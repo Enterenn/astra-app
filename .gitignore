@@ -1,3 +1,6 @@
+# BMad personal overrides (team config in _bmad/custom/ is committed)
+**/*.user.toml
+
 # Miscellaneous
 *.class
 *.lock
