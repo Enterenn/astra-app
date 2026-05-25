@@ -1,0 +1,93 @@
+# generated: 2026-05-25
+# last_updated: 2026-05-25
+# project: astra-app
+# project_key: NOKEY
+# tracking_system: file-system
+# story_location: _bmad-output/implementation-artifacts
+
+# STATUS DEFINITIONS:
+# ==================
+# Epic Status:
+#   - backlog: Epic not yet started
+#   - in-progress: Epic actively being worked on
+#   - done: All stories in epic completed
+#
+# Epic Status Transitions:
+#   - backlog → in-progress: Automatically when first story is created (via create-story)
+#   - in-progress → done: Manually when all stories reach 'done' status
+#
+# Story Status:
+#   - backlog: Story only exists in epic file
+#   - ready-for-dev: Story file created in stories folder
+#   - in-progress: Developer actively working on implementation
+#   - review: Ready for code review (via Dev's code-review workflow)
+#   - done: Story completed
+#
+# Retrospective Status:
+#   - optional: Can be completed but not required
+#   - done: Retrospective has been completed
+#
+# WORKFLOW NOTES:
+# ===============
+# - Epic transitions to 'in-progress' automatically when first story is created
+# - Stories can be worked in parallel if team capacity allows
+# - Developer typically creates next story after previous one is 'done' to incorporate learnings
+# - Dev moves story to 'review', then runs code-review (fresh context, different LLM recommended)
+#
+# EPIC TITLES (human-readable):
+#   epic-1: Trust Onboarding & App Shell
+#   epic-2: Passive Step Tracking & Today Dashboard
+#   epic-3: History & Trends
+#   epic-4: Data Sovereignty & Lifecycle (My Data)
+#   epic-5: OSS Credibility & Beta Readiness
+#
+# NAVIGATION: _bmad-output/README.md
+
+generated: 2026-05-25
+last_updated: 2026-05-25
+project: astra-app
+project_key: NOKEY
+tracking_system: file-system
+story_location: _bmad-output/implementation-artifacts
+
+development_status:
+  epic-1: backlog
+  1-1-flutter-project-initialization: backlog
+  1-2-design-tokens-and-theme-system: backlog
+  1-3-app-scaffold-and-bottom-navigation: backlog
+  1-4-user-preferences-persistence: backlog
+  1-5-trust-first-onboarding-flow: backlog
+  epic-1-retrospective: optional
+
+  epic-2: backlog
+  2-1-sqlite-schema-for-timeseries-samples: backlog
+  2-2-data-ingestion-abstraction-and-step-normalizer: backlog
+  2-3-step-repository-and-time-semantics: backlog
+  2-4-background-collector-and-android-workmanager: backlog
+  2-5-today-dashboard-with-goal-ring: backlog
+  2-6-goal-celebration-animation: backlog
+  2-7-daily-goal-local-notification: backlog
+  epic-2-retrospective: optional
+
+  epic-3: backlog
+  3-1-dev-data-inject-and-lifecycle-simulator: backlog
+  3-2-history-chart-data-aggregation: backlog
+  3-3-history-screen-with-bar-chart-and-trend: backlog
+  3-4-chart-performance-benchmark-kpi-01: backlog
+  epic-3-retrospective: optional
+
+  epic-4: backlog
+  4-1-data-lifecycle-service-downsampling-and-maintenance: backlog
+  4-2-my-data-footprint-and-background-status: backlog
+  4-3-csv-export: backlog
+  4-4-csv-import: backlog
+  4-5-full-data-purge-with-export-nudge: backlog
+  4-6-daily-goal-editor-on-my-data: backlog
+  4-7-theme-selector-and-my-data-integration: backlog
+  epic-4-retrospective: optional
+
+  epic-5: backlog
+  5-1-open-source-license-and-documentation-bundle: backlog
+  5-2-release-manifest-hardening-and-privacy-audit: backlog
+  5-3-beta-acceptance-checklist: backlog
+  epic-5-retrospective: optional

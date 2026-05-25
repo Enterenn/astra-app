@@ -2,7 +2,7 @@
 title: ASTRA — Local-First Wearable & Mobile Ecosystem
 status: final
 created: 2026-05-22
-updated: 2026-05-22
+updated: 2026-05-25
 peer_review: 2026-05-22 (Gemini + ChatGPT, 2 rounds)
 ---
 
@@ -281,11 +281,12 @@ Step samples are aggregated into **Time Buckets** of 5 minutes by default before
 
 #### FR-9: User preferences
 
-A `user_preferences` table stores at minimum `daily_step_goal` (integer).
+A `user_preferences` table stores at minimum `daily_step_goal` (integer) and `theme_mode` (`system` | `light` | `dark`).
 
 **Consequences (testable):**
-- Goal persists across app restarts.
+- Goal and theme preference persist across app restarts.
 - Default goal applied if user skips setup `[ASSUMPTION: 8000 steps]`.
+- Default `theme_mode` is `system` on first launch — app follows OS light/dark setting until user overrides.
 
 #### FR-10: Versioned schema migrations
 
@@ -379,7 +380,7 @@ Database maintenance runs weekly when the platform permits it. Android uses a sc
 
 ### 4.5 Today Surface
 
-**Description:** Primary dashboard with goal ring, current step count, and once-per-day celebration animation on goal completion. Dark mode default. Modern minimal shell. Realizes UJ-2.
+**Description:** Primary dashboard with goal ring, current step count, and once-per-day celebration animation on goal completion. Respects active theme (system/light/dark). Modern minimal shell. Realizes UJ-2.
 
 **Functional Requirements:**
 
@@ -427,7 +428,7 @@ On first goal completion each calendar day, a subtle pulse/celebration animation
 
 ### 4.7 My Data & Sovereignty
 
-**Description:** The sovereignty surface — export, **import**, purge, footprint, background status, dependency transparency. Primary product differentiator per §1.1. Realizes UJ-1, UJ-4.
+**Description:** The sovereignty surface — export, **import**, purge, footprint, background status, appearance (theme), dependency transparency. Primary product differentiator per §1.1. Realizes UJ-1, UJ-4.
 
 **Functional Requirements:**
 
@@ -458,7 +459,7 @@ User can export **Timeseries Samples** to CSV with OW-aligned column headers. Ex
 
 #### FR-20: Full local purge
 
-User can delete **all** local **Timeseries Samples** and derived collection state from **My Data** (§1.4 — full health-data purge only in Phase 0). Purge preserves non-health setup preferences such as `daily_step_goal`, onboarding completion, and permission choices.
+User can delete **all** local **Timeseries Samples** and derived collection state from **My Data** (§1.4 — full health-data purge only in Phase 0). Purge preserves non-health setup preferences such as `daily_step_goal`, `theme_mode`, onboarding completion, and permission choices.
 
 **Consequences (testable):**
 - Post-purge: sample count = 0, footprint ≈ 0 KB.
@@ -481,6 +482,16 @@ User can import a previously exported ASTRA CSV (same schema as FR-19) to repopu
 - Import validates column headers and rejects malformed rows with user-visible error (no silent partial corruption).
 - Idempotent import strategy documented: preserve `id`, skip duplicate `id`, and skip duplicate bucket identity if a malformed CSV reuses an existing bucket with a new id.
 - Round-trip test: export → purge → import restores chart-visible history.
+
+#### FR-31: Theme selection
+
+User can choose **System**, **Light**, or **Dark** appearance from **My Data**. Selection applies immediately app-wide (Today, History, My Data, onboarding if shown).
+
+**Consequences (testable):**
+- Preference stored in `user_preferences.theme_mode` and restored on cold start without incorrect theme flash.
+- Default is `system` until user changes — app follows OS light/dark setting when `system` is selected.
+- When OS theme changes and `theme_mode` is `system`, app updates without restart.
+- Both light and dark token sets meet NFR-5 contrast baseline on all three surfaces.
 
 ---
 
@@ -568,7 +579,7 @@ Project maintains a documented beta checklist covering accuracy, background, not
 
 **Consequences (testable):**
 - Checklist exists in repo; items trace to FRs above.
-- Visual cohesion items reference dark-mode-default and three-surface shell (Today / History / My Data).
+- Visual cohesion items reference system-default theme, light/dark override, and three-surface shell (Today / History / My Data).
 - Includes: release-build airplane mode, CSV export→purge→import round-trip (FR-30), step-counter reset unit test (FR-2).
 
 ---
@@ -599,7 +610,7 @@ Project maintains a documented beta checklist covering accuracy, background, not
 - **DataLifecycleService** (downsampling + VACUUM)
 - Three surfaces: **Today**, **History**, **My Data**
 - Trust onboarding, goal setup, optional local notification
-- CSV **export + import**, purge, storage footprint + last optimization, background status
+- CSV **export + import**, purge, storage footprint + last optimization, background status, theme selection (system/light/dark)
 - **AdpBleSource** stub; **DataIngestionSource** abstraction
 - Dev inject tools (90-day benchmark)
 - Apache 2.0 public repo, OW vocabulary docs, README pitch, beta checklist
@@ -669,7 +680,7 @@ Project maintains a documented beta checklist covering accuracy, background, not
 | NFR-2 | Install artifact size | < 50 MB (KPI-04) |
 | NFR-3 | Offline operation | 100% core features without network |
 | NFR-4 | Data at rest | Plaintext SQLite acceptable; SQLCipher Phase 1 |
-| NFR-5 | Accessibility | `[ASSUMPTION: WCAG 2.1 AA aspirational for Phase 0; not blocking beta]` |
+| NFR-5 | Accessibility | `[ASSUMPTION: WCAG 2.1 AA aspirational for Phase 0; not blocking beta]` — contrast baseline in **both** light and dark themes |
 | NFR-6 | Localization | English UI for Phase 0 OSS; French copy in README acceptable |
 | NFR-7 | Storage budget (1 year) | SQLite DB < 50 MB with lifecycle active (steps-only) |
 | NFR-8 | Storage budget (5 years) | SQLite DB < 200 MB with lifecycle active (steps-only) |
@@ -710,7 +721,7 @@ Project maintains a documented beta checklist covering accuracy, background, not
 |---------|---------|--------------|
 | **Today** | Current-day dashboard | Goal ring, step count, source label, celebration |
 | **History** | Temporal trends | 7d/30d charts, goal line, weekly trend |
-| **My Data** | Sovereignty (primary differentiator) | Footprint, last optimized, background status, export/import CSV, purge |
+| **My Data** | Sovereignty (primary differentiator) | Footprint, last optimized, background status, appearance (theme), export/import CSV, purge |
 | **Onboarding** | First-run (modal/flow) | Trust, permissions, goal, notification opt-in |
 
 `[ASSUMPTION: bottom navigation or tab bar with three tabs; onboarding overlays first launch only]`
@@ -719,7 +730,7 @@ Project maintains a documented beta checklist covering accuracy, background, not
 
 ## 11. Aesthetic & Tone
 
-- **Visual:** Modern minimal; dark mode default; design-token-lite system.
+- **Visual:** Modern minimal; **system theme default** (follows OS light/dark); user override to light or dark on My Data; design-token-lite dual palette.
 - **Tone:** Calm, transparent, non-judgmental. No streak shaming, no "you failed today."
 - **Anti-references:** Gamified fitness apps with leaderboards; clinical hospital UI; cluttered wearable companion apps with subscription upsells.
 
@@ -800,3 +811,4 @@ Hardware, firmware, and ADP detail: `addendum.md`.
 - **A-15:** Storage targets: 1 year < 50 MB, 5 years < 200 MB with lifecycle (§1.2, NFR-7, NFR-8).
 - **A-16:** No automatic re-bucketing of historical samples when device timezone changes in Phase 0 (§1.3).
 - **A-17:** Downsampling is destructive/irreversible after compaction (FR-11).
+- **A-18:** Default `theme_mode` = `system`; user may override to light or dark on My Data (FR-31).

@@ -27,7 +27,7 @@ _This document builds collaboratively through step-by-step discovery. Sections a
 
 **Functional Requirements:**
 
-ASTRA Phase 0 defines 30 FRs across a layered mobile architecture. The core data pipeline is: `DataIngestionSource` implementations (phone pedometer today, ADP BLE stub tomorrow) → `StepNormalizer` → `BackgroundCollector` (single ingestion writer) → SQLite `timeseries_samples` → UI queries and `DataLifecycleService` maintenance. This abstraction (FR-1–3, FR-7–8) is the primary extensibility mechanism for Phase 1+ without refactoring persistence.
+ASTRA Phase 0 defines 31 FRs across a layered mobile architecture. The core data pipeline is: `DataIngestionSource` implementations (phone pedometer today, ADP BLE stub tomorrow) → `StepNormalizer` → `BackgroundCollector` (single ingestion writer) → SQLite `timeseries_samples` → UI queries and `DataLifecycleService` maintenance. This abstraction (FR-1–3, FR-7–8) is the primary extensibility mechanism for Phase 1+ without refactoring persistence.
 
 Three user-facing surfaces (Today, History, My Data) plus onboarding map directly to architectural modules. My Data is architecturally first-class — footprint, background status, CSV export/import, and purge (FR-5, FR-13, FR-18–21, FR-30) are sovereignty features, not settings afterthoughts. Background collection (FR-4–6) and local notifications (FR-25) require platform-native services decoupled from UI lifecycle.
 
@@ -41,7 +41,7 @@ Dev/OSS FRs (FR-26–29) impose architectural observability: 90-day inject bench
 | NFR-2 (<50MB install) | Minimal dependency set; no analytics/cloud SDKs |
 | NFR-3 (100% offline) | No network in health pipeline; release builds without INTERNET permission |
 | NFR-4 (plaintext OK Phase 0) | SQLCipher migration path documented; Keystore escrow Phase 1 |
-| NFR-5 (WCAG AA aspirational) | Semantics, contrast tokens, reduce-motion variants in UX spec |
+| NFR-5 (WCAG AA aspirational) | Semantics, contrast tokens in light and dark themes, reduce-motion variants in UX spec |
 | NFR-6 (English UI) | i18n-ready structure but single locale Phase 0 |
 | NFR-7/8 (storage budgets) | Tiered downsampling + scheduled/opportunistic VACUUM; destructive compaction |
 | NFR-9 (time semantics) | UTC storage + immutable `zone_offset`; local-day aggregation for goals |
@@ -445,7 +445,7 @@ Evaluation uses cumulative daily steps from `timeseries_samples` aggregated by `
 
 **Performance (NFR-1 / KPI-01):** Chart binds pre-aggregated `ChartDayAggregate` only; no animation on 7d/30d toggle. **Benchmark acceptance:** on mid-range Android reference device, 90-day injected dataset, History 7d↔30d toggle **p95 < 100ms** (measured in `lib/dev/` benchmark harness, FR-28). **Fonts bundled locally** in `assets/fonts/`.
 
-**Theming:** `ThemeData.dark()` + `AstraColors` extension. Dark mode default only.
+**Theming:** `ThemeData.light()` + `ThemeData.dark()` + `AstraColors` extension. **System theme default** (`ThemeMode.system`); user override system/light/dark on My Data (FR-31). `ThemeCubit` drives `MaterialApp.themeMode`.
 
 ### Infrastructure & Deployment
 
@@ -521,7 +521,7 @@ lib/
 │   ├── models/           # timeseries_sample_model, chart_day_aggregate, import_result
 │   └── repositories/     # step_repository, user_preferences_repository
 ├── presentation/
-│   ├── cubits/           # today_cubit.dart, history_cubit.dart, my_data_cubit.dart, onboarding_cubit.dart
+│   ├── cubits/           # today_cubit.dart, history_cubit.dart, my_data_cubit.dart, onboarding_cubit.dart, theme_cubit.dart
 │   ├── onboarding/       # trust, permissions, goal pages
 │   ├── screens/          # app_scaffold.dart, today_screen.dart, history_screen.dart, my_data_screen.dart
 │   └── widgets/          # goal_ring.dart, step_bar_chart.dart
@@ -819,7 +819,7 @@ astra-app/                              # Git repo root = Flutter app root (D-18
 | FR-4–6 | `lib/core/services/`, `android/.../AndroidManifest.xml` |
 | FR-7–10 | `lib/core/database/`, `lib/data/repositories/step_repository.dart` |
 | FR-11–12 | `lib/core/services/data_lifecycle_service.dart` |
-| FR-13–21, FR-30 | `my_data_screen.dart`, `step_repository.dart` |
+| FR-13–21, FR-30–31 | `my_data_screen.dart`, `step_repository.dart`, `theme_cubit.dart` |
 | FR-14–15 | `today_screen.dart`, `widgets/goal_ring.dart` |
 | FR-16–17 | `history_screen.dart`, `widgets/step_bar_chart.dart` |
 | FR-22–24 | `lib/presentation/onboarding/` |
@@ -846,7 +846,7 @@ astra-app/                              # Git repo root = Flutter app root (D-18
 
 ### Requirements Coverage Validation ✅
 
-**Functional Requirements Coverage:** All 30 FRs mapped to specific files (see Requirements to Structure Mapping). FR-28 dev inject in `lib/dev/`. FR-29 beta checklist in `docs/BETA_CHECKLIST.md`.
+**Functional Requirements Coverage:** All 31 FRs mapped to specific files (see Requirements to Structure Mapping). FR-28 dev inject in `lib/dev/`. FR-29 beta checklist in `docs/BETA_CHECKLIST.md`. FR-31 theme in `theme_cubit.dart` + My Data.
 
 **Non-Functional Requirements Coverage:**
 

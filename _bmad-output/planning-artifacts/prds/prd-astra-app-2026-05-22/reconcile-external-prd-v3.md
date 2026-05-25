@@ -1,3 +1,9 @@
+---
+status: archived
+supersededBy: prd.md (2026-05-25) + implementation-readiness-report-2026-05-25.md
+purpose: PRD input-reconciliation audit trail — not an implementation spec
+---
+
 # Input Reconciliation — External PRD v3.0 (French)
 
 **Input:** User-provided inline document (May 2026)

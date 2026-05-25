@@ -2,7 +2,7 @@
 stepsCompleted: [1, 2, 3, 4, 5]
 workflowMode: fast-pass
 status: complete
-completed: 2026-05-22
+completed: 2026-05-25
 fastPassBlocksCompleted:
   - visual-foundation
   - components-and-states
@@ -35,7 +35,7 @@ fastPassBlocks:
 
 **One-line:** *Quiet instrument panel — not a coach, not a clinic.*
 
-ASTRA Phase 0 reads as a **precision tool for personal data**, not a fitness game. Visual hierarchy favors **legibility of numbers and proof** (footprint, last sync, export) over decoration. Dark mode is the default canvas; light mode is out of scope for Phase 0.
+ASTRA Phase 0 reads as a **precision tool for personal data**, not a fitness game. Visual hierarchy favors **legibility of numbers and proof** (footprint, last sync, export) over decoration. **System theme is the default** — the app follows OS light/dark until the user overrides on My Data. Both light and dark palettes are first-class in Phase 0.
 
 | Attribute | Direction |
 |-----------|-----------|
@@ -59,9 +59,9 @@ ASTRA Phase 0 reads as a **precision tool for personal data**, not a fitness gam
 
 ### 1.2 Color Tokens
 
-Phase 0 uses a **token-lite** set mappable to Flutter `ThemeData` + a small `AstraColors` extension. Semantic names over raw hex in components.
+Phase 0 uses a **token-lite** set mappable to Flutter `ThemeData.light()` + `ThemeData.dark()` + a small `AstraColors` extension. Semantic names over raw hex in components — widgets never branch on theme with hardcoded colors.
 
-#### Surfaces (dark default)
+#### Surfaces (dark palette)
 
 | Token | Hex | Usage |
 |-------|-----|-------|
@@ -116,12 +116,34 @@ Phase 0 uses a **token-lite** set mappable to Flutter `ThemeData` + a small `Ast
 | `color.status.danger` | `#F87171` | Purge confirm destructive actions |
 | `color.status.info` | `#93C5FD` | Neutral info banners (iOS backfill explainer) |
 
+#### Surfaces (light palette)
+
+| Token | Hex | Usage |
+|-------|-----|-------|
+| `color.bg.base` | `#F8F9FB` | App scaffold, full-screen backgrounds |
+| `color.bg.elevated` | `#FFFFFF` | Cards, bottom sheet, onboarding panels |
+| `color.bg.subtle` | `#EEF0F4` | Secondary panels, chart plot area |
+| `color.border.default` | `#D1D5DB` | Dividers, card outlines (1px) |
+| `color.border.focus` | `#9CA3AF` | Focus rings, active tab indicator track |
+
+#### Text (light palette)
+
+| Token | Hex | Usage |
+|-------|-----|-------|
+| `color.text.primary` | `#0F1114` | Headlines, step count hero |
+| `color.text.secondary` | `#4B5563` | Labels, captions, source tag |
+| `color.text.muted` | `#6B7280` | Timestamps, footnotes, disabled |
+| `color.text.inverse` | `#F4F5F7` | Text on accent fills (buttons) |
+
+Accent, data, and semantic status tokens (`color.accent.*`, `color.data.*`, `color.status.*`) are **shared across themes** — amber accent `#EAD55E` unchanged; verify contrast on light elevated surfaces (primary buttons use inverse dark text on amber fill per D-13).
+
 #### Flutter mapping note
 
 ```dart
-// Phase 0: ThemeData.dark() base + AstraColors extension
-// colorScheme.primary = accent.primary
-// colorScheme.surface = bg.elevated
+// Phase 0: ThemeData.light() + ThemeData.dark() + AstraColors extension
+// MaterialApp.themeMode: system default; user override via ThemeCubit (FR-31)
+// colorScheme.primary = accent.primary (both themes)
+// colorScheme.surface = bg.elevated (per active theme)
 // colorScheme.error = status.danger
 ```
 
@@ -129,9 +151,23 @@ Phase 0 uses a **token-lite** set mappable to Flutter `ThemeData` + a small `Ast
 
 ### 1.3 Typography
 
-**Families (via `google_fonts`):**
+**Families (Google Fonts origin, bundled offline):**
 - **Figtree** — UI shell: body, labels, captions, buttons, My Data metadata
 - **Darker Grotesque** — Data hero: step count, large KPI numbers, screen titles
+
+Both families are **sourced from [Google Fonts](https://fonts.google.com/)** but **must be downloaded into the repo** and declared in `pubspec.yaml` under `assets/fonts/`. Phase 0 is **strict offline-first** (FR-18): no runtime font fetch, no `google_fonts` package, no CDN dependency on first launch or in release builds.
+
+**Required weights (minimum set for type tokens below):**
+
+| Family | Weights | Used by |
+|--------|---------|---------|
+| Figtree | 400, 500, 600 | `type.body`, `type.caption`, `type.label`, `type.headline` |
+| Darker Grotesque | 500, 600 | `type.display`, `type.title`, `type.data` |
+
+**Flutter delivery (Story 1.2):**
+- Store files as `assets/fonts/Figtree-*.ttf` and `assets/fonts/DarkerGrotesque-*.ttf` (exact filenames match downloaded files).
+- Register each weight in `pubspec.yaml`; reference via `fontFamily` in `ThemeData` / `TextTheme` — not `GoogleFonts.*`.
+- Document font files in `docs/DEPENDENCIES.md` (SIL Open Font License; confirm zero network use in health pipeline).
 
 | Token | Family | Size | Weight | Line height | Usage |
 |-------|--------|------|--------|-------------|-------|
@@ -230,10 +266,11 @@ Phase 0 uses a **token-lite** set mappable to Flutter `ThemeData` + a small `Ast
 | # | Decision | Status | Resolution |
 |---|----------|--------|------------|
 | D-1 | Accent hue | **Locked** | `#EAD55E` amber (Baptiste confirmed) |
-| D-2 | Fonts | **Locked** | Figtree (UI) + Darker Grotesque (data hero) |
+| D-2 | Fonts | **Locked** | Figtree (UI) + Darker Grotesque (data hero); Google Fonts origin, bundled in `assets/fonts/` (offline) |
 | D-3 | Ring style | **Locked** | Stroke ring + center count; fill caps 100%; overflow via number |
 | D-4 | Chart bars | **Locked** | Bar charts; accent-muted fill + dashed goal line |
-| D-5 | Surfaces | **Locked** | Charcoal `#0F1114` base (Baptiste confirmed) |
+| D-5 | Surfaces | **Locked** | Charcoal `#0F1114` dark base; light base `#F8F9FB` |
+| D-15 | Theme default | **Locked** | System default; user override System / Light / Dark on My Data (FR-31) |
 
 ---
 
@@ -300,6 +337,23 @@ Small pill under Today hero: `"Phone sensor"` / future `"ASTRA ring"`.
 - Figtree `type.caption`, padding 6×10, radius `radius.full`
 - Bg `color.bg.subtle`, text `color.text.secondary`
 - Icon 14dp optional (smartphone outline)
+
+#### `ThemeSelector`
+
+Segmented control for appearance preference on My Data (FR-31).
+
+| Option | Behavior |
+|--------|----------|
+| **System** | Follow OS light/dark; default on first launch; updates when OS theme changes |
+| **Light** | Force light palette |
+| **Dark** | Force dark palette |
+
+- Label row: "Appearance" (Figtree `type.headline`) above control
+- Segmented pill on `color.bg.subtle`, selected segment `color.bg.elevated` + accent underline
+- 48dp touch height; three equal segments
+- Persists to `user_preferences.theme_mode` immediately on change
+
+---
 
 #### `SectionCard`
 
@@ -433,7 +487,7 @@ Single line Figtree `type.caption` `color.text.secondary`: **"Daily goal reached
 
 ### 2.5 My Data Surface
 
-**FR refs:** FR-5, FR-13, FR-19–21, FR-23, FR-30 · **UJ:** UJ-1, UJ-4  
+**FR refs:** FR-5, FR-13, FR-19–21, FR-23, FR-30–31 · **UJ:** UJ-1, UJ-4  
 **Primary differentiator** — most structured screen.
 
 #### Layout (scrollable)
@@ -441,7 +495,8 @@ Single line Figtree `type.caption` `color.text.secondary`: **"Daily goal reached
 1. **Background status** — `SectionCard` + `StatusBanner` variant
 2. **Footprint** — `SectionCard` with KPI row
 3. **Daily goal** — inline edit (A-9 locked)
-4. **Data actions** — Export · Import · Purge
+4. **Appearance** — `ThemeSelector` (System / Light / Dark)
+5. **Data actions** — Export · Import · Purge
 
 *No README / external doc footer in Phase 0 (D-7).*
 
@@ -525,6 +580,7 @@ Full-screen modal stack (not tabs). No back on step 1; progress dots optional (3
 | `FootprintKpiRow` | My Data | P0 |
 | `BackgroundStatusCard` | My Data | P0 |
 | `GoalEditorSheet` | My Data | P0 |
+| `ThemeSelector` | My Data | P0 |
 | `DataActionRow` | My Data | P0 |
 | `StatusBanner` | Shared | P0 |
 | `ConfirmDialog` | Shared | P0 |
@@ -547,6 +603,7 @@ Full-screen modal stack (not tabs). No back on step 1; progress dots optional (3
 | Export | — | — | success snackbar |
 | Import | ring refreshes | chart refreshes | footprint updates |
 | Purge | empty | empty | zeros + confirm was shown |
+| Theme change | tokens update | tokens update | selector reflects choice |
 | Airplane 24h | works offline | works offline | export works (SM-3) |
 
 ### 2.9 Decisions Log (Bloc 2)
@@ -691,6 +748,10 @@ If user on History when goal crossed → celebration deferred to next Today visi
 │                                     │
 │  ┌─ Daily goal ─────────────────┐   │
 │  │  Daily step goal      8 000 >│   │  tap → GoalEditor sheet
+│  └──────────────────────────────┘   │
+│                                     │
+│  ┌─ Appearance ─────────────────┐   │
+│  │  [ System | Light | Dark ]   │   │  ThemeSelector (System default)
 │  └──────────────────────────────┘   │
 │                                     │
 │  ┌─ Your data ──────────────────┐   │
@@ -928,7 +989,10 @@ Phase 0 target: **WCAG 2.1 AA aspirational** (NFR-5, A-6) — not blocking beta,
 | `#6B7280` on `#0F1114` | ~4.6:1 | Muted footnotes | ⚠️ Large text / non-critical only |
 | `#EAD55E` on `#0F1114` | ~10:1 | Accent stroke, icons | ✅ UI components |
 | `#EAD55E` on `#1A1D23` (elevated) | ~9:1 | Primary button fill | Use **`color.text.inverse`** for button label (not amber on amber) |
-| `#0F1114` on `#EAD55E` | ~10:1 | Primary button text | ✅ Locked pattern |
+| `#0F1114` on `#EAD55E` | ~10:1 | Primary button text (dark theme) | ✅ Locked pattern |
+| `#0F1114` on `#F8F9FB` (light base) | ~16:1 | Body, hero numbers (light theme) | ✅ AA all sizes |
+| `#4B5563` on `#F8F9FB` | ~7:1 | Captions, labels (light theme) | ✅ AA normal text |
+| `#EAD55E` on `#FFFFFF` (elevated) | ~1.5:1 | Accent stroke only — not body text | Use for ring/chart; buttons use dark inverse text on amber fill |
 
 **Rules:**
 - Never amber `#EAD55E` text on charcoal for paragraphs — accent is for strokes, icons, active tabs, button *backgrounds* with dark text.
@@ -961,6 +1025,7 @@ Phase 0 target: **WCAG 2.1 AA aspirational** (NFR-5, A-6) — not blocking beta,
 | Export button | "Export data as CSV file" | |
 | Import button | "Import CSV file" | |
 | Purge button | "Delete all local data" | |
+| Theme selector | "Appearance: System" / "Light" / "Dark" | Reflects current selection |
 | Stale banner | Full banner text as label | Not icon-only |
 | Tab bar | Standard `NavigationBar` semantics | |
 
@@ -1016,7 +1081,7 @@ Use before beta handoff. Maps to PRD beta checklist visual cohesion items.
 
 | # | Check | Pass criteria |
 |---|-------|---------------|
-| V-1 | Dark mode default | No light theme flash on launch |
+| V-1 | Theme default | System on first launch; no wrong-theme flash; light and dark palettes both verified |
 | V-2 | Token consistency | All screens use `AstraColors` tokens — no hardcoded hex in widgets |
 | V-3 | Typography | Figtree + Darker Grotesque only; no system font fallback visible unless bundle fail |
 | V-4 | Tab cohesion | 3 tabs same bar style, amber active state |
@@ -1048,14 +1113,14 @@ Use before beta handoff. Maps to PRD beta checklist visual cohesion items.
 
 | Bloc | Section | Status |
 |------|---------|--------|
-| 1 | Visual foundation — charcoal + amber, Figtree/Darker Grotesque, ring/chart | ✅ |
+| 1 | Visual foundation — dual palette (charcoal + light), Figtree/Darker Grotesque, system default theme | ✅ |
 | 2 | Components + states — 14 widgets, GoalCelebration, My Data sovereignty | ✅ |
 | 3 | Flows + wireframes — onboarding, export/import/purge, edge cases | ✅ |
 | 4 | Accessibility + polish + beta visual checklist | ✅ |
 
 **Output file:** `_bmad-output/planning-artifacts/ux-design-specification.md`  
 **Input PRD:** `prds/prd-astra-app-2026-05-22/prd.md`  
-**Decisions:** D-1 through D-14 logged in §1.7, §2.9, §3.14, §4.8
+**Decisions:** D-1 through D-15 logged in §1.7, §2.9, §3.14, §4.8
 
 ### 5.2 PRD Traceability (UX-relevant FRs)
 
@@ -1066,6 +1131,7 @@ Use before beta handoff. Maps to PRD beta checklist visual cohesion items.
 | FR-16, FR-17 | §2.4 History chart + trend |
 | FR-19–21, FR-30 | §3.9–3.11 flows |
 | FR-22–24 | §3.7 onboarding |
+| FR-31 | §2.2 ThemeSelector, §2.5 Appearance, §1.2 light palette |
 | FR-29 | §4.7 visual checklist |
 
 ### 5.3 Recommended Next Steps (BMad workflow)
@@ -1077,4 +1143,4 @@ Use before beta handoff. Maps to PRD beta checklist visual cohesion items.
 
 ---
 
-*UX fast pass completed 2026-05-22 — Baptiste / astra-app Phase 0 Sandbox.*
+*UX spec updated 2026-05-25 — theme system default + light/dark palettes (FR-31).*

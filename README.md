@@ -76,7 +76,7 @@ Phase 0 is not a throwaway prototype. It is a **learning sandbox** that must del
 | **My Data** | DB footprint, last optimization, background status, export / import / purge |
 | **Onboarding** | Trust, permissions, goal (8000 steps default), optional notifications |
 
-**Visual tone:** quiet instrument panel — dark mode by default, clear hierarchy, no aggressive gamification.
+**Visual tone:** quiet instrument panel — **System theme default** (follows OS); Light and Dark available on My Data — clear hierarchy, no aggressive gamification.
 
 ---
 
@@ -191,15 +191,22 @@ Then add dependencies (`sqflite`, `workmanager`, `pedometer`, etc.) and implemen
 
 ## Project documentation
 
+**Start here:** [`_bmad-output/README.md`](_bmad-output/README.md) — navigation hub for all BMAD artifacts.
+
 Planning artifacts (source of truth for implementation):
 
 | Document | Contents |
 |----------|----------|
+| [Agent workflow rules](docs/project-context.md) | Review-before-commit gate, commit conventions *(mandatory for contributors)* |
+| [Epics & stories](_bmad-output/planning-artifacts/epics.md) | 26 stories with acceptance criteria |
+| [Implementation readiness](_bmad-output/planning-artifacts/implementation-readiness-report-2026-05-25.md) | Alignment verdict — READY FOR IMPLEMENTATION |
+| [Sprint tracker](_bmad-output/implementation-artifacts/sprint-status.yaml) | Story status (all backlog) |
 | [PRD](_bmad-output/planning-artifacts/prds/prd-astra-app-2026-05-22/prd.md) | Functional requirements, NFRs, user journeys |
 | [Technical addendum](_bmad-output/planning-artifacts/prds/prd-astra-app-2026-05-22/addendum.md) | SQL DDL, ADP/firmware details (future phases) |
 | [Architecture](_bmad-output/planning-artifacts/architecture.md) | Technical decisions, structure, patterns |
 | [UX specification](_bmad-output/planning-artifacts/ux-design-specification.md) | Tokens, screens, flows, accessibility |
 | [Decision log](_bmad-output/planning-artifacts/prds/prd-astra-app-2026-05-22/.decision-log.md) | Product decision journal |
+| [Brainstorming](_bmad-output/brainstorming/brainstorming-session-2026-05-22-1521.md) | Phase 0 ideation session |
 | [Market research](_bmad-output/planning-artifacts/research/market-astra-local-first-health-hub-research-2026-05-22.md) | Competitive positioning |
 | [Domain research](_bmad-output/planning-artifacts/research/domain-astra-local-first-health-hub-research-2026-05-22.md) | Regulatory, health data, OW alignment |
 
@@ -229,6 +236,12 @@ Planning artifacts (source of truth for implementation):
 ## Contributing
 
 The project is in advanced planning; implementation is upcoming. Contributions will be welcome once the Flutter scaffold and the first story (ingestion + persistence) are in place.
+
+**Before contributing:**
+
+1. Read [`docs/project-context.md`](docs/project-context.md) — mandatory review-before-commit workflow
+2. Read [`_bmad-output/README.md`](_bmad-output/README.md) — artifact navigation and reading order
+3. Check [`sprint-status.yaml`](_bmad-output/implementation-artifacts/sprint-status.yaml) for current story status
 
 In the meantime:
 

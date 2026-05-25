@@ -1,3 +1,9 @@
+---
+status: archived
+supersededBy: prd.md (2026-05-25) + implementation-readiness-report-2026-05-25.md
+purpose: PRD input-reconciliation audit trail — not an implementation spec
+---
+
 # Input Reconciliation — Market Research 2026-05-22
 
 **Input:** `_bmad-output/planning-artifacts/research/market-astra-local-first-health-hub-research-2026-05-22.md`

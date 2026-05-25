@@ -1,3 +1,9 @@
+---
+status: archived
+supersededBy: prd.md (2026-05-25) + implementation-readiness-report-2026-05-25.md
+purpose: Pre-finalization PRD quality gate — not an implementation spec
+---
+
 # PRD Quality Review — ASTRA
 
 ## Overall verdict
@@ -62,4 +68,4 @@ Appropriate rigor for solo internal/beta OSS: full UJs for UX-heavy product, roa
 - Glossary terms used consistently (Hub App, Timeseries Sample, etc.).
 - FR-1 through FR-29 contiguous.
 - Inline `[ASSUMPTION]` tags match Assumptions Index A-1 through A-12.
-- Brainstorming doc recommends `docs/REGULATORY_POSITION.md` — not yet in FR consequences (domain research §7.3); add to FR-27 or defer note.
+- Brainstorming doc recommends `docs/REGULATORY_POSITION.md` — **resolved in FR-27** (see `.decision-log.md`, 2026-05-22).
