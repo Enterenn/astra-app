@@ -885,6 +885,14 @@ So that I can verify "proof over promises" on a sideload APK.
 **When** beta protocol runs
 **Then** Today, History, and export work offline (FR18, SM-3)
 
+**Given** Flutter 3.44+ Android Gradle Plugin 9.x with legacy Kotlin Gradle Plugin (KGP) compatibility flags
+**When** release APK is built after plugin ecosystem migration
+**Then** `android/gradle.properties` no longer requires `android.builtInKotlin=false` solely to support unmigrated plugins
+**And** `flutter build apk --release` succeeds without KGP incompatibility warnings for: `pedometer`, `share_plus`, `workmanager_android` (and any other Phase 0 plugins added by Epic 2–4)
+**And** migration follows [Flutter Built-in Kotlin for app developers](https://docs.flutter.dev/release/breaking-changes/migrate-to-built-in-kotlin/for-app-developers)
+
+**Implementation note (Story 1.1 discovery, 2026-05-25):** Phase 0 scaffold builds with `android.builtInKotlin=false` and `android.newDsl=false` (Flutter 3.44 defaults). First `flutter build apk --debug` after locked deps surfaced KGP warnings for the plugins above. This is non-blocking for Epic 1–4; resolve before beta release hardening in this story.
+
 ---
 
 ### Story 5.3: Beta Acceptance Checklist
