@@ -1,6 +1,6 @@
 # Story 1.1: Flutter Project Initialization
 
-Status: ready-for-dev
+Status: done
 
 <!-- Note: Validation is optional. Run validate-create-story for quality check before dev-story. -->
 
@@ -23,27 +23,41 @@ So that I have a clean, runnable mobile app foundation aligned with ASTRA archit
 
 ## Tasks / Subtasks
 
-- [ ] **Sub-task A — Flutter scaffold** (AC: #1)
-  - [ ] Confirm Flutter stable ≥ 3.44.0 (`flutter --version`)
-  - [ ] From repo root, run `flutter create .` with locked flags (see Dev Notes)
-  - [ ] Verify generated `pubspec.yaml` has `name: astra_app`
-  - [ ] Verify Android `applicationId` = `com.astraapp` in `android/app/build.gradle.kts` (or equivalent)
-  - [ ] Verify iOS bundle identifier = `com.astraapp` in Xcode project / `ios/Runner.xcodeproj`
-  - [ ] Confirm existing repo content preserved: `docs/`, `_bmad-output/`, `README.md`, `LICENSE`
-  - [ ] **Stop → review brief → wait for Baptiste OK → commit**
+- [x] **Sub-task A — Flutter scaffold** (AC: #1)
+  - [x] Confirm Flutter stable ≥ 3.44.0 (`flutter --version`)
+  - [x] From repo root, run `flutter create .` with locked flags (see Dev Notes)
+  - [x] Verify generated `pubspec.yaml` has `name: astra_app`
+  - [x] Verify Android `applicationId` = `com.astraapp` in `android/app/build.gradle.kts` (or equivalent)
+  - [x] Verify iOS bundle identifier = `com.astraapp` in Xcode project / `ios/Runner.xcodeproj`
+  - [x] Confirm existing repo content preserved: `docs/`, `_bmad-output/`, `README.md`, `LICENSE`
+  - [x] **Stop → review brief → wait for Baptiste OK → commit**
 
-- [ ] **Sub-task B — Locked dependencies** (AC: #1)
-  - [ ] Replace/extend `pubspec.yaml` with locked dependency block from Architecture (see below)
-  - [ ] Run `flutter pub get` — must succeed with zero resolution errors
-  - [ ] Do **not** import or wire any new packages in Dart code yet (deps declared only)
-  - [ ] **Stop → review brief → wait for Baptiste OK → commit**
+- [x] **Sub-task B — Locked dependencies** (AC: #1)
+  - [x] Replace/extend `pubspec.yaml` with locked dependency block from Architecture (see below)
+  - [x] Run `flutter pub get` — must succeed with zero resolution errors
+  - [x] Do **not** import or wire any new packages in Dart code yet (deps declared only)
+  - [x] **Stop → review brief → wait for Baptiste OK → commit**
 
-- [ ] **Sub-task C — Build & analyze verification** (AC: #1, #2)
-  - [ ] Run `flutter analyze` — zero issues
-  - [ ] Run `flutter build apk --debug` (or `flutter run` on device/emulator) — succeeds
-  - [ ] Optional: `flutter build ios --no-codesign` if macOS/Xcode available
-  - [ ] Document Flutter/Dart version used in Dev Agent Record
-  - [ ] **Stop → review brief → wait for Baptiste OK → commit**
+- [x] **Sub-task C — Build & analyze verification** (AC: #1, #2)
+  - [x] Run `flutter analyze` — zero issues
+  - [x] Run `flutter build apk --debug` (or `flutter run` on device/emulator) — succeeds
+  - [x] Optional: `flutter build ios --no-codesign` if macOS/Xcode available
+  - [x] Document Flutter/Dart version used in Dev Agent Record
+  - [x] **Stop → review brief → wait for Baptiste OK → commit**
+
+### Review Findings
+
+- [x] [Review][Decision] **`pubspec.lock` — commit or keep gitignored?** — Resolved: **A** — added `!pubspec.lock` exception to `.gitignore`; lock file committed for reproducible builds.
+- [x] [Review][Decision] **`flutter_lints` version drift** — Resolved: **B** — kept `^6.0.0` (Flutter 3.44 template default); spec baseline updated below.
+- [x] [Review][Decision] **SDK constraint drift** — Resolved: **A** — kept `sdk: ^3.12.0`; spec baseline updated to match Flutter 3.44 / Dart 3.12.
+- [x] [Review][Decision] **Gradle JVM heap 8G** — Resolved: **B** — kept `-Xmx8G` (32 GB dev workstation).
+
+- [x] [Review][Patch] **Missing `test/widget_test.dart`** [test/widget_test.dart] — added widget test for empty app shell.
+- [x] [Review][Patch] **`pubspec.yaml` missing trailing newline** [pubspec.yaml:28] — fixed.
+- [x] [Review][Patch] **Story completion metadata incomplete** [1-1-flutter-project-initialization.md] — status, checkboxes, Dev Agent Record, and File List updated.
+
+- [x] [Review][Defer] **Plugin manifest permissions not wired** [android/app/src/main/AndroidManifest.xml] — deferred, pre-existing; workmanager/pedometer/notifications wiring deferred to Epic 2 per story scope.
+- [x] [Review][Defer] **Legacy Kotlin Gradle Plugin warnings** [android/gradle.properties] — deferred, pre-existing; `builtInKotlin=false` / `kotlin.incremental=false` tracked for Epic 5 Story 5.2.
 
 ## Dev Notes
 
@@ -118,7 +132,7 @@ description: ASTRA — local-first health hub
 publish_to: 'none'
 
 environment:
-  sdk: ^3.0.0
+  sdk: ^3.12.0
 
 dependencies:
   flutter:
@@ -138,7 +152,7 @@ dependencies:
 dev_dependencies:
   flutter_test:
     sdk: flutter
-  flutter_lints: ^5.0.0
+  flutter_lints: ^6.0.0
 
 flutter:
   uses-material-design: true
@@ -231,23 +245,35 @@ lib/
 
 ### Agent Model Used
 
-_(filled by dev agent on completion)_
+Composer (code review workflow, 2026-05-25)
 
 ### Debug Log References
 
+- Code review diff range: `6198f40..HEAD` (4 implementation commits)
+- Post-review patch verification: `flutter analyze` (0 issues), `flutter test` (1 passed)
+
 ### Completion Notes List
+
+- Flutter **3.44.0** stable / Dart **3.12.0** on Windows dev workstation (32 GB RAM)
+- Sub-tasks A/B/C delivered in separate commits on `main` before code review
+- Code review resolved: `pubspec.lock` tracked, widget test added, spec baseline aligned (`sdk ^3.12.0`, `flutter_lints ^6.0.0`)
+- Android debug APK build verified during implementation; iOS build not attempted (Windows host)
+- Gradle heap kept at 8G per dev machine spec
 
 ### File List
 
-_(expected after completion)_
+- `.gitignore` (modified — `!pubspec.lock` exception)
+- `.metadata` (new)
 - `pubspec.yaml` (new)
-- `pubspec.lock` (new)
+- `pubspec.lock` (new, tracked)
 - `lib/main.dart` (new)
 - `analysis_options.yaml` (new)
+- `test/widget_test.dart` (new)
 - `android/**` (new)
 - `ios/**` (new)
-- `test/widget_test.dart` (new)
-- `.metadata` (new, Flutter tooling)
+- `_bmad-output/implementation-artifacts/stories/1-1-flutter-project-initialization.md` (new, updated)
+- `_bmad-output/planning-artifacts/architecture.md` (Epic 5 KGP note)
+- `_bmad-output/planning-artifacts/epics.md` (Epic 5 KGP note)
 
 ## Technical Requirements
 
@@ -285,7 +311,7 @@ _(expected after completion)_
 | path_provider | ^2.1.5 | Declare |
 | uuid | ^4.4.0 | Declare |
 | path | ^1.9.1 | Declare |
-| flutter_lints | ^5.0.0 | dev — from template |
+| flutter_lints | ^6.0.0 | dev — Flutter 3.44 template default |
 
 **Flutter 3.44 note:** iOS uses Swift Package Manager by default (SwiftPM replaces CocoaPods). First `flutter run` / `flutter build ios` may update Xcode project — expected; document if iOS build is attempted.
 
@@ -315,7 +341,7 @@ Mandatory for all stories — [`docs/project-context.md`](../../../docs/project-
 
 ## Story Completion Status
 
-- Status: **ready-for-dev**
-- Ultimate context engine analysis completed — comprehensive developer guide created
-- Epic 1 status: **in-progress** (first story in epic)
+- Status: **done**
+- Code review completed 2026-05-25 — all decision-needed and patch findings resolved
+- Epic 1 status: **in-progress** (story 1.1 complete; 1.2 next)
 - Next story after completion: **1-2-design-tokens-and-theme-system**
