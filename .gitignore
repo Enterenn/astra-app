@@ -11,6 +11,9 @@
 .buildlog/
 .history
 
+# JetBrains IDE (Android Studio / IntelliJ)
+.idea/
+*.iml
 
 
 # Flutter repo-specific
