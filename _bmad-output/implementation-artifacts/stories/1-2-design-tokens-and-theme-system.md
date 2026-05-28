@@ -1,6 +1,6 @@
 # Story 1.2: Design Tokens and Theme System
 
-Status: ready-for-dev
+Status: done
 
 <!-- Note: Validation is optional. Run validate-create-story for quality check before dev-story. -->
 
@@ -27,49 +27,87 @@ So that the interface feels polished in either appearance from first launch.
 
 ## Tasks / Subtasks
 
-- [ ] **Sub-task A — Font assets (offline-first)** (AC: #1)
-  - [ ] Download Figtree (400, 500, 600) and Darker Grotesque (500, 600) from [Google Fonts](https://fonts.google.com/) into `assets/fonts/` — **commit the `.ttf` files**; no `google_fonts` package, no runtime CDN fetch (UX §1.3, FR-18)
-  - [ ] Register font files in `pubspec.yaml` under `flutter: fonts:` with exact filenames
-  - [ ] Add fonts section to `docs/DEPENDENCIES.md` (create file if absent): family names, file paths, SIL OFL license note, confirm zero network use
-  - [ ] Run `flutter pub get` — must succeed
-  - [ ] **Stop → review brief → wait for Baptiste OK → commit**
+- [x] **Sub-task A — Font assets (offline-first)** (AC: #1)
+  - [x] Download Figtree and Darker Grotesque variable fonts from [Google Fonts](https://fonts.google.com/) into `assets/fonts/` — **commit the `.ttf` files**; no `google_fonts` package, no runtime CDN fetch (UX §1.3, FR-18)
+  - [x] Register font files in `pubspec.yaml` under `flutter: fonts:` with exact filenames
+  - [x] Add fonts section to `docs/DEPENDENCIES.md` (create file if absent): family names, file paths, SIL OFL license note, confirm zero network use
+  - [x] Run `flutter pub get` — must succeed
+  - [x] **Stop → review brief → wait for Baptiste OK → commit**
 
-- [ ] **Sub-task B — Design token constants** (AC: #1, #3)
-  - [ ] Create `lib/core/constants/astra_spacing.dart` — `kSpaceXs` (4) through `kSpace2xl` (48), `kRadiusSm` (8) through `kRadiusFull` (999), `kMinTouchTarget` (48), `kScreenHorizontalPadding` (16)
-  - [ ] Create `lib/core/constants/astra_typography.dart` — token helpers mapping UX §1.3 sizes/weights to Figtree / Darker Grotesque (`type.display` 52sp through `type.caption` 12sp)
-  - [ ] Create `lib/core/constants/astra_colors.dart` — `AstraColors extends ThemeExtension<AstraColors>` with **paired** light + dark factory constructors (`AstraColors.light()`, `AstraColors.dark()`); implement `copyWith` + `lerp`; all hex values from UX §1.2 (see Dev Notes table)
-  - [ ] Add `extension AstraThemeContext on BuildContext` → `astraColors` accessor
-  - [ ] **Stop → review brief → wait for Baptiste OK → commit**
+- [x] **Sub-task B — Design token constants** (AC: #1, #3)
+  - [x] Create `lib/core/constants/astra_spacing.dart` — `AstraSpacing.kSpaceXs` (4) through `AstraSpacing.kSpace2xl` (48), `AstraSpacing.kRadiusSm` (8) through `AstraSpacing.kRadiusFull` (999), `AstraSpacing.kMinTouchTarget` (48), `AstraSpacing.kScreenHorizontalPadding` (16)
+  - [x] Create `lib/core/constants/astra_typography.dart` — token helpers mapping UX §1.3 sizes/weights to Figtree / Darker Grotesque (`type.display` 52sp through `type.caption` 12sp)
+  - [x] Create `lib/core/constants/astra_colors.dart` — `AstraColors extends ThemeExtension<AstraColors>` with **paired** light + dark factory constructors (`AstraColors.light()`, `AstraColors.dark()`); implement `copyWith` + `lerp`; all hex values from UX §1.2 (see Dev Notes table)
+  - [x] Add `extension AstraThemeContext on BuildContext` → `astraColors` accessor
+  - [x] **Stop → review brief → wait for Baptiste OK → commit**
 
-- [ ] **Sub-task C — Theme builders + app wiring** (AC: #1, #2, #3)
-  - [ ] Create `lib/core/constants/astra_theme.dart` — `ThemeData buildAstraLightTheme()` and `buildAstraDarkTheme()` wiring:
+- [x] **Sub-task C — Theme builders + app wiring** (AC: #1, #2, #3)
+  - [x] Create `lib/core/constants/astra_theme.dart` — `ThemeData buildAstraLightTheme()` and `buildAstraDarkTheme()` wiring:
     - `useMaterial3: true`
     - `ColorScheme` mapped per UX Flutter mapping note (`primary` = accent, `surface` = bg.elevated, `error` = status.danger, `scaffoldBackgroundColor` = bg.base)
     - `extensions: [AstraColors.light()]` / `[AstraColors.dark()]`
     - `TextTheme` from `astra_typography.dart` tokens
     - `fontFamily: 'Figtree'` default; Darker Grotesque only on display/title/data styles
-  - [ ] Create `lib/presentation/cubits/theme_cubit.dart` + `theme_state.dart`:
+  - [x] Create `lib/presentation/cubits/theme_cubit.dart` + `theme_state.dart`:
     - `enum AstraThemePreference { system, light, dark }` (maps 1:1 to future DB `theme_mode` string values)
     - **Default state:** `AstraThemePreference.system` (in-memory only — no SQLite yet)
     - `ThemeMode get materialThemeMode` derived from preference
     - **Do not** add `setThemeMode()` persistence API yet — deferred to Story 4.7 (ThemeSelector); Story 1.4 will add repository load at startup
-  - [ ] Create `lib/app.dart` — `AstraApp` widget: `BlocProvider<ThemeCubit>`, `MaterialApp` with `theme`, `darkTheme`, `themeMode: context.watch<ThemeCubit>().state.materialThemeMode`
-  - [ ] Update `lib/main.dart` — `runApp(const AstraApp())`; remove Hello World demo
-  - [ ] Create minimal `lib/presentation/screens/theme_preview_screen.dart` (temporary until Story 1.3 replaces with tab shell):
+  - [x] Create `lib/app.dart` — `AstraApp` widget: `BlocProvider<ThemeCubit>`, `MaterialApp` with `theme`, `darkTheme`, `themeMode: context.watch<ThemeCubit>().state.materialThemeMode`
+  - [x] Update `lib/main.dart` — `runApp(const AstraApp())`; remove Hello World demo
+  - [x] Create minimal `lib/presentation/screens/theme_preview_screen.dart` (temporary until Story 1.3 replaces with tab shell):
     - `Scaffold` using `context.astraColors.bgBase` via tokens (not hardcoded hex)
-    - Horizontal padding `kScreenHorizontalPadding` (16dp)
+    - Horizontal padding `AstraSpacing.kScreenHorizontalPadding` (16dp)
     - Sample text at each typography token
-    - One interactive `FilledButton` with min height `kMinTouchTarget` (48dp) demonstrating accent + inverse text
+    - One interactive `FilledButton` with min height `AstraSpacing.kMinTouchTarget` (48dp) demonstrating accent + inverse text
     - Swatch row showing accent, status, data tokens
-  - [ ] **Stop → review brief → wait for Baptiste OK → commit**
+  - [x] **Stop → review brief → wait for Baptiste OK → commit**
 
-- [ ] **Sub-task D — Tests & verification** (AC: #1, #2, #3)
-  - [ ] `test/core/constants/astra_colors_test.dart` — spot-check 3+ light and 3+ dark token hex values match UX spec; verify `lerp` at t=0 and t=1
-  - [ ] `test/presentation/cubits/theme_cubit_test.dart` — initial state is `system`; `materialThemeMode == ThemeMode.system`
-  - [ ] Update `test/widget_test.dart` — pump `AstraApp`, verify preview screen renders, button meets 48dp min height constraint, no "Hello World"
-  - [ ] Manual: toggle OS light/dark on device/emulator while app foregrounded → preview screen colors update without hot restart
-  - [ ] Run `flutter analyze` (zero issues) and `flutter test` (all pass)
-  - [ ] **Stop → review brief → wait for Baptiste OK → commit**
+- [x] **Sub-task D — Tests & verification** (AC: #1, #2, #3)
+  - [x] `test/core/constants/astra_colors_test.dart` — spot-check 3+ light and 3+ dark token hex values match UX spec; verify `lerp` at t=0 and t=1
+  - [x] `test/presentation/cubits/theme_cubit_test.dart` — initial state is `system`; `materialThemeMode == ThemeMode.system`
+  - [x] Update `test/widget_test.dart` — pump `AstraApp`, verify preview screen renders, button meets 48dp min height constraint, no "Hello World"
+  - [x] Manual: toggle OS light/dark on device/emulator while app foregrounded → preview screen colors update without hot restart
+  - [x] Run `flutter analyze` (zero issues) and `flutter test` (all pass)
+  - [x] **Stop → review brief → wait for Baptiste OK → commit**
+
+### Review Findings
+
+- [x] [Review][Decision] Variable fonts vs five static font files — **Resolved:** keep 2 variable-font files; update spec file tree to match.
+
+- [x] [Review][Decision] Spacing constant namespace — **Resolved:** keep `AstraSpacing.k*` namespace (consistent with `AstraTypography`, preserves `k` prefix, avoids global pollution); update spec Sub-task B wording.
+
+- [x] [Review][Patch] Update spec file tree and font requirements for variable-font approach [`1-2-design-tokens-and-theme-system.md`]
+
+- [x] [Review][Patch] Update spec Sub-task B spacing naming to document `AstraSpacing.k*` pattern [`1-2-design-tokens-and-theme-system.md`]
+
+- [x] [Review][Patch] TextTheme duplicated instead of sourced from typography tokens [`lib/core/constants/astra_theme.dart:6-36`]
+
+- [x] [Review][Patch] Opacity-derived color tokens untested (28%, 80%, 35%) [`test/core/constants/astra_colors_test.dart`]
+
+- [x] [Review][Patch] Incomplete hex coverage for semantic color tokens [`test/core/constants/astra_colors_test.dart`]
+
+- [x] [Review][Patch] Widget test 48dp assertion uses first SizedBox ancestor (brittle) [`test/widget_test.dart:16-21`]
+
+- [x] [Review][Patch] Widget test missing AC #3 horizontal padding assertion (16dp) [`test/widget_test.dart`]
+
+- [x] [Review][Patch] Missing trailing newlines in modified text files [`pubspec.yaml`, `docs/DEPENDENCIES.md`, `lib/core/constants/astra_colors.dart`]
+
+- [x] [Review][Patch] Mis-indented `@override` before `copyWith` [`lib/core/constants/astra_colors.dart:664`]
+
+- [x] [Review][Defer] Unrelated `.gitignore` JetBrains entries bundled with story [`.gitignore`] — deferred, pre-existing
+
+- [x] [Review][Defer] Preview screen safe-area / text-scale / overflow edge cases [`lib/presentation/screens/theme_preview_screen.dart`] — deferred, pre-existing
+
+- [x] [Review][Defer] Partial Material 3 ColorScheme role mapping [`lib/core/constants/astra_theme.dart:64-72`] — deferred, pre-existing
+
+- [x] [Review][Defer] `copyWith` and mid-range `lerp` tests not added [`test/core/constants/astra_colors_test.dart`] — deferred, pre-existing
+
+- [x] [Review][Defer] No widget tests asserting bundled font families applied [`test/widget_test.dart`] — deferred, pre-existing
+
+- [x] [Review][Defer] No dedicated unit tests for `astra_theme`, `astra_spacing`, `astra_typography` — deferred, pre-existing
+
+- [x] [Review][Defer] AC #2 OS brightness toggle has no automated widget test (spec requires manual verification) — deferred, pre-existing
 
 ## Dev Notes
 
@@ -181,16 +219,16 @@ Expose as `TextStyle` getters on a class (e.g. `AstraTypography.display(BuildCon
 
 | Token | Value (dp) | Constant |
 |-------|------------|----------|
-| `space.xs` | 4 | `kSpaceXs` |
-| `space.sm` | 8 | `kSpaceSm` |
-| `space.md` | 16 | `kSpaceMd` / `kScreenHorizontalPadding` |
-| `space.lg` | 24 | `kSpaceLg` |
-| `space.xl` | 32 | `kSpaceXl` |
-| `space.2xl` | 48 | `kSpace2xl` |
-| `radius.sm` | 8 | `kRadiusSm` |
-| `radius.md` | 12 | `kRadiusMd` |
-| `radius.lg` | 16 | `kRadiusLg` |
-| `radius.full` | 999 | `kRadiusFull` |
+| `space.xs` | 4 | `AstraSpacing.kSpaceXs` |
+| `space.sm` | 8 | `AstraSpacing.kSpaceSm` |
+| `space.md` | 16 | `AstraSpacing.kSpaceMd` / `AstraSpacing.kScreenHorizontalPadding` |
+| `space.lg` | 24 | `AstraSpacing.kSpaceLg` |
+| `space.xl` | 32 | `AstraSpacing.kSpaceXl` |
+| `space.2xl` | 48 | `AstraSpacing.kSpace2xl` |
+| `radius.sm` | 8 | `AstraSpacing.kRadiusSm` |
+| `radius.md` | 12 | `AstraSpacing.kRadiusMd` |
+| `radius.lg` | 16 | `AstraSpacing.kRadiusLg` |
+| `radius.full` | 999 | `AstraSpacing.kRadiusFull` |
 
 ### ThemeCubit architecture (Story 1.2 minimal → future wiring)
 
@@ -246,11 +284,8 @@ lib/
 
 assets/
 └── fonts/
-    ├── Figtree-Regular.ttf            # 400
-    ├── Figtree-Medium.ttf             # 500
-    ├── Figtree-SemiBold.ttf           # 600
-    ├── DarkerGrotesque-Medium.ttf     # 500
-    └── DarkerGrotesque-SemiBold.ttf   # 600
+    ├── Figtree-VariableFont_wght.ttf       # variable; weights 400/500/600 via FontWeight
+    └── DarkerGrotesque-VariableFont_wght.ttf  # variable; weights 500/600 via FontWeight
 
 test/
 ├── core/constants/astra_colors_test.dart
@@ -310,7 +345,7 @@ FR-31 user-facing theme selection is split: **infrastructure in 1.2**, **persist
 
 ## Technical Requirements
 
-1. **Fonts:** Figtree (400, 500, 600) + Darker Grotesque (500, 600) committed under `assets/fonts/`; registered in `pubspec.yaml`; zero runtime network font fetch
+1. **Fonts:** Figtree + Darker Grotesque variable fonts committed under `assets/fonts/` (weights 400/500/600 and 500/600 via `FontWeight`); registered in `pubspec.yaml`; zero runtime network font fetch
 2. **AstraColors:** `ThemeExtension<AstraColors>` with `light()` / `dark()` factories; full semantic token set per UX §1.2; `copyWith` + `lerp` implemented
 3. **ThemeData:** Explicit `ColorScheme` mapping (not seed-generated); `useMaterial3: true`; both themes registered on `MaterialApp`
 4. **Default theme:** `ThemeMode.system` via `ThemeCubit` in-memory default `AstraThemePreference.system`
@@ -329,7 +364,7 @@ FR-31 user-facing theme selection is split: **infrastructure in 1.2**, **persist
 | State management | `flutter_bloc` Cubit — first real usage in project |
 | Fonts | Bundled in `assets/fonts/` — strict offline-first (Architecture line 365, 681) |
 | No google_fonts | Forbidden — matches FR-18 offline pipeline |
-| Naming | Files `snake_case.dart`; classes `PascalCase`; constants `k` prefix for spacing defaults |
+| Naming | Files `snake_case.dart`; classes `PascalCase`; spacing constants `AstraSpacing.k*` prefix pattern |
 | FR-9 / FR-31 infra | In-memory `theme_mode=system` default before DB exists |
 
 ## Library & Framework Requirements
@@ -346,7 +381,7 @@ FR-31 user-facing theme selection is split: **infrastructure in 1.2**, **persist
 
 | Path | Action |
 |------|--------|
-| `assets/fonts/*.ttf` | NEW — 5 font files minimum |
+| `assets/fonts/*.ttf` | NEW — 2 variable-font files (Figtree + Darker Grotesque) |
 | `lib/core/constants/astra_colors.dart` | NEW |
 | `lib/core/constants/astra_spacing.dart` | NEW |
 | `lib/core/constants/astra_typography.dart` | NEW |
@@ -416,7 +451,7 @@ Mandatory for all stories — [`docs/project-context.md`](../../../docs/project-
 
 ## Story Completion Status
 
-- Status: **ready-for-dev**
-- Ultimate context engine analysis completed — comprehensive developer guide created
-- Epic 1 status: **in-progress** (story 1.1 done; 1.2 ready)
+- Status: **done**
+- Code review completed 2026-05-28; all patch findings resolved
+- Epic 1 status: **in-progress** (story 1.1 done; 1.2 done)
 - Next story after completion: **1-3-app-scaffold-and-bottom-navigation**
