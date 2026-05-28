@@ -26,3 +26,10 @@ dev_dependencies:
 
 flutter:
   uses-material-design: true
+  fonts:
+    - family: Figtree
+      fonts:
+        - asset: assets/fonts/Figtree-VariableFont_wght.ttf
+    - family: Darker Grotesque
+      fonts:
+        - asset: assets/fonts/DarkerGrotesque-VariableFont_wght.ttf
