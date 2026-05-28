@@ -7,59 +7,76 @@ abstract final class AstraTypography {
   static const String figtree = 'Figtree';
   static const String darkerGrotesque = 'Darker Grotesque';
 
-  static TextStyle display(BuildContext context) => TextStyle(
+  static TextStyle displayFor(AstraColors colors) => TextStyle(
     fontFamily: darkerGrotesque,
     fontSize: 52,
     fontWeight: FontWeight.w600,
     height: 1.05,
-    color: context.astraColors.textPrimary,
+    color: colors.textPrimary,
   );
 
-  static TextStyle title(BuildContext context) => TextStyle(
+  static TextStyle titleFor(AstraColors colors) => TextStyle(
     fontFamily: darkerGrotesque,
     fontSize: 24,
     fontWeight: FontWeight.w600,
     height: 1.15,
-    color: context.astraColors.textPrimary,
+    color: colors.textPrimary,
   );
 
-  static TextStyle headline(BuildContext context) => TextStyle(
+  static TextStyle headlineFor(AstraColors colors) => TextStyle(
     fontFamily: figtree,
     fontSize: 18,
     fontWeight: FontWeight.w600,
     height: 1.3,
-    color: context.astraColors.textPrimary,
+    color: colors.textPrimary,
   );
 
-  static TextStyle body(BuildContext context) => TextStyle(
+  static TextStyle bodyFor(AstraColors colors) => TextStyle(
     fontFamily: figtree,
     fontSize: 16,
     fontWeight: FontWeight.w400,
     height: 1.5,
-    color: context.astraColors.textPrimary,
+    color: colors.textPrimary,
   );
 
-  static TextStyle label(BuildContext context) => TextStyle(
+  static TextStyle labelFor(AstraColors colors) => TextStyle(
     fontFamily: figtree,
     fontSize: 14,
     fontWeight: FontWeight.w500,
     height: 1.4,
-    color: context.astraColors.textPrimary,
+    color: colors.textPrimary,
   );
 
-  static TextStyle caption(BuildContext context) => TextStyle(
+  static TextStyle captionFor(AstraColors colors) => TextStyle(
     fontFamily: figtree,
     fontSize: 12,
     fontWeight: FontWeight.w400,
     height: 1.4,
-    color: context.astraColors.textSecondary,
+    color: colors.textSecondary,
   );
 
-  static TextStyle data(BuildContext context) => TextStyle(
+  static TextStyle dataFor(AstraColors colors) => TextStyle(
     fontFamily: darkerGrotesque,
     fontSize: 20,
     fontWeight: FontWeight.w500,
     height: 1.2,
-    color: context.astraColors.textPrimary,
+    color: colors.textPrimary,
   );
+
+  static TextStyle display(BuildContext context) =>
+      displayFor(context.astraColors);
+
+  static TextStyle title(BuildContext context) => titleFor(context.astraColors);
+
+  static TextStyle headline(BuildContext context) =>
+      headlineFor(context.astraColors);
+
+  static TextStyle body(BuildContext context) => bodyFor(context.astraColors);
+
+  static TextStyle label(BuildContext context) => labelFor(context.astraColors);
+
+  static TextStyle caption(BuildContext context) =>
+      captionFor(context.astraColors);
+
+  static TextStyle data(BuildContext context) => dataFor(context.astraColors);
 }

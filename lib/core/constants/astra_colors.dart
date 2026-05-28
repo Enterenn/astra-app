@@ -111,8 +111,8 @@ class AstraColors extends ThemeExtension<AstraColors> {
         textMuted: const Color(0xFF6B7280),
         textInverse: const Color(0xFF0F1114),
       );
-  
-    @override
+
+  @override
   AstraColors copyWith({
     Color? bgBase,
     Color? bgElevated,

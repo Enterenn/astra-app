@@ -8,6 +8,8 @@ import '../../core/constants/astra_typography.dart';
 class ThemePreviewScreen extends StatelessWidget {
   const ThemePreviewScreen({super.key});
 
+  static const primaryTouchTargetKey = Key('primaryTouchTarget');
+
   @override
   Widget build(BuildContext context) {
     final colors = context.astraColors;
@@ -63,6 +65,7 @@ class ThemePreviewScreen extends StatelessWidget {
             ),
             const SizedBox(height: AstraSpacing.kSpaceXl),
             SizedBox(
+              key: primaryTouchTargetKey,
               width: double.infinity,
               height: AstraSpacing.kMinTouchTarget,
               child: FilledButton(
