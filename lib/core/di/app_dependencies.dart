@@ -21,12 +21,14 @@ class AppDependencies {
     );
   }
 
-  static AppDependencies test({
+  /// Test factory — reads [initialTheme] from [userPreferences], mirroring [create].
+  static Future<AppDependencies> test({
     required UserPreferencesRepository userPreferences,
-    AstraThemePreference initialTheme = AstraThemePreference.system,
-  }) =>
-      AppDependencies(
-        userPreferences: userPreferences,
-        initialTheme: initialTheme,
-      );
+  }) async {
+    final initialTheme = await userPreferences.getThemeMode();
+    return AppDependencies(
+      userPreferences: userPreferences,
+      initialTheme: initialTheme,
+    );
+  }
 }

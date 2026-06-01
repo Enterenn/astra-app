@@ -1,6 +1,6 @@
 # Story 1.4: User Preferences Persistence
 
-Status: review
+Status: done
 
 <!-- Note: Validation is optional. Run validate-create-story for quality check before dev-story. -->
 
@@ -348,7 +348,8 @@ Composer
 
 ### Change Log
 
-- 2026-06-01: Story 1.4 — SQLite v1 preferences, repository, DI bootstrap, theme cold-start load, test suite (25 tests)
+- 2026-06-01: Story 1.4 — SQLite v1 preferences, repository, DI bootstrap, theme cold-start load, test suite (26 tests)
+- 2026-06-01: Code review — async AppDependencies.test, cold-start theme widget test, mark done
 
 ## Technical Requirements
 
@@ -476,7 +477,7 @@ Mandatory for all stories — [`docs/project-context.md`](../../../docs/project-
 
 ## Story Completion Status
 
-- Status: **review**
+- Status: **done**
 - Ultimate context engine analysis completed — comprehensive developer guide created
 - Epic 1 status: **in-progress** (stories 1.1–1.3 done; 1.4 next)
 - Next story after dev: **1-5-trust-first-onboarding-flow**
