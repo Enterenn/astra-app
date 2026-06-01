@@ -5,16 +5,14 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 import '../../core/constants/astra_colors.dart';
 import '../../core/constants/astra_spacing.dart';
 import '../../core/constants/astra_typography.dart';
+import '../../core/constants/preference_keys.dart';
 import '../cubits/onboarding_cubit.dart';
 import '../cubits/onboarding_state.dart';
 import '../widgets/astra_button.dart';
 import 'onboarding_progress_indicator.dart';
 
 class OnboardingGoalPage extends StatefulWidget {
-  const OnboardingGoalPage({
-    super.key,
-    required this.onComplete,
-  });
+  const OnboardingGoalPage({super.key, required this.onComplete});
 
   final Future<void> Function(int goal) onComplete;
 
@@ -29,7 +27,7 @@ class _OnboardingGoalPageState extends State<OnboardingGoalPage> {
   @override
   void initState() {
     super.initState();
-    _goalController = TextEditingController(text: '8000');
+    _goalController = TextEditingController(text: kDefaultStepGoal.toString());
   }
 
   @override
@@ -71,10 +69,7 @@ class _OnboardingGoalPageState extends State<OnboardingGoalPage> {
           ],
         ),
         const SizedBox(height: AstraSpacing.kSpaceLg),
-        Text(
-          'Set a daily step goal',
-          style: AstraTypography.titleFor(colors),
-        ),
+        Text('Set a daily step goal', style: AstraTypography.titleFor(colors)),
         const SizedBox(height: AstraSpacing.kSpaceMd),
         Text(
           'Change anytime in My Data.',
@@ -110,7 +105,9 @@ class _OnboardingGoalPageState extends State<OnboardingGoalPage> {
         AstraButton(
           label: 'Skip',
           variant: AstraButtonVariant.secondary,
-          onPressed: isCompleting ? null : () async => widget.onComplete(8000),
+          onPressed: isCompleting
+              ? null
+              : () async => widget.onComplete(kDefaultStepGoal),
         ),
       ],
     );

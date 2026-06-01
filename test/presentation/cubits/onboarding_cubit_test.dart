@@ -85,6 +85,7 @@ void main() {
       Permission? requestedPermission;
       final cubit = OnboardingCubit(
         userPreferences: repository,
+        activityPermissionResolver: () => Permission.activityRecognition,
         permissionRequester: (permission) async {
           requestedPermission = permission;
           return PermissionStatus.granted;
@@ -94,6 +95,7 @@ void main() {
       await cubit.requestActivityPermission();
 
       expect(requestedPermission, isNotNull);
+      expect(requestedPermission, Permission.activityRecognition);
       expect(
         cubit.state.activityPermissionStatus,
         PermissionRequestStatus.granted,
@@ -102,43 +104,71 @@ void main() {
       cubit.close();
     });
 
-    test('requestNotificationPermissionIfOptedIn skips when toggle off', () async {
-      var requestCount = 0;
-      final cubit = OnboardingCubit(
-        userPreferences: repository,
-        permissionRequester: (_) async {
-          requestCount++;
-          return PermissionStatus.granted;
-        },
-      );
-
-      await cubit.requestNotificationPermissionIfOptedIn();
-
-      expect(requestCount, 0);
-
-      cubit.close();
-    });
-
-    test('requestNotificationPermissionIfOptedIn requests when toggle on', () async {
+    test('requestActivityPermission uses injected platform resolver', () async {
       Permission? requestedPermission;
       final cubit = OnboardingCubit(
         userPreferences: repository,
+        activityPermissionResolver: () => Permission.sensors,
         permissionRequester: (permission) async {
           requestedPermission = permission;
           return PermissionStatus.granted;
         },
-      )..setNotificationOptIn(true);
+      );
 
-      await cubit.requestNotificationPermissionIfOptedIn();
+      await cubit.requestActivityPermission();
 
-      expect(requestedPermission, Permission.notification);
+      expect(requestedPermission, Permission.sensors);
       expect(
-        cubit.state.notificationPermissionStatus,
+        cubit.state.activityPermissionStatus,
         PermissionRequestStatus.granted,
       );
 
       cubit.close();
     });
+
+    test(
+      'requestNotificationPermissionIfOptedIn skips when toggle off',
+      () async {
+        var requestCount = 0;
+        final cubit = OnboardingCubit(
+          userPreferences: repository,
+          permissionRequester: (_) async {
+            requestCount++;
+            return PermissionStatus.granted;
+          },
+        );
+
+        await cubit.requestNotificationPermissionIfOptedIn();
+
+        expect(requestCount, 0);
+
+        cubit.close();
+      },
+    );
+
+    test(
+      'requestNotificationPermissionIfOptedIn requests when toggle on',
+      () async {
+        Permission? requestedPermission;
+        final cubit = OnboardingCubit(
+          userPreferences: repository,
+          permissionRequester: (permission) async {
+            requestedPermission = permission;
+            return PermissionStatus.granted;
+          },
+        )..setNotificationOptIn(true);
+
+        await cubit.requestNotificationPermissionIfOptedIn();
+
+        expect(requestedPermission, Permission.notification);
+        expect(
+          cubit.state.notificationPermissionStatus,
+          PermissionRequestStatus.granted,
+        );
+
+        cubit.close();
+      },
+    );
 
     test('requestActivityPermission maps denied platform status', () async {
       final cubit = OnboardingCubit(
@@ -174,24 +204,26 @@ void main() {
       cubit.close();
     });
 
-    test('requestNotificationPermissionIfOptedIn recovers when requester throws',
-        () async {
-      final cubit = OnboardingCubit(
-        userPreferences: repository,
-        permissionRequester: (_) async {
-          throw Exception('platform channel failure');
-        },
-      )..setNotificationOptIn(true);
+    test(
+      'requestNotificationPermissionIfOptedIn recovers when requester throws',
+      () async {
+        final cubit = OnboardingCubit(
+          userPreferences: repository,
+          permissionRequester: (_) async {
+            throw Exception('platform channel failure');
+          },
+        )..setNotificationOptIn(true);
 
-      await cubit.requestNotificationPermissionIfOptedIn();
+        await cubit.requestNotificationPermissionIfOptedIn();
 
-      expect(
-        cubit.state.notificationPermissionStatus,
-        PermissionRequestStatus.denied,
-      );
+        expect(
+          cubit.state.notificationPermissionStatus,
+          PermissionRequestStatus.denied,
+        );
 
-      cubit.close();
-    });
+        cubit.close();
+      },
+    );
 
     test('invalid goal input disables isGoalValid', () {
       final cubit = OnboardingCubit(userPreferences: repository)

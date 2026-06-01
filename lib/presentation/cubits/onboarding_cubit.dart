@@ -1,8 +1,7 @@
-import 'dart:io';
-
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:permission_handler/permission_handler.dart';
 
+import '../../core/permissions/activity_permission_resolver.dart';
 import '../../data/repositories/user_preferences_repository.dart';
 import 'onboarding_state.dart';
 
@@ -12,11 +11,15 @@ class OnboardingCubit extends Cubit<OnboardingState> {
   OnboardingCubit({
     required this.userPreferences,
     PermissionRequester? permissionRequester,
-  })  : _requestPermission = permissionRequester ?? _defaultRequestPermission,
-        super(const OnboardingState());
+    ActivityPermissionResolver? activityPermissionResolver,
+  }) : _requestPermission = permissionRequester ?? _defaultRequestPermission,
+       _activityPermissionResolver =
+           activityPermissionResolver ?? resolveActivityPermission,
+       super(const OnboardingState());
 
   final UserPreferencesRepository userPreferences;
   final PermissionRequester _requestPermission;
+  final ActivityPermissionResolver _activityPermissionResolver;
 
   static Future<PermissionStatus> _defaultRequestPermission(
     Permission permission,
@@ -49,9 +52,7 @@ class OnboardingCubit extends Cubit<OnboardingState> {
       ),
     );
 
-    final permission = Platform.isIOS
-        ? Permission.sensors
-        : Permission.activityRecognition;
+    final permission = _activityPermissionResolver();
     final resolved = await _resolvePermission(permission);
 
     emit(state.copyWith(activityPermissionStatus: resolved));

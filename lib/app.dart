@@ -11,15 +11,11 @@ import 'presentation/onboarding/onboarding_flow.dart';
 import 'presentation/screens/app_scaffold.dart';
 
 class AstraApp extends StatefulWidget {
-  const AstraApp({
-    super.key,
-    required this.deps,
-    this.createOnboardingCubit,
-  });
+  const AstraApp({super.key, required this.deps, this.createOnboardingCubit});
 
   final AppDependencies deps;
   final OnboardingCubit Function(UserPreferencesRepository userPreferences)?
-      createOnboardingCubit;
+  createOnboardingCubit;
 
   @override
   State<AstraApp> createState() => _AstraAppState();
@@ -43,7 +39,10 @@ class _AstraAppState extends State<AstraApp> {
   @override
   Widget build(BuildContext context) {
     return BlocProvider(
-      create: (_) => ThemeCubit(initialPreference: widget.deps.initialTheme),
+      create: (_) => ThemeCubit(
+        userPreferences: widget.deps.userPreferences,
+        initialPreference: widget.deps.initialTheme,
+      ),
       child: BlocBuilder<ThemeCubit, ThemeState>(
         builder: (context, themeState) {
           return MaterialApp(

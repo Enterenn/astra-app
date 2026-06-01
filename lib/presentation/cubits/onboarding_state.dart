@@ -1,3 +1,5 @@
+import '../../core/constants/preference_keys.dart';
+
 enum OnboardingStatus { inProgress, completed }
 
 enum PermissionRequestStatus { idle, requesting, granted, denied }
@@ -6,7 +8,7 @@ class OnboardingState {
   const OnboardingState({
     this.currentStep = 0,
     this.notificationOptIn = false,
-    this.goalInput = '8000',
+    this.goalInput = '$kDefaultStepGoal',
     this.status = OnboardingStatus.inProgress,
     this.activityPermissionStatus = PermissionRequestStatus.idle,
     this.notificationPermissionStatus = PermissionRequestStatus.idle,
@@ -24,14 +26,14 @@ class OnboardingState {
   bool get isGoalValid {
     final parsed = int.tryParse(goalInput.trim());
     if (parsed == null) return false;
-    return parsed >= 1000 && parsed <= 100000;
+    return parsed >= kMinStepGoal && parsed <= kMaxStepGoal;
   }
 
   int get resolvedGoal {
     if (isGoalValid) {
       return int.parse(goalInput.trim());
     }
-    return 8000;
+    return kDefaultStepGoal;
   }
 
   OnboardingState copyWith({

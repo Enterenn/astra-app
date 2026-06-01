@@ -7,7 +7,11 @@
 ## Implementation
 
 - **[implementation-artifacts/sprint-status.yaml](./implementation-artifacts/sprint-status.yaml)** - Sprint story status tracker
-- **[implementation-artifacts/stories/.gitkeep](./implementation-artifacts/stories/.gitkeep)** - Placeholder for per-story context files
+- **[implementation-artifacts/stories/1-1-flutter-project-initialization.md](./implementation-artifacts/stories/1-1-flutter-project-initialization.md)** - Epic 1 story context
+- **[implementation-artifacts/stories/1-2-design-tokens-and-theme-system.md](./implementation-artifacts/stories/1-2-design-tokens-and-theme-system.md)** - Epic 1 story context
+- **[implementation-artifacts/stories/1-3-app-scaffold-and-bottom-navigation.md](./implementation-artifacts/stories/1-3-app-scaffold-and-bottom-navigation.md)** - Epic 1 story context
+- **[implementation-artifacts/stories/1-4-user-preferences-persistence.md](./implementation-artifacts/stories/1-4-user-preferences-persistence.md)** - Epic 1 story context
+- **[implementation-artifacts/stories/1-5-trust-first-onboarding-flow.md](./implementation-artifacts/stories/1-5-trust-first-onboarding-flow.md)** - Epic 1 story context
 
 ## Planning — specifications
 
