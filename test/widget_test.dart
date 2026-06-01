@@ -1,29 +1,39 @@
 import 'package:astra_app/app.dart';
-import 'package:astra_app/core/constants/astra_spacing.dart';
-import 'package:astra_app/presentation/screens/theme_preview_screen.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 
 void main() {
-  testWidgets('AstraApp shows theme preview with 48dp primary button', (
+  testWidgets('AstraApp shows NavigationBar and switches tab placeholders', (
     WidgetTester tester,
   ) async {
     await tester.pumpWidget(const AstraApp());
 
-    expect(find.text('Hello World!'), findsNothing);
-    expect(find.text('ASTRA Theme Preview'), findsOneWidget);
-    expect(find.text('Primary action'), findsOneWidget);
+    expect(find.byType(NavigationBar), findsOneWidget);
+    expect(find.text('Today'), findsWidgets);
+    expect(find.text('History'), findsOneWidget);
+    expect(find.text('My Data'), findsOneWidget);
 
-    final scrollView = tester.widget<SingleChildScrollView>(
-      find.byType(SingleChildScrollView),
+    expect(
+      find.text('Step tracking and your goal ring will appear here.'),
+      findsOneWidget,
     );
-    final padding = scrollView.padding as EdgeInsets;
-    expect(padding.left, AstraSpacing.kScreenHorizontalPadding);
-    expect(padding.right, AstraSpacing.kScreenHorizontalPadding);
 
-    final touchTarget = tester.widget<SizedBox>(
-      find.byKey(ThemePreviewScreen.primaryTouchTargetKey),
+    await tester.tap(find.text('History'));
+    await tester.pump();
+    await tester.pump(const Duration(milliseconds: 200));
+
+    expect(
+      find.text('Your 7-day and 30-day charts will appear here.'),
+      findsOneWidget,
     );
-    expect(touchTarget.height, AstraSpacing.kMinTouchTarget);
+
+    await tester.tap(find.text('My Data'));
+    await tester.pump();
+    await tester.pump(const Duration(milliseconds: 200));
+
+    expect(
+      find.text('Data footprint, export, and settings will appear here.'),
+      findsOneWidget,
+    );
   });
 }
