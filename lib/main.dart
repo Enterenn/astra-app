@@ -1,7 +1,10 @@
 import 'package:flutter/material.dart';
 
 import 'app.dart';
+import 'core/di/app_dependencies.dart';
 
-void main() {
-  runApp(const AstraApp());
+Future<void> main() async {
+  WidgetsFlutterBinding.ensureInitialized();
+  final deps = await AppDependencies.create();
+  runApp(AstraApp(deps: deps));
 }
