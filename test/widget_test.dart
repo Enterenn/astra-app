@@ -18,7 +18,7 @@ void main() {
       findsOneWidget,
     );
 
-    await tester.tap(find.text('History'));
+    await tester.tap(find.byIcon(Icons.bar_chart_outlined));
     await tester.pump();
     await tester.pump(const Duration(milliseconds: 200));
 
@@ -27,7 +27,7 @@ void main() {
       findsOneWidget,
     );
 
-    await tester.tap(find.text('My Data'));
+    await tester.tap(find.byIcon(Icons.shield_outlined));
     await tester.pump();
     await tester.pump(const Duration(milliseconds: 200));
 

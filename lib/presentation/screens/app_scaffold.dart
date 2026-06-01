@@ -35,6 +35,15 @@ class _AppScaffoldState extends State<AppScaffold> {
             : const Duration(milliseconds: 200),
         switchInCurve: Curves.easeInOut,
         switchOutCurve: Curves.easeInOut,
+        layoutBuilder: (currentChild, previousChildren) {
+          return Stack(
+            alignment: Alignment.topCenter,
+            children: [
+              ...previousChildren,
+              ?currentChild,
+            ],
+          );
+        },
         child: KeyedSubtree(
           key: ValueKey<int>(_selectedIndex),
           child: _screens[_selectedIndex],
@@ -53,7 +62,14 @@ class _AppScaffoldState extends State<AppScaffold> {
           },
           destinations: [
             for (var i = 0; i < _labels.length; i++)
-              NavigationDestination(icon: Icon(_icons[i]), label: _labels[i]),
+              NavigationDestination(
+                icon: Semantics(
+                  label: _labels[i],
+                  child: Icon(_icons[i]),
+                ),
+                label: _labels[i],
+                tooltip: _labels[i],
+              ),
           ],
         ),
       ),
