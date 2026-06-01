@@ -1,6 +1,9 @@
 import 'package:flutter/material.dart';
 
 import '../../core/constants/astra_colors.dart';
+import 'history_screen.dart';
+import 'my_data_screen.dart';
+import 'today_screen.dart';
 
 class AppScaffold extends StatefulWidget {
   const AppScaffold({super.key});
@@ -18,6 +21,7 @@ class _AppScaffoldState extends State<AppScaffold> {
     Icons.bar_chart_outlined,
     Icons.shield_outlined,
   ];
+  static const _screens = [TodayScreen(), HistoryScreen(), MyDataScreen()];
 
   @override
   Widget build(BuildContext context) {
@@ -25,10 +29,15 @@ class _AppScaffoldState extends State<AppScaffold> {
 
     return Scaffold(
       backgroundColor: colors.bgBase,
-      body: Center(
-        child: Text(
-          _labels[_selectedIndex],
-          style: Theme.of(context).textTheme.headlineMedium,
+      body: AnimatedSwitcher(
+        duration: MediaQuery.disableAnimationsOf(context)
+            ? Duration.zero
+            : const Duration(milliseconds: 200),
+        switchInCurve: Curves.easeInOut,
+        switchOutCurve: Curves.easeInOut,
+        child: KeyedSubtree(
+          key: ValueKey<int>(_selectedIndex),
+          child: _screens[_selectedIndex],
         ),
       ),
       bottomNavigationBar: DecoratedBox(
