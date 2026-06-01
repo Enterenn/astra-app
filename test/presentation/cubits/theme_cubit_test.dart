@@ -12,4 +12,13 @@ void main() {
 
     cubit.close();
   });
+
+  test('ThemeCubit uses initialPreference from constructor', () {
+    final cubit = ThemeCubit(initialPreference: AstraThemePreference.dark);
+
+    expect(cubit.state.preference, AstraThemePreference.dark);
+    expect(cubit.state.materialThemeMode, ThemeMode.dark);
+
+    cubit.close();
+  });
 }

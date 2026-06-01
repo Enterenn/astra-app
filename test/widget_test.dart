@@ -1,12 +1,31 @@
 import 'package:astra_app/app.dart';
+import 'package:astra_app/core/database/app_database.dart';
+import 'package:astra_app/core/di/app_dependencies.dart';
+import 'package:astra_app/data/repositories/user_preferences_repository.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:sqflite_common_ffi/sqflite_ffi.dart';
+
+import 'helpers/sqflite_test_helper.dart';
 
 void main() {
+  late AppDependencies deps;
+
+  setUpAll(() async {
+    await setUpSqfliteFfi();
+    final db = await openAstraDatabase(databasePath: inMemoryDatabasePath);
+    final userPreferences = UserPreferencesRepository(db);
+    final initialTheme = await userPreferences.getThemeMode();
+    deps = AppDependencies.test(
+      userPreferences: userPreferences,
+      initialTheme: initialTheme,
+    );
+  });
+
   testWidgets('AstraApp shows NavigationBar and switches tab placeholders', (
     WidgetTester tester,
   ) async {
-    await tester.pumpWidget(const AstraApp());
+    await tester.pumpWidget(AstraApp(deps: deps));
 
     expect(find.byType(NavigationBar), findsOneWidget);
     expect(find.text('Today'), findsWidgets);

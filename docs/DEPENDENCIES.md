@@ -20,3 +20,10 @@ Phase 0: **no runtime network fetch** for fonts or health data processing. Fonts
 ## Dart / Flutter packages
 
 See `pubspec.yaml` and `pubspec.lock`. Package-level audit table → Epic 5 Story 5.1.
+
+### Dev / test only
+
+| Package | Purpose |
+|---------|---------|
+| `sqflite_common_ffi` | Run sqflite-backed unit tests on VM/desktop without an emulator |
+| `sqlite3` | Native SQLite bindings required by `sqflite_common_ffi` 2.4+ |
