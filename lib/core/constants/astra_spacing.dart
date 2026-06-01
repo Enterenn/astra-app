@@ -1,5 +1,5 @@
-/// ASTRA spacing and radius design tokens (UX §1.4).
-/// All values are logical pixels (dp).
+/// ASTRA spacing and radius design tokens.
+/// All values are logical pixels.
 abstract final class AstraSpacing {
   // Spacing scale (4px grid)
   static const double kSpaceXs = 4;
@@ -9,15 +9,18 @@ abstract final class AstraSpacing {
   static const double kSpaceXl = 32;
   static const double kSpace2xl = 48;
 
-  /// Minimum horizontal padding on scaffold screens (AC #3).
+  /// Minimum horizontal padding on scaffold screens.
   static const double kScreenHorizontalPadding = kSpaceMd;
 
-  /// Minimum touch target for interactive controls (AC #3).
+  /// Minimum touch target for interactive controls.
   static const double kMinTouchTarget = kSpace2xl;
 
-  // Corner radii
+  // Corner radius
   static const double kRadiusSm = 8;
   static const double kRadiusMd = 12;
   static const double kRadiusLg = 16;
   static const double kRadiusFull = 999;
+
+  /// Height of the bottom tab bar.
+  static const double kBottomTabBarHeight = 56;
 }
