@@ -5,17 +5,37 @@ import 'core/constants/astra_theme.dart';
 import 'core/di/app_dependencies.dart';
 import 'presentation/cubits/theme_cubit.dart';
 import 'presentation/cubits/theme_state.dart';
+import 'presentation/onboarding/onboarding_flow.dart';
 import 'presentation/screens/app_scaffold.dart';
 
-class AstraApp extends StatelessWidget {
+class AstraApp extends StatefulWidget {
   const AstraApp({super.key, required this.deps});
 
   final AppDependencies deps;
 
   @override
+  State<AstraApp> createState() => _AstraAppState();
+}
+
+class _AstraAppState extends State<AstraApp> {
+  late bool _showMainShell;
+
+  @override
+  void initState() {
+    super.initState();
+    _showMainShell = widget.deps.initialOnboardingComplete;
+  }
+
+  void _onOnboardingComplete() {
+    setState(() {
+      _showMainShell = true;
+    });
+  }
+
+  @override
   Widget build(BuildContext context) {
     return BlocProvider(
-      create: (_) => ThemeCubit(initialPreference: deps.initialTheme),
+      create: (_) => ThemeCubit(initialPreference: widget.deps.initialTheme),
       child: BlocBuilder<ThemeCubit, ThemeState>(
         builder: (context, themeState) {
           return MaterialApp(
@@ -23,7 +43,12 @@ class AstraApp extends StatelessWidget {
             theme: buildAstraLightTheme(),
             darkTheme: buildAstraDarkTheme(),
             themeMode: themeState.materialThemeMode,
-            home: const AppScaffold(),
+            home: _showMainShell
+                ? const AppScaffold()
+                : OnboardingFlow(
+                    deps: widget.deps,
+                    onComplete: _onOnboardingComplete,
+                  ),
           );
         },
       ),
