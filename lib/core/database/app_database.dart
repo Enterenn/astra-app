@@ -8,9 +8,18 @@ import 'migrations.dart';
 /// Pass [databasePath] for tests (e.g. [inMemoryDatabasePath] via FFI factory).
 Future<Database> openAstraDatabase({String? databasePath}) async {
   final path = databasePath ?? join(await getDatabasesPath(), 'astra_app.db');
-  final db = await openDatabase(
+  final enableWal = path != inMemoryDatabasePath;
+
+  return openDatabase(
     path,
     version: kDbVersion,
+    onConfigure: (db) async {
+      // Android requires rawQuery for PRAGMA (execute() throws DatabaseException).
+      if (enableWal) {
+        await db.rawQuery('PRAGMA journal_mode=WAL');
+      }
+      await db.rawQuery('PRAGMA foreign_keys = ON');
+    },
     onCreate: (db, version) async {
       await runMigrations(db, version);
     },
@@ -18,9 +27,4 @@ Future<Database> openAstraDatabase({String? databasePath}) async {
       await runMigrations(db, newVersion, fromVersion: oldVersion);
     },
   );
-  if (path != inMemoryDatabasePath) {
-    await db.execute('PRAGMA journal_mode=WAL;');
-  }
-  await db.execute('PRAGMA foreign_keys = ON;');
-  return db;
 }
