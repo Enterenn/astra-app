@@ -73,7 +73,7 @@ class OnboardingPermissionsPage extends StatelessWidget {
           isLoading: isRequesting,
           onPressed: isRequesting
               ? null
-              : () => _onAllowActivityAccess(context),
+              : () async => _onAllowActivityAccess(context),
         ),
         const SizedBox(height: AstraSpacing.kSpaceMd),
         AstraButton(
@@ -81,7 +81,7 @@ class OnboardingPermissionsPage extends StatelessWidget {
           variant: AstraButtonVariant.ghost,
           onPressed: isRequesting
               ? null
-              : () => _onSkipNotifications(context),
+              : () async => _onSkipNotifications(context),
         ),
       ],
     );

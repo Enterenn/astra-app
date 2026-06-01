@@ -52,13 +52,9 @@ class OnboardingCubit extends Cubit<OnboardingState> {
     final permission = Platform.isIOS
         ? Permission.sensors
         : Permission.activityRecognition;
-    final status = await _requestPermission(permission);
+    final resolved = await _resolvePermission(permission);
 
-    emit(
-      state.copyWith(
-        activityPermissionStatus: _mapPermissionStatus(status),
-      ),
-    );
+    emit(state.copyWith(activityPermissionStatus: resolved));
   }
 
   Future<void> requestNotificationPermissionIfOptedIn() async {
@@ -70,13 +66,20 @@ class OnboardingCubit extends Cubit<OnboardingState> {
       ),
     );
 
-    final status = await _requestPermission(Permission.notification);
+    final resolved = await _resolvePermission(Permission.notification);
 
-    emit(
-      state.copyWith(
-        notificationPermissionStatus: _mapPermissionStatus(status),
-      ),
-    );
+    emit(state.copyWith(notificationPermissionStatus: resolved));
+  }
+
+  Future<PermissionRequestStatus> _resolvePermission(
+    Permission permission,
+  ) async {
+    try {
+      final status = await _requestPermission(permission);
+      return _mapPermissionStatus(status);
+    } catch (_) {
+      return PermissionRequestStatus.denied;
+    }
   }
 
   Future<void> completeOnboarding({int? goal}) async {

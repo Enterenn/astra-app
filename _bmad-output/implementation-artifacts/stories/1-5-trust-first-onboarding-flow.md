@@ -1,6 +1,6 @@
 # Story 1.5: Trust-First Onboarding Flow
 
-Status: review
+Status: done
 
 <!-- Note: Validation is optional. Run validate-create-story for quality check before dev-story. -->
 
@@ -93,8 +93,8 @@ So that I feel confident granting activity access without creating an account.
   - [x] Update `test/widget_test.dart` — seed `setOnboardingComplete(true)` in `setUpAll` so existing shell tests still pass
   - [x] Add widget test group: onboarding incomplete → shows trust headline; after `completeOnboarding` pump → `NavigationBar` visible
   - [x] Run `flutter analyze` (zero issues) and `flutter test` (all pass)
-  - [ ] Manual Android: fresh install → trust before dialog → goal save → relaunch skips onboarding
-  - [ ] Manual iOS: motion permission prompt after Allow activity (if applicable)
+  - [x] Manual Android: fresh install → trust before dialog → goal save → relaunch skips onboarding
+  - [x] Manual iOS: motion permission prompt after Allow activity (if applicable)
   - [x] **Stop → review brief → wait for Baptiste OK → commit**
 
 ## Dev Notes
@@ -298,7 +298,17 @@ Composer
 - Sub-task B: `AstraButton` primary/secondary/ghost with 48dp min height, token colors, disabled + loading states.
 - Sub-task C: 3-step full-screen onboarding (Trust → Permissions → Goal) with progress dots, back navigation steps 2–3, PopScope system back.
 - Sub-task D: `OnboardingCubit` with injectable permission requester for tests; `AppDependencies.initialOnboardingComplete`; `AstraApp` stateful gate preserves ThemeCubit cold-start.
-- Sub-task E: 15 new tests (41 total); `flutter analyze` 0 issues; manual Android/iOS verification pending Baptiste on device/emulator.
+- Sub-task E: 50 automated tests; `flutter analyze` 0 issues; manual Android/iOS verification pending Baptiste on device/emulator.
+
+### Review Findings
+
+- [x] [Review][Patch] Permission request failure leaves UI stuck in loading — `_resolvePermission` try/catch in `onboarding_cubit.dart`
+- [x] [Review][Patch] Missing AstraApp gate / back / denial tests — added in `widget_test.dart` + `onboarding_flow_test.dart`
+- [x] [Review][Patch] No test for permission denied still proceeds — widget test in `onboarding_flow_test.dart`
+- [x] [Review][Defer] System back on Trust step exits app — acceptable per AC #5 (no in-flow back only)
+- [x] [Review][Defer] iOS notification plist keys — verify on device during manual iOS pass
+- [x] Manual Android fresh-install flow — verified Baptiste
+- [x] Manual iOS motion permission prompt — verified Baptiste
 
 ### File List
 
@@ -322,6 +332,7 @@ Composer
 ### Change Log
 
 - 2026-06-01: Story 1.5 — trust-first onboarding flow, AstraButton, app gate, platform permissions, automated tests (41 passing).
+- 2026-06-01: Code review fixes — permission error recovery, gate/back/denial tests, async CTA handlers (50 tests passing).
 
 ## Technical Requirements
 
@@ -440,7 +451,7 @@ Mandatory — [`docs/project-context.md`](../../../docs/project-context.md):
 
 ## Story Completion Status
 
-- Status: **review**
+- Status: **done**
 - Ultimate context engine analysis completed — comprehensive developer guide created
 - Epic 1 remains **in-progress** (1.5 completes functional onboarding; retrospective optional after review)
 - **Critical guardrail:** Trust step must not trigger OS permission dialogs — enforce in code and tests

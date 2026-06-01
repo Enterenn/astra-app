@@ -140,6 +140,59 @@ void main() {
       cubit.close();
     });
 
+    test('requestActivityPermission maps denied platform status', () async {
+      final cubit = OnboardingCubit(
+        userPreferences: repository,
+        permissionRequester: (_) async => PermissionStatus.denied,
+      );
+
+      await cubit.requestActivityPermission();
+
+      expect(
+        cubit.state.activityPermissionStatus,
+        PermissionRequestStatus.denied,
+      );
+
+      cubit.close();
+    });
+
+    test('requestActivityPermission recovers when requester throws', () async {
+      final cubit = OnboardingCubit(
+        userPreferences: repository,
+        permissionRequester: (_) async {
+          throw Exception('platform channel failure');
+        },
+      );
+
+      await cubit.requestActivityPermission();
+
+      expect(
+        cubit.state.activityPermissionStatus,
+        PermissionRequestStatus.denied,
+      );
+
+      cubit.close();
+    });
+
+    test('requestNotificationPermissionIfOptedIn recovers when requester throws',
+        () async {
+      final cubit = OnboardingCubit(
+        userPreferences: repository,
+        permissionRequester: (_) async {
+          throw Exception('platform channel failure');
+        },
+      )..setNotificationOptIn(true);
+
+      await cubit.requestNotificationPermissionIfOptedIn();
+
+      expect(
+        cubit.state.notificationPermissionStatus,
+        PermissionRequestStatus.denied,
+      );
+
+      cubit.close();
+    });
+
     test('invalid goal input disables isGoalValid', () {
       final cubit = OnboardingCubit(userPreferences: repository)
         ..setGoalInput('999');

@@ -103,14 +103,14 @@ class _OnboardingGoalPageState extends State<OnboardingGoalPage> {
           label: 'Start tracking',
           isLoading: isCompleting,
           onPressed: state.isGoalValid && !isCompleting
-              ? () => widget.onComplete(state.resolvedGoal)
+              ? () async => widget.onComplete(state.resolvedGoal)
               : null,
         ),
         const SizedBox(height: AstraSpacing.kSpaceMd),
         AstraButton(
           label: 'Skip',
           variant: AstraButtonVariant.secondary,
-          onPressed: isCompleting ? null : () => widget.onComplete(8000),
+          onPressed: isCompleting ? null : () async => widget.onComplete(8000),
         ),
       ],
     );

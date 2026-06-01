@@ -76,5 +76,114 @@ void main() {
       expect(permissionRequestCount, 0);
       expect(find.text('Allow activity access'), findsOneWidget);
     });
+
+    testWidgets('back navigation moves from permissions to trust', (tester) async {
+      await tester.pumpWidget(
+        MaterialApp(
+          theme: buildAstraLightTheme(),
+          home: OnboardingFlow(
+            deps: deps,
+            onComplete: () {},
+            createCubit: (repo) => OnboardingCubit(
+              userPreferences: repo,
+              permissionRequester: (_) async => PermissionStatus.granted,
+            ),
+          ),
+        ),
+      );
+
+      await tester.tap(find.text('Continue'));
+      await tester.pump();
+
+      expect(find.text('Allow activity access'), findsOneWidget);
+
+      await tester.tap(find.byTooltip('Back'));
+      await tester.pump();
+
+      expect(find.text('Your steps stay on this device.'), findsOneWidget);
+      expect(find.text('Allow activity access'), findsNothing);
+    });
+
+    testWidgets('back navigation moves from goal to permissions', (tester) async {
+      await tester.pumpWidget(
+        MaterialApp(
+          theme: buildAstraLightTheme(),
+          home: OnboardingFlow(
+            deps: deps,
+            onComplete: () {},
+            createCubit: (repo) => OnboardingCubit(
+              userPreferences: repo,
+              permissionRequester: (_) async => PermissionStatus.granted,
+            ),
+          ),
+        ),
+      );
+
+      await tester.tap(find.text('Continue'));
+      await tester.pump();
+      await tester.tap(find.text('Allow activity access'));
+      await tester.pump();
+
+      expect(find.text('Set a daily step goal'), findsOneWidget);
+
+      await tester.tap(find.byTooltip('Back'));
+      await tester.pump();
+
+      expect(find.text('Allow activity access'), findsOneWidget);
+      expect(find.text('Set a daily step goal'), findsNothing);
+    });
+
+    testWidgets('invokes onComplete when onboarding finishes', (tester) async {
+      var onCompleteCalled = false;
+      OnboardingCubit? cubitRef;
+
+      await tester.pumpWidget(
+        MaterialApp(
+          theme: buildAstraLightTheme(),
+          home: OnboardingFlow(
+            deps: deps,
+            onComplete: () => onCompleteCalled = true,
+            createCubit: (repo) {
+              cubitRef = OnboardingCubit(
+                userPreferences: repo,
+                permissionRequester: (_) async => PermissionStatus.granted,
+              );
+              return cubitRef!;
+            },
+          ),
+        ),
+      );
+
+      await tester.binding.runAsync(() async {
+        await cubitRef!.completeOnboarding(goal: 8000);
+      });
+      await tester.pump();
+
+      expect(onCompleteCalled, isTrue);
+    });
+
+    testWidgets('denied activity permission still advances to goal step',
+        (tester) async {
+      await tester.pumpWidget(
+        MaterialApp(
+          theme: buildAstraLightTheme(),
+          home: OnboardingFlow(
+            deps: deps,
+            onComplete: () {},
+            createCubit: (repo) => OnboardingCubit(
+              userPreferences: repo,
+              permissionRequester: (_) async => PermissionStatus.denied,
+            ),
+          ),
+        ),
+      );
+
+      await tester.tap(find.text('Continue'));
+      await tester.pump();
+      await tester.tap(find.text('Allow activity access'));
+      await tester.pump();
+
+      expect(find.text('Set a daily step goal'), findsOneWidget);
+    });
   });
 }
