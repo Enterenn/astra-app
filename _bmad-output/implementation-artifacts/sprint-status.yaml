@@ -1,5 +1,5 @@
 # generated: 2026-05-25
-# last_updated: 2026-06-01 (story 1-3 done)
+# last_updated: 2026-06-01 (story 1-4 review)
 # project: astra-app
 # project_key: NOKEY
 # tracking_system: file-system
@@ -55,7 +55,7 @@ development_status:
   1-1-flutter-project-initialization: done
   1-2-design-tokens-and-theme-system: done
   1-3-app-scaffold-and-bottom-navigation: done
-  1-4-user-preferences-persistence: backlog
+  1-4-user-preferences-persistence: review
   1-5-trust-first-onboarding-flow: backlog
   epic-1-retrospective: optional
 
