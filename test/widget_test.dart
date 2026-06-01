@@ -21,9 +21,9 @@ void main() {
 
     setUpAll(() async {
       db = await openAstraDatabase(databasePath: inMemoryDatabasePath);
-      deps = await AppDependencies.test(
-        userPreferences: UserPreferencesRepository(db),
-      );
+      final userPreferences = UserPreferencesRepository(db);
+      await userPreferences.setOnboardingComplete(true);
+      deps = await AppDependencies.test(userPreferences: userPreferences);
     });
 
     tearDownAll(() async {
@@ -73,6 +73,7 @@ void main() {
       db = await openAstraDatabase(databasePath: inMemoryDatabasePath);
       final userPreferences = UserPreferencesRepository(db);
       await userPreferences.setThemeMode(AstraThemePreference.dark);
+      await userPreferences.setOnboardingComplete(true);
       deps = await AppDependencies.test(userPreferences: userPreferences);
     });
 
@@ -90,5 +91,28 @@ void main() {
         expect(materialApp.themeMode, ThemeMode.dark);
       },
     );
+  });
+
+  group('AstraApp onboarding gate', () {
+    late Database db;
+    late AppDependencies completeDeps;
+
+    setUpAll(() async {
+      db = await openAstraDatabase(databasePath: inMemoryDatabasePath);
+      final userPreferences = UserPreferencesRepository(db);
+      await userPreferences.setOnboardingComplete(true);
+      completeDeps = await AppDependencies.test(userPreferences: userPreferences);
+    });
+
+    tearDownAll(() async {
+      await db.close();
+    });
+
+    testWidgets('shows shell after onboarding complete flag', (tester) async {
+      await tester.pumpWidget(AstraApp(deps: completeDeps));
+
+      expect(find.byType(NavigationBar), findsOneWidget);
+      expect(find.text('Your steps stay on this device.'), findsNothing);
+    });
   });
 }
