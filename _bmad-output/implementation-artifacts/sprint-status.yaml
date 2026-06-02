@@ -1,5 +1,6 @@
 # generated: 2026-05-25
-# last_updated: 2026-06-02 (story 3-4 done)
+# last_updated: 2026-06-02 (correct-course: epic-2 passive contract stories 2-8–2-10)
+# PAUSE: epic-4+ until epic-2 correction complete
 # project: astra-app
 # project_key: NOKEY
 # tracking_system: file-system
@@ -45,7 +46,7 @@
 # NAVIGATION: _bmad-output/README.md
 
 generated: 2026-05-25
-last_updated: 2026-06-02 (story 3-4 review)
+last_updated: 2026-06-02 (correct-course epic-2 reopen)
 project: astra-app
 project_key: NOKEY
 tracking_system: file-system
@@ -60,7 +61,7 @@ development_status:
   1-5-trust-first-onboarding-flow: done
   epic-1-retrospective: optional
 
-  epic-2: done
+  epic-2: in-progress
   2-1-sqlite-schema-for-timeseries-samples: done
   2-2-data-ingestion-abstraction-and-step-normalizer: done
   2-3-step-repository-and-time-semantics: done
@@ -68,9 +69,12 @@ development_status:
   2-5-today-dashboard-with-goal-ring: done
   2-6-goal-celebration-animation: done
   2-7-daily-goal-local-notification: done
+  2-8-android-fgs-health-passive-pipeline: backlog
+  2-9-today-display-truth-model-and-live-overlay: backlog
+  2-10-workmanager-orchestration-and-oem-deferral-hardening: backlog
   epic-2-retrospective: optional
 
-  epic-3: in-progress
+  epic-3: done
   3-1-dev-data-inject-and-lifecycle-simulator: done
   3-2-history-chart-data-aggregation: done
   3-3-history-screen-with-bar-chart-and-trend: done
@@ -91,6 +95,7 @@ development_status:
   5-1-accent-color-and-contrast-token-revision: backlog
   5-2-navigation-bar-and-spacing-polish: backlog
   5-3-cross-screen-visual-cohesion-audit: backlog
+  5-4-goal-overflow-animation-polish: backlog
   epic-5-retrospective: optional
 
   epic-6: backlog

@@ -397,6 +397,16 @@ void main() {
 - TestFlight deferred; architecture supports iOS build but beta targets Android sideload first
 - Sprint 1 story validates BGAppRefresh registration and stale UI on simulator/device
 
+### Today Display Truth Model (correct-course 2026-06-02)
+
+| Layer | Role | When active |
+|-------|------|-------------|
+| **SQLite daily aggregate** | Source of truth for Today ring, notifications, History | Always — written only by `BackgroundCollector` |
+| **LiveStepMonitor overlay** | Real-time bonus while app/process alive | Foreground + brief background when process not killed |
+| **Foreground backfill** | Mandatory recovery on app open | Every cold start and after force-stop |
+
+**Rules:** UI step count is monotonic within a local calendar day. Force-stop and OEM kills may lag until backfill — not a display bug. Threshold-based mid-walk persist from RAM is **explicitly rejected** (regression risk). Passive contract fulfilled by FGS + WM (Stories 2.8–2.10), not by keeping the app open.
+
 ### Notifications & Goal Celebration (FR-25)
 
 | Trigger | Mechanism |
@@ -437,7 +447,7 @@ Evaluation uses cumulative daily steps from `timeseries_samples` aggregated by `
 
 | Cubit | Refresh when |
 |-------|--------------|
-| `TodayCubit` | **Live steps:** `LiveStepMonitor.watchTodaySteps()` (throttled). **Metadata:** app resume → `collectOnce` + `refreshMetadata()`; `onIngestionComplete` → `refreshMetadata()` only; `AstraApp` 60s periodic persist (all tabs); returning to Today tab → `refreshMetadata()`; cold start → `refresh()` then attach live monitor; post import/purge |
+| `TodayCubit` | **Truth model:** persisted SQLite daily sum is source of truth; live monitor is real-time overlay when process alive — display never decreases within same local day (Story 2.9). **Live steps:** `LiveStepMonitor.watchTodaySteps()` (throttled ~500ms). **Cold start:** foreground backfill → reconcile from DB → attach live monitor → `syncSteps()` (not DB-only refresh overwriting live). **Resume:** persist + reconcile + `syncSteps()`. **Metadata:** app resume → `refreshMetadata()`; `onIngestionComplete` → `refreshMetadata()` only; `AstraApp` 60s periodic persist (all tabs); returning to Today tab → `refreshMetadata()`; post import/purge |
 | `HistoryCubit` | Tab selected; app resume; post import/purge/lifecycle |
 | `MyDataCubit` | Tab selected; app resume; post import/purge/export |
 
@@ -830,9 +840,11 @@ astra-app/                              # Git repo root = Flutter app root (D-18
 
 ### Integration Points
 
-**Data flow:** Pedometer → `StepNormalizer` → `BackgroundCollector` → `StepRepository` → SQLite → Cubits (read via `ChartDayAggregate`) / CSV export-import.
+**Data flow:** Pedometer → `StepNormalizer` → `BackgroundCollector` → `StepRepository` → SQLite → Cubits (read via `ChartDayAggregate`) / CSV export-import. **Parallel read path (UI isolate only):** Pedometer → `LiveStepMonitor` → `TodayCubit` overlay (never writes buckets; reconciles against SQLite).
 
 **Android background model:** FGS health (continuous when OS permits) + WorkManager (orchestration/reconciliation) + foreground backfill on app open. WorkManager alone is not a realtime guarantee.
+
+**Implementation status (2026-06-02):** Stories 2-1–2-7 delivered WM + live overlay; FGS passive pipeline and `BackgroundHealthCapabilityEvaluator` are **planned** in Stories 2.8–2.10. Until 2.8 ships, Android passive acceptance follows FR-4 same-day protocol — not live-monitor-dependent behavior.
 
 **Build:** `flutter build apk --release` from repo root — manifest audit + `release_manifest_test.dart` before beta.
 

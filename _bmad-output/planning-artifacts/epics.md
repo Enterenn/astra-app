@@ -45,7 +45,7 @@ FR2: **PhonePedometerSource** reads step counts from phone OS sensor APIs (Andro
 
 FR3: **AdpBleSource** class implements **DataIngestionSource** but returns no data in Phase 0. Stub wired in dependency injection alongside **PhonePedometerSource**; documentation references ADP as Phase 1 activation point.
 
-FR4: **BackgroundCollector** receives normalized **Time Buckets** and writes them to SQLite without requiring the user to open the Hub App. Android: continuous/near-continuous bucket writes via WorkManager/FGS. iOS: backfill on foreground and rare BGAppRefresh — no continuous 5-minute real-time collection. After 24h with app not opened, step count increases on Android beta. Single writer path to **timeseries_samples**. iOS UI copy and My Data stale indicator reflect backfill model.
+FR4: **BackgroundCollector** receives normalized **Time Buckets** and writes them to SQLite without requiring the user to open the Hub App. Android: continuous/near-continuous bucket writes via WorkManager/FGS. iOS: backfill on foreground and rare BGAppRefresh — no continuous 5-minute real-time collection. Android beta primary acceptance: same-day passive accumulation (walk ≥500 steps with app not in foreground, not force-stopped; total increases within 15 min WM cycle or on next open). Secondary: daily-goal morning check. Force-stop/OEM kill documented as lag until foreground backfill — not beta failure. 24h stress check remains SM-2 long-run only. Single writer path to **timeseries_samples**. iOS UI copy and My Data stale indicator reflect backfill model.
 
 FR5: **My Data** displays background collection status (last successful collection timestamp, stale-data warning when threshold exceeded). Stale threshold: 12 hours Android, 4 hours iOS. Copy explains platform constraints without blaming the user.
 
@@ -386,7 +386,7 @@ So that I feel confident granting activity access without creating an account.
 
 ## Epic 2: Passive Step Tracking & Today Dashboard
 
-The user's steps accumulate in the background; they see today's progress via the goal ring, celebration, and optional goal notification without constantly opening the app.
+The user's steps accumulate passively (Android FGS + WorkManager; iOS foreground backfill); they see today's progress via the goal ring, celebration, and optional goal notification without constantly opening the app. Real-time step display while the app is open is a UX bonus layered on persisted SQLite totals — see Stories 2.8–2.10 for the corrected passive contract.
 
 ### Story 2.1: SQLite Schema for Timeseries Samples
 
@@ -473,9 +473,17 @@ So that I get value without opening the app constantly.
 **When** WorkManager callback runs with `@pragma('vm:entry-point')` and `WidgetsFlutterBinding.ensureInitialized()`
 **Then** a test bucket is written and readable by UI after resume (WorkManager spike)
 
-**Given** activity permission granted and app backgrounded
-**When** 24 hours pass without opening the app on Android beta
-**Then** step count increases vs prior snapshot (FR4, SM-2)
+**Given** activity permission granted and app backgrounded or removed from recents (not force-stopped from Settings)
+**When** user walks ≥500 steps over ≥30 minutes without opening the app on Android beta
+**Then** step count increases within 15 minutes (one WorkManager cycle) OR on next app open (FR4 primary)
+
+**Given** user did not open the app since prior evening
+**When** first open of the local day after walking
+**Then** Today shows today's steps > 0 when phone sensor recorded steps (FR4 secondary — daily goal morning check)
+
+**Given** app was force-stopped from system Settings
+**When** user reopens after walking
+**Then** foreground backfill eventually reflects steps — documented platform limit, not Story 2.4 failure
 
 **Given** Android 14+ manifest
 **When** inspected
@@ -561,6 +569,93 @@ So that I can celebrate offline without notification spam.
 **Given** goal notification fired
 **When** user opens app later
 **Then** no duplicate notification on subsequent opens the same day
+
+---
+
+### Story 2.8: Android FGS Health Passive Pipeline
+
+As a **user**,
+I want steps to accumulate while the app is closed on Android without keeping it open,
+So that my daily goal progresses passively.
+
+**Acceptance Criteria:**
+
+**Given** Android 14+ with activity permission granted
+**When** app is backgrounded or removed from recents (not force-stopped)
+**Then** a foreground service with type `health` runs `BackgroundCollector` on a periodic cadence while OS permits (FR6, architecture D-04)
+
+**Given** FGS is active
+**When** user walks ≥500 steps over ≥30 min without opening the app
+**Then** buckets are written to SQLite and Today reflects increase on next open or within one collection cycle (FR4 primary)
+
+**Given** app returns to foreground
+**When** FGS and `LiveStepMonitor` would both read the pedometer
+**Then** single-writer rule holds — FGS pauses or delegates; `LiveStepMonitor` remains sole stream owner in UI isolate when process alive
+
+**Given** user force-stops from Settings
+**When** app reopens
+**Then** foreground backfill recovers steps — documented limit, not Story failure
+
+**Given** release manifest
+**When** inspected
+**Then** `FOREGROUND_SERVICE_HEALTH` declared; persistent notification copy is honest (not disguised as unrelated sync)
+
+---
+
+### Story 2.9: Today Display Truth Model & Live Overlay
+
+As a **user**,
+I want Today to show my real progress without confusing backward jumps,
+So that I trust the ring whether the app was open or closed.
+
+**Acceptance Criteria:**
+
+**Given** documented display contract
+**When** reviewed in architecture / story notes
+**Then** persisted SQLite daily sum = **source of truth**; `LiveStepMonitor` = **real-time overlay bonus** when process alive; UI never shows a lower step count within the same local day except at day rollover
+
+**Given** cold start with permission granted
+**When** Today loads
+**Then** sequence is: foreground backfill → reconcile from DB → attach live monitor → sync live total (no stale DB-only refresh overwriting live)
+
+**Given** app resume (process alive)
+**When** user returns from background
+**Then** live stream recovers and steps update within 5s without force-stop (field test B)
+
+**Given** uncommitted lifecycle hardening work
+**When** Story 2.9 is implemented
+**Then** keep: monotonic merge, `syncSteps`, cold-start ordering, `_persistOnPause` best-effort
+**And** revert: threshold persist (`onPersistRequested` / +5 steps debounce) — caused regression 1273→1254
+
+**Given** unit and widget tests
+**When** `flutter test` runs
+**Then** monotonic display, cold-start order, and resume sync are covered
+
+---
+
+### Story 2.10: WorkManager Orchestration & OEM Deferral Hardening
+
+As a **builder**,
+I want WorkManager and background health checks to be reliable on reference Android devices,
+So that passive collection survives OEM battery policies.
+
+**Acceptance Criteria:**
+
+**Given** `BackgroundHealthCapabilityEvaluator` (new, per architecture D-23)
+**When** instantiated from `AppDependencies`
+**Then** it reports: activity permission, notification permission, battery optimization exemption status, FGS declaration presence — no scattered permission logic in screens
+
+**Given** WorkManager periodic task registered
+**When** FGS is unavailable (permission revoked, OS killed service)
+**Then** WM still runs reconciliation as fallback orchestrator (architecture: WM ≠ realtime guarantee)
+
+**Given** Samsung/Xiaomi/Huawei-style battery deferral detected
+**When** evaluator runs
+**Then** capability flag is exposed for future My Data UI (Epic 4.2) — **no user-facing copy in this story**
+
+**Given** physical Android device
+**When** WM callback executes with `@pragma('vm:entry-point')`
+**Then** isolate-safe DB write succeeds; foreground backfill remains mandatory fallback if isolate init fails
 
 ---
 
@@ -919,6 +1014,33 @@ So that the app feels cohesive before OSS beta release.
 **Given** findings from Epics 1–4 device testing
 **When** logged in story completion notes
 **Then** residual polish items are either fixed in this story or explicitly deferred with rationale
+
+---
+
+### Story 5.4: Goal Overflow Animation Polish
+
+As a **user**,
+I want a calm, satisfying visual when my steps exceed the daily goal,
+So that continued walking feels acknowledged without gamified pressure.
+
+**Acceptance Criteria:**
+
+**Given** today's steps exceed `daily_step_goal` (`TodayStatus.overflow`)
+**When** the user views Today after the once-per-day celebration (Story 2.6) has already played or been dismissed
+**Then** the goal ring shows a distinct beyond-goal treatment — e.g. subtle continued pulse or shimmer on the full ring, not a static capped arc (field feedback 2026-06-02)
+**And** the center count continues updating live with each step
+
+**Given** reduce-motion OS setting enabled
+**When** steps are in overflow
+**Then** animation uses a static full ring with optional calm micro-copy only — no scale/glow loops
+
+**Given** Story 2.6 celebration triggers at first goal crossing
+**When** steps continue increasing into overflow
+**Then** celebration does not replay; overflow animation is separate and non-modal
+
+**Given** token and motion patterns are defined
+**When** implemented
+**Then** changes live in `GoalRing` / dedicated overflow widget and `AstraColors` — no ad-hoc hex in screens (V-2)
 
 ---
 

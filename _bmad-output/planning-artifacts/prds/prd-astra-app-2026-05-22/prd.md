@@ -236,7 +236,10 @@ An **AdpBleSource** class implements **DataIngestionSource** but returns no data
 | **iOS (secondary)** | **No continuous 5-minute real-time collection.** **PhonePedometerSource** backfills buckets on app foreground and on rare `BGAppRefresh` wakes — not a live background stream |
 
 **Consequences (testable):**
-- After 24 hours with app not opened, step count increases vs prior snapshot (**Android beta protocol** — primary acceptance path).
+- **Same-day passive accumulation (Android beta — primary):** On a reference Android device, with activity permission granted and the app not in foreground (backgrounded or removed from recents, **not** force-stopped from system Settings), the user walks ≥500 steps over ≥30 minutes. Within **15 minutes** (one WorkManager cycle) **or** on next app open, Today's step total increases by ≥80% of walked steps (OEM/sensor variance allowed).
+- **Daily goal morning check (Android beta — secondary):** User did not open the app since prior evening; on first open of the local day after walking, Today shows today's steps > 0 when the phone sensor recorded steps for that day.
+- **Force-stop / OEM kill (documented limit):** Steps may lag until foreground backfill; this is **not** a beta failure — My Data (Epic 4.2) will explain the constraint.
+- After 24 hours without opening the app remains a **stress / SM-2 long-run** check, not the primary daily-goal acceptance path.
 - Only one writer path exists to **timeseries_samples** (single-writer rule).
 - iOS UI copy and **My Data** stale indicator reflect backfill model; no false promise of Android-parity background cadence.
 
@@ -653,7 +656,7 @@ Project maintains a documented beta checklist covering accuracy, background, not
 **Primary**
 
 - **SM-1: Chart render performance (KPI-01)** — History chart query + render < 100 ms with 90 days of continuous injected step data. Validates FR-16, FR-28.
-- **SM-2: Background persistence** — Step count increases over 24 h without opening app (Android beta). Validates FR-4.
+- **SM-2: Background persistence** — Primary: same-day passive accumulation per FR-4 (Android beta). Long-run stress: step count increases over 24 h without opening app. Validates FR-4.
 - **SM-3: Airplane mode proof** — Full core flow (view Today, History, export) works after 24 h offline. Validates FR-18, UJ-1.
 - **SM-4: Phase 0 learning outcome** — Builder can independently implement a new **DataIngestionSource** and SQLite migration without AI scaffolding `[ASSUMPTION: self-assessed at Phase 0 exit]`. Validates FR-1, FR-10.
 
