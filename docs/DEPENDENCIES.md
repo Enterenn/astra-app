@@ -31,6 +31,19 @@ Phase 0 step collection declares only local device-health/background permissions
 - WorkManager remains registered as fallback orchestrator (architecture D-04).
 - No `dataSync` foreground service type.
 
+### Background health capability evaluator (Story 2.10)
+
+| Component | Role |
+|-----------|------|
+| `BackgroundHealthCapabilityEvaluator` (Dart) | Single D-23 entry point: activity, notification, battery exemption, FGS manifest flag, OEM deferral hint |
+| `BackgroundHealthCapabilitySnapshot` | Immutable flags for Epic 4.2 `BackgroundStatusCard` — no user-facing copy in 2.10 |
+| `BackgroundHealthCapabilityChannel` (Kotlin) | Method channel `com.astraapp.astra_app/background_health_capability`: `PowerManager.isIgnoringBatteryOptimizations`, `Build.MANUFACTURER` |
+| `kAndroidFgsHealthManifestDeclared` | Static manifest truth (verified by `test/android/android_manifest_test.dart`) — not runtime FGS running state |
+
+- **Battery optimization:** Status read via native `PowerManager` only; `REQUEST_IGNORE_BATTERY_OPTIMIZATIONS` is **not** added — no auto-request on launch (Epic 4.2 owns settings UX).
+- **OEM deferral hint:** `likelyOemBatteryDeferral` is true for Samsung/Xiaomi/Huawei/Oppo/Vivo/OnePlus/Realme when not battery-exempt — a UX hint, not proof WM was deferred.
+- **WorkManager fallback:** WM registers on Android regardless of FGS; periodic task passes `databasePath` in `inputData`. WM reconciles buckets (~15 min minimum), not realtime 5-min cadence; foreground backfill on open remains mandatory.
+
 ## WorkManager device verification (Story 2.4)
 
 Automated tests (`test/core/services/workmanager_callback_test.dart`) prove the callback bootstrap writes a bucket through an isolate-local DB connection that a separate UI connection can read. End-to-end confirmation still requires a **physical Android device** with a step counter (emulators often report `StepCount not available`).
