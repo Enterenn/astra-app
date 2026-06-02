@@ -1,5 +1,5 @@
 # generated: 2026-05-25
-# last_updated: 2026-06-02 (story 3-3 done)
+# last_updated: 2026-06-02 (story 3-4 review)
 # project: astra-app
 # project_key: NOKEY
 # tracking_system: file-system
@@ -45,7 +45,7 @@
 # NAVIGATION: _bmad-output/README.md
 
 generated: 2026-05-25
-last_updated: 2026-06-02 (story 3-3 done)
+last_updated: 2026-06-02 (story 3-4 review)
 project: astra-app
 project_key: NOKEY
 tracking_system: file-system
@@ -74,7 +74,7 @@ development_status:
   3-1-dev-data-inject-and-lifecycle-simulator: done
   3-2-history-chart-data-aggregation: done
   3-3-history-screen-with-bar-chart-and-trend: done
-  3-4-chart-performance-benchmark-kpi-01: backlog
+  3-4-chart-performance-benchmark-kpi-01: review
   epic-3-retrospective: optional
 
   epic-4: backlog
