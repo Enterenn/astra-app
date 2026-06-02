@@ -126,11 +126,15 @@ Future<void> registerStepCollectionWorkmanager({
   final inputData = databasePath == null
       ? null
       : <String, dynamic>{'databasePath': databasePath};
+  // UPDATE applies new inputData on upgrade; KEEP would leave pre-2.10 work without path.
+  final existingWorkPolicy = databasePath == null
+      ? ExistingPeriodicWorkPolicy.keep
+      : ExistingPeriodicWorkPolicy.update;
   await workmanager.registerPeriodicTask(
     kStepCollectionUniqueName,
     kStepCollectionTaskName,
     frequency: const Duration(minutes: 15),
-    existingWorkPolicy: ExistingPeriodicWorkPolicy.keep,
+    existingWorkPolicy: existingWorkPolicy,
     inputData: inputData,
   );
 }

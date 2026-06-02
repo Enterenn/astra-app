@@ -2,10 +2,9 @@ import 'dart:async';
 import 'dart:io';
 
 import 'package:flutter_bloc/flutter_bloc.dart';
-import 'package:permission_handler/permission_handler.dart';
-
 import '../../core/health/stale_data_evaluator.dart';
-import '../../core/permissions/activity_permission_resolver.dart';
+import '../../core/permissions/activity_permission_resolver.dart'
+    show isActivityRecognitionGranted;
 import '../../core/services/live_step_monitor.dart';
 import '../../core/time/local_day_formatter.dart';
 import '../../core/time/time_provider.dart';
@@ -23,7 +22,7 @@ class TodayCubit extends Cubit<TodayState> {
     ActivityPermissionChecker? activityPermissionGranted,
     bool? isIos,
   }) : _activityPermissionGranted =
-           activityPermissionGranted ?? _defaultActivityPermissionGranted,
+           activityPermissionGranted ?? isActivityRecognitionGranted,
        _isIos = isIos ?? Platform.isIOS,
        super(const TodayState.loading());
 
@@ -36,12 +35,6 @@ class TodayCubit extends Cubit<TodayState> {
   Future<void>? _refreshInFlight;
   StreamSubscription<int>? _liveStepsSubscription;
   String? _lastAppliedLocalDay;
-
-  static Future<bool> _defaultActivityPermissionGranted() async {
-    final permission = resolveActivityPermission();
-    final status = await permission.status;
-    return status.isGranted || status.isLimited || status.isProvisional;
-  }
 
   /// Subscribes to [monitor] live step stream (replays current value immediately).
   void attachLiveMonitor(LiveStepMonitor monitor) {

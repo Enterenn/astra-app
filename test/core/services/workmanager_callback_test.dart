@@ -184,7 +184,7 @@ void main() {
       expect(client.registered, isFalse);
     });
 
-    test('initializes and keeps the Android periodic task', () async {
+    test('initializes and keeps the Android periodic task without inputData', () async {
       final client = _FakeWorkmanagerClient();
 
       await registerStepCollectionWorkmanager(isAndroid: true, client: client);
@@ -196,6 +196,7 @@ void main() {
       expect(client.taskName, kStepCollectionTaskName);
       expect(client.frequency, const Duration(minutes: 15));
       expect(client.existingWorkPolicy, ExistingPeriodicWorkPolicy.keep);
+      expect(client.inputData, isNull);
     });
 
     test(
@@ -214,6 +215,7 @@ void main() {
           client.inputData,
           {'databasePath': '/data/user/0/com.astraapp/databases/astra_app.db'},
         );
+        expect(client.existingWorkPolicy, ExistingPeriodicWorkPolicy.update);
       },
     );
 

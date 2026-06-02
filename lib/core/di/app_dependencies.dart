@@ -57,11 +57,8 @@ class AppDependencies {
   final BackgroundHealthCapabilityEvaluator backgroundHealthCapabilityEvaluator;
   final HealthForegroundServiceCoordinator healthForegroundCoordinator;
 
-  static Future<bool> resolveActivityRecognitionGranted() async {
-    final permission = resolveActivityPermission();
-    final status = await permission.status;
-    return status.isGranted || status.isLimited || status.isProvisional;
-  }
+  static Future<bool> resolveActivityRecognitionGranted() =>
+      isActivityRecognitionGranted();
 
   static BackgroundHealthCapabilityEvaluator buildCapabilityEvaluator({
     Future<bool> Function()? activityRecognitionGranted,
@@ -87,15 +84,6 @@ class AppDependencies {
     return isAndroid()
         ? AndroidPlatformCapabilityProbe(isAndroidPlatform: isAndroid)
         : const NoopPlatformCapabilityProbe();
-  }
-
-  static ActivityPermissionChecker activityCheckerFromEvaluator(
-    BackgroundHealthCapabilityEvaluator evaluator,
-  ) {
-    return () async {
-      final snapshot = await evaluator.evaluate();
-      return snapshot.activityRecognitionGranted;
-    };
   }
 
   static Future<AppDependencies> create({
@@ -133,9 +121,8 @@ class AppDependencies {
     final capabilityEvaluator = buildCapabilityEvaluator(
       notificationGranted: notificationService.hasNotificationPermission,
     );
-    final activityChecker = activityCheckerFromEvaluator(capabilityEvaluator);
     final healthForeground = HealthForegroundServiceCoordinator(
-      activityPermissionGranted: activityChecker,
+      activityPermissionGranted: resolveActivityRecognitionGranted,
     );
     healthForeground.registerPlatformHandlers();
 
@@ -150,7 +137,7 @@ class AppDependencies {
       backgroundCollector: backgroundCollector,
       notificationService: notificationService,
       liveStepMonitor: liveStepMonitor,
-      activityPermissionGranted: activityChecker,
+      activityPermissionGranted: resolveActivityRecognitionGranted,
       backgroundHealthCapabilityEvaluator: capabilityEvaluator,
       healthForegroundCoordinator: healthForeground,
     );
@@ -201,18 +188,17 @@ class AppDependencies {
     final notificationCheck =
         notificationPermissionGranted ??
         notifications.hasNotificationPermission;
-    final activityForEvaluator = activityPermissionGranted ?? () async => true;
+    final activityCheck =
+        activityPermissionGranted ?? () async => true;
     final capabilityEvaluator =
         backgroundHealthCapabilityEvaluator ??
         buildCapabilityEvaluator(
-          activityRecognitionGranted: activityForEvaluator,
+          activityRecognitionGranted: activityCheck,
           notificationGranted: notificationCheck,
           platformProbe: platformCapabilityProbe,
           isAndroidPlatform: isAndroidPlatform,
         );
-    final permissionCheck =
-        activityPermissionGranted ??
-        activityCheckerFromEvaluator(capabilityEvaluator);
+    final permissionCheck = activityCheck;
     final healthForeground =
         healthForegroundCoordinator ??
         HealthForegroundServiceCoordinator(
