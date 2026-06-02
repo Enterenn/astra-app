@@ -1,5 +1,6 @@
 import 'dart:io';
 
+import 'package:astra_app/core/health/background_health_manifest.dart';
 import 'package:flutter_test/flutter_test.dart';
 
 void main() {
@@ -43,6 +44,7 @@ void main() {
         contains('android:foregroundServiceType="health"'),
       );
       expect(manifest, isNot(contains('foregroundServiceType="dataSync"')));
+      expect(kAndroidFgsHealthManifestDeclared, isTrue);
     });
 
     test('does not use network permission for health collection', () {

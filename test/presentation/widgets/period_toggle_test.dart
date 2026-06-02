@@ -1,8 +1,9 @@
 import 'package:astra_app/core/constants/astra_theme.dart';
 import 'package:astra_app/presentation/cubits/history_state.dart';
 import 'package:astra_app/presentation/widgets/period_toggle.dart';
+import 'dart:ui' show Tristate;
+
 import 'package:flutter/material.dart';
-import 'package:flutter/semantics.dart';
 import 'package:flutter_test/flutter_test.dart';
 
 void main() {
@@ -45,12 +46,12 @@ void main() {
       final sevenDays = tester.getSemantics(find.text('7 days'));
       expect(sevenDays.label, contains('7 days'));
       expect(sevenDays.hint, 'Chart range');
-      expect(sevenDays.hasFlag(SemanticsFlag.isSelected), isTrue);
+      expect(sevenDays.flagsCollection.isSelected, Tristate.isTrue);
 
       final thirtyDays = tester.getSemantics(find.text('30 days'));
       expect(thirtyDays.label, contains('30 days'));
       expect(thirtyDays.hint, 'Chart range');
-      expect(thirtyDays.hasFlag(SemanticsFlag.isSelected), isFalse);
+      expect(thirtyDays.flagsCollection.isSelected, Tristate.isFalse);
     });
   });
 }
