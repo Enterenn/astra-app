@@ -1,4 +1,5 @@
 import 'package:astra_app/core/constants/preference_keys.dart';
+import 'package:astra_app/core/services/ingestion_collection_lock.dart';
 import 'package:astra_app/core/database/app_database.dart';
 import 'package:astra_app/core/services/background_collector.dart';
 import 'package:astra_app/core/services/notification_service.dart';
@@ -45,7 +46,8 @@ void main() {
       for (final row in prefRows) {
         final key = row['key'] as String;
         if (key.startsWith('ingestion_baseline/') ||
-            key == kCelebrationShownDateKey) {
+            key == kCelebrationShownDateKey ||
+            key == kIngestionCollectLockKey) {
           await db.delete(
             'user_preferences',
             where: 'key = ?',
@@ -95,6 +97,30 @@ void main() {
       expect(rows, hasLength(2));
       expect(rows.first['value'], 5);
       expect(rows.last['value'], 15);
+    });
+
+    test('collectOnce no-ops when ingestion lock is held', () async {
+      final lock = IngestionCollectionLock(db);
+      expect(await lock.tryAcquire(), isTrue);
+      addTearDown(lock.release);
+
+      final collector = BackgroundCollector(
+        sources: [
+          _FakeStepSource([
+            StepReading(
+              cumulativeSteps: 10,
+              observedAtUtc: DateTime.utc(2026, 6, 2, 8),
+            ),
+          ]),
+        ],
+        normalizer: normalizer,
+        repository: repository,
+        baselineRepository: baselineRepository,
+        sourceTimeout: const Duration(milliseconds: 10),
+      );
+
+      expect(await collector.collectOnce(), 0);
+      expect(await db.query('timeseries_samples'), isEmpty);
     });
 
     test('skips sources that emit no readings', () async {

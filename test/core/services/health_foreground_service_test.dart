@@ -53,6 +53,34 @@ void main() {
       expect(platformCalls[1].arguments, isTrue);
     });
 
+    test('collectSteps invokes collection runner with ui-active flag', () async {
+      var skipPhone = true;
+      final channelCalls = <MethodCall>[];
+      final collecting = HealthForegroundServiceCoordinator(
+        channel: _RecordingChannel(channelCalls),
+        activityPermissionGranted: () async => true,
+        isAndroidPlatform: () => true,
+        collectionRunner: ({skipPhoneSourceWhenUiActive = false}) async {
+          skipPhone = skipPhoneSourceWhenUiActive;
+          return true;
+        },
+      );
+      collecting.registerPlatformHandlers();
+      await collecting.setUiActive(false);
+
+      const codec = StandardMethodCodec();
+      await TestDefaultBinaryMessengerBinding
+          .instance
+          .defaultBinaryMessenger
+          .handlePlatformMessage(
+        'com.astraapp.astra_app/health_foreground',
+        codec.encodeMethodCall(const MethodCall('collectSteps')),
+        (_) {},
+      );
+      await Future<void>.delayed(Duration.zero);
+
+      expect(skipPhone, isFalse);
+    });
   });
 }
 

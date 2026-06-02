@@ -16,6 +16,7 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:sqflite/sqflite.dart';
 
 import 'core/time/fake_time_provider.dart';
+import 'helpers/recording_health_fgs.dart';
 import 'helpers/sqflite_test_helper.dart';
 
 TodayCubit _testTodayCubit(AppDependencies deps) {
@@ -92,6 +93,7 @@ void main() {
         userPreferences: userPreferences,
         timeProvider: clock,
         liveStepMonitor: monitor,
+        healthForegroundCoordinator: RecordingHealthFgs(calls: []),
       );
     });
 
