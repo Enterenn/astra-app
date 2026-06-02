@@ -14,7 +14,6 @@ class BackgroundCollector {
     required this.normalizer,
     required this.repository,
     required this.baselineRepository,
-    this.onIngestionComplete,
     this.sourceTimeout = const Duration(seconds: 2),
     this.maxCollectionDuration = const Duration(seconds: 25),
   }) : _sources = List.unmodifiable(sources);
@@ -25,7 +24,12 @@ class BackgroundCollector {
   final IngestionBaselineRepository baselineRepository;
 
   /// UI isolate hook only. WorkManager isolates should leave this null.
-  final VoidCallback? onIngestionComplete;
+  VoidCallback? _onIngestionComplete;
+
+  /// Registers a callback invoked after successful bucket upserts (UI isolate).
+  void registerOnIngestionComplete(VoidCallback? callback) {
+    _onIngestionComplete = callback;
+  }
 
   final Duration sourceTimeout;
   final Duration maxCollectionDuration;
@@ -85,7 +89,7 @@ class BackgroundCollector {
     }
 
     if (upsertedCount > 0) {
-      onIngestionComplete?.call();
+      _onIngestionComplete?.call();
     }
 
     return upsertedCount;

@@ -60,9 +60,8 @@ void main() {
         normalizer: normalizer,
         repository: repository,
         baselineRepository: baselineRepository,
-        onIngestionComplete: () => callbackCount += 1,
         sourceTimeout: const Duration(milliseconds: 10),
-      );
+      )..registerOnIngestionComplete(() => callbackCount += 1);
 
       final upsertedCount = await collector.collectOnce();
 
@@ -84,9 +83,8 @@ void main() {
         normalizer: normalizer,
         repository: repository,
         baselineRepository: baselineRepository,
-        onIngestionComplete: () => callbackCount += 1,
         sourceTimeout: const Duration(milliseconds: 10),
-      );
+      )..registerOnIngestionComplete(() => callbackCount += 1);
 
       expect(await collector.collectOnce(), 0);
       expect(callbackCount, 0);
@@ -187,6 +185,60 @@ void main() {
 
       expect(await collector.collectOnce(), 0);
       expect(await db.query('timeseries_samples'), isEmpty);
+    });
+
+    test('registerOnIngestionComplete can be set after construction', () async {
+      var callbackCount = 0;
+      final collector = BackgroundCollector(
+        sources: [
+          _FakeStepSource([
+            StepReading(
+              cumulativeSteps: 10,
+              observedAtUtc: DateTime.utc(2026, 6, 2, 8),
+            ),
+            StepReading(
+              cumulativeSteps: 15,
+              observedAtUtc: DateTime.utc(2026, 6, 2, 8, 1),
+            ),
+          ]),
+        ],
+        normalizer: normalizer,
+        repository: repository,
+        baselineRepository: baselineRepository,
+        sourceTimeout: const Duration(milliseconds: 10),
+      );
+
+      collector.registerOnIngestionComplete(() => callbackCount += 1);
+
+      expect(await collector.collectOnce(), 1);
+      expect(callbackCount, 1);
+    });
+
+    test('clearing registered callback prevents further invocations', () async {
+      var callbackCount = 0;
+      final collector = BackgroundCollector(
+        sources: [
+          _FakeStepSource([
+            StepReading(
+              cumulativeSteps: 10,
+              observedAtUtc: DateTime.utc(2026, 6, 2, 8),
+            ),
+            StepReading(
+              cumulativeSteps: 15,
+              observedAtUtc: DateTime.utc(2026, 6, 2, 8, 1),
+            ),
+          ]),
+        ],
+        normalizer: normalizer,
+        repository: repository,
+        baselineRepository: baselineRepository,
+        sourceTimeout: const Duration(milliseconds: 10),
+      )..registerOnIngestionComplete(() => callbackCount += 1);
+
+      collector.registerOnIngestionComplete(null);
+
+      expect(await collector.collectOnce(), 1);
+      expect(callbackCount, 0);
     });
   });
 }
