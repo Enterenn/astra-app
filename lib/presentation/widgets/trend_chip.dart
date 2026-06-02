@@ -1,0 +1,55 @@
+import 'package:flutter/material.dart';
+
+import '../../core/constants/astra_colors.dart';
+import '../../core/constants/astra_spacing.dart';
+import '../../core/constants/astra_typography.dart';
+import '../cubits/history_state.dart';
+
+class TrendChip extends StatelessWidget {
+  const TrendChip({
+    required this.trend,
+    super.key,
+  });
+
+  final TrendSnapshot trend;
+
+  @override
+  Widget build(BuildContext context) {
+    if (!trend.isVisible) {
+      return const SizedBox.shrink();
+    }
+
+    final colors = context.astraColors;
+    final (icon, color) = switch (trend.direction) {
+      TrendDirection.up => (Icons.arrow_upward, colors.dataPositive),
+      TrendDirection.down => (Icons.arrow_downward, colors.dataNegative),
+      TrendDirection.flat => (Icons.remove, colors.textMuted),
+      TrendDirection.hidden => (Icons.remove, colors.textMuted),
+    };
+
+    return Semantics(
+      label: trend.label,
+      child: Container(
+        padding: const EdgeInsets.symmetric(
+          horizontal: AstraSpacing.kSpaceMd,
+          vertical: AstraSpacing.kSpaceSm,
+        ),
+        decoration: BoxDecoration(
+          color: colors.bgSubtle,
+          borderRadius: BorderRadius.circular(AstraSpacing.kRadiusFull),
+        ),
+        child: Row(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Icon(icon, size: 16, color: color),
+            const SizedBox(width: AstraSpacing.kSpaceSm),
+            Text(
+              trend.label,
+              style: AstraTypography.captionFor(colors).copyWith(color: color),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+}
