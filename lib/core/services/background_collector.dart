@@ -7,6 +7,10 @@ import '../../data/datasources/step_normalizer.dart';
 import '../../data/models/step_reading.dart';
 import '../../data/repositories/ingestion_baseline_repository.dart';
 import '../../data/repositories/step_repository.dart';
+import '../../data/repositories/user_preferences_repository.dart';
+import '../time/local_day_formatter.dart';
+import '../time/time_provider.dart';
+import 'notification_service.dart';
 
 class BackgroundCollector {
   BackgroundCollector({
@@ -14,6 +18,10 @@ class BackgroundCollector {
     required this.normalizer,
     required this.repository,
     required this.baselineRepository,
+    this.userPreferences,
+    this.clock,
+    this.notificationService,
+    this.notificationPermissionGranted,
     this.sourceTimeout = const Duration(seconds: 2),
     this.maxCollectionDuration = const Duration(seconds: 25),
   }) : _sources = List.unmodifiable(sources);
@@ -22,6 +30,10 @@ class BackgroundCollector {
   final StepNormalizer normalizer;
   final StepRepository repository;
   final IngestionBaselineRepository baselineRepository;
+  final UserPreferencesRepository? userPreferences;
+  final TimeProvider? clock;
+  final NotificationService? notificationService;
+  final Future<bool> Function()? notificationPermissionGranted;
 
   /// UI isolate hook only. WorkManager isolates should leave this null.
   VoidCallback? _onIngestionComplete;
@@ -36,19 +48,28 @@ class BackgroundCollector {
 
   bool _collectInFlight = false;
 
-  Future<int> collectOnce({int maxReadingsPerSource = 50}) async {
+  Future<int> collectOnce({
+    int maxReadingsPerSource = 50,
+    bool enableGoalNotification = false,
+  }) async {
     if (_collectInFlight) {
       return 0;
     }
     _collectInFlight = true;
     try {
-      return await _collectOnce(maxReadingsPerSource: maxReadingsPerSource);
+      return await _collectOnce(
+        maxReadingsPerSource: maxReadingsPerSource,
+        enableGoalNotification: enableGoalNotification,
+      );
     } finally {
       _collectInFlight = false;
     }
   }
 
-  Future<int> _collectOnce({required int maxReadingsPerSource}) async {
+  Future<int> _collectOnce({
+    required int maxReadingsPerSource,
+    required bool enableGoalNotification,
+  }) async {
     var upsertedCount = 0;
 
     for (final source in _sources) {
@@ -90,9 +111,47 @@ class BackgroundCollector {
 
     if (upsertedCount > 0) {
       _onIngestionComplete?.call();
+      if (enableGoalNotification) {
+        await _maybeNotifyGoalReached();
+      }
     }
 
     return upsertedCount;
+  }
+
+  Future<void> _maybeNotifyGoalReached() async {
+    final prefs = userPreferences;
+    final notifications = notificationService;
+    final time = clock;
+    final permissionCheck = notificationPermissionGranted;
+    if (prefs == null ||
+        notifications == null ||
+        time == null ||
+        permissionCheck == null) {
+      return;
+    }
+
+    if (!await permissionCheck()) {
+      return;
+    }
+
+    final todayIso = formatLocalDayIso(time.snapshot());
+    if (await prefs.getCelebrationShownDate() == todayIso) {
+      return;
+    }
+
+    final goal = await prefs.getDailyStepGoal();
+    if (goal <= 0) {
+      return;
+    }
+
+    final steps = await repository.getTodaySteps();
+    if (steps < goal) {
+      return;
+    }
+
+    await notifications.showGoalReached(stepsToday: steps);
+    await prefs.setCelebrationShownDate(todayIso);
   }
 }
 

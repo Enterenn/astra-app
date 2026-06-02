@@ -1,11 +1,17 @@
+import 'package:astra_app/core/constants/preference_keys.dart';
 import 'package:astra_app/core/database/app_database.dart';
 import 'package:astra_app/core/services/background_collector.dart';
+import 'package:astra_app/core/services/notification_service.dart';
+import 'package:astra_app/core/time/local_day_formatter.dart';
 import 'package:astra_app/data/datasources/data_ingestion_source.dart';
 import 'package:astra_app/data/datasources/step_normalizer.dart';
+import 'package:astra_app/data/models/normalized_step_bucket.dart';
 import 'package:astra_app/data/models/step_reading.dart';
 import 'package:astra_app/data/repositories/ingestion_baseline_repository.dart';
 import 'package:astra_app/data/repositories/step_repository.dart';
+import 'package:astra_app/data/repositories/user_preferences_repository.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:permission_handler/permission_handler.dart';
 import 'package:sqflite/sqflite.dart';
 
 import '../../core/time/fake_time_provider.dart';
@@ -21,6 +27,7 @@ void main() {
     late StepRepository repository;
     late StepNormalizer normalizer;
     late IngestionBaselineRepository baselineRepository;
+    late UserPreferencesRepository userPreferences;
     late FakeTimeProvider clock;
 
     setUp(() async {
@@ -32,6 +39,20 @@ void main() {
       repository = StepRepository(db: db, clock: clock);
       normalizer = StepNormalizer(clock: clock);
       baselineRepository = IngestionBaselineRepository(db);
+      userPreferences = UserPreferencesRepository(db);
+      await db.delete('timeseries_samples');
+      final prefRows = await db.query('user_preferences');
+      for (final row in prefRows) {
+        final key = row['key'] as String;
+        if (key.startsWith('ingestion_baseline/') ||
+            key == kCelebrationShownDateKey) {
+          await db.delete(
+            'user_preferences',
+            where: 'key = ?',
+            whereArgs: [key],
+          );
+        }
+      }
     });
 
     tearDown(() async {
@@ -240,7 +261,203 @@ void main() {
       expect(await collector.collectOnce(), 1);
       expect(callbackCount, 0);
     });
+
+    test(
+      'notifies once and writes celebration pref when goal met with permission',
+      () async {
+        var showCount = 0;
+        final notificationService = NotificationService(
+          permissionChecker: () async => PermissionStatus.granted,
+          goalNotificationPresenter: ({required id, required title, body}) async {
+            showCount += 1;
+          },
+        );
+        await userPreferences.setDailyStepGoal(5000);
+        await repository.upsertIngestionBucket(
+          _todayBucket(
+            value: 4900,
+            startTimeUtc: DateTime.utc(2026, 6, 2, 6),
+            endTimeUtc: DateTime.utc(2026, 6, 2, 6, 5),
+          ),
+        );
+        final collector = BackgroundCollector(
+          sources: [
+            _FakeStepSource([
+              StepReading(
+                cumulativeSteps: 10,
+                observedAtUtc: DateTime.utc(2026, 6, 2, 8),
+              ),
+              StepReading(
+                cumulativeSteps: 200,
+                observedAtUtc: DateTime.utc(2026, 6, 2, 8, 1),
+              ),
+            ]),
+          ],
+          normalizer: normalizer,
+          repository: repository,
+          baselineRepository: baselineRepository,
+          userPreferences: userPreferences,
+          clock: clock,
+          notificationService: notificationService,
+          notificationPermissionGranted: () async => true,
+          sourceTimeout: const Duration(milliseconds: 10),
+        );
+
+        await collector.collectOnce(enableGoalNotification: true);
+
+        expect(showCount, 1);
+        expect(
+          await userPreferences.getCelebrationShownDate(),
+          formatLocalDayIso(clock.snapshot()),
+        );
+      },
+    );
+
+    test('skips notification when celebration pref already set for today', () async {
+      var showCount = 0;
+      final notificationService = NotificationService(
+        goalNotificationPresenter: ({required id, required title, body}) async {
+          showCount += 1;
+        },
+      );
+      await userPreferences.setDailyStepGoal(100);
+      await userPreferences.setCelebrationShownDate(
+        formatLocalDayIso(clock.snapshot()),
+      );
+      await repository.upsertIngestionBucket(_todayBucket(value: 500));
+      final collector = BackgroundCollector(
+        sources: [_FakeStepSource(const [])],
+        normalizer: normalizer,
+        repository: repository,
+        baselineRepository: baselineRepository,
+        userPreferences: userPreferences,
+        clock: clock,
+        notificationService: notificationService,
+        notificationPermissionGranted: () async => true,
+        sourceTimeout: const Duration(milliseconds: 10),
+      );
+
+      await collector.collectOnce(enableGoalNotification: true);
+
+      expect(showCount, 0);
+    });
+
+    test('skips notification when permission denied', () async {
+      var showCount = 0;
+      final notificationService = NotificationService(
+        goalNotificationPresenter: ({required id, required title, body}) async {
+          showCount += 1;
+        },
+      );
+      await userPreferences.setDailyStepGoal(100);
+      await repository.upsertIngestionBucket(_todayBucket(value: 500));
+      final collector = BackgroundCollector(
+        sources: [_FakeStepSource(const [])],
+        normalizer: normalizer,
+        repository: repository,
+        baselineRepository: baselineRepository,
+        userPreferences: userPreferences,
+        clock: clock,
+        notificationService: notificationService,
+        notificationPermissionGranted: () async => false,
+        sourceTimeout: const Duration(milliseconds: 10),
+      );
+
+      await collector.collectOnce(enableGoalNotification: true);
+
+      expect(showCount, 0);
+      expect(await userPreferences.getCelebrationShownDate(), isNull);
+    });
+
+    test('does not evaluate goal notification when flag is false', () async {
+      var showCount = 0;
+      final notificationService = NotificationService(
+        goalNotificationPresenter: ({required id, required title, body}) async {
+          showCount += 1;
+        },
+      );
+      await userPreferences.setDailyStepGoal(100);
+      await repository.upsertIngestionBucket(_todayBucket(value: 500));
+      final collector = BackgroundCollector(
+        sources: [
+          _FakeStepSource([
+            StepReading(
+              cumulativeSteps: 10,
+              observedAtUtc: DateTime.utc(2026, 6, 2, 8),
+            ),
+            StepReading(
+              cumulativeSteps: 15,
+              observedAtUtc: DateTime.utc(2026, 6, 2, 8, 1),
+            ),
+          ]),
+        ],
+        normalizer: normalizer,
+        repository: repository,
+        baselineRepository: baselineRepository,
+        userPreferences: userPreferences,
+        clock: clock,
+        notificationService: notificationService,
+        notificationPermissionGranted: () async => true,
+        sourceTimeout: const Duration(milliseconds: 10),
+      );
+
+      await collector.collectOnce();
+
+      expect(showCount, 0);
+    });
+
+    test('skips notification when steps remain below goal', () async {
+      var showCount = 0;
+      final notificationService = NotificationService(
+        goalNotificationPresenter: ({required id, required title, body}) async {
+          showCount += 1;
+        },
+      );
+      await userPreferences.setDailyStepGoal(10_000);
+      final collector = BackgroundCollector(
+        sources: [
+          _FakeStepSource([
+            StepReading(
+              cumulativeSteps: 10,
+              observedAtUtc: DateTime.utc(2026, 6, 2, 8),
+            ),
+            StepReading(
+              cumulativeSteps: 15,
+              observedAtUtc: DateTime.utc(2026, 6, 2, 8, 1),
+            ),
+          ]),
+        ],
+        normalizer: normalizer,
+        repository: repository,
+        baselineRepository: baselineRepository,
+        userPreferences: userPreferences,
+        clock: clock,
+        notificationService: notificationService,
+        notificationPermissionGranted: () async => true,
+        sourceTimeout: const Duration(milliseconds: 10),
+      );
+
+      await collector.collectOnce(enableGoalNotification: true);
+
+      expect(showCount, 0);
+    });
   });
+}
+
+NormalizedStepBucket _todayBucket({
+  required int value,
+  DateTime? startTimeUtc,
+  DateTime? endTimeUtc,
+}) {
+  final start = startTimeUtc ?? DateTime.utc(2026, 6, 2, 8);
+  return NormalizedStepBucket(
+    startTimeUtc: start,
+    endTimeUtc: endTimeUtc ?? start.add(const Duration(minutes: 5)),
+    value: value,
+    provider: kInternalPhoneProvider,
+    deviceId: kSmartphoneDeviceId,
+    zoneOffset: '+02:00',
+  );
 }
 
 class _FakeStepSource implements DataIngestionSource {
