@@ -54,7 +54,7 @@ So that step buckets can be persisted correctly for charts and export later.
   - [x] Do not add Android manifest WAL metadata in this story unless existing tests prove it is required; current code-level PRAGMA is accepted by architecture.
   - [x] **Stop -> review brief -> wait for Baptiste OK -> commit**
 
-- [ ] **Sub-task C - Add migration tests** (AC: #1, #2, #4, #5)
+- [x] **Sub-task C - Add migration tests** (AC: #1, #2, #4, #5)
   - [x] Update `test/core/database/migrations_test.dart` so the existing v1 assertions are either renamed to "v2 fresh install" or split into direct `runMigrations(..., targetVersion: 1)` tests where useful.
   - [x] Test fresh install creates both `user_preferences` and `timeseries_samples`.
   - [x] Test `user_preferences` default seed values remain present after fresh v2 install.
@@ -62,14 +62,14 @@ So that step buckets can be persisted correctly for charts and export later.
   - [x] Test both indexes exist, and verify `idx_bucket_identity` is unique.
   - [x] Test constraints with inserts: valid whole-step row succeeds; negative `value` fails; fractional `steps` value fails.
   - [x] Test v1 -> v2 upgrade preserves a custom `daily_step_goal` and `theme_mode`.
-  - [ ] **Stop -> review brief -> wait for Baptiste OK -> commit**
+  - [x] **Stop -> review brief -> wait for Baptiste OK -> commit**
 
-- [ ] **Sub-task D - Verification** (AC: #1-#5)
-  - [ ] Run `flutter analyze`.
-  - [ ] Run `flutter test test/core/database/migrations_test.dart`.
-  - [ ] Run full `flutter test` if the targeted test passes.
-  - [ ] In the review brief, explain the fresh-install path and upgrade path separately.
-  - [ ] **Stop -> review brief -> wait for Baptiste OK -> commit**
+- [x] **Sub-task D - Verification** (AC: #1-#5)
+  - [x] Run `flutter analyze`.
+  - [x] Run `flutter test test/core/database/migrations_test.dart`.
+  - [x] Run full `flutter test` if the targeted test passes.
+  - [x] In the review brief, explain the fresh-install path and upgrade path separately.
+  - [x] **Stop -> review brief -> wait for Baptiste OK -> commit**
 
 ## Dev Notes
 
@@ -294,6 +294,10 @@ GPT-5.5
 - 2026-06-02: Added v1 -> v2 file-backed upgrade test preserving custom `daily_step_goal` and `theme_mode`, then verifying `timeseries_samples` and both indexes exist.
 - 2026-06-02: Ran `dart format test/core/database/migrations_test.dart`.
 - 2026-06-02: Re-ran `flutter test test/core/database/migrations_test.dart`; all 9 targeted migration tests passed.
+- 2026-06-02: Committed Sub-task C as `55c86d9 test(database): cover v1 to v2 migration upgrade`.
+- 2026-06-02: Ran `flutter analyze`; no issues found.
+- 2026-06-02: Ran `flutter test test/core/database/migrations_test.dart`; all 9 targeted migration tests passed.
+- 2026-06-02: Ran full `flutter test`; all 57 tests passed.
 
 ### Completion Notes List
 
@@ -303,6 +307,7 @@ GPT-5.5
 - Added focused migration tests covering v2 fresh install table creation, default preference seeding, canonical columns, indexes, and step value constraints; v1 direct-target behavior remains covered.
 - Sub-task B required no production change: `openAstraDatabase()` still opens a fresh handle per call, runs `onConfigure` before migrations, enables WAL for file-backed databases with `rawQuery`, and enables foreign keys for all database paths.
 - Sub-task C completed the migration test matrix by adding file-backed v1 -> v2 upgrade coverage that preserves custom `user_preferences` values and verifies the v2 table/index additions after reopening through `openAstraDatabase()`.
+- Sub-task D verification is complete: static analysis, targeted migration tests, and the full Flutter test suite are green.
 
 ### File List
 
