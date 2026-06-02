@@ -4,7 +4,9 @@ import 'package:astra_app/app.dart';
 import 'package:astra_app/core/database/app_database.dart';
 import 'package:astra_app/core/di/app_dependencies.dart';
 import 'package:astra_app/core/services/live_step_monitor.dart';
+import 'package:astra_app/data/datasources/data_ingestion_source.dart';
 import 'package:astra_app/data/datasources/phone_pedometer_source.dart';
+import 'package:astra_app/data/models/normalized_step_bucket.dart';
 import 'package:astra_app/data/repositories/ingestion_baseline_repository.dart';
 import 'package:astra_app/data/repositories/step_repository.dart';
 import 'package:astra_app/data/repositories/user_preferences_repository.dart';
@@ -166,6 +168,70 @@ void main() {
         expect(stepsAfterResume, greaterThan(stepsBeforeResume));
       });
     });
+
+    testWidgets(
+      'cold start shows live total when DB sum is lower (COLD_START_RACE)',
+      (tester) async {
+        TodayCubit? todayCubit;
+
+        await tester.runAsync(() async {
+          await tester.pumpWidget(
+            AstraApp(
+              deps: deps,
+              createTodayCubit: (dependencies) {
+                todayCubit = _testTodayCubit(dependencies);
+                return todayCubit!;
+              },
+              createHistoryCubit: _testHistoryCubit,
+              enablePeriodicPersist: false,
+              enableLiveStepPipeline: true,
+            ),
+          );
+          await tester.pump();
+
+          await _waitForLivePipeline(monitor, todayCubit!);
+
+          // Simulate SQLite baseline (800) after backfill, before live exceeds it.
+          await deps.stepRepository.upsertIngestionBucket(
+            NormalizedStepBucket(
+              startTimeUtc: DateTime.utc(2026, 6, 2, 6),
+              endTimeUtc: DateTime.utc(2026, 6, 2, 6, 5),
+              value: 800,
+              provider: kInternalPhoneProvider,
+              deviceId: kSmartphoneDeviceId,
+              zoneOffset: '+02:00',
+            ),
+          );
+          await todayCubit!.refresh(silent: true);
+          expect(todayCubit!.state.steps, 800);
+          await monitor.reconcileFromDatabase();
+          await todayCubit!.syncSteps(monitor.currentTodaySteps);
+          expect(monitor.currentTodaySteps, 800);
+
+          events.add(
+            PhoneStepEvent(steps: 1000, timeStamp: DateTime.utc(2026, 6, 2, 8)),
+          );
+          events.add(
+            PhoneStepEvent(
+              steps: 1250,
+              timeStamp: DateTime.utc(2026, 6, 2, 8, 1),
+            ),
+          );
+
+          for (var attempt = 0; attempt < 50; attempt++) {
+            await Future<void>.delayed(const Duration(milliseconds: 20));
+            if (monitor.currentTodaySteps >= 1050 &&
+                todayCubit!.state.steps >= 1050) {
+              break;
+            }
+          }
+
+          expect(monitor.currentTodaySteps, greaterThanOrEqualTo(1050));
+          expect(todayCubit!.state.steps, greaterThanOrEqualTo(1050));
+        });
+      },
+      timeout: const Timeout(Duration(seconds: 30)),
+    );
 
     testWidgets('cold start does not drop steps below live monitor total', (
       tester,

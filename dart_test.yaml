@@ -1,0 +1,4 @@
+# Reduces parallel test runners fighting over build/native_assets/windows/sqlite3.dll
+concurrency: 1
+timeout: 60s
+reporter: expanded

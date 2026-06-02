@@ -202,6 +202,9 @@ class TodayCubit extends Cubit<TodayState> {
     );
   }
 
+  /// Applies step count with monotonic same-day merge: display never drops within
+  /// the local day except on rollover (Today Display Truth Model — see
+  /// `_bmad-output/planning-artifacts/architecture.md`).
   Future<void> _applyTodaySnapshot({
     required int steps,
     required int goal,

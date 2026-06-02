@@ -141,6 +141,8 @@ class _AstraAppState extends State<AstraApp> with WidgetsBindingObserver {
     );
   }
 
+  /// Persists buffered phone readings via [BackgroundCollector] (sole bucket writer),
+  /// then reconciles [LiveStepMonitor] from SQLite without lowering the overlay.
   Future<int> _runPersistCycle({required bool enableGoalNotification}) async {
     final monitor = widget.deps.liveStepMonitor;
     final collector = widget.deps.backgroundCollector;
@@ -212,6 +214,11 @@ class _AstraAppState extends State<AstraApp> with WidgetsBindingObserver {
     await _reattachLivePipeline();
   }
 
+  /// Cold-start live pipeline (permission granted):
+  /// foreground backfill → SQLite baseline via [TodayCubit.refresh] → live attach.
+  ///
+  /// See Today Display Truth Model in
+  /// `_bmad-output/planning-artifacts/architecture.md`.
   Future<void> _startLivePipelineFirstTime() async {
     if (!widget.enableLiveStepPipeline) {
       return;
@@ -240,6 +247,9 @@ class _AstraAppState extends State<AstraApp> with WidgetsBindingObserver {
       await _todayCubit?.refresh();
       return;
     }
+
+    // SQLite daily sum before live overlay (Today Display Truth Model).
+    await _todayCubit?.refresh(silent: true);
 
     final monitor = widget.deps.liveStepMonitor;
     if (!monitor.isRunning) {

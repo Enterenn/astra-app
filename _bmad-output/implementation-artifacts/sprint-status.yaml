@@ -1,5 +1,5 @@
 # generated: 2026-05-25
-# last_updated: 2026-06-02 (story 2-8 done)
+# last_updated: 2026-06-02 (story 2-9 review)
 # PAUSE: epic-4+ until epic-2 correction complete
 # project: astra-app
 # project_key: NOKEY
@@ -46,7 +46,7 @@
 # NAVIGATION: _bmad-output/README.md
 
 generated: 2026-05-25
-last_updated: 2026-06-02 (story 2-8 done)
+last_updated: 2026-06-02 (story 2-9 review)
 project: astra-app
 project_key: NOKEY
 tracking_system: file-system
@@ -70,7 +70,7 @@ development_status:
   2-6-goal-celebration-animation: done
   2-7-daily-goal-local-notification: done
   2-8-android-fgs-health-passive-pipeline: done
-  2-9-today-display-truth-model-and-live-overlay: backlog
+  2-9-today-display-truth-model-and-live-overlay: review
   2-10-workmanager-orchestration-and-oem-deferral-hardening: backlog
   epic-2-retrospective: optional
 
