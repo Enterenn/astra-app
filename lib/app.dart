@@ -75,10 +75,30 @@ class _AstraAppState extends State<AstraApp> with WidgetsBindingObserver {
   @override
   void didChangeAppLifecycleState(AppLifecycleState state) {
     if (state == AppLifecycleState.paused) {
-      unawaited(_persistOnPause());
+      unawaited(_onAppBackgrounded());
     } else if (state == AppLifecycleState.resumed) {
-      unawaited(_collectAndRefreshToday());
+      unawaited(_onAppForegrounded());
     }
+  }
+
+  Future<void> _onAppBackgrounded() async {
+    await _persistOnPause();
+    if (!_showMainShell) {
+      return;
+    }
+    final healthFgs = widget.deps.healthForegroundCoordinator;
+    if (widget.enableLiveStepPipeline) {
+      await widget.deps.liveStepMonitor.stop();
+    }
+    await healthFgs.setUiActive(false);
+    await healthFgs.startHealthCollectionService();
+  }
+
+  Future<void> _onAppForegrounded() async {
+    final healthFgs = widget.deps.healthForegroundCoordinator;
+    await healthFgs.stopHealthCollectionService();
+    await healthFgs.setUiActive(true);
+    await _collectAndRefreshToday();
   }
 
   /// Flushes buffered steps to SQLite when the app leaves the foreground.

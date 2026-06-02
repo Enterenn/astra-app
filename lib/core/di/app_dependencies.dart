@@ -13,6 +13,7 @@ import '../../presentation/cubits/theme_state.dart';
 import '../database/app_database.dart';
 import '../permissions/activity_permission_resolver.dart';
 import '../services/background_collector.dart';
+import '../services/health_foreground_service.dart';
 import '../services/live_step_monitor.dart';
 import '../services/notification_service.dart';
 import '../time/system_time_provider.dart';
@@ -33,6 +34,7 @@ class AppDependencies {
     required this.notificationService,
     required this.liveStepMonitor,
     required this.activityPermissionGranted,
+    required this.healthForegroundCoordinator,
   });
 
   final UserPreferencesRepository userPreferences;
@@ -46,6 +48,7 @@ class AppDependencies {
   final NotificationService notificationService;
   final LiveStepMonitor liveStepMonitor;
   final ActivityPermissionChecker activityPermissionGranted;
+  final HealthForegroundServiceCoordinator healthForegroundCoordinator;
 
   static Future<bool> defaultActivityPermissionGranted() async {
     final permission = resolveActivityPermission();
@@ -85,6 +88,11 @@ class AppDependencies {
       notificationPermissionGranted:
           notificationService.hasNotificationPermission,
     );
+    final healthForeground = HealthForegroundServiceCoordinator(
+      activityPermissionGranted: defaultActivityPermissionGranted,
+    );
+    healthForeground.registerPlatformHandlers();
+
     return AppDependencies(
       userPreferences: userPreferences,
       initialTheme: initialTheme,
@@ -97,6 +105,7 @@ class AppDependencies {
       notificationService: notificationService,
       liveStepMonitor: liveStepMonitor,
       activityPermissionGranted: defaultActivityPermissionGranted,
+      healthForegroundCoordinator: healthForeground,
     );
   }
 
@@ -111,6 +120,7 @@ class AppDependencies {
     Future<bool> Function()? notificationPermissionGranted,
     LiveStepMonitor? liveStepMonitor,
     ActivityPermissionChecker? activityPermissionGranted,
+    HealthForegroundServiceCoordinator? healthForegroundCoordinator,
   }) async {
     final initialTheme = await userPreferences.getThemeMode();
     final onboardingComplete =
@@ -142,6 +152,11 @@ class AppDependencies {
         activityPermissionGranted ??
         notificationPermissionGranted ??
         () async => true;
+    final healthForeground =
+        healthForegroundCoordinator ??
+        HealthForegroundServiceCoordinator(
+          activityPermissionGranted: permissionCheck,
+        );
     final backgroundCollector = BackgroundCollector(
       sources: sources,
       normalizer: stepNormalizer,
@@ -164,6 +179,7 @@ class AppDependencies {
       notificationService: notifications,
       liveStepMonitor: monitor,
       activityPermissionGranted: permissionCheck,
+      healthForegroundCoordinator: healthForeground,
     );
   }
 }
