@@ -20,6 +20,43 @@ Phase 0 step collection declares only local device-health/background permissions
 - `INTERNET` is intentionally absent from the release manifest.
 - No foreground service is started in Story 2.4, so no `foregroundServiceType` service declaration is added yet. When a health foreground service is introduced, it must use `foregroundServiceType="health"`, not `dataSync`.
 
+## WorkManager device verification (Story 2.4)
+
+Automated tests (`test/core/services/workmanager_callback_test.dart`) prove the callback bootstrap writes a bucket through an isolate-local DB connection that a separate UI connection can read. End-to-end confirmation still requires a **physical Android device** with a step counter (emulators often report `StepCount not available`).
+
+### Physical-device spike checklist (AC #1)
+
+1. Install a debug build: `flutter build apk --debug` then `adb install -r build/app/outputs/flutter-apk/app-debug.apk`.
+2. Grant permissions: `adb shell pm grant com.astraapp android.permission.ACTIVITY_RECOGNITION` (and `POST_NOTIFICATIONS` on Android 13+).
+3. Complete onboarding in the app; note baseline via `adb exec-out run-as com.astraapp cat databases/astra_app.db` (+ `-wal`/`-shm` if needed) or query on-device sqlite3.
+4. Walk a few dozen steps (or move with the phone).
+5. Send the app to background (`adb shell input keyevent KEYCODE_HOME`) or force-stop after first launch so WorkManager is registered.
+6. Optional — force the periodic job before the 15-minute window (Android 14+ namespace required):
+
+   ```bash
+   adb shell cmd jobscheduler run -f -u 0 -n androidx.work.systemjobscheduler com.astraapp 2
+   ```
+
+   WorkManager may still defer execution if the task is ahead of its minimum interval; waiting 15 minutes or reopening the app (foreground backfill) are valid fallbacks.
+
+7. Reopen the app. Expect `getLastIngestionUtc()` / step rows to advance vs baseline.
+8. Record device model, Android version, and pass/fail in the story Dev Agent Record.
+
+**AC #2 (24 h without opening the app)** is a beta acceptance test (SM-2), not automatable in CI.
+
+### Emulator attempt (2026-06-02)
+
+| Item | Result |
+|------|--------|
+| Device | `sdk_gphone16k_x86_64`, Android 17 (API 37) |
+| APK install | PASS |
+| WorkManager job registered | PASS (`androidx.work.systemjobscheduler` job id `2`) |
+| Forced jobscheduler run | PARTIAL — WM accepted force but rescheduled (`executed before schedule`) |
+| Step bucket written | FAIL — emulator pedometer: `StepCount not available` |
+| Foreground backfill on launch | Ran; same pedometer error, 0 step rows in DB |
+
+Physical-device confirmation remains the reference gate before beta.
+
 ## Bundled fonts (offline)
 
 | Family | File | License | Weights (via variable font) | Used for |
