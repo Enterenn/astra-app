@@ -7,9 +7,11 @@ class MainActivity : FlutterActivity() {
     override fun configureFlutterEngine(flutterEngine: FlutterEngine) {
         super.configureFlutterEngine(flutterEngine)
         HealthForegroundChannel.attach(flutterEngine, this)
+        BackgroundHealthCapabilityChannel.attach(flutterEngine, this)
     }
 
     override fun cleanUpFlutterEngine(flutterEngine: FlutterEngine) {
+        BackgroundHealthCapabilityChannel.detach()
         HealthForegroundChannel.detach()
         super.cleanUpFlutterEngine(flutterEngine)
     }
