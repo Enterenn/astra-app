@@ -57,7 +57,7 @@ So that I have a clean, runnable mobile app foundation aligned with ASTRA archit
 - [x] [Review][Patch] **Story completion metadata incomplete** [1-1-flutter-project-initialization.md] — status, checkboxes, Dev Agent Record, and File List updated.
 
 - [x] [Review][Defer] **Plugin manifest permissions not wired** [android/app/src/main/AndroidManifest.xml] — deferred, pre-existing; workmanager/pedometer/notifications wiring deferred to Epic 2 per story scope.
-- [x] [Review][Defer] **Legacy Kotlin Gradle Plugin warnings** [android/gradle.properties] — deferred, pre-existing; `builtInKotlin=false` / `kotlin.incremental=false` tracked for Epic 5 Story 5.2.
+- [x] [Review][Defer] **Legacy Kotlin Gradle Plugin warnings** [android/gradle.properties] — deferred, pre-existing; `builtInKotlin=false` / `kotlin.incremental=false` tracked for Epic 6 Story 6.2.
 
 ## Dev Notes
 
@@ -73,7 +73,7 @@ So that I have a clean, runnable mobile app foundation aligned with ASTRA archit
 - `lib/core/`, `lib/data/`, `lib/presentation/` folder structure → Story 1.2+
 - Design tokens, themes, fonts → Story 1.2
 - `AppDependencies`, Cubits, repositories → Epic 2+
-- Release manifest INTERNET removal → Epic 5 (Story 5.2)
+- Release manifest INTERNET removal → Epic 6 (Story 6.2)
 - `docs/DEPENDENCIES.md` full audit → when packages are actually used (Epic 2+); note declared deps only if file exists
 
 Do not over-implement. Story 1.1 ends with a **runnable empty app** + **declared deps**, not ASTRA features.
@@ -272,8 +272,8 @@ Composer (code review workflow, 2026-05-25)
 - `android/**` (new)
 - `ios/**` (new)
 - `_bmad-output/implementation-artifacts/stories/1-1-flutter-project-initialization.md` (new, updated)
-- `_bmad-output/planning-artifacts/architecture.md` (Epic 5 KGP note)
-- `_bmad-output/planning-artifacts/epics.md` (Epic 5 KGP note)
+- `_bmad-output/planning-artifacts/architecture.md` (Epic 6 KGP note)
+- `_bmad-output/planning-artifacts/epics.md` (Epic 6 KGP note)
 
 ## Technical Requirements
 
@@ -328,7 +328,7 @@ Composer (code review workflow, 2026-05-25)
 - **`flutter create --empty`**: minimal app, no counter demo — correct for ASTRA
 - **SwiftPM default on iOS** (3.44+): CLI auto-migrates Xcode project; no manual CocoaPods setup required for new projects
 - **APK size**: empty Flutter 3.38+ APKs are larger than pre-3.38 — expected, not a 1.1 defect (NFR-2 addressed in later optimization stories)
-- **KGP / Built-in Kotlin (deferred):** First build with locked deps may warn that `pedometer`, `share_plus`, `workmanager_android` apply legacy Kotlin Gradle Plugin. Non-blocking in 1.1 (`android.builtInKotlin=false`). Tracked for **Epic 5 Story 5.2** — see `epics.md` and `architecture.md` gap notes.
+- **KGP / Built-in Kotlin (deferred):** First build with locked deps may warn that `pedometer`, `share_plus`, `workmanager_android` apply legacy Kotlin Gradle Plugin. Non-blocking in 1.1 (`android.builtInKotlin=false`). Tracked for **Epic 6 Story 6.2** — see `epics.md` and `architecture.md` gap notes.
 - Verify local Flutter version before init; run `flutter upgrade` if below 3.44
 
 ## Project Context Reference

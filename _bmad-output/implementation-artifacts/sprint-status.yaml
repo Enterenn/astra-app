@@ -1,5 +1,5 @@
 # generated: 2026-05-25
-# last_updated: 2026-06-02 (story 2-7 done, epic 2 complete)
+# last_updated: 2026-06-02 (epic reorg: epic 5 = design polish, epic 6 = OSS beta)
 # project: astra-app
 # project_key: NOKEY
 # tracking_system: file-system
@@ -39,12 +39,13 @@
 #   epic-2: Passive Step Tracking & Today Dashboard
 #   epic-3: History & Trends
 #   epic-4: Data Sovereignty & Lifecycle (My Data)
-#   epic-5: OSS Credibility & Beta Readiness
+#   epic-5: Design Polish & Visual Cohesion
+#   epic-6: OSS Credibility & Beta Readiness
 #
 # NAVIGATION: _bmad-output/README.md
 
 generated: 2026-05-25
-last_updated: 2026-06-02 (story 2-7 done, epic 2 complete)
+last_updated: 2026-06-02 (epic reorg: epic 5 = design polish, epic 6 = OSS beta)
 project: astra-app
 project_key: NOKEY
 tracking_system: file-system
@@ -87,7 +88,13 @@ development_status:
   epic-4-retrospective: optional
 
   epic-5: backlog
-  5-1-open-source-license-and-documentation-bundle: backlog
-  5-2-release-manifest-hardening-and-privacy-audit: backlog
-  5-3-beta-acceptance-checklist: backlog
+  5-1-accent-color-and-contrast-token-revision: backlog
+  5-2-navigation-bar-and-spacing-polish: backlog
+  5-3-cross-screen-visual-cohesion-audit: backlog
   epic-5-retrospective: optional
+
+  epic-6: backlog
+  6-1-open-source-license-and-documentation-bundle: backlog
+  6-2-release-manifest-hardening-and-privacy-audit: backlog
+  6-3-beta-acceptance-checklist: backlog
+  epic-6-retrospective: optional

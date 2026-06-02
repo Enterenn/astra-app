@@ -20,6 +20,8 @@ This document provides the complete epic and story breakdown for astra-app, deco
 
 **Scope amendment (user-confirmed, 2026-05-25):** System / light / dark theme with user choice on My Data. **System is first-launch default** (follows OS). PRD FR-31 and UX spec §1.1–1.2 aligned.
 
+**Scope amendment (user-confirmed, 2026-06-02):** **Epic 5** is now the **design polish pass** (colors, spacing, visual cohesion). Former Epic 5 (OSS Credibility & Beta Readiness) moves to **Epic 6**. Functional theme selector remains Epic 4 Story 4.7; contrast/visual verification moves to Epic 5.
+
 ## Development Workflow (all stories)
 
 Every sub-task follows **review before commit**. See [`docs/project-context.md`](../../docs/project-context.md).
@@ -213,7 +215,7 @@ FR14: Epic 2 — Today goal ring dashboard
 FR15: Epic 2 — Once-per-day goal celebration animation
 FR16: Epic 3 — History bar charts (7d/30d)
 FR17: Epic 3 — Weekly trend indicator
-FR18: Epic 5 — No network dependency + release manifest verification
+FR18: Epic 6 — No network dependency + release manifest verification
 FR19: Epic 4 — CSV export with OW-aligned columns
 FR20: Epic 4 — Full local health-data purge
 FR21: Epic 4 — Export-before-purge prompt
@@ -221,10 +223,10 @@ FR22: Epic 1 — Trust-first onboarding
 FR23: Epic 1 — Goal setup onboarding (+ editable on My Data in Epic 4)
 FR24: Epic 1 — Notification opt-in during onboarding
 FR25: Epic 2 — Daily goal local notification
-FR26: Epic 5 — Apache 2.0 open source
-FR27: Epic 5 — Project documentation bundle
+FR26: Epic 6 — Apache 2.0 open source
+FR27: Epic 6 — Project documentation bundle
 FR28: Epic 3 — Dev data inject & lifecycle simulator
-FR29: Epic 5 — Beta acceptance checklist
+FR29: Epic 6 — Beta acceptance checklist
 FR30: Epic 4 — CSV import with idempotent reconciliation
 FR31: Epic 4 — Theme selection (System / Light / Dark)
 
@@ -246,7 +248,11 @@ The user reviews 7-day and 30-day step trends with fast charts and a simple week
 The user controls their health data — footprint, CSV export/import, purge, background status, goal editing, and theme preference. Primary product differentiator.
 **FRs covered:** FR5, FR11, FR12, FR13, FR19, FR20, FR21, FR23, FR30, FR31
 
-### Epic 5: OSS Credibility & Beta Readiness
+### Epic 5: Design Polish & Visual Cohesion
+After functional epics ship, the app receives a dedicated visual pass — accent/contrast tokens, navigation spacing, and cross-screen cohesion verified on device before beta.
+**NFRs covered:** NFR5 (WCAG AA aspirational contrast in both themes)
+
+### Epic 6: OSS Credibility & Beta Readiness
 The repo is beta-ready and open-source credible — documentation, privacy audit, release hardening, and acceptance checklist.
 **FRs covered:** FR18, FR26, FR27, FR29
 
@@ -827,17 +833,100 @@ So that the app looks the way I prefer regardless of OS settings.
 **Then** section order is: Background → Footprint → Goal → Appearance → Data actions (UX-DR11)
 **And** copy/tone follows UX §4.6 guardrails (UX-DR20)
 
-**Given** light and dark effective themes
-**When** beta visual check runs
-**Then** contrast pairs meet baseline per UX §4.1 (NFR5, UX-DR21)
+**Given** theme selector is functional
+**When** Epic 5 design polish runs
+**Then** contrast and visual cohesion are verified per UX §4.1 and V-1–V-13 (NFR5, UX-DR21) — not blocking Story 4.7 delivery
 
 ---
 
-## Epic 5: OSS Credibility & Beta Readiness
+## Epic 5: Design Polish & Visual Cohesion
+
+After Epics 1–4 deliver functional surfaces, a dedicated pass revisits tokens, spacing, and on-device visual quality before OSS beta hardening.
+
+### Story 5.1: Accent Color & Contrast Token Revision
+
+As a **user**,
+I want accent colors readable in both light and dark themes,
+So that the interface stays calm and legible on my phone in any appearance mode.
+
+**Acceptance Criteria:**
+
+**Given** device testing on light theme (user feedback 2026-06-02)
+**When** accent `#EAD55E` is used on light elevated surfaces (ring stroke, active tab, CTA fill)
+**Then** revised tokens improve visibility without breaking dark-mode-first calm tone (UX §1.2, D-1)
+**And** changes are centralized in `AstraColors` / `astra_theme.dart` — no ad-hoc hex in widgets (V-2)
+
+**Given** primary buttons on amber fill
+**When** rendered in light and dark themes
+**Then** label uses `color.text.inverse` with contrast meeting UX §4.1 baseline (D-13, NFR5)
+
+**Given** goal ring, chart bars, and status colors
+**When** viewed on light `bg.base` and dark `bg.base`
+**Then** accent-muted tracks and data semantics remain distinguishable (UX-DR21)
+
+**Given** token changes
+**When** `flutter analyze` and existing widget tests run
+**Then** no regressions; update UX spec token table if hex values change
+
+---
+
+### Story 5.2: Navigation Bar & Spacing Polish
+
+As a **user**,
+I want comfortable spacing in the bottom navigation and consistent screen padding,
+So that labels and icons are not cramped against screen edges.
+
+**Acceptance Criteria:**
+
+**Given** `AppScaffold` bottom `NavigationBar` (user feedback 2026-06-02)
+**When** viewed on a physical device
+**Then** icon and label vertical padding meet minimum touch comfort — not flush to bar top/bottom (UX-DR3, V-4)
+
+**Given** all three tabs (Today, History, My Data)
+**When** compared side by side
+**Then** bar height, indicator, and inactive/active states are visually consistent (V-4)
+
+**Given** screen body layouts from Epics 1–4
+**When** spacing audit runs against `astra_spacing.dart` 4px grid
+**Then** horizontal padding ≥16dp; interactive targets ≥48dp where applicable (UX-DR3)
+
+**Given** reduce-motion enabled
+**When** navigation transitions run
+**Then** existing instant-swap behavior preserved (UX-DR18)
+
+---
+
+### Story 5.3: Cross-Screen Visual Cohesion Audit
+
+As a **builder**,
+I want every surface verified against the UX visual checklist on device,
+So that the app feels cohesive before OSS beta release.
+
+**Acceptance Criteria:**
+
+**Given** UX spec §4.7 checklist V-1–V-13
+**When** executed on release or profile build on physical device
+**Then** each item passes or has documented exception with fix plan (UX-DR21)
+
+**Given** Today, History, My Data, and onboarding
+**When** reviewed in system, light, and dark effective themes
+**Then** typography uses bundled Figtree + Darker Grotesque only (V-3); no layout jumps on Today sync (V-5)
+
+**Given** screenshot / README GIF readiness (SM-7 prep)
+**When** Today and My Data are framed
+**Then** hero layouts are presentation-ready (V-13)
+
+**Given** findings from Epics 1–4 device testing
+**When** logged in story completion notes
+**Then** residual polish items are either fixed in this story or explicitly deferred with rationale
+
+---
+
+## Epic 6: OSS Credibility & Beta Readiness
 
 The repo is beta-ready and open-source credible — documentation, privacy audit, release hardening, and acceptance checklist.
 
-### Story 5.1: Open Source License and Documentation Bundle
+### Story 6.1: Open Source License and Documentation Bundle
 
 As a **contributor**,
 I want clear OSS licensing and technical documentation,
@@ -860,7 +949,7 @@ So that I can understand, audit, and extend the project confidently.
 
 ---
 
-### Story 5.2: Release Manifest Hardening and Privacy Audit
+### Story 6.2: Release Manifest Hardening and Privacy Audit
 
 As a **privacy pragmatist**,
 I want the release build provably free of network access in the health pipeline,
@@ -888,14 +977,14 @@ So that I can verify "proof over promises" on a sideload APK.
 **Given** Flutter 3.44+ Android Gradle Plugin 9.x with legacy Kotlin Gradle Plugin (KGP) compatibility flags
 **When** release APK is built after plugin ecosystem migration
 **Then** `android/gradle.properties` no longer requires `android.builtInKotlin=false` solely to support unmigrated plugins
-**And** `flutter build apk --release` succeeds without KGP incompatibility warnings for: `pedometer`, `share_plus`, `workmanager_android` (and any other Phase 0 plugins added by Epic 2–4)
+**And** `flutter build apk --release` succeeds without KGP incompatibility warnings for: `pedometer`, `share_plus`, `workmanager_android` (and any other Phase 0 plugins added by Epic 2–5)
 **And** migration follows [Flutter Built-in Kotlin for app developers](https://docs.flutter.dev/release/breaking-changes/migrate-to-built-in-kotlin/for-app-developers)
 
-**Implementation note (Story 1.1 discovery, 2026-05-25):** Phase 0 scaffold builds with `android.builtInKotlin=false` and `android.newDsl=false` (Flutter 3.44 defaults). First `flutter build apk --debug` after locked deps surfaced KGP warnings for the plugins above. This is non-blocking for Epic 1–4; resolve before beta release hardening in this story.
+**Implementation note (Story 1.1 discovery, 2026-05-25):** Phase 0 scaffold builds with `android.builtInKotlin=false` and `android.newDsl=false` (Flutter 3.44 defaults). First `flutter build apk --debug` after locked deps surfaced KGP warnings for the plugins above. This is non-blocking for Epic 1–5; resolve before beta release hardening in this story.
 
 ---
 
-### Story 5.3: Beta Acceptance Checklist
+### Story 6.3: Beta Acceptance Checklist
 
 As a **builder**,
 I want a comprehensive beta checklist tracing to FRs and visual polish items,
@@ -905,7 +994,7 @@ So that Phase 0 exit criteria are objectively verifiable before sharing the OSS 
 
 **Given** `docs/BETA_CHECKLIST.md`
 **When** reviewed
-**Then** items cover background persistence, notifications, footprint, export, import, purge, airplane mode, counter-reset unit test, CSV round-trip, and visual cohesion V-1–V-13 (FR29, UX-DR21)
+**Then** items cover background persistence, notifications, footprint, export, import, purge, airplane mode, counter-reset unit test, CSV round-trip, and reference Epic 5 visual cohesion sign-off (FR29, UX-DR21)
 
 **Given** each checklist item
 **When** traced

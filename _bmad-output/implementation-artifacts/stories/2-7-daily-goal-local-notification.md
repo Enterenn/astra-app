@@ -116,7 +116,7 @@ So that I can celebrate offline without notification spam.
 - Re-request notification permission from My Data → not Phase 0
 - Scheduled/reminder notifications, streak nudges, coach copy → never
 - iOS BGAppRefresh goal notification parity → best-effort via foreground backfill + WM N/A on iOS; document honest limitation
-- Epic 5 `flutter_local_notifications` FCM audit → **Story 5.2** (confirm local-only)
+- Epic 6 `flutter_local_notifications` FCM audit → **Story 6.2** (confirm local-only)
 
 Do not over-implement. This story is **one-shot goal notification + dedup** — not a general notification framework.
 

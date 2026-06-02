@@ -886,7 +886,7 @@ astra-app/                              # Git repo root = Flutter app root (D-18
 - WorkManager + sqflite isolate behavior on target OEM devices — Sprint 0 spike
 - iOS BGAppRefresh reliability — Sprint 1 validation
 - CI/CD pipeline deferred post-beta
-- **Android Built-in Kotlin / KGP migration (Epic 5 Story 5.2):** Flutter 3.44 + AGP 9.x temporarily allow plugins that apply Kotlin Gradle Plugin (KGP) via `android.builtInKotlin=false` in `gradle.properties`. Story 1.1 build surfaced warnings for `pedometer`, `share_plus`, `workmanager_android`. Before beta release, verify plugin changelogs, upgrade where Built-in Kotlin is supported, remove legacy flags, and confirm `flutter build apk --release` is clean. Ref: [migrate-to-built-in-kotlin](https://docs.flutter.dev/release/breaking-changes/migrate-to-built-in-kotlin/for-app-developers).
+- **Android Built-in Kotlin / KGP migration (Epic 6 Story 6.2):** Flutter 3.44 + AGP 9.x temporarily allow plugins that apply Kotlin Gradle Plugin (KGP) via `android.builtInKotlin=false` in `gradle.properties`. Story 1.1 build surfaced warnings for `pedometer`, `share_plus`, `workmanager_android`. Before beta release, verify plugin changelogs, upgrade where Built-in Kotlin is supported, remove legacy flags, and confirm `flutter build apk --release` is clean. Ref: [migrate-to-built-in-kotlin](https://docs.flutter.dev/release/breaking-changes/migrate-to-built-in-kotlin/for-app-developers).
 
 **Critical:** None — pending spike validations are normal pre-beta gates, not architecture gaps.
 

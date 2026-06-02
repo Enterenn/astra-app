@@ -415,7 +415,7 @@ From **Story 1.1** (done):
 - Review-before-commit gate: **4 sub-tasks** for 1.2 (A–D), each needs Baptiste OK before commit
 - Story 1.1 explicitly deferred design tokens → this story; do not recreate scaffold
 - `flutter_lints ^6.0.0` — keep analyzer clean
-- Android KGP warnings deferred to Epic 5 Story 5.2 — ignore for 1.2
+- Android KGP warnings deferred to Epic 6 Story 6.2 — ignore for 1.2
 - Plugin manifest permissions deferred to Epic 2 — no AndroidManifest changes in 1.2
 - Default widget test exists for Hello World — **must update** for new app structure
 
