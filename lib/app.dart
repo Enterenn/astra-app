@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 
@@ -21,13 +23,33 @@ class AstraApp extends StatefulWidget {
   State<AstraApp> createState() => _AstraAppState();
 }
 
-class _AstraAppState extends State<AstraApp> {
+class _AstraAppState extends State<AstraApp> with WidgetsBindingObserver {
   late bool _showMainShell;
 
   @override
   void initState() {
     super.initState();
     _showMainShell = widget.deps.initialOnboardingComplete;
+    WidgetsBinding.instance.addObserver(this);
+    _collectForegroundBackfill();
+  }
+
+  @override
+  void dispose() {
+    WidgetsBinding.instance.removeObserver(this);
+    super.dispose();
+  }
+
+  @override
+  void didChangeAppLifecycleState(AppLifecycleState state) {
+    if (state == AppLifecycleState.resumed) {
+      _collectForegroundBackfill();
+    }
+  }
+
+  void _collectForegroundBackfill() {
+    // iOS relies on this foreground backfill model; Android uses it as a WM fallback.
+    unawaited(widget.deps.backgroundCollector.collectOnce());
   }
 
   void _onOnboardingComplete() {

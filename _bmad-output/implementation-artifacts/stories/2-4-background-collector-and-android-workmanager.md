@@ -77,13 +77,13 @@ So that I get value without opening the app constantly.
   - [x] Document manifest changes in review brief; update `docs/DEPENDENCIES.md` network/manifest notes if new permissions listed.
   - [x] **Stop → review brief → wait for Baptiste OK → commit**
 
-- [ ] **Sub-task F — Foreground backfill + lifecycle wiring** (AC: #2, #5)
-  - [ ] Wire `BackgroundCollector` in `AppDependencies.create()` / `.test()`; expose getter.
-  - [ ] In `main.dart` or `AstraApp`: after deps ready, call `backgroundCollector.collectOnce()` once (foreground backfill on cold start).
-  - [ ] On `AppLifecycleState.resumed`: call `collectOnce()` again (mandatory fallback if WM isolate failed — architecture D-04).
-  - [ ] **iOS:** skip WorkManager init; rely on cold start + resume backfill only; add code comment referencing FR4 iOS model.
-  - [ ] **Android:** init WorkManager + foreground backfill (both paths active).
-  - [ ] Extend `test/core/di/app_dependencies_test.dart` for `backgroundCollector` presence.
+- [x] **Sub-task F — Foreground backfill + lifecycle wiring** (AC: #2, #5)
+  - [x] Wire `BackgroundCollector` in `AppDependencies.create()` / `.test()`; expose getter.
+  - [x] In `main.dart` or `AstraApp`: after deps ready, call `backgroundCollector.collectOnce()` once (foreground backfill on cold start).
+  - [x] On `AppLifecycleState.resumed`: call `collectOnce()` again (mandatory fallback if WM isolate failed — architecture D-04).
+  - [x] **iOS:** skip WorkManager init; rely on cold start + resume backfill only; add code comment referencing FR4 iOS model.
+  - [x] **Android:** init WorkManager + foreground backfill (both paths active).
+  - [x] Extend `test/core/di/app_dependencies_test.dart` for `backgroundCollector` presence.
   - [ ] **Stop → review brief → wait for Baptiste OK → commit**
 
 - [ ] **Sub-task G — Physical device verification + docs** (AC: #1, #2)
@@ -406,6 +406,12 @@ GPT-5.5
 - 2026-06-02: GREEN `flutter test test/android/android_manifest_test.dart` passed after adding Android health FGS permissions and manifest guard tests.
 - 2026-06-02: REGRESSION `flutter test` passed, 103 tests.
 - 2026-06-02: QUALITY `flutter analyze` passed with no issues.
+- 2026-06-02: BLOCKER `flutter test` crashed with `PathAccessException` on `build/native_assets/windows/sqlite3.dll` (Accès refusé). Root cause: a concurrent `flutter run` debug session (+ lingering `flutter_tester`) held the host native-asset DLL while `flutter test` tried to replace it. Not a code issue. Resolved by stopping the `flutter run` session before running tests.
+- 2026-06-02: BLOCKER `flutter test test/widget_test.dart` hung indefinitely (idle `flutter_tester`). Root cause: the foreground-backfill tests ran `BackgroundCollector.collectOnce()` (fire-and-forget in `initState`) and `StepRepository.getLastIngestionUtc()` outside `tester.runAsync()`, so real SQLite I/O never completed in the fake-async zone. Fixed by wrapping `pumpWidget` + collection + DB reads in `tester.runAsync()` with deterministic polling.
+- 2026-06-02: GREEN `flutter test test/widget_test.dart` passed, 7 tests.
+- 2026-06-02: GREEN `flutter test test/core/di/app_dependencies_test.dart` passed.
+- 2026-06-02: REGRESSION `flutter test` passed, 105 tests.
+- 2026-06-02: QUALITY `flutter analyze` passed with no issues.
 
 ### Completion Notes List
 - Sub-task A implementation ready for review: added an isolate-safe database factory wrapper that returns a fresh `Database` connection on every call while reusing `openAstraDatabase()` for WAL, foreign keys, migrations, and `databasePath` test injection.
@@ -421,6 +427,10 @@ GPT-5.5
 - Sub-task E implementation ready for review: added Android `FOREGROUND_SERVICE` and `FOREGROUND_SERVICE_HEALTH` permissions while preserving `ACTIVITY_RECOGNITION` and avoiding `foregroundServiceType="dataSync"`.
 - Verified local `workmanager` and `pedometer` README/manifests: `pedometer` requires `ACTIVITY_RECOGNITION`; WorkManager docs/package manifest did not require app-level `RECEIVE_BOOT_COMPLETED`, so it was not added.
 - Updated `docs/DEPENDENCIES.md` with health pipeline manifest notes and the no-network/no-`dataSync` constraint.
+- Sub-task F implementation ready for review: exposed `BackgroundCollector` through `AppDependencies.create()`/`.test()`, and `AstraApp` now triggers `collectOnce()` on cold start (`initState`) and on every `AppLifecycleState.resumed` via `WidgetsBindingObserver` (D-04 mandatory foreground fallback, FR4 iOS model documented in code).
+- The test factory defaults `ingestionSources` to the no-op `AdpBleSource` so widget tests never start live platform streams; `app_dependencies_test.dart` passes a live source explicitly when needed.
+- Fixed a test-only hang: foreground-backfill widget tests now run all real-async work (widget build, fire-and-forget collection, SQLite reads) inside `tester.runAsync()` with bounded polling instead of asserting DB state from the fake-async zone.
+- The `PathAccessException` blocker was environmental (concurrent `flutter run` locking the Windows native-asset `sqlite3.dll`), not a defect in the app or pipeline.
 
 ### File List
 - `lib/core/database/isolate_database_factory.dart`
@@ -436,6 +446,9 @@ GPT-5.5
 - `android/app/src/main/AndroidManifest.xml`
 - `docs/DEPENDENCIES.md`
 - `test/android/android_manifest_test.dart`
+- `lib/core/di/app_dependencies.dart`
+- `lib/app.dart`
+- `test/widget_test.dart`
 
 ### Change Log
 - 2026-06-02: Implemented Sub-task A isolate-safe database factory and WAL connection test.
@@ -443,6 +456,7 @@ GPT-5.5
 - 2026-06-02: Implemented Sub-task C BackgroundCollector core and service tests.
 - 2026-06-02: Implemented Sub-task D WorkManager callback, Android registration, and tests.
 - 2026-06-02: Implemented Sub-task E Android health FGS manifest permissions and documentation.
+- 2026-06-02: Implemented Sub-task F foreground backfill + lifecycle wiring (DI exposure, cold-start/resume `collectOnce()`), and fixed the widget-test runAsync hang. Full suite green at 105 tests.
 
 ## Story Completion Status
 
