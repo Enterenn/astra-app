@@ -1,5 +1,5 @@
 # generated: 2026-05-25
-# last_updated: 2026-06-02 (story 2-6 done)
+# last_updated: 2026-06-02 (story 2-7 review)
 # project: astra-app
 # project_key: NOKEY
 # tracking_system: file-system
@@ -44,7 +44,7 @@
 # NAVIGATION: _bmad-output/README.md
 
 generated: 2026-05-25
-last_updated: 2026-06-02 (story 2-6 review)
+last_updated: 2026-06-02 (story 2-7 ready-for-dev)
 project: astra-app
 project_key: NOKEY
 tracking_system: file-system
@@ -66,7 +66,7 @@ development_status:
   2-4-background-collector-and-android-workmanager: done
   2-5-today-dashboard-with-goal-ring: done
   2-6-goal-celebration-animation: done
-  2-7-daily-goal-local-notification: backlog
+  2-7-daily-goal-local-notification: review
   epic-2-retrospective: optional
 
   epic-3: backlog
