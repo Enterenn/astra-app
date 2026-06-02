@@ -57,15 +57,15 @@ So that I get value without opening the app constantly.
   - [x] Add `test/core/services/background_collector_test.dart` with fake source + in-memory DB; assert upsert count and `onIngestionComplete` fired when buckets written.
   - [x] **Stop → review brief → wait for Baptiste OK → commit**
 
-- [ ] **Sub-task D — WorkManager callback + registration** (AC: #1, #4)
-  - [ ] Add `lib/core/services/workmanager_callback.dart`:
-    - [ ] Top-level `@pragma('vm:entry-point') void callbackDispatcher()` using **workmanager 0.9+** API: `Workmanager().executeTask((task, inputData) async { … })`.
-    - [ ] Inside task: `WidgetsFlutterBinding.ensureInitialized()` then `DartPluginRegistrant.ensureInitialized()` (required for sqflite/pedometer in background isolate).
-    - [ ] Bootstrap isolate-local deps: `openAstraDatabase()` → `StepRepository` + `StepNormalizer` + sources + `BackgroundCollector` → `collectOnce()`.
-    - [ ] On failure: log via `debugPrint` (no analytics); return `false` so WM can retry; never swallow silently without log.
-  - [ ] Add task name constants e.g. `kStepCollectionTaskName = 'astra_step_collection'`.
-  - [ ] Register in `main.dart` (Android only): `Workmanager().initialize(callbackDispatcher)` then `registerPeriodicTask` with frequency ≥ 15 minutes (Android minimum); use `ExistingPeriodicWorkPolicy.keep` on re-register.
-  - [ ] **Stop → review brief → wait for Baptiste OK → commit**
+- [x] **Sub-task D — WorkManager callback + registration** (AC: #1, #4)
+  - [x] Add `lib/core/services/workmanager_callback.dart`:
+    - [x] Top-level `@pragma('vm:entry-point') void callbackDispatcher()` using **workmanager 0.9+** API: `Workmanager().executeTask((task, inputData) async { … })`.
+    - [x] Inside task: `WidgetsFlutterBinding.ensureInitialized()` then `DartPluginRegistrant.ensureInitialized()` (required for sqflite/pedometer in background isolate).
+    - [x] Bootstrap isolate-local deps: `openAstraDatabase()` → `StepRepository` + `StepNormalizer` + sources + `BackgroundCollector` → `collectOnce()`.
+    - [x] On failure: log via `debugPrint` (no analytics); return `false` so WM can retry; never swallow silently without log.
+  - [x] Add task name constants e.g. `kStepCollectionTaskName = 'astra_step_collection'`.
+  - [x] Register in `main.dart` (Android only): `Workmanager().initialize(callbackDispatcher)` then `registerPeriodicTask` with frequency ≥ 15 minutes (Android minimum); use `ExistingPeriodicWorkPolicy.keep` on re-register.
+  - [x] **Stop → review brief → wait for Baptiste OK → commit**
 
 - [ ] **Sub-task E — Android manifest + FGS compliance** (AC: #3)
   - [ ] Update `android/app/src/main/AndroidManifest.xml`:
@@ -398,6 +398,10 @@ GPT-5.5
 - 2026-06-02: GREEN `flutter test test/core/services/background_collector_test.dart` passed after adding the collector.
 - 2026-06-02: REGRESSION `flutter test` passed, 97 tests.
 - 2026-06-02: QUALITY `flutter analyze` passed with no issues.
+- 2026-06-02: RED `flutter test test/core/services/workmanager_callback_test.dart` failed because WorkManager callback/registration files did not exist.
+- 2026-06-02: GREEN `flutter test test/core/services/workmanager_callback_test.dart` passed after adding callback, task constants, and registration helper.
+- 2026-06-02: REGRESSION `flutter test` passed, 101 tests.
+- 2026-06-02: QUALITY `flutter analyze` passed with no issues.
 
 ### Completion Notes List
 - Sub-task A implementation ready for review: added an isolate-safe database factory wrapper that returns a fresh `Database` connection on every call while reusing `openAstraDatabase()` for WAL, foreign keys, migrations, and `databasePath` test injection.
@@ -408,6 +412,8 @@ GPT-5.5
 - Sub-task C implementation ready for review: added `BackgroundCollector.collectOnce()` to orchestrate bounded source reads, normalization, repository upserts, and the UI-isolate completion callback.
 - Added collector tests for successful upsert/callback, empty sources, source errors, and live streams that emit no events.
 - Verified `upsertIngestionBucket()` is only called by `BackgroundCollector` in `lib/` production code.
+- Sub-task D implementation ready for review: added WorkManager 0.9 callback dispatcher, isolate-local task bootstrap, task constants, and Android-only periodic registration from `main.dart`.
+- Added WorkManager tests proving a background task writes via an isolate-local DB connection readable by a separate UI connection, returns `false` on bootstrap failure, skips non-Android registration, and uses `ExistingPeriodicWorkPolicy.keep`.
 
 ### File List
 - `lib/core/database/isolate_database_factory.dart`
@@ -416,11 +422,16 @@ GPT-5.5
 - `test/data/repositories/step_repository_last_ingestion_test.dart`
 - `lib/core/services/background_collector.dart`
 - `test/core/services/background_collector_test.dart`
+- `lib/core/services/workmanager_callback.dart`
+- `lib/core/services/workmanager_tasks.dart`
+- `lib/main.dart`
+- `test/core/services/workmanager_callback_test.dart`
 
 ### Change Log
 - 2026-06-02: Implemented Sub-task A isolate-safe database factory and WAL connection test.
 - 2026-06-02: Implemented Sub-task B last step ingestion query and repository tests.
 - 2026-06-02: Implemented Sub-task C BackgroundCollector core and service tests.
+- 2026-06-02: Implemented Sub-task D WorkManager callback, Android registration, and tests.
 
 ## Story Completion Status
 
