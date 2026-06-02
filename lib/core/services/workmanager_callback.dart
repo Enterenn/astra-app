@@ -22,6 +22,7 @@ abstract class StepCollectionWorkmanagerClient {
     String taskName, {
     required Duration frequency,
     required ExistingPeriodicWorkPolicy existingWorkPolicy,
+    Map<String, dynamic>? inputData,
   });
 }
 
@@ -43,12 +44,14 @@ class PluginStepCollectionWorkmanagerClient
     String taskName, {
     required Duration frequency,
     required ExistingPeriodicWorkPolicy existingWorkPolicy,
+    Map<String, dynamic>? inputData,
   }) {
     return _workmanager.registerPeriodicTask(
       uniqueName,
       taskName,
       frequency: frequency,
       existingWorkPolicy: existingWorkPolicy,
+      inputData: inputData,
     );
   }
 }
@@ -105,8 +108,13 @@ Future<bool> runStepCollectionWorkmanagerTask({
   }
 }
 
+/// Registers Android periodic step collection (D-04).
+///
+/// WorkManager is the reconciliation fallback when FGS cannot run — not a
+/// realtime 5-minute guarantee. Foreground backfill on app open remains mandatory.
 Future<void> registerStepCollectionWorkmanager({
   bool? isAndroid,
+  String? databasePath,
   StepCollectionWorkmanagerClient? client,
 }) async {
   if (!(isAndroid ?? Platform.isAndroid)) {
@@ -115,10 +123,14 @@ Future<void> registerStepCollectionWorkmanager({
 
   final workmanager = client ?? PluginStepCollectionWorkmanagerClient();
   await workmanager.initialize(callbackDispatcher);
+  final inputData = databasePath == null
+      ? null
+      : <String, dynamic>{'databasePath': databasePath};
   await workmanager.registerPeriodicTask(
     kStepCollectionUniqueName,
     kStepCollectionTaskName,
     frequency: const Duration(minutes: 15),
     existingWorkPolicy: ExistingPeriodicWorkPolicy.keep,
+    inputData: inputData,
   );
 }

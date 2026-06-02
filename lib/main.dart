@@ -1,6 +1,8 @@
 import 'dart:async';
 
 import 'package:flutter/material.dart';
+import 'package:path/path.dart' show join;
+import 'package:sqflite/sqflite.dart';
 
 import 'app.dart';
 import 'core/di/app_dependencies.dart';
@@ -21,6 +23,8 @@ Future<void> main() async {
   final deps = await AppDependencies.create(
     notificationService: notificationService,
   );
-  await registerStepCollectionWorkmanager();
+  // WM registers regardless of FGS — reconciliation fallback (D-04), not realtime cadence.
+  final databasePath = join(await getDatabasesPath(), 'astra_app.db');
+  await registerStepCollectionWorkmanager(databasePath: databasePath);
   runApp(AstraApp(deps: deps));
 }

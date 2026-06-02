@@ -138,6 +138,31 @@ void main() {
       );
     });
 
+    test(
+      'FGS-unavailable bootstrap uses phone provider only without monitor drain',
+      () async {
+        final success = await runStepCollectionWorkmanagerTask(
+          databasePath: databasePath,
+          notificationService: _testNotificationService(),
+          notificationPermissionGranted: () async => false,
+          sources: [
+            _FakeStepSource([
+              StepReading(
+                cumulativeSteps: 5,
+                observedAtUtc: DateTime.utc(2026, 6, 2, 8),
+              ),
+            ]),
+          ],
+          clock: FakeTimeProvider(
+            fixedNowUtc: DateTime.utc(2026, 6, 2, 8),
+            zoneOffset: const Duration(hours: 2),
+          ),
+        );
+
+        expect(success, isTrue);
+      },
+    );
+
     test('returns false when collection fails before opening the database', () async {
       final success = await runStepCollectionWorkmanagerTask(
         openDatabase: ({String? databasePath}) async {
@@ -172,6 +197,36 @@ void main() {
       expect(client.frequency, const Duration(minutes: 15));
       expect(client.existingWorkPolicy, ExistingPeriodicWorkPolicy.keep);
     });
+
+    test(
+      'registers with databasePath inputData when FGS would be unavailable',
+      () async {
+        final client = _FakeWorkmanagerClient();
+
+        await registerStepCollectionWorkmanager(
+          isAndroid: true,
+          databasePath: '/data/user/0/com.astraapp/databases/astra_app.db',
+          client: client,
+        );
+
+        expect(client.registered, isTrue);
+        expect(
+          client.inputData,
+          {'databasePath': '/data/user/0/com.astraapp/databases/astra_app.db'},
+        );
+      },
+    );
+
+    test(
+      'still registers on Android when activity permission denied (FGS skipped)',
+      () async {
+        final client = _FakeWorkmanagerClient();
+
+        await registerStepCollectionWorkmanager(isAndroid: true, client: client);
+
+        expect(client.registered, isTrue);
+      },
+    );
   });
 }
 
@@ -212,17 +267,21 @@ class _FakeWorkmanagerClient implements StepCollectionWorkmanagerClient {
     this.callbackDispatcher = callbackDispatcher;
   }
 
+  Map<String, dynamic>? inputData;
+
   @override
   Future<void> registerPeriodicTask(
     String uniqueName,
     String taskName, {
     required Duration frequency,
     required ExistingPeriodicWorkPolicy existingWorkPolicy,
+    Map<String, dynamic>? inputData,
   }) async {
     registered = true;
     this.uniqueName = uniqueName;
     this.taskName = taskName;
     this.frequency = frequency;
     this.existingWorkPolicy = existingWorkPolicy;
+    this.inputData = inputData;
   }
 }
