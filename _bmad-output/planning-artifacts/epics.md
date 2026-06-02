@@ -249,7 +249,7 @@ The user controls their health data — footprint, CSV export/import, purge, bac
 **FRs covered:** FR5, FR11, FR12, FR13, FR19, FR20, FR21, FR23, FR30, FR31
 
 ### Epic 5: Design Polish & Visual Cohesion
-After functional epics ship, the app receives a dedicated visual pass — accent/contrast tokens, navigation spacing, and cross-screen cohesion verified on device before beta.
+After functional epics ship, the app receives a dedicated visual pass — accent/contrast tokens, navigation spacing, and cross-screen cohesion verified on device before beta. Includes early Android build-hygiene (Built-in Kotlin / plugin KGP migration) so Gradle debt does not accumulate while UI polish runs.
 **NFRs covered:** NFR5 (WCAG AA aspirational contrast in both themes)
 
 ### Epic 6: OSS Credibility & Beta Readiness
@@ -936,7 +936,46 @@ So that the app looks the way I prefer regardless of OS settings.
 
 ## Epic 5: Design Polish & Visual Cohesion
 
-After Epics 1–4 deliver functional surfaces, a dedicated pass revisits tokens, spacing, and on-device visual quality before OSS beta hardening.
+After Epics 1–4 deliver functional surfaces, a dedicated pass revisits tokens, spacing, on-device visual quality, and Android build plugin hygiene before OSS beta hardening.
+
+**Execution order (user-confirmed 2026-06-02):** Story **5.5** (Built-in Kotlin / KGP — build hygiene) **first**, then **5.1–5.4** (visual polish). Do not accumulate Gradle debt before the UI pass.
+
+### Story 5.5: Built-in Kotlin Plugin Migration (KGP)
+
+As a **builder**,
+I want Phase 0 Android plugins migrated off legacy Kotlin Gradle Plugin (KGP) application,
+So that `flutter build` stays compatible with Flutter Built-in Kotlin and we do not accumulate Gradle debt from the start of the project.
+
+**Acceptance Criteria:**
+
+**Given** `flutter run` or `flutter build apk` on Android with current locked deps
+**When** the build completes after this story
+**Then** Flutter emits **no** warning that `pedometer`, `share_plus`, or `workmanager_android` apply KGP (field observation 2026-06-02)
+**And** any other Phase 0 plugin added in Epics 2–4 is included in the audit
+
+**Given** plugin changelogs and [Flutter Built-in Kotlin migration guide](https://docs.flutter.dev/release/breaking-changes/migrate-to-built-in-kotlin/for-app-developers)
+**When** compatible versions exist on pub.dev
+**Then** `pubspec.yaml` / lockfile are upgraded to those versions
+**And** `docs/DEPENDENCIES.md` records version bumps and rationale
+
+**Given** no compatible plugin release exists
+**When** migration is blocked for a dependency
+**Then** an upstream issue is filed (or existing issue linked) per Flutter guidance
+**And** the story documents the blocker and temporary workaround in `docs/DEPENDENCIES.md` — no silent deferral
+
+**Given** `android/gradle.properties` currently sets `android.builtInKotlin=false` (Story 1.1 scaffold workaround)
+**When** all audited plugins support Built-in Kotlin
+**Then** that flag is removed (or narrowed to a documented exception only)
+**And** `android.newDsl=false` is re-evaluated against Flutter 3.44+ defaults
+
+**Given** migration complete
+**When** `flutter build apk --debug` and `flutter build apk --release` run on CI or local
+**Then** both succeed without KGP incompatibility warnings
+**And** existing Android tests (`test/android/`, manifest tests) still pass
+
+**Implementation note:** Story 6.2 retains release-manifest and privacy audit scope; KGP resolution is **pulled forward** to Epic 5 per user decision (2026-06-02) — do not defer to beta hardening.
+
+---
 
 ### Story 5.1: Accent Color & Contrast Token Revision
 
@@ -1099,10 +1138,10 @@ So that I can verify "proof over promises" on a sideload APK.
 **Given** Flutter 3.44+ Android Gradle Plugin 9.x with legacy Kotlin Gradle Plugin (KGP) compatibility flags
 **When** release APK is built after plugin ecosystem migration
 **Then** `android/gradle.properties` no longer requires `android.builtInKotlin=false` solely to support unmigrated plugins
-**And** `flutter build apk --release` succeeds without KGP incompatibility warnings for: `pedometer`, `share_plus`, `workmanager_android` (and any other Phase 0 plugins added by Epic 2–5)
-**And** migration follows [Flutter Built-in Kotlin for app developers](https://docs.flutter.dev/release/breaking-changes/migrate-to-built-in-kotlin/for-app-developers)
+**And** `flutter build apk --release` succeeds without KGP incompatibility warnings for Phase 0 plugins (verified in **Story 5.5** — not re-done here)
+**And** migration guide reference remains valid: [Flutter Built-in Kotlin for app developers](https://docs.flutter.dev/release/breaking-changes/migrate-to-built-in-kotlin/for-app-developers)
 
-**Implementation note (Story 1.1 discovery, 2026-05-25):** Phase 0 scaffold builds with `android.builtInKotlin=false` and `android.newDsl=false` (Flutter 3.44 defaults). First `flutter build apk --debug` after locked deps surfaced KGP warnings for the plugins above. This is non-blocking for Epic 1–5; resolve before beta release hardening in this story.
+**Implementation note (Story 1.1 discovery, 2026-05-25):** Phase 0 scaffold builds with `android.builtInKotlin=false` and `android.newDsl=false` (Flutter 3.44 defaults). First `flutter build apk --debug` after locked deps surfaced KGP warnings for `pedometer`, `share_plus`, `workmanager_android`. **Resolved in Story 5.5** (Epic 5, user-confirmed 2026-06-02); this story verifies release build still clean at beta gate.
 
 ---
 

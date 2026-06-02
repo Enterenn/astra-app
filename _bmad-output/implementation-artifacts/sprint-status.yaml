@@ -92,6 +92,7 @@ development_status:
   epic-4-retrospective: optional
 
   epic-5: backlog
+  5-5-built-in-kotlin-plugin-migration: backlog  # priority — run before 5.1–5.4
   5-1-accent-color-and-contrast-token-revision: backlog
   5-2-navigation-bar-and-spacing-polish: backlog
   5-3-cross-screen-visual-cohesion-audit: backlog
