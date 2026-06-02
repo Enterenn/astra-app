@@ -215,7 +215,7 @@ void main() {
       await tester.pump();
 
       final initialCalls = (cubit! as _RefreshCountingCubit).refreshCallCount;
-      expect(initialCalls, greaterThanOrEqualTo(1));
+      expect(initialCalls, 0);
 
       await tester.tap(find.byIcon(Icons.bar_chart_outlined));
       await tester.pump();
@@ -236,17 +236,27 @@ void main() {
     testWidgets('stale compact banner navigates to My Data tab', (
       tester,
     ) async {
+      TodayCubit? staleCubit;
+
       await _pumpAppScaffold(
         tester,
         AppScaffold(
           deps: deps,
-          createTodayCubit: (dependencies) => _StaleTodayCubit(
-            stepRepository: dependencies.stepRepository,
-            userPreferences: dependencies.userPreferences,
-            clock: dependencies.timeProvider,
-          ),
+          createTodayCubit: (dependencies) {
+            staleCubit = _StaleTodayCubit(
+              stepRepository: dependencies.stepRepository,
+              userPreferences: dependencies.userPreferences,
+              clock: dependencies.timeProvider,
+            );
+            return staleCubit!;
+          },
         ),
       );
+
+      await tester.runAsync(() async {
+        await staleCubit!.refresh();
+      });
+      await tester.pump();
 
       expect(find.byType(StatusBanner), findsOneWidget);
 

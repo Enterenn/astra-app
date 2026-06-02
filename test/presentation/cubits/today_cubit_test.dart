@@ -458,6 +458,83 @@ void main() {
       await events.close();
     });
 
+    test('refresh does not lower steps after live stream reported higher', () async {
+      final events = StreamController<PhoneStepEvent>.broadcast();
+      final monitor = LiveStepMonitor(
+        stepRepository: stepRepository,
+        baselineRepository: IngestionBaselineRepository(db),
+        clock: clock,
+        stepEventStreamFactory: () => events.stream,
+        emitThrottle: Duration.zero,
+      );
+      final cubit = buildCubit();
+      cubit.attachLiveMonitor(monitor);
+      await monitor.start();
+      await monitor.reconcileFromDatabase();
+
+      events.add(
+        PhoneStepEvent(steps: 100, timeStamp: DateTime.utc(2026, 6, 2, 12)),
+      );
+      events.add(
+        PhoneStepEvent(steps: 1150, timeStamp: DateTime.utc(2026, 6, 2, 12, 1)),
+      );
+      await Future<void>.delayed(const Duration(milliseconds: 10));
+      expect(cubit.state.steps, 1050);
+
+      await cubit.refresh();
+      expect(cubit.state.steps, greaterThanOrEqualTo(1050));
+
+      await cubit.close();
+      await monitor.stop();
+      monitor.dispose();
+      await events.close();
+    });
+
+    test('live stream updates steps while cubit is still loading', () async {
+      final permissionGate = Completer<bool>();
+      final events = StreamController<PhoneStepEvent>.broadcast();
+      final monitor = LiveStepMonitor(
+        stepRepository: stepRepository,
+        baselineRepository: IngestionBaselineRepository(db),
+        clock: clock,
+        stepEventStreamFactory: () => events.stream,
+        emitThrottle: Duration.zero,
+      );
+      final cubit = buildCubit(
+        activityPermissionGranted: () => permissionGate.future,
+      );
+      cubit.attachLiveMonitor(monitor);
+      await monitor.start();
+      await monitor.reconcileFromDatabase();
+
+      events.add(
+        PhoneStepEvent(steps: 10, timeStamp: DateTime.utc(2026, 6, 2, 12)),
+      );
+      events.add(
+        PhoneStepEvent(steps: 500, timeStamp: DateTime.utc(2026, 6, 2, 12, 1)),
+      );
+      await Future<void>.delayed(const Duration(milliseconds: 10));
+
+      expect(cubit.state.steps, 490);
+      expect(cubit.state.status, isNot(TodayStatus.loading));
+
+      permissionGate.complete(true);
+      await cubit.close();
+      await monitor.stop();
+      monitor.dispose();
+      await events.close();
+    });
+
+    test('syncSteps applies monotonic merge from monitor', () async {
+      final cubit = buildCubit();
+      await cubit.refresh();
+      await cubit.syncSteps(1200);
+      expect(cubit.state.steps, 1200);
+      await cubit.syncSteps(1100);
+      expect(cubit.state.steps, 1200);
+      cubit.close();
+    });
+
     test('refreshMetadata updates stale without changing steps', () async {
       await stepRepository.upsertIngestionBucket(
         _bucket(

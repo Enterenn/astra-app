@@ -139,24 +139,25 @@ void main() {
       'MaterialApp themeMode reflects persisted theme on first frame',
       (WidgetTester tester) async {
         await tester.runAsync(() async {
-          await tester.pumpWidget(
-            AstraApp(
-              deps: deps,
-              createTodayCubit: _testTodayCubit,
+        await tester.pumpWidget(
+          AstraApp(
+            deps: deps,
+            createTodayCubit: _testTodayCubit,
             createHistoryCubit: _testHistoryCubit,
-            ),
-          );
-          await tester.pump();
-        });
+            enablePeriodicPersist: false,
+            enableLiveStepPipeline: false,
+          ),
+        );
+        await tester.pump();
 
         final materialApp = tester.widget<MaterialApp>(
           find.byType(MaterialApp),
         );
         expect(materialApp.themeMode, ThemeMode.dark);
 
-        await tester.runAsync(() async {
-          await tester.pumpWidget(const SizedBox.shrink());
-          await tester.pump();
+        await Future<void>.delayed(const Duration(milliseconds: 200));
+        await tester.pumpWidget(const SizedBox.shrink());
+        await tester.pump();
         });
       },
     );
@@ -263,6 +264,8 @@ void main() {
 
       await tester.runAsync(() async {
         await cubitRef!.completeOnboarding(goal: 8000);
+        await tester.pump();
+        await Future<void>.delayed(const Duration(milliseconds: 300));
       });
       await tester.pump();
 
@@ -274,7 +277,6 @@ void main() {
       );
 
       await tester.runAsync(() async {
-        await Future<void>.delayed(const Duration(milliseconds: 100));
         await tester.pumpWidget(const SizedBox.shrink());
         await tester.pump();
       });
@@ -375,6 +377,43 @@ void main() {
           DateTime.utc(2026, 6, 2, 8, 10),
         );
         expect(last, DateTime.utc(2026, 6, 2, 8, 10));
+      });
+    });
+
+    testWidgets('persists when app pauses before resume', (tester) async {
+      await tester.runAsync(() async {
+        await tester.pumpWidget(
+          AstraApp(
+            deps: deps,
+            createTodayCubit: _testTodayCubit,
+            createHistoryCubit: _testHistoryCubit,
+            enablePeriodicPersist: false,
+            enableLiveStepPipeline: false,
+          ),
+        );
+        await tester.pump();
+        await _waitForIngestion(stepRepository, DateTime.utc(2026, 6, 2, 8, 5));
+
+        final source = deps.ingestionSources.single as _MutableStepSource;
+        source.readings = [
+          StepReading(
+            cumulativeSteps: 20,
+            observedAtUtc: DateTime.utc(2026, 6, 2, 8, 5),
+          ),
+          StepReading(
+            cumulativeSteps: 30,
+            observedAtUtc: DateTime.utc(2026, 6, 2, 8, 6),
+          ),
+        ];
+
+        tester.binding.handleAppLifecycleStateChanged(
+          AppLifecycleState.paused,
+        );
+        final lastOnPause = await _waitForIngestion(
+          stepRepository,
+          DateTime.utc(2026, 6, 2, 8, 10),
+        );
+        expect(lastOnPause, DateTime.utc(2026, 6, 2, 8, 10));
       });
     });
 

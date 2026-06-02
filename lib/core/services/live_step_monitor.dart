@@ -22,7 +22,7 @@ class LiveStepMonitor {
     required this.clock,
     this.incrementCalculator = const StepIncrementCalculator(),
     PhoneStepEventStreamFactory? stepEventStreamFactory,
-    this.emitThrottle = const Duration(seconds: 1),
+    this.emitThrottle = const Duration(milliseconds: 500),
     this.maxBufferedReadings = 200,
   }) : _stepEventStreamFactory =
            stepEventStreamFactory ?? PhonePedometerSource.defaultStepEventStreamFactory;
@@ -86,6 +86,15 @@ class LiveStepMonitor {
     _subscription = null;
   }
 
+  /// Re-subscribes to the pedometer stream and re-syncs from SQLite.
+  ///
+  /// Used on app resume when the platform stream may have stalled in background.
+  Future<void> restart() async {
+    await stop();
+    await start();
+    await reconcileFromDatabase();
+  }
+
   /// Pauses pending-delta accumulation and aligns memory baseline with SQLite.
   Future<void> beginReconcile() async {
     _reconciling = true;
@@ -94,6 +103,22 @@ class LiveStepMonitor {
 
   void endReconcile() {
     _reconciling = false;
+    _flushBufferedReadingsToDelta();
+  }
+
+  /// Applies buffered sensor readings to [ _pendingDelta] after a persist cycle.
+  ///
+  /// Readings that arrived after [drainReadingsForCollection] during reconcile
+  /// were buffered but not shown live; this catches the UI up without waiting
+  /// for the next platform event.
+  void _flushBufferedReadingsToDelta() {
+    if (_readingsBuffer.isEmpty) {
+      return;
+    }
+    for (final reading in _readingsBuffer) {
+      _handleLocalDayRollover();
+      _applyReadingToDelta(reading);
+    }
   }
 
   /// Re-reads persisted totals and baseline; never lowers the displayed total.

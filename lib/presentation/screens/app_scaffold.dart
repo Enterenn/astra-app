@@ -81,10 +81,6 @@ class _AppScaffoldState extends State<AppScaffold> {
     if (backfill != null) {
       await backfill;
     }
-    if (!mounted) {
-      return;
-    }
-    await _todayCubit.refresh();
   }
 
   @override

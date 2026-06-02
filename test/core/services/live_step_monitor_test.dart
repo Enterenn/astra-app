@@ -174,5 +174,50 @@ void main() {
       await countingMonitor.stop();
       countingMonitor.dispose();
     });
+
+    test('endReconcile flushes buffered readings to live display', () async {
+      await monitor.start();
+      await monitor.reconcileFromDatabase();
+
+      events.add(
+        PhoneStepEvent(steps: 50, timeStamp: DateTime.utc(2026, 6, 2, 12)),
+      );
+      await Future<void>.delayed(Duration.zero);
+
+      await monitor.beginReconcile();
+      events.add(
+        PhoneStepEvent(steps: 80, timeStamp: DateTime.utc(2026, 6, 2, 12, 1)),
+      );
+      await Future<void>.delayed(Duration.zero);
+      expect(monitor.currentTodaySteps, 0);
+
+      monitor.endReconcile();
+      expect(monitor.currentTodaySteps, 30);
+    });
+
+    test('restart re-subscribes and preserves monotonic display', () async {
+      await monitor.start();
+      events.add(
+        PhoneStepEvent(steps: 50, timeStamp: DateTime.utc(2026, 6, 2, 12)),
+      );
+      events.add(
+        PhoneStepEvent(steps: 80, timeStamp: DateTime.utc(2026, 6, 2, 12, 1)),
+      );
+      await Future<void>.delayed(Duration.zero);
+      expect(monitor.currentTodaySteps, 30);
+
+      await monitor.restart();
+      expect(monitor.isRunning, isTrue);
+      expect(monitor.currentTodaySteps, greaterThanOrEqualTo(30));
+
+      events.add(
+        PhoneStepEvent(steps: 100, timeStamp: DateTime.utc(2026, 6, 2, 12, 2)),
+      );
+      events.add(
+        PhoneStepEvent(steps: 130, timeStamp: DateTime.utc(2026, 6, 2, 12, 3)),
+      );
+      await Future<void>.delayed(Duration.zero);
+      expect(monitor.currentTodaySteps, greaterThan(30));
+    });
   });
 }

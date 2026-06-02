@@ -50,6 +50,7 @@ class _AstraAppState extends State<AstraApp> with WidgetsBindingObserver {
   late final Future<int> _foregroundBackfill;
   Timer? _persistTimer;
   bool _livePipelineStarted = false;
+  Future<void>? _backgroundPersistInFlight;
 
   @override
   void initState() {
@@ -73,9 +74,46 @@ class _AstraAppState extends State<AstraApp> with WidgetsBindingObserver {
 
   @override
   void didChangeAppLifecycleState(AppLifecycleState state) {
-    if (state == AppLifecycleState.resumed) {
+    if (state == AppLifecycleState.paused) {
+      unawaited(_persistOnPause());
+    } else if (state == AppLifecycleState.resumed) {
       unawaited(_collectAndRefreshToday());
     }
+  }
+
+  /// Flushes buffered steps to SQLite when the app leaves the foreground.
+  ///
+  /// Best-effort before a possible process kill — no UI updates (user cannot see
+  /// Today). [AppLifecycleState.resumed] still reconciles and syncs the cubit.
+  Future<void> _persistOnPause() async {
+    if (!_showMainShell) {
+      return;
+    }
+
+    if (_backgroundPersistInFlight != null) {
+      return _backgroundPersistInFlight;
+    }
+
+    _backgroundPersistInFlight = _persistOnPauseImpl();
+    try {
+      await _backgroundPersistInFlight;
+    } finally {
+      _backgroundPersistInFlight = null;
+    }
+  }
+
+  Future<void> _persistOnPauseImpl() async {
+    if (widget.enableLiveStepPipeline) {
+      if (!_livePipelineStarted) {
+        return;
+      }
+      await _runPersistCycle(enableGoalNotification: false);
+      return;
+    }
+
+    await widget.deps.backgroundCollector.collectOnce(
+      enableGoalNotification: false,
+    );
   }
 
   Future<int> _runPersistCycle({required bool enableGoalNotification}) async {
@@ -95,35 +133,86 @@ class _AstraAppState extends State<AstraApp> with WidgetsBindingObserver {
   }
 
   Future<void> _collectAndRefreshToday() async {
+    final pendingPausePersist = _backgroundPersistInFlight;
+    if (pendingPausePersist != null) {
+      await pendingPausePersist;
+    }
+
     if (widget.enableLiveStepPipeline) {
+      final monitor = widget.deps.liveStepMonitor;
+      if (_livePipelineStarted && !monitor.isRunning) {
+        await monitor.start();
+        await monitor.reconcileFromDatabase();
+      }
       await _runPersistCycle(enableGoalNotification: false);
+      await _todayCubit?.syncSteps(monitor.currentTodaySteps);
     } else {
       await widget.deps.backgroundCollector.collectOnce(
         enableGoalNotification: false,
       );
+      await _todayCubit?.refresh(silent: true);
     }
     await _todayCubit?.refreshMetadata();
     await _historyCubit?.refresh(silent: true);
   }
 
+  Future<void> _initialTodayRefresh() async {
+    await _foregroundBackfill;
+    if (!mounted) {
+      return;
+    }
+    await _todayCubit?.refresh();
+  }
+
   void _onTodayCubitReady(TodayCubit cubit) {
     _todayCubit = cubit;
-    unawaited(_maybeStartLivePipeline());
+    if (widget.enableLiveStepPipeline) {
+      unawaited(_ensureLivePipelineAttached());
+    } else {
+      unawaited(_initialTodayRefresh());
+    }
   }
 
   void _onHistoryCubitReady(HistoryCubit cubit) {
     _historyCubit = cubit;
   }
 
-  Future<void> _maybeStartLivePipeline() async {
-    if (!widget.enableLiveStepPipeline || _livePipelineStarted) {
+  /// First launch or hot-reload cubit recreate — never overwrite live total with
+  /// a stale SQLite-only [TodayCubit.refresh].
+  Future<void> _ensureLivePipelineAttached() async {
+    if (!_livePipelineStarted) {
+      await _startLivePipelineFirstTime();
+      return;
+    }
+    await _reattachLivePipeline();
+  }
+
+  Future<void> _startLivePipelineFirstTime() async {
+    if (!widget.enableLiveStepPipeline) {
       return;
     }
     await _foregroundBackfill;
     if (!mounted) {
       return;
     }
+    await _bindLiveMonitorToToday();
+    if (!mounted) {
+      return;
+    }
+    _livePipelineStarted = true;
+    _startPeriodicPersist();
+  }
+
+  Future<void> _reattachLivePipeline() async {
+    if (!mounted) {
+      return;
+    }
+    await _bindLiveMonitorToToday();
+  }
+
+  Future<void> _bindLiveMonitorToToday() async {
     if (!await widget.deps.activityPermissionGranted()) {
+      await _todayCubit?.refresh();
       return;
     }
 
@@ -134,8 +223,8 @@ class _AstraAppState extends State<AstraApp> with WidgetsBindingObserver {
     }
 
     _todayCubit?.attachLiveMonitor(monitor);
-    _livePipelineStarted = true;
-    _startPeriodicPersist();
+    await _todayCubit?.syncSteps(monitor.currentTodaySteps);
+    await _todayCubit?.refreshMetadata();
   }
 
   void _startPeriodicPersist() {

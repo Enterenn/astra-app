@@ -35,6 +35,7 @@ class TodayCubit extends Cubit<TodayState> {
 
   Future<void>? _refreshInFlight;
   StreamSubscription<int>? _liveStepsSubscription;
+  String? _lastAppliedLocalDay;
 
   static Future<bool> _defaultActivityPermissionGranted() async {
     final permission = resolveActivityPermission();
@@ -70,6 +71,31 @@ class TodayCubit extends Cubit<TodayState> {
     } finally {
       _refreshInFlight = null;
     }
+  }
+
+  /// Applies [steps] from the live monitor after resume or reconcile.
+  Future<void> syncSteps(int steps) async {
+    if (isClosed) {
+      return;
+    }
+    if (state.status == TodayStatus.noPermission) {
+      return;
+    }
+
+    var goal = state.goal;
+    if (state.status == TodayStatus.loading) {
+      goal = await userPreferences.getDailyStepGoal();
+      if (isClosed) {
+        return;
+      }
+    }
+
+    await _applyTodaySnapshot(
+      steps: steps,
+      goal: goal,
+      isStale: state.isStale,
+      lastIngestionUtc: state.lastIngestionUtc,
+    );
   }
 
   /// Updates goal, stale metadata, and permission without re-reading step count.
@@ -157,12 +183,17 @@ class TodayCubit extends Cubit<TodayState> {
       return;
     }
 
-    if (state.status == TodayStatus.loading ||
-        state.status == TodayStatus.noPermission) {
+    if (state.status == TodayStatus.noPermission) {
       return;
     }
 
-    final goal = state.goal;
+    var goal = state.goal;
+    if (state.status == TodayStatus.loading) {
+      goal = await userPreferences.getDailyStepGoal();
+      if (isClosed) {
+        return;
+      }
+    }
     await _applyTodaySnapshot(
       steps: steps,
       goal: goal,
@@ -181,14 +212,24 @@ class TodayCubit extends Cubit<TodayState> {
       return;
     }
 
+    final todayIso = formatLocalDayIso(clock.snapshot());
+    var effectiveSteps = steps;
+    if (_lastAppliedLocalDay == todayIso &&
+        state.status != TodayStatus.loading &&
+        state.status != TodayStatus.noPermission &&
+        steps < state.steps) {
+      effectiveSteps = state.steps;
+    }
+    _lastAppliedLocalDay = todayIso;
+
     final baseState = TodayState.fromData(
-      steps: steps,
+      steps: effectiveSteps,
       goal: goal,
       isStale: isStale,
       lastIngestionUtc: lastIngestionUtc,
     );
     await _maybeTriggerCelebration(
-      steps: steps,
+      steps: effectiveSteps,
       goal: goal,
       baseState: baseState,
     );
