@@ -2,6 +2,7 @@ import '../../core/time/time_provider.dart';
 import '../models/normalized_step_bucket.dart';
 import '../models/step_reading.dart';
 import 'data_ingestion_source.dart';
+import 'step_increment_calculator.dart';
 
 /// Output of [StepNormalizer.normalize] / [StepNormalizer.normalizeReadings].
 class StepNormalizationResult {
@@ -17,9 +18,13 @@ class StepNormalizationResult {
 }
 
 class StepNormalizer {
-  const StepNormalizer({required this.clock});
+  const StepNormalizer({
+    required this.clock,
+    this.incrementCalculator = const StepIncrementCalculator(),
+  });
 
   final TimeProvider clock;
+  final StepIncrementCalculator incrementCalculator;
 
   Future<StepNormalizationResult> normalize(
     DataIngestionSource source, {
@@ -56,7 +61,7 @@ class StepNormalizer {
         continue;
       }
 
-      final increment = _calculateIncrement(
+      final increment = incrementCalculator.calculate(
         current: cumulativeSteps,
         baseline: baseline,
       );
@@ -104,20 +109,6 @@ class StepNormalizer {
       utc.hour,
       utc.minute - (utc.minute % 5),
     );
-  }
-
-  int? _calculateIncrement({required int current, required int baseline}) {
-    if (current >= baseline) {
-      return current - baseline;
-    }
-
-    // A large drop is treated as a reboot/reset; small drops are sensor noise.
-    final resetThreshold = baseline ~/ 2;
-    if (current <= resetThreshold) {
-      return current;
-    }
-
-    return null;
   }
 
   String _formatZoneOffset(Duration offset) {
