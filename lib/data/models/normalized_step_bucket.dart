@@ -15,7 +15,9 @@ class NormalizedStepBucket {
     this.resolution = kFiveMinuteResolution,
   }) : startTimeUtc = startTimeUtc.toUtc(),
        endTimeUtc = endTimeUtc.toUtc() {
-    assert(value >= 0, 'value must be non-negative');
+    if (value < 0) {
+      throw ArgumentError.value(value, 'value', 'must be non-negative');
+    }
   }
 
   final DateTime startTimeUtc;

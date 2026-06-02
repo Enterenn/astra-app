@@ -1,7 +1,13 @@
 class StepReading {
   StepReading({required this.cumulativeSteps, required DateTime observedAtUtc})
     : observedAtUtc = observedAtUtc.toUtc() {
-    assert(cumulativeSteps >= 0, 'cumulativeSteps must be non-negative');
+    if (cumulativeSteps < 0) {
+      throw ArgumentError.value(
+        cumulativeSteps,
+        'cumulativeSteps',
+        'must be non-negative',
+      );
+    }
   }
 
   final int cumulativeSteps;

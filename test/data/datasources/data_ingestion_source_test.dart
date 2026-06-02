@@ -34,6 +34,16 @@ void main() {
       );
     });
 
+    test('StepReading rejects negative cumulative steps', () {
+      expect(
+        () => StepReading(
+          cumulativeSteps: -1,
+          observedAtUtc: DateTime.utc(2026, 6, 2, 7),
+        ),
+        throwsArgumentError,
+      );
+    });
+
     test('NormalizedStepBucket is storage-ready but does not own an id', () {
       final bucket = NormalizedStepBucket(
         startTimeUtc: DateTime.parse('2026-06-02T07:00:00Z'),
@@ -50,6 +60,20 @@ void main() {
       expect(bucket.provider, kInternalPhoneProvider);
       expect(bucket.deviceId, kSmartphoneDeviceId);
       expect(bucket.value, 42);
+    });
+
+    test('NormalizedStepBucket rejects negative values', () {
+      expect(
+        () => NormalizedStepBucket(
+          startTimeUtc: DateTime.parse('2026-06-02T07:00:00Z'),
+          endTimeUtc: DateTime.parse('2026-06-02T07:05:00Z'),
+          value: -1,
+          provider: kInternalPhoneProvider,
+          deviceId: kSmartphoneDeviceId,
+          zoneOffset: '+02:00',
+        ),
+        throwsArgumentError,
+      );
     });
 
     test(

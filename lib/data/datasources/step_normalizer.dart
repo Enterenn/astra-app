@@ -1,5 +1,6 @@
 import '../../core/time/time_provider.dart';
 import '../models/normalized_step_bucket.dart';
+import '../models/step_reading.dart';
 import 'data_ingestion_source.dart';
 
 class StepNormalizer {
@@ -8,13 +9,25 @@ class StepNormalizer {
   final TimeProvider clock;
 
   Future<List<NormalizedStepBucket>> normalize(
-    DataIngestionSource source,
-  ) async {
+    DataIngestionSource source, {
+    required int maxReadings,
+  }) async {
+    final readings = await source
+        .watchStepReadings()
+        .take(maxReadings)
+        .toList();
+    return normalizeReadings(source: source, readings: readings);
+  }
+
+  List<NormalizedStepBucket> normalizeReadings({
+    required DataIngestionSource source,
+    required Iterable<StepReading> readings,
+  }) {
     final bucketValues = <DateTime, int>{};
     final zoneOffset = _formatZoneOffset(clock.currentZoneOffset());
 
     int? baseline;
-    await for (final reading in source.watchStepReadings()) {
+    for (final reading in readings) {
       final cumulativeSteps = reading.cumulativeSteps;
 
       if (baseline == null) {
@@ -22,18 +35,22 @@ class StepNormalizer {
         continue;
       }
 
-      final increment = cumulativeSteps >= baseline
-          ? cumulativeSteps - baseline
-          : cumulativeSteps;
+      final increment = _calculateIncrement(
+        current: cumulativeSteps,
+        baseline: baseline,
+      );
+
+      if (increment == null) {
+        continue;
+      }
+
       baseline = cumulativeSteps;
 
       if (increment <= 0) {
         continue;
       }
 
-      // Buckets are aligned to absolute UTC 5-minute boundaries from the
-      // injected clock so normalization stays deterministic in tests.
-      final bucketStartUtc = _floorToFiveMinuteUtc(clock.nowUtc());
+      final bucketStartUtc = _floorToFiveMinuteUtc(reading.observedAtUtc);
       bucketValues.update(
         bucketStartUtc,
         (value) => value + increment,
@@ -63,6 +80,20 @@ class StepNormalizer {
       utc.hour,
       utc.minute - (utc.minute % 5),
     );
+  }
+
+  int? _calculateIncrement({required int current, required int baseline}) {
+    if (current >= baseline) {
+      return current - baseline;
+    }
+
+    // A large drop is treated as a reboot/reset; small drops are sensor noise.
+    final resetThreshold = baseline ~/ 2;
+    if (current <= resetThreshold) {
+      return current;
+    }
+
+    return null;
   }
 
   String _formatZoneOffset(Duration offset) {
