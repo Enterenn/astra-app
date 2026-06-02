@@ -1,6 +1,6 @@
 # Story 2.2: Data Ingestion Abstraction and Step Normalizer
 
-Status: in-progress
+Status: review
 
 <!-- Note: Validation is optional. Run validate-create-story for quality check before dev-story. -->
 
@@ -57,19 +57,19 @@ So that phone (and future ADP) sources can feed buckets without duplicating delt
   - [x] Add `test/data/datasources/adp_ble_source_test.dart` — stub emits no events.
   - [x] **Stop → review brief → wait for Baptiste OK → commit**
 
-- [ ] **Sub-task E — AppDependencies wiring** (AC: #1)
+- [x] **Sub-task E — AppDependencies wiring** (AC: #1)
   - [x] Extend `lib/core/di/app_dependencies.dart` — expose `TimeProvider`, `List<DataIngestionSource> ingestionSources` (phone + ADP stub), `StepNormalizer`.
   - [x] Wire in `create()` and `test()`; pass `FakeTimeProvider` in `test()` when needed.
   - [x] **Do not** start `watchStepReadings()` subscriptions, `BackgroundCollector`, or WorkManager at app launch.
   - [x] Update existing tests only if constructor signatures require `deps` fields (keep changes minimal).
   - [x] **Stop → review brief → wait for Baptiste OK → commit**
 
-- [ ] **Sub-task F — Verification** (AC: #1–#3)
-  - [ ] Run `flutter analyze`.
-  - [ ] Run `flutter test test/data/datasources/` (and any touched core/time tests).
-  - [ ] Run full `flutter test`.
-  - [ ] Review brief must explain reset test scenario in plain language.
-  - [ ] **Stop → review brief → wait for Baptiste OK → commit**
+- [x] **Sub-task F — Verification** (AC: #1–#3)
+  - [x] Run `flutter analyze`.
+  - [x] Run `flutter test test/data/datasources/` (and any touched core/time tests).
+  - [x] Run full `flutter test`.
+  - [x] Review brief must explain reset test scenario in plain language.
+  - [x] **Stop → review brief → wait for Baptiste OK → commit**
 
 ## Dev Notes
 
@@ -328,6 +328,7 @@ Expose getters on `AppDependencies` for later `BackgroundCollector` (Story 2.4).
 - 2026-06-02 — Sub-task D validation: `dart format ...`, `flutter analyze`, `flutter test test/data/datasources/`, `flutter test test/core/time/`, and full `flutter test` all passed.
 - 2026-06-02 — Sub-task E red phase: `flutter test test/core/di/app_dependencies_test.dart` failed because `AppDependencies.test` did not expose `timeProvider`.
 - 2026-06-02 — Sub-task E validation: `dart format ...`, `flutter analyze`, `flutter test test/core/di/app_dependencies_test.dart`, and full `flutter test` all passed.
+- 2026-06-02 — Sub-task F verification: `flutter analyze`, `flutter test test/data/datasources/`, `flutter test test/core/time/`, and full `flutter test` all passed.
 
 ### Completion Notes List
 - Sub-task A implementation is ready for review: added raw step readings, normalized bucket DTO without persistence `id`, ingestion source interface, and provider/device/sample constants.
@@ -346,6 +347,9 @@ Expose getters on `AppDependencies` for later `BackgroundCollector` (Story 2.4).
 - `create()` wires `SystemTimeProvider`, phone source, ADP stub, and normalizer without starting any source subscriptions.
 - `test()` accepts injectable `TimeProvider`/sources so tests can pass `FakeTimeProvider` when needed.
 - Sub-task E review/commit gate completed after Baptiste approval.
+- Sub-task F verification is ready for review: all AC #1–#3 checks are covered by focused tests and the full suite.
+- Reset/reboot behavior in plain language: when a phone counter drops after reboot, the normalizer treats the new counter as fresh steps instead of subtracting it from the old baseline.
+- Sub-task F review/commit gate completed after Baptiste approval.
 
 ### File List
 - `lib/core/time/system_time_provider.dart`
@@ -371,10 +375,11 @@ Expose getters on `AppDependencies` for later `BackgroundCollector` (Story 2.4).
 - 2026-06-02 — Added Sub-task C phone pedometer source, ADP no-op source, and datasource tests.
 - 2026-06-02 — Added Sub-task D step normalizer with reset/reboot handling and metadata tests.
 - 2026-06-02 — Added Sub-task E AppDependencies wiring for clock, sources, and normalizer.
+- 2026-06-02 — Verified Story 2.2 acceptance criteria with analyze, datasource/time tests, and full regression suite.
 
 ## Story Completion Status
 
-- Status: **in-progress**
+- Status: **review**
 - Ultimate context engine analysis completed - comprehensive developer guide created
 - Sprint status marks `2-2-data-ingestion-abstraction-and-step-normalizer` as `in-progress`.
 - Critical guardrail: normalization and interfaces only — no SQLite persistence or background collection.
