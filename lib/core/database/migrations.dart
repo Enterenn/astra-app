@@ -54,11 +54,13 @@ Future<void> onCreateV1(Database db) async {
 Future<void> onCreateV2(Database db) async {
   await db.execute('''
     CREATE TABLE IF NOT EXISTS timeseries_samples (
-      id TEXT PRIMARY KEY,
+      id TEXT PRIMARY KEY NOT NULL,
       start_time TEXT NOT NULL,
       end_time TEXT NOT NULL,
       type TEXT NOT NULL,
-      value REAL NOT NULL CHECK (value >= 0),
+      value REAL NOT NULL CHECK (
+        typeof(value) IN ('integer', 'real') AND value >= 0
+      ),
       unit TEXT NOT NULL,
       resolution TEXT NOT NULL,
       provider TEXT NOT NULL,

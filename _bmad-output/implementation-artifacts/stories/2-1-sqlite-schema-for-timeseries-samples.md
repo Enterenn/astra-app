@@ -1,6 +1,6 @@
 # Story 2.1: SQLite Schema for Timeseries Samples
 
-Status: in-progress
+Status: done
 
 <!-- Note: Validation is optional. Run validate-create-story for quality check before dev-story. -->
 
@@ -70,6 +70,12 @@ So that step buckets can be persisted correctly for charts and export later.
   - [x] Run full `flutter test` if the targeted test passes.
   - [x] In the review brief, explain the fresh-install path and upgrade path separately.
   - [x] **Stop -> review brief -> wait for Baptiste OK -> commit**
+
+### Review Findings
+
+- [x] [Review][Patch] Make `timeseries_samples.id` explicitly non-null — fixed with `id TEXT PRIMARY KEY NOT NULL` and a null-id insert rejection test. [`lib/core/database/migrations.dart:57`, `test/core/database/migrations_test.dart:95`]
+- [x] [Review][Patch] Reject nonnumeric SQLite storage for `value` — fixed with a `typeof(value) IN ('integer', 'real')` check and a string-value insert rejection test. [`lib/core/database/migrations.dart:61`, `test/core/database/migrations_test.dart:146`]
+- [x] [Review][Patch] Assert the `DESC` sort order on `idx_timeseries_query` — fixed by asserting the `start_time` `desc` flag through `PRAGMA index_xinfo`. [`lib/core/database/migrations.dart:72`, `test/core/database/migrations_test.dart:122`]
 
 ## Dev Notes
 
@@ -298,6 +304,12 @@ GPT-5.5
 - 2026-06-02: Ran `flutter analyze`; no issues found.
 - 2026-06-02: Ran `flutter test test/core/database/migrations_test.dart`; all 9 targeted migration tests passed.
 - 2026-06-02: Ran full `flutter test`; all 57 tests passed.
+- 2026-06-02: Committed Sub-task D as `69c44a6 docs(story): record story 2-1 verification`.
+- 2026-06-02: Ran final full `flutter test` during completion; all 57 tests passed.
+- 2026-06-02: Code review found 3 patch findings; applied schema/test fixes for non-null `id`, numeric `value` storage, and `DESC` index verification.
+- 2026-06-02: Ran `dart format lib/core/database/migrations.dart test/core/database/migrations_test.dart`.
+- 2026-06-02: Ran `flutter test test/core/database/migrations_test.dart`; all 9 targeted migration tests passed.
+- 2026-06-02: Read IDE lints for edited database files; no linter errors found.
 
 ### Completion Notes List
 
@@ -308,6 +320,7 @@ GPT-5.5
 - Sub-task B required no production change: `openAstraDatabase()` still opens a fresh handle per call, runs `onConfigure` before migrations, enables WAL for file-backed databases with `rawQuery`, and enables foreign keys for all database paths.
 - Sub-task C completed the migration test matrix by adding file-backed v1 -> v2 upgrade coverage that preserves custom `user_preferences` values and verifies the v2 table/index additions after reopening through `openAstraDatabase()`.
 - Sub-task D verification is complete: static analysis, targeted migration tests, and the full Flutter test suite are green.
+- Code review patch findings are resolved: `timeseries_samples.id` is explicitly non-null, `value` rejects nonnumeric SQLite storage, and tests assert the `DESC` index metadata.
 
 ### File List
 
@@ -318,7 +331,7 @@ GPT-5.5
 
 ## Story Completion Status
 
-- Status: **in-progress**
+- Status: **done**
 - Ultimate context engine analysis completed - comprehensive developer guide created
-- Sprint status should mark `epic-2` as `in-progress` and `2-1-sqlite-schema-for-timeseries-samples` as `ready-for-dev`.
+- Sprint status marks `epic-2` as `in-progress` and `2-1-sqlite-schema-for-timeseries-samples` as `done`.
 - Critical guardrail: schema-only story; do not implement repository or ingestion pipeline yet.

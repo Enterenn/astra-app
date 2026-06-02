@@ -93,6 +93,7 @@ void main() {
       );
 
       for (final columnName in <String>[
+        'id',
         'start_time',
         'end_time',
         'type',
@@ -126,6 +127,14 @@ void main() {
         queryIndexColumns.map((column) => column['name']),
         orderedEquals(<String>['type', 'start_time']),
       );
+
+      final queryIndexMetadata = await db.rawQuery(
+        'PRAGMA index_xinfo(idx_timeseries_query);',
+      );
+      final startTimeIndexColumn = queryIndexMetadata.firstWhere(
+        (column) => column['name'] == 'start_time',
+      );
+      expect(startTimeIndexColumn['desc'], 1);
 
       final bucketIndexColumns = await db.rawQuery(
         'PRAGMA index_info(idx_bucket_identity);',
@@ -193,6 +202,29 @@ void main() {
           'value': 12.0,
         }),
         completes,
+      );
+
+      await expectLater(
+        db.insert('timeseries_samples', {
+          ...validStepSample,
+          'id': null,
+          'start_time': '2026-06-02T08:20:00Z',
+          'end_time': '2026-06-02T08:25:00Z',
+        }),
+        throwsA(isA<DatabaseException>()),
+      );
+
+      await expectLater(
+        db.insert('timeseries_samples', {
+          ...validStepSample,
+          'id': '00000000-0000-4000-8000-000000000005',
+          'start_time': '2026-06-02T08:25:00Z',
+          'end_time': '2026-06-02T08:30:00Z',
+          'type': 'distance',
+          'value': 'abc',
+          'unit': 'meter',
+        }),
+        throwsA(isA<DatabaseException>()),
       );
     });
   });
