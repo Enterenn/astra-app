@@ -5,6 +5,7 @@ import 'package:uuid/uuid.dart';
 import '../../core/time/local_day_calculator.dart';
 import '../../core/time/time_provider.dart';
 import '../../core/time/timestamp_codec.dart';
+import '../models/chart_day_aggregate.dart';
 import '../models/normalized_step_bucket.dart';
 import '../models/timeseries_sample_model.dart';
 
@@ -85,6 +86,59 @@ class StepRepository {
     }
 
     return total;
+  }
+
+  /// Returns daily step totals for the History chart (7 or 30 day window).
+  ///
+  /// Aggregation runs in Dart using each row's stored [TimeseriesSampleModel.zoneOffset].
+  /// Results are zero-filled for every calendar day in the window and sorted newest-first.
+  Future<List<ChartDayAggregate>> getChartDailyAggregates({
+    required int days,
+  }) async {
+    if (days != 7 && days != 30) {
+      throw ArgumentError.value(days, 'days', 'Phase 0 supports 7 or 30 only');
+    }
+
+    final timeSnapshot = clock.snapshot();
+    final referenceToday = LocalDayCalculator.localDay(
+      utc: timeSnapshot.nowUtc,
+      zoneOffset: TimestampCodec.formatZoneOffset(timeSnapshot.zoneOffset),
+    );
+    final windowStart = referenceToday.subtract(Duration(days: days - 1));
+
+    final sqlLowerBoundUtc = windowStart.subtract(const Duration(days: 1));
+    final rows = await db.query(
+      'timeseries_samples',
+      where: 'type = ? AND start_time >= ?',
+      whereArgs: [
+        kStepSampleType,
+        TimestampCodec.formatUtc(sqlLowerBoundUtc),
+      ],
+    );
+
+    final totals = <DateTime, int>{};
+    for (final row in rows) {
+      final sample = TimeseriesSampleModel.fromMap(row);
+      final rowLocalDay = LocalDayCalculator.localDay(
+        utc: sample.startTimeUtc,
+        zoneOffset: sample.zoneOffset,
+      );
+      if (rowLocalDay.isBefore(windowStart) ||
+          rowLocalDay.isAfter(referenceToday)) {
+        continue;
+      }
+      totals[rowLocalDay] = (totals[rowLocalDay] ?? 0) + sample.value.toInt();
+    }
+
+    final results = <ChartDayAggregate>[];
+    for (var i = 0; i < days; i++) {
+      final day = referenceToday.subtract(Duration(days: i));
+      results.add(
+        ChartDayAggregate(localDay: day, totalSteps: totals[day] ?? 0),
+      );
+    }
+    results.sort((a, b) => b.localDay.compareTo(a.localDay));
+    return results;
   }
 
   /// Inserts pre-built sample rows in a single transaction.
