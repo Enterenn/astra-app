@@ -25,7 +25,10 @@ void main() {
       db = await openAstraDatabase(databasePath: inMemoryDatabasePath);
       final userPreferences = UserPreferencesRepository(db);
       await userPreferences.setOnboardingComplete(true);
-      deps = await AppDependencies.test(userPreferences: userPreferences);
+      deps = await AppDependencies.test(
+        db: db,
+        userPreferences: userPreferences,
+      );
     });
 
     tearDownAll(() async {
@@ -76,7 +79,10 @@ void main() {
       final userPreferences = UserPreferencesRepository(db);
       await userPreferences.setThemeMode(AstraThemePreference.dark);
       await userPreferences.setOnboardingComplete(true);
-      deps = await AppDependencies.test(userPreferences: userPreferences);
+      deps = await AppDependencies.test(
+        db: db,
+        userPreferences: userPreferences,
+      );
     });
 
     tearDownAll(() async {
@@ -88,8 +94,9 @@ void main() {
       (WidgetTester tester) async {
         await tester.pumpWidget(AstraApp(deps: deps));
 
-        final materialApp =
-            tester.widget<MaterialApp>(find.byType(MaterialApp));
+        final materialApp = tester.widget<MaterialApp>(
+          find.byType(MaterialApp),
+        );
         expect(materialApp.themeMode, ThemeMode.dark);
       },
     );
@@ -105,12 +112,17 @@ void main() {
       completeDb = await openAstraDatabase(databasePath: inMemoryDatabasePath);
       final completePrefs = UserPreferencesRepository(completeDb);
       await completePrefs.setOnboardingComplete(true);
-      completeDeps = await AppDependencies.test(userPreferences: completePrefs);
+      completeDeps = await AppDependencies.test(
+        db: completeDb,
+        userPreferences: completePrefs,
+      );
 
-      incompleteDb =
-          await openAstraDatabase(databasePath: inMemoryDatabasePath);
+      incompleteDb = await openAstraDatabase(
+        databasePath: inMemoryDatabasePath,
+      );
       final incompletePrefs = UserPreferencesRepository(incompleteDb);
       incompleteDeps = await AppDependencies.test(
+        db: incompleteDb,
         userPreferences: incompletePrefs,
         initialOnboardingComplete: false,
       );
@@ -128,14 +140,18 @@ void main() {
       expect(find.text('Your steps stay on this device.'), findsNothing);
     });
 
-    testWidgets('shows onboarding when completion flag is absent', (tester) async {
+    testWidgets('shows onboarding when completion flag is absent', (
+      tester,
+    ) async {
       await tester.pumpWidget(AstraApp(deps: incompleteDeps));
 
       expect(find.text('Your steps stay on this device.'), findsOneWidget);
       expect(find.byType(NavigationBar), findsNothing);
     });
 
-    testWidgets('transitions to shell after onboarding completes', (tester) async {
+    testWidgets('transitions to shell after onboarding completes', (
+      tester,
+    ) async {
       OnboardingCubit? cubitRef;
 
       await tester.pumpWidget(

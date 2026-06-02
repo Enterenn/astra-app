@@ -26,6 +26,7 @@ void main() {
       db = await openAstraDatabase(databasePath: inMemoryDatabasePath);
       userPreferences = UserPreferencesRepository(db);
       deps = await AppDependencies.test(
+        db: db,
         userPreferences: userPreferences,
         initialOnboardingComplete: false,
       );
@@ -39,10 +40,7 @@ void main() {
       await tester.pumpWidget(
         MaterialApp(
           theme: buildAstraLightTheme(),
-          home: OnboardingFlow(
-            deps: deps,
-            onComplete: () {},
-          ),
+          home: OnboardingFlow(deps: deps, onComplete: () {}),
         ),
       );
 
@@ -77,7 +75,9 @@ void main() {
       expect(find.text('Allow activity access'), findsOneWidget);
     });
 
-    testWidgets('back navigation moves from permissions to trust', (tester) async {
+    testWidgets('back navigation moves from permissions to trust', (
+      tester,
+    ) async {
       await tester.pumpWidget(
         MaterialApp(
           theme: buildAstraLightTheme(),
@@ -104,7 +104,9 @@ void main() {
       expect(find.text('Allow activity access'), findsNothing);
     });
 
-    testWidgets('back navigation moves from goal to permissions', (tester) async {
+    testWidgets('back navigation moves from goal to permissions', (
+      tester,
+    ) async {
       await tester.pumpWidget(
         MaterialApp(
           theme: buildAstraLightTheme(),
@@ -162,8 +164,9 @@ void main() {
       expect(onCompleteCalled, isTrue);
     });
 
-    testWidgets('denied activity permission still advances to goal step',
-        (tester) async {
+    testWidgets('denied activity permission still advances to goal step', (
+      tester,
+    ) async {
       await tester.pumpWidget(
         MaterialApp(
           theme: buildAstraLightTheme(),

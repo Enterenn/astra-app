@@ -1,7 +1,10 @@
+import 'package:sqflite/sqflite.dart';
+
 import '../../data/datasources/adp_ble_source.dart';
 import '../../data/datasources/data_ingestion_source.dart';
 import '../../data/datasources/phone_pedometer_source.dart';
 import '../../data/datasources/step_normalizer.dart';
+import '../../data/repositories/step_repository.dart';
 import '../../data/repositories/user_preferences_repository.dart';
 import '../../presentation/cubits/theme_state.dart';
 import '../database/app_database.dart';
@@ -16,6 +19,7 @@ class AppDependencies {
     required this.timeProvider,
     required this.ingestionSources,
     required this.stepNormalizer,
+    required this.stepRepository,
   });
 
   final UserPreferencesRepository userPreferences;
@@ -24,6 +28,7 @@ class AppDependencies {
   final TimeProvider timeProvider;
   final List<DataIngestionSource> ingestionSources;
   final StepNormalizer stepNormalizer;
+  final StepRepository stepRepository;
 
   static Future<AppDependencies> create() async {
     final db = await openAstraDatabase();
@@ -32,6 +37,7 @@ class AppDependencies {
     final initialOnboardingComplete = await userPreferences
         .getOnboardingComplete();
     final timeProvider = const SystemTimeProvider();
+    final stepRepository = StepRepository(db: db, clock: timeProvider);
     final ingestionSources = <DataIngestionSource>[
       PhonePedometerSource(),
       const AdpBleSource(),
@@ -43,11 +49,13 @@ class AppDependencies {
       timeProvider: timeProvider,
       ingestionSources: ingestionSources,
       stepNormalizer: StepNormalizer(clock: timeProvider),
+      stepRepository: stepRepository,
     );
   }
 
   /// Test factory — reads persisted prefs, mirroring [create].
   static Future<AppDependencies> test({
+    required Database db,
     required UserPreferencesRepository userPreferences,
     bool? initialOnboardingComplete,
     TimeProvider? timeProvider,
@@ -68,6 +76,7 @@ class AppDependencies {
       timeProvider: clock,
       ingestionSources: sources,
       stepNormalizer: StepNormalizer(clock: clock),
+      stepRepository: StepRepository(db: db, clock: clock),
     );
   }
 }
