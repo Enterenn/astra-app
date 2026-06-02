@@ -1,15 +1,64 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_bloc/flutter_bloc.dart';
 
-import '../widgets/tab_placeholder_body.dart';
+import '../../core/constants/astra_colors.dart';
+import '../../core/constants/astra_spacing.dart';
+import '../../core/constants/astra_typography.dart';
+import '../cubits/history_cubit.dart';
+import '../cubits/history_state.dart';
+import '../widgets/period_toggle.dart';
+import '../widgets/step_bar_chart.dart';
+import '../widgets/trend_chip.dart';
 
 class HistoryScreen extends StatelessWidget {
   const HistoryScreen({super.key});
 
   @override
   Widget build(BuildContext context) {
-    return const TabPlaceholderBody(
-      title: 'History',
-      placeholder: 'Your 7-day and 30-day charts will appear here.',
+    final colors = context.astraColors;
+
+    return ColoredBox(
+      color: colors.bgBase,
+      child: SafeArea(
+        bottom: false,
+        child: BlocBuilder<HistoryCubit, HistoryState>(
+          builder: (context, state) {
+            return Padding(
+              padding: const EdgeInsets.symmetric(
+                horizontal: AstraSpacing.kScreenHorizontalPadding,
+              ),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.stretch,
+                children: [
+                  const SizedBox(height: AstraSpacing.kSpaceMd),
+                  Text('History', style: AstraTypography.title(context)),
+                  const SizedBox(height: AstraSpacing.kSpaceMd),
+                  PeriodToggle(
+                    selected: state.period,
+                    onChanged: context.read<HistoryCubit>().selectPeriod,
+                  ),
+                  if (state.trend != null) ...[
+                    const SizedBox(height: AstraSpacing.kSpaceMd),
+                    Align(
+                      alignment: Alignment.centerLeft,
+                      child: TrendChip(trend: state.trend!),
+                    ),
+                  ],
+                  const SizedBox(height: AstraSpacing.kSpaceMd),
+                  Expanded(
+                    child: StepBarChart(
+                      points: state.chartPoints,
+                      dailyGoal: state.dailyGoal,
+                      status: state.status,
+                    ),
+                  ),
+                  const SizedBox(height: AstraSpacing.kSpaceMd),
+                ],
+              ),
+            );
+          },
+        ),
+      ),
     );
   }
 }

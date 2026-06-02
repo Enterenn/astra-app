@@ -5,6 +5,7 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 
 import '../../core/constants/astra_colors.dart';
 import '../../core/di/app_dependencies.dart';
+import '../cubits/history_cubit.dart';
 import '../cubits/today_cubit.dart';
 import 'history_screen.dart';
 import 'my_data_screen.dart';
@@ -16,7 +17,10 @@ class AppScaffold extends StatefulWidget {
     this.foregroundBackfill,
     this.onTodayCubitReady,
     this.onTodayCubitDisposed,
+    this.onHistoryCubitReady,
+    this.onHistoryCubitDisposed,
     this.createTodayCubit,
+    this.createHistoryCubit,
     super.key,
   });
 
@@ -24,7 +28,10 @@ class AppScaffold extends StatefulWidget {
   final Future<int>? foregroundBackfill;
   final ValueChanged<TodayCubit>? onTodayCubitReady;
   final VoidCallback? onTodayCubitDisposed;
+  final ValueChanged<HistoryCubit>? onHistoryCubitReady;
+  final VoidCallback? onHistoryCubitDisposed;
   final TodayCubit Function(AppDependencies deps)? createTodayCubit;
+  final HistoryCubit Function(AppDependencies deps)? createHistoryCubit;
 
   @override
   State<AppScaffold> createState() => _AppScaffoldState();
@@ -33,6 +40,7 @@ class AppScaffold extends StatefulWidget {
 class _AppScaffoldState extends State<AppScaffold> {
   int _selectedIndex = 0;
   late final TodayCubit _todayCubit;
+  late final HistoryCubit _historyCubit;
 
   static const _labels = ['Today', 'History', 'My Data'];
   static const _icons = [
@@ -52,7 +60,14 @@ class _AppScaffoldState extends State<AppScaffold> {
           clock: widget.deps.timeProvider,
           activityPermissionGranted: widget.deps.activityPermissionGranted,
         );
+    _historyCubit =
+        widget.createHistoryCubit?.call(widget.deps) ??
+        HistoryCubit(
+          stepRepository: widget.deps.stepRepository,
+          userPreferences: widget.deps.userPreferences,
+        );
     widget.onTodayCubitReady?.call(_todayCubit);
+    widget.onHistoryCubitReady?.call(_historyCubit);
     widget.deps.backgroundCollector.registerOnIngestionComplete(
       _onIngestionComplete,
     );
@@ -74,21 +89,28 @@ class _AppScaffoldState extends State<AppScaffold> {
   void dispose() {
     widget.deps.backgroundCollector.registerOnIngestionComplete(null);
     widget.onTodayCubitDisposed?.call();
+    widget.onHistoryCubitDisposed?.call();
     _todayCubit.close();
+    _historyCubit.close();
     super.dispose();
   }
 
   void _onIngestionComplete() {
     unawaited(_todayCubit.refreshMetadata());
+    unawaited(_historyCubit.refresh(silent: true));
   }
 
   void _onDestinationSelected(int index) {
     final returningToToday = index == 0 && _selectedIndex != 0;
+    final openingHistory = index == 1 && _selectedIndex != 1;
     setState(() {
       _selectedIndex = index;
     });
     if (returningToToday) {
       unawaited(_todayCubit.refreshMetadata());
+    }
+    if (openingHistory) {
+      unawaited(_historyCubit.refresh());
     }
   }
 
@@ -104,7 +126,10 @@ class _AppScaffoldState extends State<AppScaffold> {
         value: _todayCubit,
         child: TodayScreen(onNavigateToMyData: _navigateToMyData),
       ),
-      1 => const HistoryScreen(),
+      1 => BlocProvider.value(
+        value: _historyCubit,
+        child: const HistoryScreen(),
+      ),
       2 => const MyDataScreen(),
       _ => const SizedBox.shrink(),
     };

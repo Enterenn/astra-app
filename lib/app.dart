@@ -9,6 +9,7 @@ import 'data/repositories/user_preferences_repository.dart';
 import 'presentation/cubits/onboarding_cubit.dart';
 import 'presentation/cubits/theme_cubit.dart';
 import 'presentation/cubits/theme_state.dart';
+import 'presentation/cubits/history_cubit.dart';
 import 'presentation/cubits/today_cubit.dart';
 import 'presentation/onboarding/onboarding_flow.dart';
 import 'presentation/screens/app_scaffold.dart';
@@ -19,6 +20,7 @@ class AstraApp extends StatefulWidget {
     required this.deps,
     this.createOnboardingCubit,
     this.createTodayCubit,
+    this.createHistoryCubit,
     this.enablePeriodicPersist = true,
     this.enableLiveStepPipeline = true,
   });
@@ -27,6 +29,7 @@ class AstraApp extends StatefulWidget {
   final OnboardingCubit Function(UserPreferencesRepository userPreferences)?
   createOnboardingCubit;
   final TodayCubit Function(AppDependencies deps)? createTodayCubit;
+  final HistoryCubit Function(AppDependencies deps)? createHistoryCubit;
   final bool enablePeriodicPersist;
   final bool enableLiveStepPipeline;
 
@@ -43,6 +46,7 @@ class _AstraAppState extends State<AstraApp> with WidgetsBindingObserver {
 
   late bool _showMainShell;
   TodayCubit? _todayCubit;
+  HistoryCubit? _historyCubit;
   late final Future<int> _foregroundBackfill;
   Timer? _persistTimer;
   bool _livePipelineStarted = false;
@@ -99,11 +103,16 @@ class _AstraAppState extends State<AstraApp> with WidgetsBindingObserver {
       );
     }
     await _todayCubit?.refreshMetadata();
+    await _historyCubit?.refresh(silent: true);
   }
 
   void _onTodayCubitReady(TodayCubit cubit) {
     _todayCubit = cubit;
     unawaited(_maybeStartLivePipeline());
+  }
+
+  void _onHistoryCubitReady(HistoryCubit cubit) {
+    _historyCubit = cubit;
   }
 
   Future<void> _maybeStartLivePipeline() async {
@@ -167,7 +176,10 @@ class _AstraAppState extends State<AstraApp> with WidgetsBindingObserver {
                         : null,
                     onTodayCubitReady: _onTodayCubitReady,
                     onTodayCubitDisposed: () => _todayCubit = null,
+                    onHistoryCubitReady: _onHistoryCubitReady,
+                    onHistoryCubitDisposed: () => _historyCubit = null,
                     createTodayCubit: widget.createTodayCubit,
+                    createHistoryCubit: widget.createHistoryCubit,
                   )
                 : OnboardingFlow(
                     deps: widget.deps,
