@@ -1,0 +1,231 @@
+import 'package:astra_app/core/constants/preference_keys.dart';
+import 'package:astra_app/core/database/app_database.dart';
+import 'package:astra_app/data/datasources/data_ingestion_source.dart';
+import 'package:astra_app/data/models/normalized_step_bucket.dart';
+import 'package:astra_app/data/repositories/step_repository.dart';
+import 'package:astra_app/data/repositories/user_preferences_repository.dart';
+import 'package:astra_app/presentation/cubits/today_cubit.dart';
+import 'package:astra_app/presentation/cubits/today_state.dart';
+import 'package:flutter_test/flutter_test.dart';
+import 'package:sqflite/sqflite.dart';
+
+import '../../core/time/fake_time_provider.dart';
+import '../../helpers/sqflite_test_helper.dart';
+
+void main() {
+  setUpAll(() async {
+    await setUpSqfliteFfi();
+  });
+
+  group('TodayCubit', () {
+    late Database db;
+    late UserPreferencesRepository userPreferences;
+    late FakeTimeProvider clock;
+    late StepRepository stepRepository;
+
+    setUp(() async {
+      db = await openAstraDatabase(databasePath: inMemoryDatabasePath);
+      userPreferences = UserPreferencesRepository(db);
+      clock = FakeTimeProvider(
+        fixedNowUtc: DateTime.utc(2026, 6, 2, 12),
+        zoneOffset: const Duration(hours: 2),
+      );
+      stepRepository = StepRepository(db: db, clock: clock);
+    });
+
+    tearDown(() async {
+      await db.close();
+    });
+
+    TodayCubit buildCubit({
+      Future<bool> Function()? activityPermissionGranted,
+      bool isIos = false,
+    }) {
+      return TodayCubit(
+        stepRepository: stepRepository,
+        userPreferences: userPreferences,
+        clock: clock,
+        activityPermissionGranted:
+            activityPermissionGranted ?? () async => true,
+        isIos: isIos,
+      );
+    }
+
+    test('starts in loading state', () {
+      final cubit = buildCubit();
+      expect(cubit.state.status, TodayStatus.loading);
+      cubit.close();
+    });
+
+    test('refresh emits noPermission when activity permission denied', () async {
+      final cubit = buildCubit(activityPermissionGranted: () async => false);
+
+      await cubit.refresh();
+
+      expect(cubit.state.status, TodayStatus.noPermission);
+      cubit.close();
+    });
+
+    test('refresh emits empty when permission granted and no steps', () async {
+      final cubit = buildCubit();
+
+      await cubit.refresh();
+
+      expect(cubit.state.status, TodayStatus.empty);
+      expect(cubit.state.steps, 0);
+      expect(cubit.state.goal, kDefaultStepGoal);
+      expect(cubit.state.isStale, isFalse);
+      cubit.close();
+    });
+
+    test('refresh emits progress when steps are below goal', () async {
+      await stepRepository.upsertIngestionBucket(
+        _bucket(
+          startTimeUtc: DateTime.utc(2026, 6, 2, 10),
+          value: 3000,
+          zoneOffset: '+02:00',
+        ),
+      );
+      final cubit = buildCubit();
+
+      await cubit.refresh();
+
+      expect(cubit.state.status, TodayStatus.progress);
+      expect(cubit.state.steps, 3000);
+      expect(cubit.state.progressRatio, closeTo(3000 / kDefaultStepGoal, 0.001));
+      cubit.close();
+    });
+
+    test('refresh emits goalMet when steps equal goal', () async {
+      await userPreferences.setDailyStepGoal(5000);
+      await stepRepository.upsertIngestionBucket(
+        _bucket(
+          startTimeUtc: DateTime.utc(2026, 6, 2, 10),
+          value: 5000,
+          zoneOffset: '+02:00',
+        ),
+      );
+      final cubit = buildCubit();
+
+      await cubit.refresh();
+
+      expect(cubit.state.status, TodayStatus.goalMet);
+      expect(cubit.state.steps, 5000);
+      expect(cubit.state.progressRatio, 1);
+      cubit.close();
+    });
+
+    test('refresh emits overflow when steps exceed goal', () async {
+      await userPreferences.setDailyStepGoal(5000);
+      await stepRepository.upsertIngestionBucket(
+        _bucket(
+          startTimeUtc: DateTime.utc(2026, 6, 2, 10),
+          value: 7500,
+          zoneOffset: '+02:00',
+        ),
+      );
+      final cubit = buildCubit();
+
+      await cubit.refresh();
+
+      expect(cubit.state.status, TodayStatus.overflow);
+      expect(cubit.state.steps, 7500);
+      expect(cubit.state.progressRatio, 1);
+      cubit.close();
+    });
+
+    test('refresh is not stale on Android at exactly 12 hours', () async {
+      await stepRepository.upsertIngestionBucket(
+        _bucket(
+          startTimeUtc: DateTime.utc(2026, 6, 2, 0),
+          endTimeUtc: DateTime.utc(2026, 6, 2, 0),
+          value: 100,
+          zoneOffset: '+02:00',
+        ),
+      );
+      final cubit = buildCubit(isIos: false);
+
+      await cubit.refresh();
+
+      expect(cubit.state.isStale, isFalse);
+      cubit.close();
+    });
+
+    test('refresh is stale on Android just past 12 hours', () async {
+      await stepRepository.upsertIngestionBucket(
+        _bucket(
+          startTimeUtc: DateTime.utc(2026, 6, 1, 23, 59),
+          endTimeUtc: DateTime.utc(2026, 6, 1, 23, 59),
+          value: 100,
+          zoneOffset: '+02:00',
+        ),
+      );
+      final cubit = buildCubit(isIos: false);
+
+      await cubit.refresh();
+
+      expect(cubit.state.isStale, isTrue);
+      cubit.close();
+    });
+
+    test('refresh is not stale on iOS at exactly 4 hours', () async {
+      await stepRepository.upsertIngestionBucket(
+        _bucket(
+          startTimeUtc: DateTime.utc(2026, 6, 2, 8),
+          endTimeUtc: DateTime.utc(2026, 6, 2, 8),
+          value: 100,
+          zoneOffset: '+02:00',
+        ),
+      );
+      final cubit = buildCubit(isIos: true);
+
+      await cubit.refresh();
+
+      expect(cubit.state.isStale, isFalse);
+      cubit.close();
+    });
+
+    test('refresh is stale on iOS just past 4 hours', () async {
+      await stepRepository.upsertIngestionBucket(
+        _bucket(
+          startTimeUtc: DateTime.utc(2026, 6, 2, 7, 59),
+          endTimeUtc: DateTime.utc(2026, 6, 2, 7, 59),
+          value: 100,
+          zoneOffset: '+02:00',
+        ),
+      );
+      final cubit = buildCubit(isIos: true);
+
+      await cubit.refresh();
+
+      expect(cubit.state.isStale, isTrue);
+      cubit.close();
+    });
+
+    test('refresh is not stale when last ingestion is null', () async {
+      final cubit = buildCubit();
+
+      await cubit.refresh();
+
+      expect(cubit.state.lastIngestionUtc, isNull);
+      expect(cubit.state.isStale, isFalse);
+      cubit.close();
+    });
+  });
+}
+
+NormalizedStepBucket _bucket({
+  required DateTime startTimeUtc,
+  required int value,
+  required String zoneOffset,
+  DateTime? endTimeUtc,
+  String provider = kInternalPhoneProvider,
+  String deviceId = kSmartphoneDeviceId,
+}) => NormalizedStepBucket(
+  startTimeUtc: startTimeUtc,
+  endTimeUtc: endTimeUtc ?? startTimeUtc.add(const Duration(minutes: 5)),
+  value: value,
+  provider: provider,
+  deviceId: deviceId,
+  zoneOffset: zoneOffset,
+);

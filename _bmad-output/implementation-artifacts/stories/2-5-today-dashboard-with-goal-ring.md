@@ -35,15 +35,15 @@ So that I can check progress at a glance.
   - [x] Add `lib/core/health/stale_data_evaluator.dart` — pure function: `DateTime? lastIngestionUtc`, `DateTime nowUtc`, `bool isIos` → `bool isStale`; thresholds **12h Android / 4h iOS** ([Source: `architecture.md` — iOS stale threshold]).
   - [x] Add unit tests in `test/core/health/stale_data_evaluator_test.dart`.
   - [x] Allow UI registration of `BackgroundCollector.onIngestionComplete` after construction (mutable setter or `registerOnIngestionComplete` — collector is built in `AppDependencies` before `TodayCubit` exists).
-  - [ ] **Stop → review brief → wait for Baptiste OK → commit**
+  - [x] **Stop → review brief → wait for Baptiste OK → commit**
 
-- [ ] **Sub-task B — TodayCubit + state** (AC: #1–#4 data layer)
-  - [ ] Add `lib/presentation/cubits/today_state.dart` — sealed or enum-driven `TodayStatus`: `loading`, `noPermission`, `empty`, `progress`, `goalMet`, `overflow`; fields: `steps`, `goal`, `isStale`, `lastIngestionUtc` optional.
-  - [ ] Add `lib/presentation/cubits/today_cubit.dart`:
-    - [ ] Inject `StepRepository`, `UserPreferencesRepository`, `TimeProvider`, activity permission checker (reuse `resolveActivityPermission` + `permission_handler` pattern from onboarding; injectable for tests).
-    - [ ] `Future<void> refresh()` — parallel `getTodaySteps()`, `getDailyStepGoal()`, `getLastIngestionUtc()`, permission status; compute stale via evaluator; map to state (overflow when `steps > goal`, goalMet when `steps >= goal` and not overflow semantics per UX).
-    - [ ] **Read-only** — never call `upsertIngestionBucket()`.
-  - [ ] Add `test/presentation/cubits/today_cubit_test.dart` — fake repos, permission granted/denied, stale boundary at 12h/4h, overflow vs goalMet.
+- [x] **Sub-task B — TodayCubit + state** (AC: #1–#4 data layer)
+  - [x] Add `lib/presentation/cubits/today_state.dart` — sealed or enum-driven `TodayStatus`: `loading`, `noPermission`, `empty`, `progress`, `goalMet`, `overflow`; fields: `steps`, `goal`, `isStale`, `lastIngestionUtc` optional.
+  - [x] Add `lib/presentation/cubits/today_cubit.dart`:
+    - [x] Inject `StepRepository`, `UserPreferencesRepository`, `TimeProvider`, activity permission checker (reuse `resolveActivityPermission` + `permission_handler` pattern from onboarding; injectable for tests).
+    - [x] `Future<void> refresh()` — parallel `getTodaySteps()`, `getDailyStepGoal()`, `getLastIngestionUtc()`, permission status; compute stale via evaluator; map to state (overflow when `steps > goal`, goalMet when `steps >= goal` and not overflow semantics per UX).
+    - [x] **Read-only** — never call `upsertIngestionBucket()`.
+  - [x] Add `test/presentation/cubits/today_cubit_test.dart` — fake repos, permission granted/denied, stale boundary at 12h/4h, overflow vs goalMet.
   - [ ] **Stop → review brief → wait for Baptiste OK → commit**
 
 - [ ] **Sub-task C — GoalRing widget** (AC: #1–#3)
@@ -381,6 +381,7 @@ Run: `flutter analyze`, `flutter test test/core/health/ test/presentation/cubits
 ### Completion Notes List
 
 - **Sub-task A (2026-06-02):** Added `isStaleData()` pure function with 12h Android / 4h iOS thresholds; null last ingestion → not stale. Refactored `BackgroundCollector` to use `registerOnIngestionComplete()` for post-construction UI wiring. 15 tests pass (7 stale evaluator + 8 collector).
+- **Sub-task B (2026-06-02):** Added `TodayState` with 6 status variants and `TodayCubit.refresh()` read path (parallel repo reads, permission check, stale evaluation). 11 cubit tests cover permission, progress/goalMet/overflow, and stale boundaries.
 
 ### File List
 
@@ -388,6 +389,9 @@ Run: `flutter analyze`, `flutter test test/core/health/ test/presentation/cubits
 - `test/core/health/stale_data_evaluator_test.dart` (new)
 - `lib/core/services/background_collector.dart` (modified)
 - `test/core/services/background_collector_test.dart` (modified)
+- `lib/presentation/cubits/today_state.dart` (new)
+- `lib/presentation/cubits/today_cubit.dart` (new)
+- `test/presentation/cubits/today_cubit_test.dart` (new)
 
 ## Story completion status
 
