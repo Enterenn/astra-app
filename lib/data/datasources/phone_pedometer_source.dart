@@ -46,4 +46,8 @@ class PhonePedometerSource implements DataIngestionSource {
   static Stream<PhoneStepEvent> _defaultStepEventStreamFactory() {
     return Pedometer.stepCountStream.map(PhoneStepEvent.fromStepCount);
   }
+
+  /// Exposed for [LiveStepMonitor] — sole production subscriber in UI isolate.
+  static PhoneStepEventStreamFactory get defaultStepEventStreamFactory =>
+      _defaultStepEventStreamFactory;
 }
