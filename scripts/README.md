@@ -2,7 +2,7 @@
 
 ## `pre_test.ps1` (Windows)
 
-Releases `build/native_assets/windows/sqlite3.dll` before `flutter test` when a prior run was killed or left a Dart process holding the FFI DLL.
+Releases `build/native_assets/windows/sqlite3.dll` before `flutter test` when a prior run was killed or left a Dart process holding the FFI DLL. Only stops `dart` / `flutter_tester` processes whose command line references this repo (does not kill global `flutter` CLI).
 
 ```powershell
 # Normal (fast)
@@ -19,9 +19,10 @@ flutter test
 Reduces "Access denied" when Flutter replaces `sqlite3.dll`:
 
 ```powershell
+$projectRoot = (Resolve-Path (Join-Path $PSScriptRoot '..')).Path
 $paths = @(
-  "D:\03_Web\02_astra-app\astra-app\build",
-  "D:\03_Web\02_astra-app\astra-app\.dart_tool",
+  (Join-Path $projectRoot 'build'),
+  (Join-Path $projectRoot '.dart_tool'),
   "$env:LOCALAPPDATA\Pub\Cache",
   "$env:LOCALAPPDATA\flutter"
 )

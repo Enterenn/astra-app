@@ -5,15 +5,25 @@ $projectRoot = Split-Path -Parent $PSScriptRoot
 $dllPath = Join-Path $projectRoot "build\native_assets\windows\sqlite3.dll"
 $nativeAssetsDir = Join-Path $projectRoot "build\native_assets\windows"
 
-Write-Host "=== pre_test: stopping Dart/Flutter test processes ===" -ForegroundColor Cyan
-
-@('dart', 'flutter', 'flutter_tester', 'flutter_tools') | ForEach-Object {
-    $procs = Get-Process -Name $_ -ErrorAction SilentlyContinue
-    if ($procs) {
-        $procs | Stop-Process -Force
-        Write-Host "  killed: $_ ($($procs.Count))"
+function Stop-ProcessesForProject {
+    param([string[]]$Names)
+    foreach ($name in $Names) {
+        $filter = if ($name.EndsWith('.exe')) { "Name = '$name'" } else { "Name = '$name.exe'" }
+        $procs = Get-CimInstance Win32_Process -Filter $filter -ErrorAction SilentlyContinue |
+            Where-Object {
+                $_.CommandLine -and ($_.CommandLine -like "*$projectRoot*")
+            }
+        foreach ($proc in $procs) {
+            Stop-Process -Id $proc.ProcessId -Force -ErrorAction SilentlyContinue
+            Write-Host "  killed: $($proc.Name) (pid $($proc.ProcessId))" -ForegroundColor DarkGray
+        }
     }
 }
+
+Write-Host "=== pre_test: stopping project-scoped Dart test processes ===" -ForegroundColor Cyan
+Write-Host "  project: $projectRoot"
+
+Stop-ProcessesForProject -Names @('dart', 'flutter_tester')
 
 Start-Sleep -Milliseconds 800
 
@@ -24,6 +34,7 @@ if ($handleExe -and (Test-Path $dllPath)) {
         Write-Host "  WARN: sqlite3.dll still has open handles:" -ForegroundColor Yellow
         $handles | Write-Host
         Write-Host "  Install Sysinternals Handle or close the listed process, then re-run." -ForegroundColor Yellow
+        Write-Host "  Or run: Get-Process dart,flutter_tester | Stop-Process -Force (kills all; use with care)." -ForegroundColor Yellow
     }
 }
 

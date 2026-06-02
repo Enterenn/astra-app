@@ -168,8 +168,7 @@ class _AstraAppState extends State<AstraApp> with WidgetsBindingObserver {
     if (widget.enableLiveStepPipeline) {
       final monitor = widget.deps.liveStepMonitor;
       if (_livePipelineStarted && !monitor.isRunning) {
-        await monitor.start();
-        await monitor.reconcileFromDatabase();
+        await monitor.restart();
       }
       await _runPersistCycle(enableGoalNotification: false);
       await _todayCubit?.syncSteps(monitor.currentTodaySteps);
