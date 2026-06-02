@@ -2,6 +2,7 @@
 const kDailyStepGoalKey = 'daily_step_goal';
 const kThemeModeKey = 'theme_mode';
 const kOnboardingCompleteKey = 'onboarding_complete';
+const kCelebrationShownDateKey = 'celebration_shown_date';
 
 const kDefaultStepGoal = 8000;
 const kMinStepGoal = 1000;

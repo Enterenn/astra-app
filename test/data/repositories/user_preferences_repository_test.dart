@@ -71,5 +71,14 @@ void main() {
       await repository.setOnboardingComplete(true);
       expect(await repository.getOnboardingComplete(), isTrue);
     });
+
+    test('celebration shown date is null when unset', () async {
+      expect(await repository.getCelebrationShownDate(), isNull);
+    });
+
+    test('round-trips celebration shown date', () async {
+      await repository.setCelebrationShownDate('2026-06-02');
+      expect(await repository.getCelebrationShownDate(), '2026-06-02');
+    });
   });
 }

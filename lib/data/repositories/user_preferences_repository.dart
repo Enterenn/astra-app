@@ -48,6 +48,15 @@ class UserPreferencesRepository {
     await _writeValue(kOnboardingCompleteKey, complete ? 'true' : 'false');
   }
 
+  /// Local calendar day (`YYYY-MM-DD`) when goal celebration was last shown.
+  Future<String?> getCelebrationShownDate() async {
+    return _readValue(kCelebrationShownDateKey);
+  }
+
+  Future<void> setCelebrationShownDate(String localDayIso) async {
+    await _writeValue(kCelebrationShownDateKey, localDayIso);
+  }
+
   Future<String?> _readValue(String key) async {
     final rows = await _db.query(
       'user_preferences',
