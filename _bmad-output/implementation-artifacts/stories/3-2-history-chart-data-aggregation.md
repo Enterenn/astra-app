@@ -1,6 +1,6 @@
 # Story 3.2: History Chart Data Aggregation
 
-Status: review
+Status: done
 
 <!-- Note: Validation is optional. Run validate-create-story for quality check before dev-story. -->
 
@@ -316,15 +316,18 @@ Composer
 
 - **Sub-task A:** Added immutable `ChartDayAggregate` read model with manual `==` / `hashCode`.
 - **Sub-task B:** Added `getChartDailyAggregates({required int days})` to `StepRepository` — Dart-side grouping via `LocalDayCalculator`, zero-fill, newest-first sort, optional SQL `start_time` prefilter.
-- **Sub-task C:** Six unit tests cover 7d/30d counts, window boundaries, mixed offsets, post-compaction conservation, empty DB, invalid `days`.
+- **Sub-task C:** Eight unit tests cover 7d/30d counts, window boundaries, mixed offsets, SQL prefilter boundary (+14:00), post-compaction conservation (7d + 30d), empty DB, invalid `days`.
 - **Sub-task D:** `flutter analyze` clean; full `flutter test` suite passes; no presentation-layer changes.
+- **Code review:** Removed redundant sort; added 30-day boundary/sort tests, SQL prefilter edge-case test, and 30-day post-compaction conservation.
 
 ### File List
 
 - `lib/data/models/chart_day_aggregate.dart` (new)
 - `lib/data/repositories/step_repository.dart` (updated)
 - `test/data/repositories/step_repository_chart_aggregates_test.dart` (new)
+- `_bmad-output/implementation-artifacts/sprint-status.yaml` (updated)
 
 ### Change Log
 
 - 2026-06-02: Story 3.2 — chart daily aggregation read model + repository method + unit tests.
+- 2026-06-02: Code review fixes — redundant sort removed; extended test coverage; story marked done.

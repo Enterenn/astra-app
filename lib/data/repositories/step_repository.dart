@@ -137,7 +137,6 @@ class StepRepository {
         ChartDayAggregate(localDay: day, totalSteps: totals[day] ?? 0),
       );
     }
-    results.sort((a, b) => b.localDay.compareTo(a.localDay));
     return results;
   }
 
