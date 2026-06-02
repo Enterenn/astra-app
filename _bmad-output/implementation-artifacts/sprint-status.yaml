@@ -1,5 +1,5 @@
 # generated: 2026-05-25
-# last_updated: 2026-06-02 (epic reorg: epic 5 = design polish, epic 6 = OSS beta)
+# last_updated: 2026-06-02 (story 3-1 review)
 # project: astra-app
 # project_key: NOKEY
 # tracking_system: file-system
@@ -45,7 +45,7 @@
 # NAVIGATION: _bmad-output/README.md
 
 generated: 2026-05-25
-last_updated: 2026-06-02 (epic reorg: epic 5 = design polish, epic 6 = OSS beta)
+last_updated: 2026-06-02 (story 3-1 review)
 project: astra-app
 project_key: NOKEY
 tracking_system: file-system
@@ -70,8 +70,8 @@ development_status:
   2-7-daily-goal-local-notification: done
   epic-2-retrospective: optional
 
-  epic-3: backlog
-  3-1-dev-data-inject-and-lifecycle-simulator: backlog
+  epic-3: in-progress
+  3-1-dev-data-inject-and-lifecycle-simulator: review
   3-2-history-chart-data-aggregation: backlog
   3-3-history-screen-with-bar-chart-and-trend: backlog
   3-4-chart-performance-benchmark-kpi-01: backlog
