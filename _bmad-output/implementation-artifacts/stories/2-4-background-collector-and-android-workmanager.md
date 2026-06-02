@@ -45,17 +45,17 @@ So that I get value without opening the app constantly.
   - [x] Add `test/data/repositories/step_repository_last_ingestion_test.dart`.
   - [x] **Stop → review brief → wait for Baptiste OK → commit**
 
-- [ ] **Sub-task C — BackgroundCollector core** (AC: #1, #5)
-  - [ ] Add `lib/core/services/background_collector.dart`:
-    - [ ] Constructor: `List<DataIngestionSource>`, `StepNormalizer`, `StepRepository`, `TimeProvider`; optional `VoidCallback? onIngestionComplete` (UI isolate only — document).
-    - [ ] `Future<int> collectOnce({int maxReadingsPerSource = 50})` — for each source with non-empty stream sample: `normalizer.normalize(source, maxReadings: …)` → `repository.upsertIngestionBucket()` per bucket; return count of buckets upserted.
-    - [ ] Guard live platform streams with a short timeout or equivalent bounded-read strategy so a WorkManager task cannot hang forever when `Pedometer.stepCountStream` emits no event.
-    - [ ] **Only** this class calls `upsertIngestionBucket()` in production code paths.
-    - [ ] Skip sources that emit no readings (ADP stub); catch/log stream errors without crashing isolate.
-    - [ ] No `DateTime.now()` — use injected `TimeProvider` only if timestamps needed locally (prefer normalizer/repository paths).
-    - [ ] No direct `Database` access — repository only.
-  - [ ] Add `test/core/services/background_collector_test.dart` with fake source + in-memory DB; assert upsert count and `onIngestionComplete` fired when buckets written.
-  - [ ] **Stop → review brief → wait for Baptiste OK → commit**
+- [x] **Sub-task C — BackgroundCollector core** (AC: #1, #5)
+  - [x] Add `lib/core/services/background_collector.dart`:
+    - [x] Constructor: `List<DataIngestionSource>`, `StepNormalizer`, `StepRepository`, `TimeProvider`; optional `VoidCallback? onIngestionComplete` (UI isolate only — document).
+    - [x] `Future<int> collectOnce({int maxReadingsPerSource = 50})` — for each source with non-empty stream sample: `normalizer.normalize(source, maxReadings: …)` → `repository.upsertIngestionBucket()` per bucket; return count of buckets upserted.
+    - [x] Guard live platform streams with a short timeout or equivalent bounded-read strategy so a WorkManager task cannot hang forever when `Pedometer.stepCountStream` emits no event.
+    - [x] **Only** this class calls `upsertIngestionBucket()` in production code paths.
+    - [x] Skip sources that emit no readings (ADP stub); catch/log stream errors without crashing isolate.
+    - [x] No `DateTime.now()` — use injected `TimeProvider` only if timestamps needed locally (prefer normalizer/repository paths).
+    - [x] No direct `Database` access — repository only.
+  - [x] Add `test/core/services/background_collector_test.dart` with fake source + in-memory DB; assert upsert count and `onIngestionComplete` fired when buckets written.
+  - [x] **Stop → review brief → wait for Baptiste OK → commit**
 
 - [ ] **Sub-task D — WorkManager callback + registration** (AC: #1, #4)
   - [ ] Add `lib/core/services/workmanager_callback.dart`:
@@ -394,6 +394,10 @@ GPT-5.5
 - 2026-06-02: GREEN `flutter test test/data/repositories/step_repository_last_ingestion_test.dart` passed after adding the last-ingestion query.
 - 2026-06-02: REGRESSION `flutter test` passed, 93 tests.
 - 2026-06-02: QUALITY `flutter analyze` passed with no issues.
+- 2026-06-02: RED `flutter test test/core/services/background_collector_test.dart` failed because `BackgroundCollector` did not exist.
+- 2026-06-02: GREEN `flutter test test/core/services/background_collector_test.dart` passed after adding the collector.
+- 2026-06-02: REGRESSION `flutter test` passed, 97 tests.
+- 2026-06-02: QUALITY `flutter analyze` passed with no issues.
 
 ### Completion Notes List
 - Sub-task A implementation ready for review: added an isolate-safe database factory wrapper that returns a fresh `Database` connection on every call while reusing `openAstraDatabase()` for WAL, foreign keys, migrations, and `databasePath` test injection.
@@ -401,16 +405,22 @@ GPT-5.5
 - Added a file-backed FFI test proving two sequential factory opens on the same database path both succeed with WAL enabled.
 - Sub-task B implementation ready for review: added `StepRepository.getLastIngestionUtc()` using `MAX(end_time)` filtered to step samples and parsed through `TimestampCodec.parseUtc()`.
 - Added repository tests for the empty-table `null` case and for ignoring newer non-step samples when calculating last step ingestion.
+- Sub-task C implementation ready for review: added `BackgroundCollector.collectOnce()` to orchestrate bounded source reads, normalization, repository upserts, and the UI-isolate completion callback.
+- Added collector tests for successful upsert/callback, empty sources, source errors, and live streams that emit no events.
+- Verified `upsertIngestionBucket()` is only called by `BackgroundCollector` in `lib/` production code.
 
 ### File List
 - `lib/core/database/isolate_database_factory.dart`
 - `test/core/database/isolate_database_factory_test.dart`
 - `lib/data/repositories/step_repository.dart`
 - `test/data/repositories/step_repository_last_ingestion_test.dart`
+- `lib/core/services/background_collector.dart`
+- `test/core/services/background_collector_test.dart`
 
 ### Change Log
 - 2026-06-02: Implemented Sub-task A isolate-safe database factory and WAL connection test.
 - 2026-06-02: Implemented Sub-task B last step ingestion query and repository tests.
+- 2026-06-02: Implemented Sub-task C BackgroundCollector core and service tests.
 
 ## Story Completion Status
 
