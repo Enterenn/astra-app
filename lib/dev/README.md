@@ -66,18 +66,39 @@ Reproducible harness for **History chart query + render latency** when toggling 
 
 KPI-01 **pass/fail** is measured on a **mid-range Android reference device** (debug build). CI/emulator runs are **log-only** — slow VMs must not fail the suite.
 
-1. Install debug build on physical Android device.
-2. Ensure dev DB has 90-day inject (or call `runDevInject` from a debug entry point).
-3. Invoke `runChartBenchmark(repository: ..., clock: ..., assertPassGate: true)` from a debug-only trigger.
-4. Capture console output — look for `[KPI-01]` log line with `total_p50` / `total_p95`.
-5. **Pass:** `total_p95 < 100 ms`. Record results in `_bmad-output/implementation-artifacts/kpi-01-regression-log.md`.
+1. Install **debug** build on physical Android device (mid-range reference, e.g. CPH2663).
+2. Open **History** tab — tap the **speed FAB** (debug only). This runs `runDevChartBenchmark` with 90-day inject, **50 iterations**, and off-screen `StepBarChart` pumps (7d + 30d).
+3. Capture console `[KPI-01]` log (`render=true`, `profile=full-stack`, `total_p95`).
+4. **Pass:** `total_p95 < 100 ms`. Record in `_bmad-output/implementation-artifacts/kpi-01-regression-log.md`.
+
+Programmatic alternative:
+
+```dart
+await runDevChartBenchmark(
+  repository: stepRepository,
+  clock: timeProvider,
+  db: stepRepository.db,
+  userPreferences: userPreferences,
+  pumpChart: createOverlayStepBarChartPump(context),
+  assertPassGate: true,
+);
+```
+
+Use **`iterations: 50`** (default) on device for a stable p95. CI smoke uses `iterations: 1`.
+
+### Benchmark profiles
+
+| Profile | Enum | Per iteration | Matches |
+|---------|------|---------------|---------|
+| **Full stack (KPI-01 primary)** | `ChartBenchmarkProfile.fullStack` | `getChartDailyAggregates(30)` + toggle + optional chart pump | Refresh + toggle cost |
+| **Toggle only** | `ChartBenchmarkProfile.toggleOnly` | Toggle + chart pump only (query p50/p95 = 0) | `PeriodToggle` after warm cache |
 
 ### Reading output
 
 Example log line:
 
 ```text
-[KPI-01] dataset=raw-25920 rows=25920 iterations=50 query_p50=12.34ms query_p95=18.56ms toggle_p50=1.23ms toggle_p95=2.45ms total_p50=13.57ms total_p95=21.01ms pass=true
+[KPI-01] profile=full-stack render=true dataset=raw-25920 rows=25920 iterations=50 query_p50=12.34ms query_p95=18.56ms toggle_p50=1.23ms toggle_p95=2.45ms total_p50=13.57ms total_p95=21.01ms threshold=100ms pass=true
 ```
 
 | Field | Meaning |
@@ -86,11 +107,12 @@ Example log line:
 | `toggle_p50/p95` | In-memory `HistoryCubit.selectPeriod(7d↔30d)` + optional chart pump |
 | `total_p50/p95` | **KPI-01 metric** = query + toggle per iteration |
 
-Widget render can be profiled on device via the optional `pumpChart` callback; CI smoke validates cubit toggle only (`step_bar_chart_test.dart` covers chart rendering).
+Chart render is measured when `pumpChart` is set (device FAB uses `createOverlayStepBarChartPump`). CI smoke also runs `pumpChart` via `test/dev/chart_benchmark_pump.dart`.
 
 ## Release-build safety
 
-- Entry points `runDevInject()` and `runDevLifecycleSimulate()` throw unless `kDebugMode` is true.
+- Entry points `runDevInject()`, `runDevLifecycleSimulate()`, and `runDevChartBenchmark()` throw unless `kDebugMode` is true.
+- `ChartBenchmarkDevFab` is only built when `kDebugMode` is true.
 - `StepRepository.insertDevSamplesBatch()` is guarded with a debug `assert`.
 - **Do not import `lib/dev/` from `main.dart`, `app.dart`, or production widgets** without a `kDebugMode` guard.
 - Flutter release builds tree-shake unreachable debug paths when callers respect this policy; keep dev triggers in tests or debug-only code paths.
@@ -102,4 +124,6 @@ Widget render can be profiled on device via the optional `pumpChart` callback; C
 | `data_inject_service.dart` | 90-day synthetic inject |
 | `lifecycle_simulator.dart` | FR11 compaction orchestration |
 | `lifecycle_compaction.dart` | Pure merge/age helpers (Epic 4.1 reuse) |
-| `chart_benchmark.dart` | KPI-01 query + toggle/render benchmark harness |
+| `chart_benchmark.dart` | KPI-01 harness + `runDevChartBenchmark()` |
+| `chart_benchmark_render_pump.dart` | Off-screen `StepBarChart` pump for device/tests |
+| `chart_benchmark_dev_fab.dart` | History-tab debug FAB to run KPI-01 on device |

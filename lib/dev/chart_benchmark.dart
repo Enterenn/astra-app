@@ -16,23 +16,21 @@ const kChartBenchmarkPassThresholdMs = 100;
 const kDatasetLabelRaw25920 = 'raw-25920';
 const kDatasetLabelCompacted10080 = 'compacted-10080';
 
-/// Per-iteration phase timings captured during a benchmark run.
-class ChartBenchmarkIteration {
-  const ChartBenchmarkIteration({
-    required this.queryMs,
-    required this.toggleMs,
-  });
+/// KPI-01 measurement profile (logged as `profile=` in console output).
+enum ChartBenchmarkProfile {
+  /// Query + toggle + render each iteration (refresh + toggle stack).
+  fullStack,
 
-  final double queryMs;
-  final double toggleMs;
-
-  double get totalMs => queryMs + toggleMs;
+  /// Toggle + render only after warm-up (matches [HistoryCubit.selectPeriod] UX).
+  toggleOnly,
 }
 
 /// Aggregated KPI-01 benchmark output with percentile summaries.
 class ChartBenchmarkResult {
   const ChartBenchmarkResult({
     required this.iterations,
+    required this.profile,
+    required this.includesChartRender,
     required this.queryP50Ms,
     required this.queryP95Ms,
     required this.toggleP50Ms,
@@ -45,6 +43,8 @@ class ChartBenchmarkResult {
   });
 
   final int iterations;
+  final ChartBenchmarkProfile profile;
+  final bool includesChartRender;
   final double queryP50Ms;
   final double queryP95Ms;
   final double toggleP50Ms;
@@ -70,10 +70,12 @@ Future<ChartBenchmarkResult> runChartBenchmark({
   Database? db,
   UserPreferencesRepository? userPreferences,
   int iterations = kChartBenchmarkDefaultIterations,
+  ChartBenchmarkProfile profile = ChartBenchmarkProfile.fullStack,
   bool runLifecycleCompaction = false,
   bool skipDatasetSetup = false,
   ChartBenchmarkWidgetPump? pumpChart,
   bool assertPassGate = false,
+  @visibleForTesting int? passThresholdMs,
 }) async {
   if (!kDebugMode) {
     throw StateError('Chart benchmark is only available in debug builds');
@@ -105,6 +107,8 @@ Future<ChartBenchmarkResult> runChartBenchmark({
 
   final rowCount = await repository.countStepSamples();
   final datasetLabel = _datasetLabelForRowCount(rowCount);
+  final threshold = passThresholdMs ?? kChartBenchmarkPassThresholdMs;
+  final measureQuery = profile == ChartBenchmarkProfile.fullStack;
 
   final prefs =
       userPreferences ?? UserPreferencesRepository(repository.db);
@@ -114,7 +118,6 @@ Future<ChartBenchmarkResult> runChartBenchmark({
   );
 
   try {
-    await repository.getChartDailyAggregates(days: 30);
     await cubit.refresh();
     if (cubit.state.status != HistoryStatus.ready) {
       throw StateError(
@@ -128,10 +131,13 @@ Future<ChartBenchmarkResult> runChartBenchmark({
     final totalSamples = <double>[];
 
     for (var i = 0; i < iterations; i++) {
-      final queryStopwatch = Stopwatch()..start();
-      await repository.getChartDailyAggregates(days: 30);
-      queryStopwatch.stop();
-      final queryMs = queryStopwatch.elapsedMicroseconds / 1000.0;
+      var queryMs = 0.0;
+      if (measureQuery) {
+        final queryStopwatch = Stopwatch()..start();
+        await repository.getChartDailyAggregates(days: 30);
+        queryStopwatch.stop();
+        queryMs = queryStopwatch.elapsedMicroseconds / 1000.0;
+      }
 
       final toggleStopwatch = Stopwatch()..start();
       await benchmarkToggleRender(
@@ -152,10 +158,12 @@ Future<ChartBenchmarkResult> runChartBenchmark({
     final toggleP95 = _percentile(toggleSamples, 0.95);
     final totalP50 = _percentile(totalSamples, 0.50);
     final totalP95 = _percentile(totalSamples, 0.95);
-    final passed = totalP95 < kChartBenchmarkPassThresholdMs;
+    final passed = totalP95 < threshold;
 
     final result = ChartBenchmarkResult(
       iterations: iterations,
+      profile: profile,
+      includesChartRender: pumpChart != null,
       queryP50Ms: queryP50,
       queryP95Ms: queryP95,
       toggleP50Ms: toggleP50,
@@ -167,12 +175,12 @@ Future<ChartBenchmarkResult> runChartBenchmark({
       passed: passed,
     );
 
-    _logBenchmarkResult(result);
+    _logBenchmarkResult(result, threshold: threshold);
 
     if (assertPassGate && !passed) {
       throw StateError(
         'KPI-01 failed: total p95 ${totalP95.toStringAsFixed(2)}ms '
-        '>= $kChartBenchmarkPassThresholdMs ms',
+        '>= $threshold ms',
       );
     }
 
@@ -180,6 +188,37 @@ Future<ChartBenchmarkResult> runChartBenchmark({
   } finally {
     await cubit.close();
   }
+}
+
+/// Debug entry point mirroring [runDevInject].
+Future<ChartBenchmarkResult> runDevChartBenchmark({
+  required StepRepository repository,
+  required TimeProvider clock,
+  Database? db,
+  UserPreferencesRepository? userPreferences,
+  int iterations = kChartBenchmarkDefaultIterations,
+  ChartBenchmarkProfile profile = ChartBenchmarkProfile.fullStack,
+  bool runLifecycleCompaction = false,
+  bool skipDatasetSetup = false,
+  ChartBenchmarkWidgetPump? pumpChart,
+  bool assertPassGate = false,
+}) async {
+  if (!kDebugMode) {
+    throw StateError('Chart benchmark is only available in debug builds');
+  }
+
+  return runChartBenchmark(
+    repository: repository,
+    clock: clock,
+    db: db,
+    userPreferences: userPreferences,
+    iterations: iterations,
+    profile: profile,
+    runLifecycleCompaction: runLifecycleCompaction,
+    skipDatasetSetup: skipDatasetSetup,
+    pumpChart: pumpChart,
+    assertPassGate: assertPassGate,
+  );
 }
 
 /// Toggles 7d ↔ 30d on a warmed [HistoryCubit] and optionally pumps chart UI.
@@ -231,9 +270,21 @@ String _datasetLabelForRowCount(int rowCount) {
   return 'custom-$rowCount';
 }
 
-void _logBenchmarkResult(ChartBenchmarkResult result) {
+String _profileLabel(ChartBenchmarkProfile profile) {
+  return switch (profile) {
+    ChartBenchmarkProfile.fullStack => 'full-stack',
+    ChartBenchmarkProfile.toggleOnly => 'toggle-only',
+  };
+}
+
+void _logBenchmarkResult(
+  ChartBenchmarkResult result, {
+  required int threshold,
+}) {
   debugPrint(
-    '[KPI-01] dataset=${result.datasetLabel} rows=${result.rowCount} '
+    '[KPI-01] profile=${_profileLabel(result.profile)} '
+    'render=${result.includesChartRender} '
+    'dataset=${result.datasetLabel} rows=${result.rowCount} '
     'iterations=${result.iterations} '
     'query_p50=${result.queryP50Ms.toStringAsFixed(2)}ms '
     'query_p95=${result.queryP95Ms.toStringAsFixed(2)}ms '
@@ -241,6 +292,6 @@ void _logBenchmarkResult(ChartBenchmarkResult result) {
     'toggle_p95=${result.toggleP95Ms.toStringAsFixed(2)}ms '
     'total_p50=${result.totalP50Ms.toStringAsFixed(2)}ms '
     'total_p95=${result.totalP95Ms.toStringAsFixed(2)}ms '
-    'pass=${result.passed}',
+    'threshold=${threshold}ms pass=${result.passed}',
   );
 }
