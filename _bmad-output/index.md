@@ -16,6 +16,7 @@
 ## Planning — specifications
 
 - **[planning-artifacts/architecture.md](./planning-artifacts/architecture.md)** - Technical decisions and module structure
+- **[planning-artifacts/background-trust-and-movement-validation.md](./planning-artifacts/background-trust-and-movement-validation.md)** - Process alive vs killed, stay-up-to-date layers, GPS sovereignty guardrails
 - **[planning-artifacts/epics.md](./planning-artifacts/epics.md)** - Epic breakdown with story acceptance criteria
 - **[planning-artifacts/implementation-readiness-report-2026-05-25.md](./planning-artifacts/implementation-readiness-report-2026-05-25.md)** - PRD UX architecture alignment assessment
 - **[planning-artifacts/ux-design-specification.md](./planning-artifacts/ux-design-specification.md)** - Design tokens screens and flows

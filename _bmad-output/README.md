@@ -46,6 +46,7 @@ Read in this order:
 | [PRD](./planning-artifacts/prds/prd-astra-app-2026-05-22/prd.md) | 31 FRs, 9 NFRs, user journeys, scope |
 | [Technical addendum](./planning-artifacts/prds/prd-astra-app-2026-05-22/addendum.md) | SQL DDL, ADP/firmware (future phases) |
 | [Architecture](./planning-artifacts/architecture.md) | Technical decisions, module structure, patterns |
+| [Background trust & GPS guardrails](./planning-artifacts/background-trust-and-movement-validation.md) | Alive vs killed promises, catch-up layers, sovereignty-safe GPS |
 | [UX specification](./planning-artifacts/ux-design-specification.md) | Tokens, screens, flows, accessibility |
 | [Decision log](./planning-artifacts/prds/prd-astra-app-2026-05-22/.decision-log.md) | Product decision journal |
 

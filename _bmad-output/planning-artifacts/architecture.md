@@ -59,6 +59,8 @@ Dev/OSS FRs (FR-26–29) impose architectural observability: 90-day inject bench
 - Android = reference platform (WorkManager, `FOREGROUND_SERVICE_HEALTH`, continuous background target)
 - iOS = secondary (foreground backfill + rare BGAppRefresh; honest stale UI — no parity promise)
 
+**Background trust & GPS guardrails:** See [background-trust-and-movement-validation.md](./background-trust-and-movement-validation.md) — process-alive vs killed promises, layered catch-up (live monitor, WM, backfill), sovereignty-safe GPS rules (ephemeral on-device only, no stored trails).
+
 **Stack (Phase 0, from addendum):** `pedometer`, `sqflite`, `workmanager`, `flutter_local_notifications`, `fl_chart`, `share_plus`, `permission_handler`. Explicitly excluded: `open_wearables_health_sdk`, analytics SDKs, HTTP in health pipeline.
 
 **Android manifest (FR-6, FR-29):** `FOREGROUND_SERVICE_HEALTH` and related FGS declarations are configured in `AndroidManifest.xml`, not via `permission_handler`. Release manifest verification (no INTERNET, correct FGS type) must be part of dev tooling and beta checklist — not assumed from runtime permission flows alone.
@@ -429,13 +431,13 @@ Evaluation uses cumulative daily steps from `timeseries_samples` aggregated by `
 
 ### Frontend Architecture
 
-**State management:** `flutter_bloc` Cubits only — `TodayCubit`, `HistoryCubit`, `MyDataCubit`, `OnboardingCubit`. **No reactive stream architecture Phase 0** — no Riverpod, no app-wide `Stream`/`BehaviorSubject` state graphs. Exception: platform sensor streams (`pedometer`) terminate at `DataIngestionSource` boundary only.
+**State management:** `flutter_bloc` Cubits only — `TodayCubit`, `HistoryCubit`, `MyDataCubit`, `OnboardingCubit`. **No reactive stream architecture Phase 0** — no Riverpod, no app-wide `Stream`/`BehaviorSubject` state graphs. Exceptions: (1) platform sensor streams (`pedometer`) owned by `LiveStepMonitor` in UI isolate — sole subscriber, fan-out via `MonitorDrainSource` to `BackgroundCollector`; (2) **approved derogation (2026-06-02):** `LiveStepMonitor.watchTodaySteps()` → `TodayCubit.attachLiveMonitor()` for real-time Today step display (throttled ~1s), not app-wide reactive state.
 
 **Cubit refresh triggers:**
 
 | Cubit | Refresh when |
 |-------|--------------|
-| `TodayCubit` | App resume; `BackgroundCollector.onIngestionComplete` callback (UI isolate); Today tab visible → 60s periodic poll; post import/purge |
+| `TodayCubit` | **Live steps:** `LiveStepMonitor.watchTodaySteps()` (throttled). **Metadata:** app resume → `collectOnce` + `refreshMetadata()`; `onIngestionComplete` → `refreshMetadata()` only; `AstraApp` 60s periodic persist (all tabs); returning to Today tab → `refreshMetadata()`; cold start → `refresh()` then attach live monitor; post import/purge |
 | `HistoryCubit` | Tab selected; app resume; post import/purge/lifecycle |
 | `MyDataCubit` | Tab selected; app resume; post import/purge/export |
 
