@@ -52,12 +52,12 @@ So that I can check progress at a glance.
   - [x] Center: `AstraTypography.displayFor`, sublabels Figtree caption "steps today" / "goal {formatted}".
   - [x] Semantics: `label: Steps today: N of goal`, `value`/`min`/`max` for progress ([Source: UX §4.3]).
   - [x] Add `test/presentation/widgets/goal_ring_test.dart` — pump widget states, semantics, overflow arc capped.
-  - [ ] **Stop → review brief → wait for Baptiste OK → commit**
+  - [x] **Stop → review brief → wait for Baptiste OK → commit**
 
-- [ ] **Sub-task D — SourceChip + StatusBanner (compact stale)** (AC: #1, #4)
-  - [ ] Add `lib/presentation/widgets/source_chip.dart` — pill "Phone sensor", `bgSubtle` / `textSecondary`, optional 14dp icon.
-  - [ ] Add `lib/presentation/widgets/status_banner.dart` — variant enum: `staleCompact` (Today), reserve `staleFull` stub for Epic 4.2; 3px left accent `statusStale`; copy: **"Steps may be delayed — see My Data"**; `onTap` navigates to My Data tab.
-  - [ ] Widget tests for compact stale visibility and tap callback.
+- [x] **Sub-task D — SourceChip + StatusBanner (compact stale)** (AC: #1, #4)
+  - [x] Add `lib/presentation/widgets/source_chip.dart` — pill "Phone sensor", `bgSubtle` / `textSecondary`, optional 14dp icon.
+  - [x] Add `lib/presentation/widgets/status_banner.dart` — variant enum: `staleCompact` (Today), reserve `staleFull` stub for Epic 4.2; 3px left accent `statusStale`; copy: **"Steps may be delayed — see My Data"**; `onTap` navigates to My Data tab.
+  - [x] Widget tests for compact stale visibility and tap callback.
   - [ ] **Stop → review brief → wait for Baptiste OK → commit**
 
 - [ ] **Sub-task E — TodayScreen + AppScaffold integration** (AC: #1–#4, refresh triggers)
@@ -383,6 +383,7 @@ Run: `flutter analyze`, `flutter test test/core/health/ test/presentation/cubits
 - **Sub-task A (2026-06-02):** Added `isStaleData()` pure function with 12h Android / 4h iOS thresholds; null last ingestion → not stale. Refactored `BackgroundCollector` to use `registerOnIngestionComplete()` for post-construction UI wiring. 15 tests pass (7 stale evaluator + 8 collector).
 - **Sub-task B (2026-06-02):** Added `TodayState` with 6 status variants and `TodayCubit.refresh()` read path (parallel repo reads, permission check, stale evaluation). 11 cubit tests cover permission, progress/goalMet/overflow, and stale boundaries.
 - **Sub-task C (2026-06-02):** Added `GoalRing` widget with `GoalRingPainter` (CustomPainter), step count formatter, loading pulse, dashed no-permission track, semantics. 8 widget tests pass.
+- **Sub-task D (2026-06-02):** Added `SourceChip` pill and `StatusBanner` with `staleCompact`/`staleFull` variants, 3px stale accent, tap callback. 5 widget tests pass.
 
 ### File List
 
@@ -396,6 +397,9 @@ Run: `flutter analyze`, `flutter test test/core/health/ test/presentation/cubits
 - `lib/presentation/formatters/step_count_formatter.dart` (new)
 - `lib/presentation/widgets/goal_ring.dart` (new)
 - `test/presentation/widgets/goal_ring_test.dart` (new)
+- `lib/presentation/widgets/source_chip.dart` (new)
+- `lib/presentation/widgets/status_banner.dart` (new)
+- `test/presentation/widgets/status_banner_test.dart` (new)
 
 ## Story completion status
 

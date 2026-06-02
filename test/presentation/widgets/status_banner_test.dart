@@ -1,0 +1,92 @@
+import 'package:astra_app/core/constants/astra_theme.dart';
+import 'package:astra_app/presentation/widgets/source_chip.dart';
+import 'package:astra_app/presentation/widgets/status_banner.dart';
+import 'package:flutter/material.dart';
+import 'package:flutter_test/flutter_test.dart';
+
+void main() {
+  group('StatusBanner', () {
+    testWidgets('staleCompact variant shows compact stale copy', (tester) async {
+      await tester.pumpWidget(
+        MaterialApp(
+          theme: buildAstraLightTheme(),
+          home: const Scaffold(
+            body: StatusBanner(variant: StatusBannerVariant.staleCompact),
+          ),
+        ),
+      );
+
+      expect(
+        find.text('Steps may be delayed — see My Data'),
+        findsOneWidget,
+      );
+    });
+
+    testWidgets('staleCompact invokes onTap when tapped', (tester) async {
+      var tapped = false;
+
+      await tester.pumpWidget(
+        MaterialApp(
+          theme: buildAstraLightTheme(),
+          home: Scaffold(
+            body: StatusBanner(
+              variant: StatusBannerVariant.staleCompact,
+              onTap: () => tapped = true,
+            ),
+          ),
+        ),
+      );
+
+      await tester.tap(find.byType(StatusBanner));
+      await tester.pump();
+
+      expect(tapped, isTrue);
+    });
+
+    testWidgets('staleFull stub renders full diagnostic copy', (tester) async {
+      await tester.pumpWidget(
+        MaterialApp(
+          theme: buildAstraLightTheme(),
+          home: const Scaffold(
+            body: StatusBanner(variant: StatusBannerVariant.staleFull),
+          ),
+        ),
+      );
+
+      expect(
+        find.textContaining('No new steps in 12+ hours'),
+        findsOneWidget,
+      );
+    });
+  });
+
+  group('SourceChip', () {
+    testWidgets('shows default Phone sensor label', (tester) async {
+      await tester.pumpWidget(
+        MaterialApp(
+          theme: buildAstraLightTheme(),
+          home: const Scaffold(
+            body: SourceChip(),
+          ),
+        ),
+      );
+
+      expect(find.text('Phone sensor'), findsOneWidget);
+      expect(find.byIcon(Icons.smartphone_outlined), findsOneWidget);
+    });
+
+    testWidgets('can hide icon', (tester) async {
+      await tester.pumpWidget(
+        MaterialApp(
+          theme: buildAstraLightTheme(),
+          home: const Scaffold(
+            body: SourceChip(showIcon: false),
+          ),
+        ),
+      );
+
+      expect(find.text('Phone sensor'), findsOneWidget);
+      expect(find.byIcon(Icons.smartphone_outlined), findsNothing);
+    });
+  });
+}
