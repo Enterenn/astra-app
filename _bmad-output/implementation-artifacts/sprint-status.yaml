@@ -1,5 +1,5 @@
 # generated: 2026-05-25
-# last_updated: 2026-06-02 (story 2-3 done)
+# last_updated: 2026-06-02 (story 2-4 in-progress)
 # project: astra-app
 # project_key: NOKEY
 # tracking_system: file-system
@@ -44,7 +44,7 @@
 # NAVIGATION: _bmad-output/README.md
 
 generated: 2026-05-25
-last_updated: 2026-06-02 (story 2-3 done)
+last_updated: 2026-06-02 (story 2-4 in-progress)
 project: astra-app
 project_key: NOKEY
 tracking_system: file-system
@@ -63,7 +63,7 @@ development_status:
   2-1-sqlite-schema-for-timeseries-samples: done
   2-2-data-ingestion-abstraction-and-step-normalizer: done
   2-3-step-repository-and-time-semantics: done
-  2-4-background-collector-and-android-workmanager: backlog
+  2-4-background-collector-and-android-workmanager: in-progress
   2-5-today-dashboard-with-goal-ring: backlog
   2-6-goal-celebration-animation: backlog
   2-7-daily-goal-local-notification: backlog
