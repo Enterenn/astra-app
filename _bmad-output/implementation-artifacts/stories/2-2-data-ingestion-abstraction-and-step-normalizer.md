@@ -27,14 +27,14 @@ So that phone (and future ADP) sources can feed buckets without duplicating delt
 
 ## Tasks / Subtasks
 
-- [ ] **Sub-task A — Core models and ingestion contract** (AC: #1)
+- [x] **Sub-task A — Core models and ingestion contract** (AC: #1)
   - [x] Add `lib/data/models/step_reading.dart` — raw platform reading (`cumulativeSteps`, `observedAtUtc`).
   - [x] Add `lib/data/models/normalized_step_bucket.dart` — storage-ready bucket **without** `id` (UUID assigned at persist time in Story 2.3/2.4).
   - [x] Add `lib/data/datasources/data_ingestion_source.dart` — architecture contract with `providerId`, `deviceId`, `watchStepReadings()`.
   - [x] Add provider/device constants (e.g. `kInternalPhoneProvider`, `kSmartphoneDeviceId`, `kAstraWearableProvider` for ADP stub).
   - [x] **Stop → review brief → wait for Baptiste OK → commit**
 
-- [ ] **Sub-task B — TimeProvider (normalizer clock only)** (AC: #2, supports D-25)
+- [x] **Sub-task B — TimeProvider (normalizer clock only)** (AC: #2, supports D-25)
   - [x] Add `lib/core/time/time_provider.dart` — `nowUtc()`, `currentZoneOffset()` per architecture.
   - [x] Add `lib/core/time/system_time_provider.dart` — production implementation.
   - [x] Add `test/core/time/fake_time_provider.dart` — fixed clock for deterministic normalizer tests.
@@ -42,10 +42,10 @@ So that phone (and future ADP) sources can feed buckets without duplicating delt
   - [x] **Stop → review brief → wait for Baptiste OK → commit**
 
 - [ ] **Sub-task C — Data sources** (AC: #1, #3 metadata)
-  - [ ] Add `lib/data/datasources/phone_pedometer_source.dart` — maps `Pedometer.stepCountStream` `StepCount` → `StepReading`; `providerId=internal_phone`, `deviceId=smartphone`.
-  - [ ] Inject a testable pedometer stream factory (constructor param or typedef) so unit tests never touch real sensors.
-  - [ ] Add `lib/data/datasources/adp_ble_source.dart` — implements interface; `watchStepReadings()` returns empty stream; document Phase 1 ADP activation in class dartdoc.
-  - [ ] **Stop → review brief → wait for Baptiste OK → commit**
+  - [x] Add `lib/data/datasources/phone_pedometer_source.dart` — maps `Pedometer.stepCountStream` `StepCount` → `StepReading`; `providerId=internal_phone`, `deviceId=smartphone`.
+  - [x] Inject a testable pedometer stream factory (constructor param or typedef) so unit tests never touch real sensors.
+  - [x] Add `lib/data/datasources/adp_ble_source.dart` — implements interface; `watchStepReadings()` returns empty stream; document Phase 1 ADP activation in class dartdoc.
+  - [x] **Stop → review brief → wait for Baptiste OK → commit**
 
 - [ ] **Sub-task D — StepNormalizer + unit tests** (AC: #2, #3 field shapes)
   - [ ] Add `lib/data/datasources/step_normalizer.dart` — **only** place that converts cumulative readings → 5-minute bucket increments.
@@ -322,6 +322,8 @@ Expose getters on `AppDependencies` for later `BackgroundCollector` (Story 2.4).
 - 2026-06-02 — Sub-task A green/refactor validation: `dart format ...`, `flutter analyze`, `flutter test test/data/datasources/data_ingestion_source_test.dart`, and full `flutter test` all passed.
 - 2026-06-02 — Sub-task B red phase: `flutter test test/core/time/time_provider_test.dart` failed on missing time provider files.
 - 2026-06-02 — Sub-task B validation: `dart format ...`, `flutter analyze`, `flutter test test/core/time/time_provider_test.dart`, and full `flutter test` all passed.
+- 2026-06-02 — Sub-task C red phase: `flutter test test/data/datasources/adp_ble_source_test.dart test/data/datasources/phone_pedometer_source_test.dart` failed on missing data source files.
+- 2026-06-02 — Sub-task C validation: `dart format ...`, `flutter analyze`, `flutter test test/data/datasources/`, and full `flutter test` all passed.
 
 ### Completion Notes List
 - Sub-task A implementation is ready for review: added raw step readings, normalized bucket DTO without persistence `id`, ingestion source interface, and provider/device/sample constants.
@@ -330,20 +332,28 @@ Expose getters on `AppDependencies` for later `BackgroundCollector` (Story 2.4).
 - Sub-task B implementation is ready for review: added `TimeProvider`, `SystemTimeProvider`, and deterministic `FakeTimeProvider` for upcoming normalizer tests.
 - Confirmed no `LocalDayCalculator`, repository time semantics, persistence, or background collection were introduced.
 - Sub-task B review/commit gate completed after Baptiste approval.
+- Sub-task C implementation is ready for review: added `PhonePedometerSource` with injectable phone event stream factory and `AdpBleSource` Phase 0 no-op stub.
+- Phone source maps pedometer step events to raw cumulative `StepReading` values with phone metadata; ADP source emits no events.
+- Sub-task C review/commit gate completed after Baptiste approval.
 
 ### File List
 - `lib/core/time/system_time_provider.dart`
 - `lib/core/time/time_provider.dart`
+- `lib/data/datasources/adp_ble_source.dart`
 - `lib/data/datasources/data_ingestion_source.dart`
+- `lib/data/datasources/phone_pedometer_source.dart`
 - `lib/data/models/normalized_step_bucket.dart`
 - `lib/data/models/step_reading.dart`
 - `test/core/time/fake_time_provider.dart`
 - `test/core/time/time_provider_test.dart`
+- `test/data/datasources/adp_ble_source_test.dart`
 - `test/data/datasources/data_ingestion_source_test.dart`
+- `test/data/datasources/phone_pedometer_source_test.dart`
 
 ### Change Log
 - 2026-06-02 — Added Sub-task A core ingestion contract artifacts and tests; story moved to in-progress.
 - 2026-06-02 — Added Sub-task B time provider abstraction, system clock, fake clock, and tests.
+- 2026-06-02 — Added Sub-task C phone pedometer source, ADP no-op source, and datasource tests.
 
 ## Story Completion Status
 
