@@ -55,7 +55,7 @@ FR7: Hub persists **Timeseries Samples** in `timeseries_samples` table with OW-a
 
 FR8: Step samples aggregated into **Time Buckets** of 5 minutes by default before insert. Consecutive samples do not exceed one row per 5-minute window per device. Dev tooling can override bucket size for benchmarks.
 
-FR9: `user_preferences` table stores at minimum `daily_step_goal` (integer) and `theme_mode` (`system` | `light` | `dark`). Goal and theme preference persist across app restarts. Default goal 8000 if user skips setup. Default theme `system` on first launch.
+FR9: `user_preferences` table stores at minimum `daily_step_goal` (integer) and `theme_mode` (`system` | `light` | `dark`). Optional `display_name` (string, trimmed, local-only) may be stored for a calm Today greeting — no account, no cloud. Goal and theme preference persist across app restarts. Default goal 8000 if user skips setup. Default theme `system` on first launch.
 
 FR10: Database schema changes use numbered migrations from project inception. Fresh install and upgrade from prior schema version both succeed without data loss in Phase 0 test matrix.
 
@@ -77,7 +77,7 @@ FR18: Hub App performs **no outbound network requests** in the health data pipel
 
 FR19: User can export **Timeseries Samples** to CSV with OW-aligned column headers. Export preserves `id` column exactly for idempotent import. Export includes all canonical columns. CSV written to local cache/temp before OS share sheet.
 
-FR20: User can delete **all** local **Timeseries Samples** and derived collection state from **My Data**. Post-purge: sample count = 0, footprint ≈ 0 KB. Purge requires explicit confirmation. Purge preserves non-health setup preferences (daily_step_goal, theme_mode, onboarding completion, permission choices). Post-purge onboarding does not restart.
+FR20: User can delete **all** local **Timeseries Samples** and derived collection state from **My Data**. Post-purge: sample count = 0, footprint ≈ 0 KB. Purge requires explicit confirmation. Purge preserves non-health setup preferences (daily_step_goal, theme_mode, display_name if set, onboarding completion, permission choices). Post-purge onboarding does not restart.
 
 FR21: When user initiates purge, Hub encourages export first (non-blocking). Confirmation dialog mentions export option; user can cancel purge.
 
@@ -245,8 +245,8 @@ The user reviews 7-day and 30-day step trends with fast charts and a simple week
 **FRs covered:** FR16, FR17, FR28
 
 ### Epic 4: Data Sovereignty & Lifecycle (My Data)
-The user controls their health data — footprint, CSV export/import, purge, background status, goal editing, and theme preference. Primary product differentiator.
-**FRs covered:** FR5, FR11, FR12, FR13, FR19, FR20, FR21, FR23, FR30, FR31
+The user controls their health data — footprint, CSV export/import, purge, background status, goal editing, theme preference, and optional local display name (no account). Primary product differentiator.
+**FRs covered:** FR5, FR9, FR11, FR12, FR13, FR19, FR20, FR21, FR23, FR30, FR31
 
 ### Epic 5: Design Polish & Visual Cohesion
 After functional epics ship, the app receives a dedicated visual pass — accent/contrast tokens, navigation spacing, and cross-screen cohesion verified on device before beta. Includes early Android build-hygiene (Built-in Kotlin / plugin KGP migration) so Gradle debt does not accumulate while UI polish runs.
@@ -760,7 +760,7 @@ So that History meets NFR1 before beta.
 
 ## Epic 4: Data Sovereignty & Lifecycle (My Data)
 
-The user controls their health data — footprint, CSV export/import, purge, background status, goal editing, and theme preference. Primary product differentiator.
+The user controls their health data — footprint, CSV export/import, purge, background status, goal editing, theme preference, and optional local display name (no account). Primary product differentiator.
 
 ### Story 4.1: Data Lifecycle Service (Downsampling and Maintenance)
 
@@ -876,11 +876,11 @@ So that I can wipe my history while keeping my preferences.
 **Given** user confirms delete
 **When** purge executes in transaction
 **Then** all `timeseries_samples` and derived collection state are removed (FR20)
-**And** `daily_step_goal`, `theme_mode`, onboarding flag, permission choices persist (D-11)
+**And** `daily_step_goal`, `theme_mode`, `display_name` (if set), onboarding flag, permission choices persist (D-11)
 
 **Given** purge completes
 **When** user views Today/History/My Data
-**Then** empty states show 0 samples / ~0 KB; goal row unchanged; no re-onboarding
+**Then** empty states show 0 samples / ~0 KB; goal row unchanged; Today greeting unchanged if display name was set; no re-onboarding
 
 ---
 
@@ -931,6 +931,71 @@ So that the app looks the way I prefer regardless of OS settings.
 **Given** theme selector is functional
 **When** Epic 5 design polish runs
 **Then** contrast and visual cohesion are verified per UX §4.1 and V-1–V-13 (NFR5, UX-DR21) — not blocking Story 4.7 delivery
+
+---
+
+### Story 4.8: Local Display Name and Today Greeting
+
+As a **user**,
+I want to optionally tell the app my first name and see a calm greeting on Today,
+So that the app feels personal without creating an account or sending data anywhere.
+
+**Acceptance Criteria:**
+
+**Given** first launch onboarding
+**When** user completes trust, permissions, and goal steps
+**Then** an optional display-name step asks what to call them (English copy only in Phase 0)
+**And** user can skip without blocking completion
+**And** trimmed non-empty input persists to `user_preferences.display_name` via `UserPreferencesRepository`
+
+**Given** no display name stored
+**When** Today loads
+**Then** no greeting line is shown (ring layout unchanged)
+
+**Given** a display name is stored
+**When** Today loads
+**Then** a single caption line above the goal ring shows **"Hello, {name}"** (Figtree `type.caption`, `text.secondary`)
+**And** step count is **not** duplicated under the greeting (ring remains sole step total)
+
+**Given** My Data is available (this story may ship before full My Data sections)
+**When** user edits display name from My Data
+**Then** value persists immediately and Today greeting updates on next refresh without restart
+
+**Given** full health-data purge (Story 4.5)
+**When** purge completes
+**Then** `display_name` is retained like `daily_step_goal` and `theme_mode`
+
+**Given** copy and tone
+**When** greeting is shown
+**Then** voice stays calm and factual per UX §4.6 — no coach language, exclamation marks, or streak messaging
+
+**Out of scope for 4.8:** i18n / `flutter_localizations` (deferred); personalized celebration or notifications; step count subtitle under greeting; profile initials avatar → Story 4.9.
+
+---
+
+### Story 4.9: Profile Initials on My Data (Settings Entry)
+
+As a **user**,
+I want a simple profile affordance on My Data using my initials,
+So that I have a recognizable entry point for preferences even without an account.
+
+**Acceptance Criteria:**
+
+**Given** a display name is stored
+**When** My Data profile header renders
+**Then** a circular initials badge shows one or two letters derived from the trimmed name (uppercase)
+**And** tap opens or scrolls to profile/preferences rows (display name, goal, appearance) per integrated My Data layout
+
+**Given** no display name
+**When** My Data profile header renders
+**Then** a neutral placeholder glyph is shown (no fake initials)
+**And** tap still reaches display-name edit affordance
+
+**Given** display name changes
+**When** save completes
+**Then** initials update immediately without app restart
+
+**Out of scope for 4.9:** photo upload, account linking, cloud avatar, i18n.
 
 ---
 
