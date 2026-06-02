@@ -1,3 +1,4 @@
+import 'package:permission_handler/permission_handler.dart';
 import 'package:sqflite/sqflite.dart';
 
 import '../../data/datasources/adp_ble_source.dart';
@@ -10,6 +11,7 @@ import '../../data/repositories/user_preferences_repository.dart';
 import '../../presentation/cubits/theme_state.dart';
 import '../database/app_database.dart';
 import '../services/background_collector.dart';
+import '../services/notification_service.dart';
 import '../time/system_time_provider.dart';
 import '../time/time_provider.dart';
 
@@ -23,6 +25,7 @@ class AppDependencies {
     required this.stepNormalizer,
     required this.stepRepository,
     required this.backgroundCollector,
+    required this.notificationService,
   });
 
   final UserPreferencesRepository userPreferences;
@@ -33,8 +36,11 @@ class AppDependencies {
   final StepNormalizer stepNormalizer;
   final StepRepository stepRepository;
   final BackgroundCollector backgroundCollector;
+  final NotificationService notificationService;
 
-  static Future<AppDependencies> create() async {
+  static Future<AppDependencies> create({
+    required NotificationService notificationService,
+  }) async {
     final db = await openAstraDatabase();
     final userPreferences = UserPreferencesRepository(db);
     final initialTheme = await userPreferences.getThemeMode();
@@ -52,6 +58,11 @@ class AppDependencies {
       normalizer: stepNormalizer,
       repository: stepRepository,
       baselineRepository: IngestionBaselineRepository(db),
+      userPreferences: userPreferences,
+      clock: timeProvider,
+      notificationService: notificationService,
+      notificationPermissionGranted:
+          notificationService.hasNotificationPermission,
     );
     return AppDependencies(
       userPreferences: userPreferences,
@@ -62,6 +73,7 @@ class AppDependencies {
       stepNormalizer: stepNormalizer,
       stepRepository: stepRepository,
       backgroundCollector: backgroundCollector,
+      notificationService: notificationService,
     );
   }
 
@@ -72,6 +84,8 @@ class AppDependencies {
     bool? initialOnboardingComplete,
     TimeProvider? timeProvider,
     List<DataIngestionSource>? ingestionSources,
+    NotificationService? notificationService,
+    Future<bool> Function()? notificationPermissionGranted,
   }) async {
     final initialTheme = await userPreferences.getThemeMode();
     final onboardingComplete =
@@ -82,11 +96,23 @@ class AppDependencies {
         ingestionSources ?? const <DataIngestionSource>[AdpBleSource()];
     final stepNormalizer = StepNormalizer(clock: clock);
     final stepRepository = StepRepository(db: db, clock: clock);
+    final notifications =
+        notificationService ??
+        NotificationService(
+          goalNotificationPresenter:
+              ({required id, required title, body}) async {},
+          permissionChecker: () async => PermissionStatus.granted,
+        );
     final backgroundCollector = BackgroundCollector(
       sources: sources,
       normalizer: stepNormalizer,
       repository: stepRepository,
       baselineRepository: IngestionBaselineRepository(db),
+      userPreferences: userPreferences,
+      clock: clock,
+      notificationService: notifications,
+      notificationPermissionGranted:
+          notificationPermissionGranted ?? () async => true,
     );
     return AppDependencies(
       userPreferences: userPreferences,
@@ -97,6 +123,7 @@ class AppDependencies {
       stepNormalizer: stepNormalizer,
       stepRepository: stepRepository,
       backgroundCollector: backgroundCollector,
+      notificationService: notifications,
     );
   }
 }

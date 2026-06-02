@@ -1,6 +1,7 @@
 import 'package:astra_app/core/database/app_database.dart';
 import 'package:astra_app/core/di/app_dependencies.dart';
 import 'package:astra_app/core/services/background_collector.dart';
+import 'package:astra_app/core/services/notification_service.dart';
 import 'package:astra_app/data/datasources/adp_ble_source.dart';
 import 'package:astra_app/data/datasources/phone_pedometer_source.dart';
 import 'package:astra_app/data/datasources/step_normalizer.dart';
@@ -51,6 +52,7 @@ void main() {
         expect(deps.stepRepository, isA<StepRepository>());
         expect(deps.stepRepository.clock, same(clock));
         expect(deps.backgroundCollector, isA<BackgroundCollector>());
+        expect(deps.notificationService, isA<NotificationService>());
         expect(deps.ingestionSources, hasLength(2));
         expect(deps.ingestionSources, contains(isA<PhonePedometerSource>()));
         expect(deps.ingestionSources, contains(isA<AdpBleSource>()));
