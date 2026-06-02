@@ -33,8 +33,19 @@ void main() {
       );
     });
 
-    test('does not use dataSync or network permission for health collection', () {
+    test('declares health foreground service without dataSync type', () {
+      expect(
+        manifest,
+        contains('android:name=".HealthStepForegroundService"'),
+      );
+      expect(
+        manifest,
+        contains('android:foregroundServiceType="health"'),
+      );
       expect(manifest, isNot(contains('foregroundServiceType="dataSync"')));
+    });
+
+    test('does not use network permission for health collection', () {
       expect(
         manifest,
         isNot(contains('android.permission.INTERNET')),

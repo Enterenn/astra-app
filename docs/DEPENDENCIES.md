@@ -18,7 +18,18 @@ Phase 0 step collection declares only local device-health/background permissions
 | `POST_NOTIFICATIONS` | Already used by the app for later local notification UX; not a network permission |
 
 - `INTERNET` is intentionally absent from the release manifest.
-- No foreground service is started in Story 2.4, so no `foregroundServiceType` service declaration is added yet. When a health foreground service is introduced, it must use `foregroundServiceType="health"`, not `dataSync`.
+
+### Health foreground service (Story 2.8)
+
+| Component | Role |
+|-----------|------|
+| `HealthStepForegroundService` (Kotlin) | Android `foregroundServiceType="health"` service; `ServiceCompat.startForeground` with `FOREGROUND_SERVICE_TYPE_HEALTH` on API 34+ |
+| Notification channel `astra_health_tracking` (id `100`) | Honest ongoing copy: "Step tracking active" — distinct from goal channel `astra_goal_reached` (id `1`) |
+| `HealthForegroundServiceCoordinator` (Dart) | Method channel `com.astraapp.astra_app/health_foreground`; starts/stops FGS on app pause/resume |
+| `runFgsStepCollectionCycle` | Periodic `BackgroundCollector.collectOnce` every 5 minutes while FGS runs (same bootstrap as WorkManager) |
+
+- WorkManager remains registered as fallback orchestrator (architecture D-04).
+- No `dataSync` foreground service type.
 
 ## WorkManager device verification (Story 2.4)
 
