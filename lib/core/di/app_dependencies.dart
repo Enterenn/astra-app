@@ -1,3 +1,5 @@
+import 'dart:io';
+
 import 'package:permission_handler/permission_handler.dart';
 import 'package:sqflite/sqflite.dart';
 
@@ -12,8 +14,11 @@ import '../../data/repositories/user_preferences_repository.dart';
 import '../../presentation/cubits/theme_state.dart';
 import '../database/app_database.dart';
 import '../permissions/activity_permission_resolver.dart';
+import '../services/android_platform_capability_probe.dart';
 import '../services/background_collector.dart';
+import '../services/background_health_capability_evaluator.dart';
 import '../services/health_foreground_service.dart';
+import '../services/platform_capability_probe.dart';
 import '../services/live_step_monitor.dart';
 import '../services/notification_service.dart';
 import '../time/system_time_provider.dart';
@@ -34,6 +39,7 @@ class AppDependencies {
     required this.notificationService,
     required this.liveStepMonitor,
     required this.activityPermissionGranted,
+    required this.backgroundHealthCapabilityEvaluator,
     required this.healthForegroundCoordinator,
   });
 
@@ -48,12 +54,48 @@ class AppDependencies {
   final NotificationService notificationService;
   final LiveStepMonitor liveStepMonitor;
   final ActivityPermissionChecker activityPermissionGranted;
+  final BackgroundHealthCapabilityEvaluator backgroundHealthCapabilityEvaluator;
   final HealthForegroundServiceCoordinator healthForegroundCoordinator;
 
-  static Future<bool> defaultActivityPermissionGranted() async {
+  static Future<bool> resolveActivityRecognitionGranted() async {
     final permission = resolveActivityPermission();
     final status = await permission.status;
     return status.isGranted || status.isLimited || status.isProvisional;
+  }
+
+  static BackgroundHealthCapabilityEvaluator buildCapabilityEvaluator({
+    Future<bool> Function()? activityRecognitionGranted,
+    required Future<bool> Function() notificationGranted,
+    PlatformCapabilityProbe? platformProbe,
+    bool Function()? isAndroidPlatform,
+  }) {
+    return BackgroundHealthCapabilityEvaluator(
+      activityRecognitionGranted:
+          activityRecognitionGranted ?? resolveActivityRecognitionGranted,
+      notificationGranted: notificationGranted,
+      platformProbe:
+          platformProbe ??
+          _defaultPlatformProbe(isAndroidPlatform: isAndroidPlatform),
+      isAndroidPlatform: isAndroidPlatform ?? () => Platform.isAndroid,
+    );
+  }
+
+  static PlatformCapabilityProbe _defaultPlatformProbe({
+    bool Function()? isAndroidPlatform,
+  }) {
+    final isAndroid = isAndroidPlatform ?? () => Platform.isAndroid;
+    return isAndroid()
+        ? AndroidPlatformCapabilityProbe(isAndroidPlatform: isAndroid)
+        : const NoopPlatformCapabilityProbe();
+  }
+
+  static ActivityPermissionChecker activityCheckerFromEvaluator(
+    BackgroundHealthCapabilityEvaluator evaluator,
+  ) {
+    return () async {
+      final snapshot = await evaluator.evaluate();
+      return snapshot.activityRecognitionGranted;
+    };
   }
 
   static Future<AppDependencies> create({
@@ -88,8 +130,12 @@ class AppDependencies {
       notificationPermissionGranted:
           notificationService.hasNotificationPermission,
     );
+    final capabilityEvaluator = buildCapabilityEvaluator(
+      notificationGranted: notificationService.hasNotificationPermission,
+    );
+    final activityChecker = activityCheckerFromEvaluator(capabilityEvaluator);
     final healthForeground = HealthForegroundServiceCoordinator(
-      activityPermissionGranted: defaultActivityPermissionGranted,
+      activityPermissionGranted: activityChecker,
     );
     healthForeground.registerPlatformHandlers();
 
@@ -104,7 +150,8 @@ class AppDependencies {
       backgroundCollector: backgroundCollector,
       notificationService: notificationService,
       liveStepMonitor: liveStepMonitor,
-      activityPermissionGranted: defaultActivityPermissionGranted,
+      activityPermissionGranted: activityChecker,
+      backgroundHealthCapabilityEvaluator: capabilityEvaluator,
       healthForegroundCoordinator: healthForeground,
     );
   }
@@ -120,7 +167,10 @@ class AppDependencies {
     Future<bool> Function()? notificationPermissionGranted,
     LiveStepMonitor? liveStepMonitor,
     ActivityPermissionChecker? activityPermissionGranted,
+    BackgroundHealthCapabilityEvaluator? backgroundHealthCapabilityEvaluator,
+    PlatformCapabilityProbe? platformCapabilityProbe,
     HealthForegroundServiceCoordinator? healthForegroundCoordinator,
+    bool Function()? isAndroidPlatform,
   }) async {
     final initialTheme = await userPreferences.getThemeMode();
     final onboardingComplete =
@@ -148,10 +198,21 @@ class AppDependencies {
               ({required id, required title, body}) async {},
           permissionChecker: () async => PermissionStatus.granted,
         );
+    final notificationCheck =
+        notificationPermissionGranted ??
+        notifications.hasNotificationPermission;
+    final activityForEvaluator = activityPermissionGranted ?? () async => true;
+    final capabilityEvaluator =
+        backgroundHealthCapabilityEvaluator ??
+        buildCapabilityEvaluator(
+          activityRecognitionGranted: activityForEvaluator,
+          notificationGranted: notificationCheck,
+          platformProbe: platformCapabilityProbe,
+          isAndroidPlatform: isAndroidPlatform,
+        );
     final permissionCheck =
         activityPermissionGranted ??
-        notificationPermissionGranted ??
-        () async => true;
+        activityCheckerFromEvaluator(capabilityEvaluator);
     final healthForeground =
         healthForegroundCoordinator ??
         HealthForegroundServiceCoordinator(
@@ -165,7 +226,7 @@ class AppDependencies {
       userPreferences: userPreferences,
       clock: clock,
       notificationService: notifications,
-      notificationPermissionGranted: permissionCheck,
+      notificationPermissionGranted: notificationCheck,
     );
     return AppDependencies(
       userPreferences: userPreferences,
@@ -179,6 +240,7 @@ class AppDependencies {
       notificationService: notifications,
       liveStepMonitor: monitor,
       activityPermissionGranted: permissionCheck,
+      backgroundHealthCapabilityEvaluator: capabilityEvaluator,
       healthForegroundCoordinator: healthForeground,
     );
   }
