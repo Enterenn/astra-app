@@ -5,6 +5,7 @@ import 'package:permission_handler/permission_handler.dart';
 
 import '../../core/health/stale_data_evaluator.dart';
 import '../../core/permissions/activity_permission_resolver.dart';
+import '../../core/time/local_day_formatter.dart';
 import '../../core/time/time_provider.dart';
 import '../../data/repositories/step_repository.dart';
 import '../../data/repositories/user_preferences_repository.dart';
@@ -93,13 +94,52 @@ class TodayCubit extends Cubit<TodayState> {
       isIos: _isIos,
     );
 
-    emit(
-      TodayState.fromData(
-        steps: steps,
-        goal: goal,
-        isStale: stale,
-        lastIngestionUtc: lastUtc,
-      ),
+    final baseState = TodayState.fromData(
+      steps: steps,
+      goal: goal,
+      isStale: stale,
+      lastIngestionUtc: lastUtc,
     );
+    await _maybeTriggerCelebration(
+      steps: steps,
+      goal: goal,
+      baseState: baseState,
+    );
+  }
+
+  void dismissCelebration() {
+    if (state.showCelebration) {
+      emit(state.copyWith(showCelebration: false));
+    }
+  }
+
+  Future<void> _maybeTriggerCelebration({
+    required int steps,
+    required int goal,
+    required TodayState baseState,
+  }) async {
+    if (isClosed) {
+      return;
+    }
+    if (goal <= 0 || steps < goal) {
+      emit(baseState.copyWith(showCelebration: false));
+      return;
+    }
+
+    final todayIso = formatLocalDayIso(clock.snapshot());
+    final shownDate = await userPreferences.getCelebrationShownDate();
+    if (isClosed) {
+      return;
+    }
+    if (shownDate == todayIso) {
+      emit(baseState.copyWith(showCelebration: false));
+      return;
+    }
+
+    await userPreferences.setCelebrationShownDate(todayIso);
+    if (isClosed) {
+      return;
+    }
+    emit(baseState.copyWith(showCelebration: true));
   }
 }

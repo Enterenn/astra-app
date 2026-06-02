@@ -1,4 +1,5 @@
 import 'package:astra_app/core/constants/preference_keys.dart';
+import 'package:astra_app/core/time/local_day_formatter.dart';
 import 'package:astra_app/core/database/app_database.dart';
 import 'package:astra_app/data/datasources/data_ingestion_source.dart';
 import 'package:astra_app/data/models/normalized_step_bucket.dart';
@@ -240,6 +241,115 @@ void main() {
       expect(sawLoading, isFalse);
       expect(cubit.state.status, TodayStatus.progress);
       await subscription.cancel();
+      cubit.close();
+    });
+
+    test('refresh triggers celebration when goal met and pref unset', () async {
+      await userPreferences.setDailyStepGoal(5000);
+      await stepRepository.upsertIngestionBucket(
+        _bucket(
+          startTimeUtc: DateTime.utc(2026, 6, 2, 10),
+          value: 5000,
+          zoneOffset: '+02:00',
+        ),
+      );
+      final cubit = buildCubit();
+
+      await cubit.refresh();
+
+      expect(cubit.state.showCelebration, isTrue);
+      expect(
+        await userPreferences.getCelebrationShownDate(),
+        formatLocalDayIso(clock.snapshot()),
+      );
+      cubit.close();
+    });
+
+    test('refresh does not trigger celebration when pref already today', () async {
+      final todayIso = formatLocalDayIso(clock.snapshot());
+      await userPreferences.setCelebrationShownDate(todayIso);
+      await userPreferences.setDailyStepGoal(5000);
+      await stepRepository.upsertIngestionBucket(
+        _bucket(
+          startTimeUtc: DateTime.utc(2026, 6, 2, 10),
+          value: 5000,
+          zoneOffset: '+02:00',
+        ),
+      );
+      final cubit = buildCubit();
+
+      await cubit.refresh();
+
+      expect(cubit.state.showCelebration, isFalse);
+      cubit.close();
+    });
+
+    test('refresh does not trigger celebration when steps below goal', () async {
+      await userPreferences.setDailyStepGoal(5000);
+      await stepRepository.upsertIngestionBucket(
+        _bucket(
+          startTimeUtc: DateTime.utc(2026, 6, 2, 10),
+          value: 3000,
+          zoneOffset: '+02:00',
+        ),
+      );
+      final cubit = buildCubit();
+
+      await cubit.refresh();
+
+      expect(cubit.state.showCelebration, isFalse);
+      cubit.close();
+    });
+
+    test('refresh triggers celebration on overflow when pref unset', () async {
+      await userPreferences.setDailyStepGoal(5000);
+      await stepRepository.upsertIngestionBucket(
+        _bucket(
+          startTimeUtc: DateTime.utc(2026, 6, 2, 10),
+          value: 7500,
+          zoneOffset: '+02:00',
+        ),
+      );
+      final cubit = buildCubit();
+
+      await cubit.refresh();
+
+      expect(cubit.state.showCelebration, isTrue);
+      cubit.close();
+    });
+
+    test('refresh does not trigger celebration when permission denied', () async {
+      await userPreferences.setDailyStepGoal(5000);
+      await stepRepository.upsertIngestionBucket(
+        _bucket(
+          startTimeUtc: DateTime.utc(2026, 6, 2, 10),
+          value: 5000,
+          zoneOffset: '+02:00',
+        ),
+      );
+      final cubit = buildCubit(activityPermissionGranted: () async => false);
+
+      await cubit.refresh();
+
+      expect(cubit.state.showCelebration, isFalse);
+      cubit.close();
+    });
+
+    test('dismissCelebration clears showCelebration flag', () async {
+      await userPreferences.setDailyStepGoal(5000);
+      await stepRepository.upsertIngestionBucket(
+        _bucket(
+          startTimeUtc: DateTime.utc(2026, 6, 2, 10),
+          value: 5000,
+          zoneOffset: '+02:00',
+        ),
+      );
+      final cubit = buildCubit();
+      await cubit.refresh();
+
+      expect(cubit.state.showCelebration, isTrue);
+      cubit.dismissCelebration();
+      expect(cubit.state.showCelebration, isFalse);
       cubit.close();
     });
 

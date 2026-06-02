@@ -16,6 +16,7 @@ class TodayState {
     this.goal = kDefaultStepGoal,
     this.isStale = false,
     this.lastIngestionUtc,
+    this.showCelebration = false,
   });
 
   final TodayStatus status;
@@ -23,6 +24,7 @@ class TodayState {
   final int goal;
   final bool isStale;
   final DateTime? lastIngestionUtc;
+  final bool showCelebration;
 
   const TodayState.loading() : this(status: TodayStatus.loading);
 
@@ -33,6 +35,7 @@ class TodayState {
     required int goal,
     required bool isStale,
     DateTime? lastIngestionUtc,
+    bool showCelebration = false,
   }) {
     return TodayState(
       status: _resolveStatus(steps: steps, goal: goal),
@@ -40,6 +43,25 @@ class TodayState {
       goal: goal,
       isStale: isStale,
       lastIngestionUtc: lastIngestionUtc,
+      showCelebration: showCelebration,
+    );
+  }
+
+  TodayState copyWith({
+    TodayStatus? status,
+    int? steps,
+    int? goal,
+    bool? isStale,
+    DateTime? lastIngestionUtc,
+    bool? showCelebration,
+  }) {
+    return TodayState(
+      status: status ?? this.status,
+      steps: steps ?? this.steps,
+      goal: goal ?? this.goal,
+      isStale: isStale ?? this.isStale,
+      lastIngestionUtc: lastIngestionUtc ?? this.lastIngestionUtc,
+      showCelebration: showCelebration ?? this.showCelebration,
     );
   }
 
