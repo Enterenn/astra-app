@@ -17,6 +17,8 @@ typedef AstraDatabaseOpener = Future<Database> Function({String? databasePath});
 abstract class StepCollectionWorkmanagerClient {
   Future<void> initialize(Function callbackDispatcher);
 
+  Future<void> cancelByUniqueName(String uniqueName);
+
   Future<void> registerPeriodicTask(
     String uniqueName,
     String taskName, {
@@ -36,6 +38,11 @@ class PluginStepCollectionWorkmanagerClient
   @override
   Future<void> initialize(Function callbackDispatcher) {
     return _workmanager.initialize(callbackDispatcher);
+  }
+
+  @override
+  Future<void> cancelByUniqueName(String uniqueName) {
+    return _workmanager.cancelByUniqueName(uniqueName);
   }
 
   @override
@@ -106,6 +113,21 @@ Future<bool> runStepCollectionWorkmanagerTask({
   } finally {
     await db?.close();
   }
+}
+
+/// Cancels any in-flight Android step-collection WM work before UI-isolate init.
+///
+/// Prevents a background isolate from racing [NotificationService.initialize].
+Future<void> cancelStepCollectionWorkmanager({
+  bool? isAndroid,
+  StepCollectionWorkmanagerClient? client,
+}) async {
+  if (!(isAndroid ?? Platform.isAndroid)) {
+    return;
+  }
+
+  final workmanager = client ?? PluginStepCollectionWorkmanagerClient();
+  await workmanager.cancelByUniqueName(kStepCollectionUniqueName);
 }
 
 /// Registers Android periodic step collection (D-04).

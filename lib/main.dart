@@ -11,9 +11,10 @@ import 'core/services/workmanager_callback.dart';
 
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
+  await cancelStepCollectionWorkmanager();
   final notificationService = NotificationService();
   try {
-    await notificationService.initialize().timeout(const Duration(seconds: 5));
+    await notificationService.initialize().timeout(const Duration(seconds: 3));
   } on TimeoutException catch (error) {
     debugPrint('NotificationService init timed out: $error');
   } catch (error, stackTrace) {

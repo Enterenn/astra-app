@@ -46,5 +46,29 @@ void main() {
       expect(await limitedService.hasNotificationPermission(), isTrue);
       expect(await provisionalService.hasNotificationPermission(), isTrue);
     });
+
+    test('concurrent initialize calls share one platform init', () async {
+      var initCount = 0;
+      final service = NotificationService(
+        platformInitializer: (_) async {
+          initCount += 1;
+          await Future<void>.delayed(const Duration(milliseconds: 20));
+        },
+      );
+
+      await Future.wait([service.initialize(), service.initialize()]);
+
+      expect(initCount, 1);
+    });
+
+    test('initializeForBackground returns false when init times out', () async {
+      final service = NotificationService(
+        platformInitializer: (_) =>
+            Future<void>.delayed(const Duration(seconds: 5)),
+        backgroundInitTimeout: const Duration(milliseconds: 10),
+      );
+
+      expect(await service.initializeForBackground(), isFalse);
+    });
   });
 }

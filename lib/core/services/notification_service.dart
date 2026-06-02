@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:flutter/foundation.dart';
 import 'package:flutter_local_notifications/flutter_local_notifications.dart';
 import 'package:permission_handler/permission_handler.dart';
@@ -10,15 +12,23 @@ typedef GoalNotificationPresenter = Future<void> Function({
   String? body,
 });
 
+typedef NotificationPlatformInitializer = Future<void> Function(
+  FlutterLocalNotificationsPlugin plugin,
+);
+
 /// Local-only goal notifications (FR25). No FCM / scheduled nudges.
 class NotificationService {
   NotificationService({
     FlutterLocalNotificationsPlugin? plugin,
     NotificationPermissionChecker? permissionChecker,
     this._goalNotificationPresenter,
+    this._platformInitializer,
+    Duration? backgroundInitTimeout,
   }) : _plugin = plugin ?? FlutterLocalNotificationsPlugin(),
        _permissionChecker =
-           permissionChecker ?? (() => Permission.notification.status);
+           permissionChecker ?? (() => Permission.notification.status),
+       _backgroundInitTimeout =
+           backgroundInitTimeout ?? const Duration(seconds: 2);
 
   static const int goalNotificationId = 1;
   static const String goalChannelId = 'astra_goal_reached';
@@ -28,8 +38,11 @@ class NotificationService {
   final FlutterLocalNotificationsPlugin _plugin;
   final NotificationPermissionChecker _permissionChecker;
   final GoalNotificationPresenter? _goalNotificationPresenter;
+  final NotificationPlatformInitializer? _platformInitializer;
+  final Duration _backgroundInitTimeout;
 
   bool _initialized = false;
+  Future<void>? _initFuture;
 
   bool get _usesPlatformPresenter => _goalNotificationPresenter == null;
 
@@ -38,7 +51,16 @@ class NotificationService {
     if (_initialized) {
       return;
     }
-    await _initializePlatform();
+
+    _initFuture ??= _initializePlatform();
+    try {
+      await _initFuture;
+    } catch (_) {
+      if (!_initialized) {
+        _initFuture = null;
+      }
+      rethrow;
+    }
   }
 
   /// WorkManager isolate — same minimal init after binding + plugin registrant.
@@ -47,12 +69,24 @@ class NotificationService {
       _initialized = true;
       return true;
     }
-    await initialize();
-    return _initialized;
+
+    try {
+      await initialize().timeout(_backgroundInitTimeout);
+      return _initialized;
+    } on TimeoutException catch (error) {
+      debugPrint('NotificationService background init timed out: $error');
+      return false;
+    }
   }
 
   Future<void> _initializePlatform() async {
     if (!_usesPlatformPresenter) {
+      _initialized = true;
+      return;
+    }
+
+    if (_platformInitializer != null) {
+      await _platformInitializer(_plugin);
       _initialized = true;
       return;
     }
@@ -82,6 +116,7 @@ class NotificationService {
       );
       _initialized = true;
     } catch (error, stackTrace) {
+      _initFuture = null;
       debugPrint('NotificationService init failed: $error');
       debugPrintStack(stackTrace: stackTrace);
     }

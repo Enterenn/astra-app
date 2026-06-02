@@ -28,7 +28,7 @@ Future<BackgroundCollector> createIsolateBackgroundCollector({
         const AdpBleSource(),
       ];
   final notifications = notificationService ?? NotificationService();
-  await notifications.initializeForBackground();
+  final notificationsReady = await notifications.initializeForBackground();
   return BackgroundCollector(
     sources: resolvedSources,
     normalizer: StepNormalizer(clock: timeProvider),
@@ -36,9 +36,10 @@ Future<BackgroundCollector> createIsolateBackgroundCollector({
     baselineRepository: IngestionBaselineRepository(db),
     userPreferences: UserPreferencesRepository(db),
     clock: timeProvider,
-    notificationService: notifications,
-    notificationPermissionGranted:
-        notificationPermissionGranted ??
-        notifications.hasNotificationPermission,
+    notificationService: notificationsReady ? notifications : null,
+    notificationPermissionGranted: notificationsReady
+        ? (notificationPermissionGranted ??
+              notifications.hasNotificationPermission)
+        : null,
   );
 }

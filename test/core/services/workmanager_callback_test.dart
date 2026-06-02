@@ -163,6 +163,65 @@ void main() {
       },
     );
 
+    test(
+      'skips goal notification when background init times out but still collects',
+      () async {
+        final clock = FakeTimeProvider(
+          fixedNowUtc: DateTime.utc(2026, 6, 2, 8),
+          zoneOffset: const Duration(hours: 2),
+        );
+        final notificationService = NotificationService(
+          platformInitializer: (_) =>
+              Future<void>.delayed(const Duration(seconds: 5)),
+          backgroundInitTimeout: const Duration(milliseconds: 10),
+          permissionChecker: () async => PermissionStatus.granted,
+        );
+
+        final uiDb = await openAstraDatabase(databasePath: databasePath);
+        addTearDown(uiDb.close);
+        final userPreferences = UserPreferencesRepository(uiDb);
+        await userPreferences.setDailyStepGoal(5000);
+        final repository = StepRepository(db: uiDb, clock: clock);
+        await repository.upsertIngestionBucket(
+          NormalizedStepBucket(
+            startTimeUtc: DateTime.utc(2026, 6, 2, 6),
+            endTimeUtc: DateTime.utc(2026, 6, 2, 6, 5),
+            value: 4900,
+            provider: kInternalPhoneProvider,
+            deviceId: kSmartphoneDeviceId,
+            zoneOffset: '+02:00',
+          ),
+        );
+        await uiDb.close();
+
+        final success = await runStepCollectionWorkmanagerTask(
+          databasePath: databasePath,
+          sources: [
+            _FakeStepSource([
+              StepReading(
+                cumulativeSteps: 10,
+                observedAtUtc: DateTime.utc(2026, 6, 2, 8),
+              ),
+              StepReading(
+                cumulativeSteps: 200,
+                observedAtUtc: DateTime.utc(2026, 6, 2, 8, 1),
+              ),
+            ]),
+          ],
+          clock: clock,
+          notificationService: notificationService,
+          notificationPermissionGranted: () async => true,
+        );
+
+        final verifyDb = await openAstraDatabase(databasePath: databasePath);
+        addTearDown(verifyDb.close);
+        final verifyPrefs = UserPreferencesRepository(verifyDb);
+
+        expect(success, isTrue);
+        expect(await verifyPrefs.getCelebrationShownDate(), isNull);
+      },
+    );
+
     test('returns false when collection fails before opening the database', () async {
       final success = await runStepCollectionWorkmanagerTask(
         openDatabase: ({String? databasePath}) async {
@@ -171,6 +230,24 @@ void main() {
       );
 
       expect(success, isFalse);
+    });
+  });
+
+  group('cancelStepCollectionWorkmanager', () {
+    test('skips cancel on non-Android platforms', () async {
+      final client = _FakeWorkmanagerClient();
+
+      await cancelStepCollectionWorkmanager(isAndroid: false, client: client);
+
+      expect(client.cancelledUniqueName, isNull);
+    });
+
+    test('cancels the Android periodic unique name', () async {
+      final client = _FakeWorkmanagerClient();
+
+      await cancelStepCollectionWorkmanager(isAndroid: true, client: client);
+
+      expect(client.cancelledUniqueName, kStepCollectionUniqueName);
     });
   });
 
@@ -262,11 +339,17 @@ class _FakeWorkmanagerClient implements StepCollectionWorkmanagerClient {
   String? taskName;
   Duration? frequency;
   ExistingPeriodicWorkPolicy? existingWorkPolicy;
+  String? cancelledUniqueName;
 
   @override
   Future<void> initialize(Function callbackDispatcher) async {
     initialized = true;
     this.callbackDispatcher = callbackDispatcher;
+  }
+
+  @override
+  Future<void> cancelByUniqueName(String uniqueName) async {
+    cancelledUniqueName = uniqueName;
   }
 
   Map<String, dynamic>? inputData;
