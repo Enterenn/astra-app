@@ -32,14 +32,14 @@ So that phone (and future ADP) sources can feed buckets without duplicating delt
   - [x] Add `lib/data/models/normalized_step_bucket.dart` — storage-ready bucket **without** `id` (UUID assigned at persist time in Story 2.3/2.4).
   - [x] Add `lib/data/datasources/data_ingestion_source.dart` — architecture contract with `providerId`, `deviceId`, `watchStepReadings()`.
   - [x] Add provider/device constants (e.g. `kInternalPhoneProvider`, `kSmartphoneDeviceId`, `kAstraWearableProvider` for ADP stub).
-  - [ ] **Stop → review brief → wait for Baptiste OK → commit**
+  - [x] **Stop → review brief → wait for Baptiste OK → commit**
 
 - [ ] **Sub-task B — TimeProvider (normalizer clock only)** (AC: #2, supports D-25)
-  - [ ] Add `lib/core/time/time_provider.dart` — `nowUtc()`, `currentZoneOffset()` per architecture.
-  - [ ] Add `lib/core/time/system_time_provider.dart` — production implementation.
-  - [ ] Add `test/core/time/fake_time_provider.dart` — fixed clock for deterministic normalizer tests.
-  - [ ] **Do not** add `LocalDayCalculator` or repository time semantics — Story 2.3.
-  - [ ] **Stop → review brief → wait for Baptiste OK → commit**
+  - [x] Add `lib/core/time/time_provider.dart` — `nowUtc()`, `currentZoneOffset()` per architecture.
+  - [x] Add `lib/core/time/system_time_provider.dart` — production implementation.
+  - [x] Add `test/core/time/fake_time_provider.dart` — fixed clock for deterministic normalizer tests.
+  - [x] **Do not** add `LocalDayCalculator` or repository time semantics — Story 2.3.
+  - [x] **Stop → review brief → wait for Baptiste OK → commit**
 
 - [ ] **Sub-task C — Data sources** (AC: #1, #3 metadata)
   - [ ] Add `lib/data/datasources/phone_pedometer_source.dart` — maps `Pedometer.stepCountStream` `StepCount` → `StepReading`; `providerId=internal_phone`, `deviceId=smartphone`.
@@ -320,20 +320,30 @@ Expose getters on `AppDependencies` for later `BackgroundCollector` (Story 2.4).
 ### Debug Log References
 - 2026-06-02 — Sub-task A red phase: `flutter test test/data/datasources/data_ingestion_source_test.dart` failed on missing ingestion contract/model files.
 - 2026-06-02 — Sub-task A green/refactor validation: `dart format ...`, `flutter analyze`, `flutter test test/data/datasources/data_ingestion_source_test.dart`, and full `flutter test` all passed.
+- 2026-06-02 — Sub-task B red phase: `flutter test test/core/time/time_provider_test.dart` failed on missing time provider files.
+- 2026-06-02 — Sub-task B validation: `dart format ...`, `flutter analyze`, `flutter test test/core/time/time_provider_test.dart`, and full `flutter test` all passed.
 
 ### Completion Notes List
 - Sub-task A implementation is ready for review: added raw step readings, normalized bucket DTO without persistence `id`, ingestion source interface, and provider/device/sample constants.
 - Added focused contract tests for UTC reading normalization, storage-ready bucket shape, and `DataIngestionSource` stream metadata.
-- Review/commit gate remains pending per project workflow.
+- Sub-task A review/commit gate completed with commit `f428b8a`.
+- Sub-task B implementation is ready for review: added `TimeProvider`, `SystemTimeProvider`, and deterministic `FakeTimeProvider` for upcoming normalizer tests.
+- Confirmed no `LocalDayCalculator`, repository time semantics, persistence, or background collection were introduced.
+- Sub-task B review/commit gate completed after Baptiste approval.
 
 ### File List
+- `lib/core/time/system_time_provider.dart`
+- `lib/core/time/time_provider.dart`
 - `lib/data/datasources/data_ingestion_source.dart`
 - `lib/data/models/normalized_step_bucket.dart`
 - `lib/data/models/step_reading.dart`
+- `test/core/time/fake_time_provider.dart`
+- `test/core/time/time_provider_test.dart`
 - `test/data/datasources/data_ingestion_source_test.dart`
 
 ### Change Log
 - 2026-06-02 — Added Sub-task A core ingestion contract artifacts and tests; story moved to in-progress.
+- 2026-06-02 — Added Sub-task B time provider abstraction, system clock, fake clock, and tests.
 
 ## Story Completion Status
 
