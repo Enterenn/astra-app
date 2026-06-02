@@ -222,4 +222,61 @@ void main() {
       expect(tableNames, isNot(contains('timeseries_samples')));
     });
   });
+
+  group('migration v1 to v2 upgrade', () {
+    test('preserves custom preferences and adds timeseries schema', () async {
+      final tempDir = await Directory.systemTemp.createTemp(
+        'astra_db_upgrade_test',
+      );
+      addTearDown(() async {
+        if (tempDir.existsSync()) {
+          await tempDir.delete(recursive: true);
+        }
+      });
+
+      final databasePath = p.join(tempDir.path, 'astra_app.db');
+      final v1Db = await openDatabase(
+        databasePath,
+        version: 1,
+        onCreate: (db, version) => runMigrations(db, version),
+      );
+      await v1Db.update(
+        'user_preferences',
+        {'value': '12000'},
+        where: 'key = ?',
+        whereArgs: [kDailyStepGoalKey],
+      );
+      await v1Db.update(
+        'user_preferences',
+        {'value': 'dark'},
+        where: 'key = ?',
+        whereArgs: [kThemeModeKey],
+      );
+      await v1Db.close();
+
+      final upgradedDb = await openAstraDatabase(databasePath: databasePath);
+      addTearDown(() => upgradedDb.close());
+
+      final prefs = {
+        for (final row in await upgradedDb.query('user_preferences'))
+          row['key'] as String: row['value'] as String,
+      };
+      expect(prefs[kDailyStepGoalKey], '12000');
+      expect(prefs[kThemeModeKey], 'dark');
+
+      final tables = await upgradedDb.rawQuery(
+        "SELECT name FROM sqlite_master WHERE type='table' AND name = 'timeseries_samples'",
+      );
+      expect(tables, isNotEmpty);
+
+      final indexes = await upgradedDb.rawQuery(
+        'PRAGMA index_list(timeseries_samples);',
+      );
+      final indexNames = indexes.map((index) => index['name'] as String);
+      expect(
+        indexNames,
+        containsAll(['idx_timeseries_query', 'idx_bucket_identity']),
+      );
+    });
+  });
 }

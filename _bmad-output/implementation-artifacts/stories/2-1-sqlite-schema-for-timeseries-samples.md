@@ -48,20 +48,20 @@ So that step buckets can be persisted correctly for charts and export later.
   - [x] Keep `onCreateV1(db)` unchanged except for comments if needed.
   - [x] **Stop -> review brief -> wait for Baptiste OK -> commit**
 
-- [ ] **Sub-task B - Preserve database open behavior** (AC: #3)
+- [x] **Sub-task B - Preserve database open behavior** (AC: #3)
   - [x] Review `lib/core/database/app_database.dart`; keep `onConfigure` before migrations and preserve current `rawQuery('PRAGMA journal_mode=WAL')` Android-compatible behavior.
   - [x] Do not introduce a shared static database singleton; WorkManager/UI isolate safety depends on each isolate opening its own handle.
   - [x] Do not add Android manifest WAL metadata in this story unless existing tests prove it is required; current code-level PRAGMA is accepted by architecture.
-  - [ ] **Stop -> review brief -> wait for Baptiste OK -> commit**
+  - [x] **Stop -> review brief -> wait for Baptiste OK -> commit**
 
 - [ ] **Sub-task C - Add migration tests** (AC: #1, #2, #4, #5)
-  - [ ] Update `test/core/database/migrations_test.dart` so the existing v1 assertions are either renamed to "v2 fresh install" or split into direct `runMigrations(..., targetVersion: 1)` tests where useful.
-  - [ ] Test fresh install creates both `user_preferences` and `timeseries_samples`.
-  - [ ] Test `user_preferences` default seed values remain present after fresh v2 install.
-  - [ ] Test schema columns include all canonical names and `NOT NULL` expectations where inspectable.
-  - [ ] Test both indexes exist, and verify `idx_bucket_identity` is unique.
-  - [ ] Test constraints with inserts: valid whole-step row succeeds; negative `value` fails; fractional `steps` value fails.
-  - [ ] Test v1 -> v2 upgrade preserves a custom `daily_step_goal` and `theme_mode`.
+  - [x] Update `test/core/database/migrations_test.dart` so the existing v1 assertions are either renamed to "v2 fresh install" or split into direct `runMigrations(..., targetVersion: 1)` tests where useful.
+  - [x] Test fresh install creates both `user_preferences` and `timeseries_samples`.
+  - [x] Test `user_preferences` default seed values remain present after fresh v2 install.
+  - [x] Test schema columns include all canonical names and `NOT NULL` expectations where inspectable.
+  - [x] Test both indexes exist, and verify `idx_bucket_identity` is unique.
+  - [x] Test constraints with inserts: valid whole-step row succeeds; negative `value` fails; fractional `steps` value fails.
+  - [x] Test v1 -> v2 upgrade preserves a custom `daily_step_goal` and `theme_mode`.
   - [ ] **Stop -> review brief -> wait for Baptiste OK -> commit**
 
 - [ ] **Sub-task D - Verification** (AC: #1-#5)
@@ -290,6 +290,10 @@ GPT-5.5
 - 2026-06-02: Restored `onCreateV1(db)` formatting to keep the v1 migration diff unchanged; re-ran `flutter test test/core/database/migrations_test.dart`; all targeted migration tests passed.
 - 2026-06-02: Committed Sub-task A as `5c52e32 feat(database): add timeseries samples migration v2`.
 - 2026-06-02: Reviewed `lib/core/database/app_database.dart` for Sub-task B; existing open behavior already satisfies AC #3 and required no code change.
+- 2026-06-02: Committed Sub-task B as `4f4ac79 docs(story): record database open behavior review`.
+- 2026-06-02: Added v1 -> v2 file-backed upgrade test preserving custom `daily_step_goal` and `theme_mode`, then verifying `timeseries_samples` and both indexes exist.
+- 2026-06-02: Ran `dart format test/core/database/migrations_test.dart`.
+- 2026-06-02: Re-ran `flutter test test/core/database/migrations_test.dart`; all 9 targeted migration tests passed.
 
 ### Completion Notes List
 
@@ -298,6 +302,7 @@ GPT-5.5
 - Added `timeseries_samples` with canonical Phase 0 columns, non-negative `value` check, integer-only `steps` check, `idx_timeseries_query`, and unique `idx_bucket_identity`.
 - Added focused migration tests covering v2 fresh install table creation, default preference seeding, canonical columns, indexes, and step value constraints; v1 direct-target behavior remains covered.
 - Sub-task B required no production change: `openAstraDatabase()` still opens a fresh handle per call, runs `onConfigure` before migrations, enables WAL for file-backed databases with `rawQuery`, and enables foreign keys for all database paths.
+- Sub-task C completed the migration test matrix by adding file-backed v1 -> v2 upgrade coverage that preserves custom `user_preferences` values and verifies the v2 table/index additions after reopening through `openAstraDatabase()`.
 
 ### File List
 
