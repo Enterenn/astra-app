@@ -13,6 +13,7 @@ import 'today_screen.dart';
 class AppScaffold extends StatefulWidget {
   const AppScaffold({
     required this.deps,
+    this.foregroundBackfill,
     this.onTodayCubitReady,
     this.onTodayCubitDisposed,
     this.createTodayCubit,
@@ -22,6 +23,7 @@ class AppScaffold extends StatefulWidget {
   });
 
   final AppDependencies deps;
+  final Future<int>? foregroundBackfill;
   final ValueChanged<TodayCubit>? onTodayCubitReady;
   final VoidCallback? onTodayCubitDisposed;
   final TodayCubit Function(AppDependencies deps)? createTodayCubit;
@@ -56,8 +58,19 @@ class _AppScaffoldState extends State<AppScaffold> {
     widget.deps.backgroundCollector.registerOnIngestionComplete(
       _onIngestionComplete,
     );
-    unawaited(_todayCubit.refresh());
+    unawaited(_initialRefresh());
     _syncRefreshTimer();
+  }
+
+  Future<void> _initialRefresh() async {
+    final backfill = widget.foregroundBackfill;
+    if (backfill != null) {
+      await backfill;
+    }
+    if (!mounted) {
+      return;
+    }
+    await _todayCubit.refresh();
   }
 
   @override

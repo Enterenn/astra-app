@@ -57,6 +57,32 @@ class UserPreferencesRepository {
     await _writeValue(kCelebrationShownDateKey, localDayIso);
   }
 
+  /// Atomically records [localDayIso] when not already set for that day.
+  ///
+  /// Returns `true` when this caller claimed the day (notification or
+  /// celebration may proceed). Returns `false` when today was already claimed.
+  Future<bool> tryClaimCelebrationShownDate(String localDayIso) async {
+    return _db.transaction((txn) async {
+      final rows = await txn.query(
+        'user_preferences',
+        columns: ['value'],
+        where: 'key = ?',
+        whereArgs: [kCelebrationShownDateKey],
+        limit: 1,
+      );
+      final current = rows.isEmpty ? null : rows.first['value'] as String?;
+      if (current == localDayIso) {
+        return false;
+      }
+      await txn.insert(
+        'user_preferences',
+        {'key': kCelebrationShownDateKey, 'value': localDayIso},
+        conflictAlgorithm: ConflictAlgorithm.replace,
+      );
+      return true;
+    });
+  }
+
   Future<String?> _readValue(String key) async {
     final rows = await _db.query(
       'user_preferences',

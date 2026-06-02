@@ -80,5 +80,21 @@ void main() {
       await repository.setCelebrationShownDate('2026-06-02');
       expect(await repository.getCelebrationShownDate(), '2026-06-02');
     });
+
+    test('tryClaimCelebrationShownDate returns true on first claim for a day', () async {
+      expect(await repository.tryClaimCelebrationShownDate('2026-06-02'), isTrue);
+      expect(await repository.getCelebrationShownDate(), '2026-06-02');
+    });
+
+    test('tryClaimCelebrationShownDate returns false when already claimed', () async {
+      await repository.setCelebrationShownDate('2026-06-02');
+      expect(await repository.tryClaimCelebrationShownDate('2026-06-02'), isFalse);
+    });
+
+    test('tryClaimCelebrationShownDate allows claim when stored day differs', () async {
+      await repository.setCelebrationShownDate('2026-06-01');
+      expect(await repository.tryClaimCelebrationShownDate('2026-06-02'), isTrue);
+      expect(await repository.getCelebrationShownDate(), '2026-06-02');
+    });
   });
 }

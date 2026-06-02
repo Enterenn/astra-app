@@ -109,11 +109,12 @@ class BackgroundCollector {
       }
     }
 
+    if (enableGoalNotification) {
+      await _maybeNotifyGoalReached();
+    }
+
     if (upsertedCount > 0) {
       _onIngestionComplete?.call();
-      if (enableGoalNotification) {
-        await _maybeNotifyGoalReached();
-      }
     }
 
     return upsertedCount;
@@ -136,9 +137,6 @@ class BackgroundCollector {
     }
 
     final todayIso = formatLocalDayIso(time.snapshot());
-    if (await prefs.getCelebrationShownDate() == todayIso) {
-      return;
-    }
 
     final goal = await prefs.getDailyStepGoal();
     if (goal <= 0) {
@@ -150,8 +148,11 @@ class BackgroundCollector {
       return;
     }
 
+    if (!await prefs.tryClaimCelebrationShownDate(todayIso)) {
+      return;
+    }
+
     await notifications.showGoalReached(stepsToday: steps);
-    await prefs.setCelebrationShownDate(todayIso);
   }
 }
 

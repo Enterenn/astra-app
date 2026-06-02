@@ -35,13 +35,16 @@ class AstraApp extends StatefulWidget {
 class _AstraAppState extends State<AstraApp> with WidgetsBindingObserver {
   late bool _showMainShell;
   TodayCubit? _todayCubit;
+  late final Future<int> _foregroundBackfill;
 
   @override
   void initState() {
     super.initState();
     _showMainShell = widget.deps.initialOnboardingComplete;
     WidgetsBinding.instance.addObserver(this);
-    _collectForegroundBackfill();
+    _foregroundBackfill = widget.deps.backgroundCollector.collectOnce(
+      enableGoalNotification: true,
+    );
   }
 
   @override
@@ -55,15 +58,6 @@ class _AstraAppState extends State<AstraApp> with WidgetsBindingObserver {
     if (state == AppLifecycleState.resumed) {
       unawaited(_collectAndRefreshToday());
     }
-  }
-
-  void _collectForegroundBackfill() {
-    // iOS relies on this foreground backfill model; Android uses it as a WM fallback.
-    unawaited(
-      widget.deps.backgroundCollector.collectOnce(
-        enableGoalNotification: true,
-      ),
-    );
   }
 
   /// Runs foreground ingestion before reading SQLite so Today shows fresh totals.
@@ -97,6 +91,9 @@ class _AstraAppState extends State<AstraApp> with WidgetsBindingObserver {
             home: _showMainShell
                 ? AppScaffold(
                     deps: widget.deps,
+                    foregroundBackfill: widget.deps.initialOnboardingComplete
+                        ? _foregroundBackfill
+                        : null,
                     onTodayCubitReady: (cubit) => _todayCubit = cubit,
                     onTodayCubitDisposed: () => _todayCubit = null,
                     createTodayCubit: widget.createTodayCubit,

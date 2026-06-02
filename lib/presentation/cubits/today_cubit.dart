@@ -127,17 +127,14 @@ class TodayCubit extends Cubit<TodayState> {
     }
 
     final todayIso = formatLocalDayIso(clock.snapshot());
-    final shownDate = await userPreferences.getCelebrationShownDate();
     if (isClosed) {
       return;
     }
-    if (shownDate == todayIso) {
+    if (!await userPreferences.tryClaimCelebrationShownDate(todayIso)) {
       // Keep an in-flight celebration alive across silent refresh / ingestion.
       emit(baseState.copyWith(showCelebration: state.showCelebration));
       return;
     }
-
-    await userPreferences.setCelebrationShownDate(todayIso);
     if (isClosed) {
       return;
     }

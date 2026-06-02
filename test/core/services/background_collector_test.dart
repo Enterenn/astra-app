@@ -441,6 +441,84 @@ void main() {
 
       expect(showCount, 0);
     });
+
+    test('notifies when goal already met without new upserts', () async {
+      var showCount = 0;
+      final notificationService = NotificationService(
+        permissionChecker: () async => PermissionStatus.granted,
+        goalNotificationPresenter: ({required id, required title, body}) async {
+          showCount += 1;
+        },
+      );
+      await userPreferences.setDailyStepGoal(100);
+      await repository.upsertIngestionBucket(_todayBucket(value: 500));
+      final collector = BackgroundCollector(
+        sources: [_FakeStepSource(const [])],
+        normalizer: normalizer,
+        repository: repository,
+        baselineRepository: baselineRepository,
+        userPreferences: userPreferences,
+        clock: clock,
+        notificationService: notificationService,
+        notificationPermissionGranted: () async => true,
+        sourceTimeout: const Duration(milliseconds: 10),
+      );
+
+      await collector.collectOnce(enableGoalNotification: true);
+
+      expect(showCount, 1);
+      expect(
+        await userPreferences.getCelebrationShownDate(),
+        formatLocalDayIso(clock.snapshot()),
+      );
+    });
+
+    test(
+      'runs goal notification before ingestion callback when enabled',
+      () async {
+        final order = <String>[];
+        final notificationService = NotificationService(
+          permissionChecker: () async => PermissionStatus.granted,
+          goalNotificationPresenter: ({required id, required title, body}) async {
+            order.add('notify');
+          },
+        );
+        await userPreferences.setDailyStepGoal(5000);
+        await repository.upsertIngestionBucket(
+          _todayBucket(
+            value: 4900,
+            startTimeUtc: DateTime.utc(2026, 6, 2, 6),
+            endTimeUtc: DateTime.utc(2026, 6, 2, 6, 5),
+          ),
+        );
+        final collector = BackgroundCollector(
+          sources: [
+            _FakeStepSource([
+              StepReading(
+                cumulativeSteps: 10,
+                observedAtUtc: DateTime.utc(2026, 6, 2, 8),
+              ),
+              StepReading(
+                cumulativeSteps: 200,
+                observedAtUtc: DateTime.utc(2026, 6, 2, 8, 1),
+              ),
+            ]),
+          ],
+          normalizer: normalizer,
+          repository: repository,
+          baselineRepository: baselineRepository,
+          userPreferences: userPreferences,
+          clock: clock,
+          notificationService: notificationService,
+          notificationPermissionGranted: () async => true,
+          sourceTimeout: const Duration(milliseconds: 10),
+        )..registerOnIngestionComplete(() => order.add('callback'));
+
+        await collector.collectOnce(enableGoalNotification: true);
+
+        expect(order, ['notify', 'callback']);
+      },
+    );
   });
 }
 

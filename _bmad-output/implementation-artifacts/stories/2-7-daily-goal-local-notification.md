@@ -1,6 +1,6 @@
 # Story 2.7: Daily Goal Local Notification
 
-Status: review
+Status: done
 
 <!-- Note: Validation is optional. Run validate-create-story for quality check before dev-story. -->
 
@@ -339,8 +339,9 @@ Composer (Cursor)
 - Added `NotificationService` (local channel `astra_goal_reached`, id `1`, calm copy) with injectable permission/presenter for tests.
 - `BackgroundCollector.collectOnce(enableGoalNotification:)` evaluates `getTodaySteps()` vs goal after upserts; writes `celebration_shown_date` on notify (Story 2.6 dedup).
 - Call-site policy: cold-start + WorkManager `true`; resume on Today `false`.
-- `flutter analyze` clean; **175** tests pass. Manual Android device checks deferred to Baptiste.
+- `flutter analyze` clean; **180** tests pass. Manual Android device checks deferred to Baptiste.
 - No manifest/DEPENDENCIES changes (POST_NOTIFICATIONS already present; no extra receivers required).
+- Code review fixes: atomic `tryClaimCelebrationShownDate`, notify-before-callback ordering, goal eval without upserts, cold-start backfill coordination, init timeout.
 
 ### File List
 
@@ -350,16 +351,21 @@ Composer (Cursor)
 - lib/core/di/app_dependencies.dart
 - lib/main.dart
 - lib/app.dart
+- lib/data/repositories/user_preferences_repository.dart
+- lib/presentation/cubits/today_cubit.dart
+- lib/presentation/screens/app_scaffold.dart
 - test/core/services/notification_service_test.dart (new)
 - test/core/services/background_collector_test.dart
 - test/core/services/workmanager_callback_test.dart
 - test/core/di/app_dependencies_test.dart
+- test/data/repositories/user_preferences_repository_test.dart
 
 ### Change Log
 
 - 2026-06-02: Story 2.7 — daily goal local notification + dedup via `celebration_shown_date`; Epic 2 passive loop complete.
+- 2026-06-02: Code review — race/dedup fixes; story done.
 
 ## Story completion status
 
 - Ultimate context engine analysis completed — comprehensive developer guide created
-- Status: **review**
+- Status: **done**
