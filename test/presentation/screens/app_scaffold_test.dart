@@ -57,6 +57,20 @@ class _RefreshCountingCubit extends TodayCubit {
     refreshCallCount++;
     await super.refresh(silent: silent);
   }
+
+  @override
+  Future<void> refreshMetadata() async {
+    refreshCallCount++;
+    if (state.status == TodayStatus.loading) {
+      return;
+    }
+    emit(
+      state.copyWith(
+        isStale: state.isStale,
+        lastIngestionUtc: state.lastIngestionUtc,
+      ),
+    );
+  }
 }
 
 Future<void> _pumpAppScaffold(
@@ -116,7 +130,6 @@ void main() {
           AppScaffold(
             deps: deps,
             createTodayCubit: _testTodayCubit,
-            enablePeriodicRefresh: false,
           ),
         );
 
@@ -151,7 +164,6 @@ void main() {
         AppScaffold(
           deps: deps,
           createTodayCubit: _testTodayCubit,
-          enablePeriodicRefresh: false,
         ),
         disableAnimations: false,
       );
@@ -181,7 +193,6 @@ void main() {
             );
             return cubit!;
           },
-          enablePeriodicRefresh: false,
         ),
       );
       await tester.pump();
@@ -194,6 +205,7 @@ void main() {
 
       await tester.tap(find.byIcon(Icons.circle_outlined));
       await tester.pump();
+      await tester.pump(const Duration(milliseconds: 50));
 
       expect(
         (cubit! as _RefreshCountingCubit).refreshCallCount,
@@ -215,7 +227,6 @@ void main() {
             userPreferences: dependencies.userPreferences,
             clock: dependencies.timeProvider,
           ),
-          enablePeriodicRefresh: false,
         ),
       );
 
@@ -242,7 +253,6 @@ void main() {
         AppScaffold(
           deps: deps,
           createTodayCubit: _testTodayCubit,
-          enablePeriodicRefresh: false,
         ),
       );
 

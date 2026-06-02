@@ -58,7 +58,8 @@ void main() {
           AstraApp(
             deps: deps,
             createTodayCubit: _testTodayCubit,
-            enablePeriodicRefresh: false,
+            enablePeriodicPersist: false,
+            enableLiveStepPipeline: false,
           ),
         );
         await tester.pump();
@@ -126,7 +127,6 @@ void main() {
             AstraApp(
               deps: deps,
               createTodayCubit: _testTodayCubit,
-              enablePeriodicRefresh: false,
             ),
           );
           await tester.pump();
@@ -182,7 +182,8 @@ void main() {
           AstraApp(
             deps: completeDeps,
             createTodayCubit: _testTodayCubit,
-            enablePeriodicRefresh: false,
+            enablePeriodicPersist: false,
+            enableLiveStepPipeline: false,
           ),
         );
         await tester.pump();
@@ -200,7 +201,16 @@ void main() {
     testWidgets('shows onboarding when completion flag is absent', (
       tester,
     ) async {
-      await tester.pumpWidget(AstraApp(deps: incompleteDeps));
+      await tester.runAsync(() async {
+        await tester.pumpWidget(
+          AstraApp(
+            deps: incompleteDeps,
+            enablePeriodicPersist: false,
+            enableLiveStepPipeline: false,
+          ),
+        );
+        await tester.pump();
+      });
 
       expect(find.text('Your steps stay on this device.'), findsOneWidget);
       expect(find.byType(NavigationBar), findsNothing);
@@ -216,7 +226,6 @@ void main() {
           AstraApp(
             deps: incompleteDeps,
             createTodayCubit: _testTodayCubit,
-            enablePeriodicRefresh: false,
             createOnboardingCubit: (repo) {
               cubitRef = OnboardingCubit(
                 userPreferences: repo,
@@ -224,6 +233,8 @@ void main() {
               );
               return cubitRef!;
             },
+            enablePeriodicPersist: false,
+            enableLiveStepPipeline: false,
           ),
         );
         await tester.pump();
@@ -297,7 +308,8 @@ void main() {
           AstraApp(
             deps: deps,
             createTodayCubit: _testTodayCubit,
-            enablePeriodicRefresh: false,
+            enablePeriodicPersist: false,
+            enableLiveStepPipeline: false,
           ),
         );
         await tester.pump();
@@ -315,7 +327,8 @@ void main() {
           AstraApp(
             deps: deps,
             createTodayCubit: _testTodayCubit,
-            enablePeriodicRefresh: false,
+            enablePeriodicPersist: false,
+            enableLiveStepPipeline: false,
           ),
         );
         await tester.pump();
@@ -357,7 +370,6 @@ void main() {
               todayCubit = _testTodayCubit(dependencies);
               return todayCubit!;
             },
-            enablePeriodicRefresh: false,
           ),
         );
         await tester.pump();

@@ -1,7 +1,10 @@
 import 'package:astra_app/core/constants/preference_keys.dart';
 import 'package:astra_app/core/time/local_day_formatter.dart';
 import 'package:astra_app/core/database/app_database.dart';
+import 'package:astra_app/core/services/live_step_monitor.dart';
 import 'package:astra_app/data/datasources/data_ingestion_source.dart';
+import 'package:astra_app/data/datasources/phone_pedometer_source.dart';
+import 'package:astra_app/data/repositories/ingestion_baseline_repository.dart';
 import 'package:astra_app/data/models/normalized_step_bucket.dart';
 import 'package:astra_app/data/repositories/step_repository.dart';
 import 'package:astra_app/data/repositories/user_preferences_repository.dart';
@@ -389,6 +392,89 @@ void main() {
       expect(cubit.state.showCelebration, isTrue);
       cubit.dismissCelebration();
       expect(cubit.state.showCelebration, isFalse);
+      cubit.close();
+    });
+
+    test('live stream updates steps without refresh', () async {
+      final events = StreamController<PhoneStepEvent>.broadcast();
+      final monitor = LiveStepMonitor(
+        stepRepository: stepRepository,
+        baselineRepository: IngestionBaselineRepository(db),
+        clock: clock,
+        stepEventStreamFactory: () => events.stream,
+        emitThrottle: Duration.zero,
+      );
+      final cubit = buildCubit();
+      await cubit.refresh();
+      cubit.attachLiveMonitor(monitor);
+      await monitor.start();
+      await monitor.reconcileFromDatabase();
+
+      events.add(
+        PhoneStepEvent(steps: 10, timeStamp: DateTime.utc(2026, 6, 2, 12)),
+      );
+      events.add(
+        PhoneStepEvent(steps: 3500, timeStamp: DateTime.utc(2026, 6, 2, 12, 1)),
+      );
+      await Future<void>.delayed(const Duration(milliseconds: 10));
+
+      expect(cubit.state.steps, 3490);
+      expect(cubit.state.status, TodayStatus.progress);
+      await cubit.close();
+      await monitor.stop();
+      monitor.dispose();
+      await events.close();
+    });
+
+    test('live stream triggers celebration when goal crossed', () async {
+      await userPreferences.setDailyStepGoal(3000);
+      final events = StreamController<PhoneStepEvent>.broadcast();
+      final monitor = LiveStepMonitor(
+        stepRepository: stepRepository,
+        baselineRepository: IngestionBaselineRepository(db),
+        clock: clock,
+        stepEventStreamFactory: () => events.stream,
+        emitThrottle: Duration.zero,
+      );
+      final cubit = buildCubit();
+      await cubit.refresh();
+      cubit.attachLiveMonitor(monitor);
+      await monitor.start();
+      await monitor.reconcileFromDatabase();
+
+      events.add(
+        PhoneStepEvent(steps: 100, timeStamp: DateTime.utc(2026, 6, 2, 12)),
+      );
+      events.add(
+        PhoneStepEvent(steps: 3100, timeStamp: DateTime.utc(2026, 6, 2, 12, 1)),
+      );
+      await Future<void>.delayed(const Duration(milliseconds: 10));
+
+      expect(cubit.state.showCelebration, isTrue);
+      expect(cubit.state.steps, 3000);
+      await cubit.close();
+      await monitor.stop();
+      monitor.dispose();
+      await events.close();
+    });
+
+    test('refreshMetadata updates stale without changing steps', () async {
+      await stepRepository.upsertIngestionBucket(
+        _bucket(
+          startTimeUtc: DateTime.utc(2026, 6, 1, 23, 59),
+          endTimeUtc: DateTime.utc(2026, 6, 1, 23, 59),
+          value: 100,
+          zoneOffset: '+02:00',
+        ),
+      );
+      final cubit = buildCubit();
+      await cubit.refresh();
+      final stepsBefore = cubit.state.steps;
+
+      await cubit.refreshMetadata();
+
+      expect(cubit.state.steps, stepsBefore);
+      expect(cubit.state.isStale, isTrue);
       cubit.close();
     });
 

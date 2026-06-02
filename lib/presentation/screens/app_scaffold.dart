@@ -17,8 +17,6 @@ class AppScaffold extends StatefulWidget {
     this.onTodayCubitReady,
     this.onTodayCubitDisposed,
     this.createTodayCubit,
-    this.enablePeriodicRefresh = true,
-    this.refreshInterval = const Duration(seconds: 60),
     super.key,
   });
 
@@ -27,8 +25,6 @@ class AppScaffold extends StatefulWidget {
   final ValueChanged<TodayCubit>? onTodayCubitReady;
   final VoidCallback? onTodayCubitDisposed;
   final TodayCubit Function(AppDependencies deps)? createTodayCubit;
-  final bool enablePeriodicRefresh;
-  final Duration refreshInterval;
 
   @override
   State<AppScaffold> createState() => _AppScaffoldState();
@@ -37,7 +33,6 @@ class AppScaffold extends StatefulWidget {
 class _AppScaffoldState extends State<AppScaffold> {
   int _selectedIndex = 0;
   late final TodayCubit _todayCubit;
-  Timer? _refreshTimer;
 
   static const _labels = ['Today', 'History', 'My Data'];
   static const _icons = [
@@ -49,17 +44,19 @@ class _AppScaffoldState extends State<AppScaffold> {
   @override
   void initState() {
     super.initState();
-    _todayCubit = widget.createTodayCubit?.call(widget.deps) ?? TodayCubit(
-      stepRepository: widget.deps.stepRepository,
-      userPreferences: widget.deps.userPreferences,
-      clock: widget.deps.timeProvider,
-    );
+    _todayCubit =
+        widget.createTodayCubit?.call(widget.deps) ??
+        TodayCubit(
+          stepRepository: widget.deps.stepRepository,
+          userPreferences: widget.deps.userPreferences,
+          clock: widget.deps.timeProvider,
+          activityPermissionGranted: widget.deps.activityPermissionGranted,
+        );
     widget.onTodayCubitReady?.call(_todayCubit);
     widget.deps.backgroundCollector.registerOnIngestionComplete(
       _onIngestionComplete,
     );
     unawaited(_initialRefresh());
-    _syncRefreshTimer();
   }
 
   Future<void> _initialRefresh() async {
@@ -75,7 +72,6 @@ class _AppScaffoldState extends State<AppScaffold> {
 
   @override
   void dispose() {
-    _refreshTimer?.cancel();
     widget.deps.backgroundCollector.registerOnIngestionComplete(null);
     widget.onTodayCubitDisposed?.call();
     _todayCubit.close();
@@ -83,7 +79,7 @@ class _AppScaffoldState extends State<AppScaffold> {
   }
 
   void _onIngestionComplete() {
-    unawaited(_todayCubit.refresh());
+    unawaited(_todayCubit.refreshMetadata());
   }
 
   void _onDestinationSelected(int index) {
@@ -91,27 +87,15 @@ class _AppScaffoldState extends State<AppScaffold> {
     setState(() {
       _selectedIndex = index;
     });
-    _syncRefreshTimer();
     if (returningToToday) {
-      unawaited(_todayCubit.refresh());
+      unawaited(_todayCubit.refreshMetadata());
     }
-  }
-
-  void _syncRefreshTimer() {
-    _refreshTimer?.cancel();
-    if (!widget.enablePeriodicRefresh || _selectedIndex != 0) {
-      return;
-    }
-    _refreshTimer = Timer.periodic(widget.refreshInterval, (_) {
-      unawaited(_todayCubit.refresh());
-    });
   }
 
   void _navigateToMyData() {
     setState(() {
       _selectedIndex = 2;
     });
-    _syncRefreshTimer();
   }
 
   Widget _buildScreen(int index) {

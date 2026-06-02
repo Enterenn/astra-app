@@ -19,37 +19,51 @@ class AstraApp extends StatefulWidget {
     required this.deps,
     this.createOnboardingCubit,
     this.createTodayCubit,
-    this.enablePeriodicRefresh = true,
+    this.enablePeriodicPersist = true,
+    this.enableLiveStepPipeline = true,
   });
 
   final AppDependencies deps;
   final OnboardingCubit Function(UserPreferencesRepository userPreferences)?
   createOnboardingCubit;
   final TodayCubit Function(AppDependencies deps)? createTodayCubit;
-  final bool enablePeriodicRefresh;
+  final bool enablePeriodicPersist;
+  final bool enableLiveStepPipeline;
 
   @override
   State<AstraApp> createState() => _AstraAppState();
 }
 
 class _AstraAppState extends State<AstraApp> with WidgetsBindingObserver {
+  static const _persistInterval = Duration(seconds: 60);
+
+  /// Must cover [LiveStepMonitor.maxBufferedReadings] so periodic persist
+  /// normalizes every buffered phone reading in one collect.
+  static const _persistMaxReadingsPerSource = 250;
+
   late bool _showMainShell;
   TodayCubit? _todayCubit;
   late final Future<int> _foregroundBackfill;
+  Timer? _persistTimer;
+  bool _livePipelineStarted = false;
 
   @override
   void initState() {
     super.initState();
     _showMainShell = widget.deps.initialOnboardingComplete;
     WidgetsBinding.instance.addObserver(this);
-    _foregroundBackfill = widget.deps.backgroundCollector.collectOnce(
-      enableGoalNotification: true,
-    );
+    _foregroundBackfill = widget.enableLiveStepPipeline
+        ? _runPersistCycle(enableGoalNotification: true)
+        : widget.deps.backgroundCollector.collectOnce(
+            enableGoalNotification: true,
+          );
   }
 
   @override
   void dispose() {
+    _persistTimer?.cancel();
     WidgetsBinding.instance.removeObserver(this);
+    unawaited(widget.deps.liveStepMonitor.stop());
     super.dispose();
   }
 
@@ -60,12 +74,69 @@ class _AstraAppState extends State<AstraApp> with WidgetsBindingObserver {
     }
   }
 
-  /// Runs foreground ingestion before reading SQLite so Today shows fresh totals.
+  Future<int> _runPersistCycle({required bool enableGoalNotification}) async {
+    final monitor = widget.deps.liveStepMonitor;
+    final collector = widget.deps.backgroundCollector;
+    await monitor.beginReconcile();
+    try {
+      final upserted = await collector.collectOnce(
+        maxReadingsPerSource: _persistMaxReadingsPerSource,
+        enableGoalNotification: enableGoalNotification,
+      );
+      await monitor.reconcileFromDatabase();
+      return upserted;
+    } finally {
+      monitor.endReconcile();
+    }
+  }
+
   Future<void> _collectAndRefreshToday() async {
-    await widget.deps.backgroundCollector.collectOnce(
-      enableGoalNotification: false,
-    );
-    await _todayCubit?.refresh();
+    if (widget.enableLiveStepPipeline) {
+      await _runPersistCycle(enableGoalNotification: false);
+    } else {
+      await widget.deps.backgroundCollector.collectOnce(
+        enableGoalNotification: false,
+      );
+    }
+    await _todayCubit?.refreshMetadata();
+  }
+
+  void _onTodayCubitReady(TodayCubit cubit) {
+    _todayCubit = cubit;
+    unawaited(_maybeStartLivePipeline());
+  }
+
+  Future<void> _maybeStartLivePipeline() async {
+    if (!widget.enableLiveStepPipeline || _livePipelineStarted) {
+      return;
+    }
+    await _foregroundBackfill;
+    if (!mounted) {
+      return;
+    }
+    if (!await widget.deps.activityPermissionGranted()) {
+      return;
+    }
+
+    final monitor = widget.deps.liveStepMonitor;
+    if (!monitor.isRunning) {
+      await monitor.start();
+      await monitor.reconcileFromDatabase();
+    }
+
+    _todayCubit?.attachLiveMonitor(monitor);
+    _livePipelineStarted = true;
+    _startPeriodicPersist();
+  }
+
+  void _startPeriodicPersist() {
+    if (!widget.enablePeriodicPersist) {
+      return;
+    }
+    _persistTimer?.cancel();
+    _persistTimer = Timer.periodic(_persistInterval, (_) {
+      unawaited(_runPersistCycle(enableGoalNotification: false));
+    });
   }
 
   void _onOnboardingComplete() {
@@ -94,10 +165,9 @@ class _AstraAppState extends State<AstraApp> with WidgetsBindingObserver {
                     foregroundBackfill: widget.deps.initialOnboardingComplete
                         ? _foregroundBackfill
                         : null,
-                    onTodayCubitReady: (cubit) => _todayCubit = cubit,
+                    onTodayCubitReady: _onTodayCubitReady,
                     onTodayCubitDisposed: () => _todayCubit = null,
                     createTodayCubit: widget.createTodayCubit,
-                    enablePeriodicRefresh: widget.enablePeriodicRefresh,
                   )
                 : OnboardingFlow(
                     deps: widget.deps,
