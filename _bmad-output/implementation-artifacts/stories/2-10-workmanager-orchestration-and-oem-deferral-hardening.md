@@ -1,6 +1,6 @@
 # Story 2.10: WorkManager Orchestration & OEM Deferral Hardening
 
-Status: review
+Status: done
 
 <!-- Note: Validation is optional. Run validate-create-story for quality check before dev-story. -->
 
@@ -366,10 +366,11 @@ Composer (dev-story 2026-06-02)
 
 - 2026-06-02: Story 2.10 — capability evaluator, Android probes, AppDependencies wiring, WM inputData hardening, tests + docs (automated); physical verification deferred.
 - 2026-06-02: Seven sub-task commits (A–F docs + chore); status → review.
+- 2026-06-02: Code review fixes — shared activity gate, WM UPDATE policy for databasePath; status → done.
 
 ## Story Completion Status
 
-- Status: **review** (Sub-task F manual device checks still recommended before `done`)
+- Status: **done** (Sub-task F manual device checks deferred — run when convenient per `docs/DEPENDENCIES.md`)
 - Ultimate context engine analysis completed — comprehensive developer guide created
 - **Note:** Epic 2 closing infrastructure story — delivers `BackgroundHealthCapabilityEvaluator` and WM fallback hardening; My Data UI consumes flags in Story 4.2
 - **Prerequisites satisfied:** Stories 2.9 and 2.8 done; WM + FGS + backfill pipeline operational
