@@ -86,6 +86,8 @@ class _AstraAppState extends State<AstraApp> with WidgetsBindingObserver {
     if (!_showMainShell) {
       return;
     }
+    _persistTimer?.cancel();
+    _persistTimer = null;
     final healthFgs = widget.deps.healthForegroundCoordinator;
     if (widget.enableLiveStepPipeline) {
       await widget.deps.liveStepMonitor.stop();
@@ -99,6 +101,9 @@ class _AstraAppState extends State<AstraApp> with WidgetsBindingObserver {
     await healthFgs.stopHealthCollectionService();
     await healthFgs.setUiActive(true);
     await _collectAndRefreshToday();
+    if (_livePipelineStarted && widget.enablePeriodicPersist) {
+      _startPeriodicPersist();
+    }
   }
 
   /// Flushes buffered steps to SQLite when the app leaves the foreground.

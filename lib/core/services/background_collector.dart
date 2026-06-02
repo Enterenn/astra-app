@@ -10,6 +10,7 @@ import '../../data/repositories/step_repository.dart';
 import '../../data/repositories/user_preferences_repository.dart';
 import '../time/local_day_formatter.dart';
 import '../time/time_provider.dart';
+import 'ingestion_collection_lock.dart';
 import 'notification_service.dart';
 
 class BackgroundCollector {
@@ -56,11 +57,19 @@ class BackgroundCollector {
       return 0;
     }
     _collectInFlight = true;
+    final lock = IngestionCollectionLock(repository.db);
     try {
-      return await _collectOnce(
-        maxReadingsPerSource: maxReadingsPerSource,
-        enableGoalNotification: enableGoalNotification,
-      );
+      if (!await lock.tryAcquire()) {
+        return 0;
+      }
+      try {
+        return await _collectOnce(
+          maxReadingsPerSource: maxReadingsPerSource,
+          enableGoalNotification: enableGoalNotification,
+        );
+      } finally {
+        await lock.release();
+      }
     } finally {
       _collectInFlight = false;
     }
