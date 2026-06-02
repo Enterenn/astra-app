@@ -61,7 +61,7 @@ development_status:
   1-5-trust-first-onboarding-flow: done
   epic-1-retrospective: optional
 
-  epic-2: in-progress
+  epic-2: done
   2-1-sqlite-schema-for-timeseries-samples: done
   2-2-data-ingestion-abstraction-and-step-normalizer: done
   2-3-step-repository-and-time-semantics: done
