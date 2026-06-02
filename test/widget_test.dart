@@ -8,6 +8,7 @@ import 'package:astra_app/data/repositories/user_preferences_repository.dart';
 import 'package:astra_app/presentation/cubits/onboarding_cubit.dart';
 import 'package:astra_app/presentation/cubits/theme_state.dart';
 import 'package:astra_app/presentation/cubits/today_cubit.dart';
+import 'package:astra_app/presentation/cubits/today_state.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:permission_handler/permission_handler.dart';
@@ -342,7 +343,69 @@ void main() {
         expect(last, DateTime.utc(2026, 6, 2, 8, 10));
       });
     });
+
+    testWidgets('refreshes Today cubit after resume once collect finishes', (
+      tester,
+    ) async {
+      TodayCubit? todayCubit;
+
+      await tester.runAsync(() async {
+        await tester.pumpWidget(
+          AstraApp(
+            deps: deps,
+            createTodayCubit: (dependencies) {
+              todayCubit = _testTodayCubit(dependencies);
+              return todayCubit!;
+            },
+            enablePeriodicRefresh: false,
+          ),
+        );
+        await tester.pump();
+        await _waitForIngestion(
+          stepRepository,
+          DateTime.utc(2026, 6, 2, 8, 5),
+        );
+
+        final stepsBeforeResume = await _waitForStableTodaySteps(todayCubit!);
+
+        final source = deps.ingestionSources.single as _MutableStepSource;
+        source.readings = [
+          StepReading(
+            cumulativeSteps: 20,
+            observedAtUtc: DateTime.utc(2026, 6, 2, 8, 5),
+          ),
+          StepReading(
+            cumulativeSteps: 30,
+            observedAtUtc: DateTime.utc(2026, 6, 2, 8, 6),
+          ),
+        ];
+
+        tester.binding.handleAppLifecycleStateChanged(
+          AppLifecycleState.resumed,
+        );
+        await _waitForIngestion(
+          stepRepository,
+          DateTime.utc(2026, 6, 2, 8, 10),
+        );
+
+        final stepsAfterResume = await _waitForStableTodaySteps(todayCubit!);
+        expect(stepsAfterResume, greaterThan(stepsBeforeResume));
+      });
+    });
   });
+}
+
+Future<int> _waitForStableTodaySteps(
+  TodayCubit cubit, {
+  int attempts = 100,
+}) async {
+  for (var attempt = 0; attempt < attempts; attempt++) {
+    if (cubit.state.status != TodayStatus.loading) {
+      return cubit.state.steps;
+    }
+    await Future<void>.delayed(const Duration(milliseconds: 20));
+  }
+  return cubit.state.steps;
 }
 
 /// Polls the repository until the latest ingestion reaches [expected] or a

@@ -30,17 +30,40 @@ class TodayCubit extends Cubit<TodayState> {
   final ActivityPermissionChecker _activityPermissionGranted;
   final bool _isIos;
 
+  Future<void>? _refreshInFlight;
+
   static Future<bool> _defaultActivityPermissionGranted() async {
     final permission = resolveActivityPermission();
     final status = await permission.status;
     return status.isGranted || status.isLimited || status.isProvisional;
   }
 
-  Future<void> refresh() async {
+  /// Refreshes dashboard data from repositories (read-only).
+  ///
+  /// When [silent] is true (default), keeps the current UI while fetching so
+  /// periodic, resume, and ingestion refreshes do not flash the skeleton or
+  /// hide the stale banner.
+  Future<void> refresh({bool silent = true}) async {
     if (isClosed) {
       return;
     }
-    emit(const TodayState.loading());
+
+    if (_refreshInFlight != null) {
+      return _refreshInFlight!;
+    }
+
+    _refreshInFlight = _refreshImpl(silent: silent);
+    try {
+      await _refreshInFlight!;
+    } finally {
+      _refreshInFlight = null;
+    }
+  }
+
+  Future<void> _refreshImpl({required bool silent}) async {
+    if (!silent && state.status != TodayStatus.loading) {
+      emit(const TodayState.loading());
+    }
 
     final granted = await _activityPermissionGranted();
     if (isClosed) {

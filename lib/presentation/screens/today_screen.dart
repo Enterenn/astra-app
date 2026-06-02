@@ -55,7 +55,7 @@ class TodayScreen extends StatelessWidget {
                   flex: 45,
                   child: Column(
                     children: [
-                      const SourceChip(),
+                      const Center(child: SourceChip()),
                       if (state.status == TodayStatus.noPermission) ...[
                         const SizedBox(height: AstraSpacing.kSpaceMd),
                         TextButton(

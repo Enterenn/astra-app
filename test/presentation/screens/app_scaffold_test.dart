@@ -31,7 +31,7 @@ class _StaleTodayCubit extends TodayCubit {
   }) : super(activityPermissionGranted: () async => true);
 
   @override
-  Future<void> refresh() async {
+  Future<void> refresh({bool silent = true}) async {
     emit(
       TodayState.fromData(
         steps: 1200,
@@ -40,6 +40,22 @@ class _StaleTodayCubit extends TodayCubit {
         lastIngestionUtc: DateTime.utc(2020, 1, 1),
       ),
     );
+  }
+}
+
+class _RefreshCountingCubit extends TodayCubit {
+  _RefreshCountingCubit({
+    required super.stepRepository,
+    required super.userPreferences,
+    required super.clock,
+  }) : super(activityPermissionGranted: () async => true);
+
+  int refreshCallCount = 0;
+
+  @override
+  Future<void> refresh({bool silent = true}) async {
+    refreshCallCount++;
+    await super.refresh(silent: silent);
   }
 }
 
@@ -144,6 +160,45 @@ void main() {
 
       expect(tester.takeException(), isNull);
       expect(find.text('steps today'), findsOneWidget);
+
+      await _disposeScaffold(tester);
+    });
+
+    testWidgets('returning to Today tab triggers another refresh', (
+      tester,
+    ) async {
+      TodayCubit? cubit;
+
+      await _pumpAppScaffold(
+        tester,
+        AppScaffold(
+          deps: deps,
+          createTodayCubit: (dependencies) {
+            cubit = _RefreshCountingCubit(
+              stepRepository: dependencies.stepRepository,
+              userPreferences: dependencies.userPreferences,
+              clock: dependencies.timeProvider,
+            );
+            return cubit!;
+          },
+          enablePeriodicRefresh: false,
+        ),
+      );
+      await tester.pump();
+
+      final initialCalls = (cubit! as _RefreshCountingCubit).refreshCallCount;
+      expect(initialCalls, greaterThanOrEqualTo(1));
+
+      await tester.tap(find.byIcon(Icons.bar_chart_outlined));
+      await tester.pump();
+
+      await tester.tap(find.byIcon(Icons.circle_outlined));
+      await tester.pump();
+
+      expect(
+        (cubit! as _RefreshCountingCubit).refreshCallCount,
+        initialCalls + 1,
+      );
 
       await _disposeScaffold(tester);
     });

@@ -74,10 +74,14 @@ class _AppScaffoldState extends State<AppScaffold> {
   }
 
   void _onDestinationSelected(int index) {
+    final returningToToday = index == 0 && _selectedIndex != 0;
     setState(() {
       _selectedIndex = index;
     });
     _syncRefreshTimer();
+    if (returningToToday) {
+      unawaited(_todayCubit.refresh());
+    }
   }
 
   void _syncRefreshTimer() {

@@ -6,6 +6,8 @@ import 'package:astra_app/data/repositories/step_repository.dart';
 import 'package:astra_app/data/repositories/user_preferences_repository.dart';
 import 'package:astra_app/presentation/cubits/today_cubit.dart';
 import 'package:astra_app/presentation/cubits/today_state.dart';
+import 'dart:async';
+
 import 'package:flutter_test/flutter_test.dart';
 import 'package:sqflite/sqflite.dart';
 
@@ -209,6 +211,51 @@ void main() {
 
       expect(cubit.state.lastIngestionUtc, isNull);
       expect(cubit.state.isStale, isFalse);
+      cubit.close();
+    });
+
+    test('silent refresh does not re-emit loading when data is already shown', () async {
+      await stepRepository.upsertIngestionBucket(
+        _bucket(
+          startTimeUtc: DateTime.utc(2026, 6, 2, 10),
+          value: 3000,
+          zoneOffset: '+02:00',
+        ),
+      );
+      final cubit = buildCubit();
+      await cubit.refresh();
+
+      expect(cubit.state.status, TodayStatus.progress);
+
+      var sawLoading = false;
+      final subscription = cubit.stream.listen((state) {
+        if (state.status == TodayStatus.loading) {
+          sawLoading = true;
+        }
+      });
+
+      await cubit.refresh();
+      await Future<void>.delayed(Duration.zero);
+
+      expect(sawLoading, isFalse);
+      expect(cubit.state.status, TodayStatus.progress);
+      await subscription.cancel();
+      cubit.close();
+    });
+
+    test('coalesced refresh awaits a single in-flight operation', () async {
+      final permissionGate = Completer<bool>();
+      final cubit = buildCubit(
+        activityPermissionGranted: () => permissionGate.future,
+      );
+
+      final first = cubit.refresh();
+      final second = cubit.refresh();
+      permissionGate.complete(true);
+
+      await Future.wait([first, second]);
+
+      expect(cubit.state.status, TodayStatus.empty);
       cubit.close();
     });
   });

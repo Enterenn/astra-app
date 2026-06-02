@@ -109,6 +109,28 @@ void main() {
       expect(find.text('0'), findsOneWidget);
     });
 
+    testWidgets('overflow semantics use goal-reached copy', (tester) async {
+      final handle = tester.ensureSemantics();
+
+      await pumpGoalRing(
+        tester,
+        state: TodayState.fromData(
+          steps: 10_847,
+          goal: 8000,
+          isStale: false,
+        ),
+      );
+
+      expect(
+        find.bySemanticsLabel(
+          'Steps today: 10847. Daily goal 8000 reached.',
+        ),
+        findsOneWidget,
+      );
+
+      handle.dispose();
+    });
+
     testWidgets('semantics label describes steps versus goal', (tester) async {
       final handle = tester.ensureSemantics();
 

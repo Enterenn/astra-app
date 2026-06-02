@@ -73,15 +73,25 @@ class StatusBanner extends StatelessWidget {
     );
 
     if (onTap == null) {
-      return banner;
+      return Semantics(
+        label: _copy,
+        child: banner,
+      );
     }
 
-    return Material(
-      color: Colors.transparent,
-      child: InkWell(
-        onTap: onTap,
-        borderRadius: BorderRadius.circular(AstraSpacing.kRadiusMd),
-        child: banner,
+    return Semantics(
+      label: _copy,
+      button: true,
+      onTap: onTap,
+      child: ExcludeSemantics(
+        child: Material(
+          color: Colors.transparent,
+          child: InkWell(
+            onTap: onTap,
+            borderRadius: BorderRadius.circular(AstraSpacing.kRadiusMd),
+            child: banner,
+          ),
+        ),
       ),
     );
   }

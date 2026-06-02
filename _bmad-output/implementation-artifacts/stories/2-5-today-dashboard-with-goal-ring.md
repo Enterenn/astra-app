@@ -1,6 +1,6 @@
 # Story 2.5: Today Dashboard with Goal Ring
 
-Status: in-progress
+Status: done
 
 <!-- Note: Validation is optional. Run validate-create-story for quality check before dev-story. -->
 
@@ -69,13 +69,13 @@ So that I can check progress at a glance.
     - [x] `backgroundCollector` ingestion callback → `todayCubit.refresh()` when buckets upserted.
     - [x] When Today tab selected (`_selectedIndex == 0`): `Timer.periodic(60s)` → `refresh()`; cancel when leaving tab or dispose.
   - [x] No-permission: optional text button / link → `openAppSettings()` via `permission_handler` (non-blocking).
-  - [ ] **Stop → review brief → wait for Baptiste OK → commit**
+  - [x] **Stop → review brief → wait for Baptiste OK → commit**
 
-- [ ] **Sub-task F — Verification** (AC: #1–#4)
-  - [ ] Run `flutter analyze` and `flutter test`.
-  - [ ] Manual: complete onboarding with permission → walk or inject steps → Today shows count + arc; deny permission path shows dashed `--`; force stale by mocking old `getLastIngestionUtc` in debug if needed.
-  - [ ] Review brief documents what is **deferred** to 2.6/2.7/4.2.
-  - [ ] **Stop → review brief → wait for Baptiste OK → commit**
+- [x] **Sub-task F — Verification** (AC: #1–#4)
+  - [x] Run `flutter analyze` and `flutter test`.
+  - [x] Manual: complete onboarding with permission → walk or inject steps → Today shows count + arc; deny permission path shows dashed `--`; force stale by mocking old `getLastIngestionUtc` in debug if needed.
+  - [x] Review brief documents what is **deferred** to 2.6/2.7/4.2.
+  - [x] **Stop → review brief → wait for Baptiste OK → commit**
 
 ## Dev Notes
 
@@ -385,6 +385,14 @@ Run: `flutter analyze`, `flutter test test/core/health/ test/presentation/cubits
 - **Sub-task C (2026-06-02):** Added `GoalRing` widget with `GoalRingPainter` (CustomPainter), step count formatter, loading pulse, dashed no-permission track, semantics. 8 widget tests pass.
 - **Sub-task D (2026-06-02):** Added `SourceChip` pill and `StatusBanner` with `staleCompact`/`staleFull` variants, 3px stale accent, tap callback. 5 widget tests pass.
 - **Sub-task E (2026-06-02):** Integrated Today dashboard — `AppScaffold` hoists `TodayCubit`, wires refresh triggers (init, resume, ingestion, 60s poll), `TodayScreen` layout with GoalRing/SourceChip/stale banner. Updated app_scaffold + widget tests.
+- **Sub-task F (2026-06-02):** `flutter analyze` clean; 144/144 tests pass. Story ready for review.
+- **Code review (2026-06-02):** Silent refresh (no loading flash), coalesced refresh, resume collect-then-refresh, tab-return refresh, GoalRing/StatusBanner a11y, FittedBox for text scale, centered SourceChip. 150/150 tests pass.
+
+### Deferred (out of scope 2.5)
+
+- **2.6** — `GoalCelebration` animation, `celebration_shown_date` preference
+- **2.7** — `NotificationService`, goal notification
+- **4.2** — `StatusBanner.staleFull`, `BackgroundStatusCard`, OEM battery deep-links on My Data
 
 ### File List
 
@@ -411,4 +419,4 @@ Run: `flutter analyze`, `flutter test test/core/health/ test/presentation/cubits
 ## Story completion status
 
 - Ultimate context engine analysis completed — comprehensive developer guide created
-- Status: **ready-for-dev**
+- Status: **done**

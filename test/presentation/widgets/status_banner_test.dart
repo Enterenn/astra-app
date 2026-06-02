@@ -22,6 +22,31 @@ void main() {
       );
     });
 
+    testWidgets('staleCompact exposes full copy as semantics label', (
+      tester,
+    ) async {
+      final handle = tester.ensureSemantics();
+
+      await tester.pumpWidget(
+        MaterialApp(
+          theme: buildAstraLightTheme(),
+          home: Scaffold(
+            body: StatusBanner(
+              variant: StatusBannerVariant.staleCompact,
+              onTap: () {},
+            ),
+          ),
+        ),
+      );
+
+      expect(
+        find.bySemanticsLabel('Steps may be delayed — see My Data'),
+        findsOneWidget,
+      );
+
+      handle.dispose();
+    });
+
     testWidgets('staleCompact invokes onTap when tapped', (tester) async {
       var tapped = false;
 

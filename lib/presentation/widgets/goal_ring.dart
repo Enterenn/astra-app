@@ -83,6 +83,8 @@ class _GoalRingState extends State<GoalRing> with SingleTickerProviderStateMixin
         return Semantics(
           label: _semanticsLabel,
           value: _semanticsValue,
+          increasedValue: _semanticsMaxValue,
+          decreasedValue: _semanticsDecreasedValue,
           container: true,
           child: ExcludeSemantics(
             child: SizedBox(
@@ -136,21 +138,24 @@ class _GoalRingState extends State<GoalRing> with SingleTickerProviderStateMixin
       _ => formatStepCount(widget.state.steps),
     };
 
-    return Column(
-      mainAxisSize: MainAxisSize.min,
-      children: [
-        if (centerText.isNotEmpty)
-          Text(centerText, style: AstraTypography.displayFor(colors))
-        else
-          SizedBox(height: AstraTypography.displayFor(colors).fontSize),
-        const SizedBox(height: 4),
-        Text('steps today', style: AstraTypography.captionFor(colors)),
-        const SizedBox(height: 2),
-        Text(
-          'goal ${formatStepCount(widget.state.goal)}',
-          style: AstraTypography.captionFor(colors),
-        ),
-      ],
+    return FittedBox(
+      fit: BoxFit.scaleDown,
+      child: Column(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          if (centerText.isNotEmpty)
+            Text(centerText, style: AstraTypography.displayFor(colors))
+          else
+            SizedBox(height: AstraTypography.displayFor(colors).fontSize),
+          const SizedBox(height: 4),
+          Text('steps today', style: AstraTypography.captionFor(colors)),
+          const SizedBox(height: 2),
+          Text(
+            'goal ${formatStepCount(widget.state.goal)}',
+            style: AstraTypography.captionFor(colors),
+          ),
+        ],
+      ),
     );
   }
 
@@ -158,8 +163,10 @@ class _GoalRingState extends State<GoalRing> with SingleTickerProviderStateMixin
     return switch (widget.state.status) {
       TodayStatus.loading => 'Steps today: loading',
       TodayStatus.noPermission => 'Steps today: permission required',
-      _ =>
-        'Steps today: ${widget.state.steps} of ${widget.state.goal}',
+      TodayStatus.overflow ||
+      TodayStatus.goalMet =>
+        'Steps today: ${widget.state.steps}. Daily goal ${widget.state.goal} reached.',
+      _ => 'Steps today: ${widget.state.steps} of ${widget.state.goal}',
     };
   }
 
@@ -167,6 +174,29 @@ class _GoalRingState extends State<GoalRing> with SingleTickerProviderStateMixin
     return switch (widget.state.status) {
       TodayStatus.loading || TodayStatus.noPermission => null,
       _ => widget.state.steps.toString(),
+    };
+  }
+
+  /// Progress ring min (UX §4.3): 0.
+  String? get _semanticsDecreasedValue {
+    return switch (widget.state.status) {
+      TodayStatus.progress ||
+      TodayStatus.goalMet ||
+      TodayStatus.overflow ||
+      TodayStatus.empty => '0',
+      _ => null,
+    };
+  }
+
+  /// Progress ring max (UX §4.3): daily goal.
+  String? get _semanticsMaxValue {
+    return switch (widget.state.status) {
+      TodayStatus.progress ||
+      TodayStatus.goalMet ||
+      TodayStatus.overflow ||
+      TodayStatus.empty when widget.state.goal > 0 =>
+        widget.state.goal.toString(),
+      _ => null,
     };
   }
 }

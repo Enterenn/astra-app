@@ -53,14 +53,19 @@ class _AstraAppState extends State<AstraApp> with WidgetsBindingObserver {
   @override
   void didChangeAppLifecycleState(AppLifecycleState state) {
     if (state == AppLifecycleState.resumed) {
-      _collectForegroundBackfill();
-      unawaited(_todayCubit?.refresh());
+      unawaited(_collectAndRefreshToday());
     }
   }
 
   void _collectForegroundBackfill() {
     // iOS relies on this foreground backfill model; Android uses it as a WM fallback.
     unawaited(widget.deps.backgroundCollector.collectOnce());
+  }
+
+  /// Runs foreground ingestion before reading SQLite so Today shows fresh totals.
+  Future<void> _collectAndRefreshToday() async {
+    await widget.deps.backgroundCollector.collectOnce();
+    await _todayCubit?.refresh();
   }
 
   void _onOnboardingComplete() {
