@@ -11,10 +11,12 @@ import '../../data/datasources/phone_pedometer_source.dart';
 import '../../data/datasources/step_normalizer.dart';
 import '../../data/repositories/ingestion_baseline_repository.dart';
 import '../../data/repositories/step_repository.dart';
+import '../../data/repositories/user_preferences_repository.dart';
 import '../database/isolate_database_factory.dart';
 import '../time/system_time_provider.dart';
 import '../time/time_provider.dart';
 import 'background_collector.dart';
+import 'notification_service.dart';
 import 'workmanager_tasks.dart';
 
 typedef AstraDatabaseOpener = Future<Database> Function({String? databasePath});
@@ -85,6 +87,8 @@ Future<bool> runStepCollectionWorkmanagerTask({
   List<DataIngestionSource>? sources,
   TimeProvider? clock,
   AstraDatabaseOpener openDatabase = openIsolateAstraDatabase,
+  NotificationService? notificationService,
+  Future<bool> Function()? notificationPermissionGranted,
 }) async {
   Database? db;
   try {
@@ -92,14 +96,23 @@ Future<bool> runStepCollectionWorkmanagerTask({
     final timeProvider = clock ?? const SystemTimeProvider();
     final repository = StepRepository(db: db, clock: timeProvider);
     final normalizer = StepNormalizer(clock: timeProvider);
+    final userPreferences = UserPreferencesRepository(db);
+    final notifications = notificationService ?? NotificationService();
+    await notifications.initializeForBackground();
     final collector = BackgroundCollector(
       sources: sources ?? [PhonePedometerSource(), const AdpBleSource()],
       normalizer: normalizer,
       repository: repository,
       baselineRepository: IngestionBaselineRepository(db),
+      userPreferences: userPreferences,
+      clock: timeProvider,
+      notificationService: notifications,
+      notificationPermissionGranted:
+          notificationPermissionGranted ??
+          notifications.hasNotificationPermission,
     );
 
-    await collector.collectOnce();
+    await collector.collectOnce(enableGoalNotification: true);
     return true;
   } catch (error, stackTrace) {
     debugPrint('WorkManager step collection failed: $error');

@@ -1,12 +1,17 @@
 import 'dart:io';
 
 import 'package:astra_app/core/database/app_database.dart';
+import 'package:astra_app/core/services/notification_service.dart';
 import 'package:astra_app/core/services/workmanager_callback.dart';
 import 'package:astra_app/core/services/workmanager_tasks.dart';
+import 'package:astra_app/core/time/local_day_formatter.dart';
 import 'package:astra_app/data/datasources/data_ingestion_source.dart';
+import 'package:astra_app/data/models/normalized_step_bucket.dart';
 import 'package:astra_app/data/models/step_reading.dart';
 import 'package:astra_app/data/repositories/step_repository.dart';
+import 'package:astra_app/data/repositories/user_preferences_repository.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:permission_handler/permission_handler.dart';
 import 'package:workmanager/workmanager.dart';
 
 import '../../core/time/fake_time_provider.dart';
@@ -35,6 +40,8 @@ void main() {
     test('writes a bucket using an isolate-local database connection', () async {
       final success = await runStepCollectionWorkmanagerTask(
         databasePath: databasePath,
+        notificationService: _testNotificationService(),
+        notificationPermissionGranted: () async => true,
         sources: [
           _FakeStepSource([
             StepReading(
@@ -67,6 +74,67 @@ void main() {
       expect(
         await repository.getLastIngestionUtc(),
         DateTime.utc(2026, 6, 2, 8, 5),
+      );
+    });
+
+    test('evaluates goal notification when WM bootstrap crosses goal', () async {
+      var showCount = 0;
+      final clock = FakeTimeProvider(
+        fixedNowUtc: DateTime.utc(2026, 6, 2, 8),
+        zoneOffset: const Duration(hours: 2),
+      );
+      final notificationService = NotificationService(
+        permissionChecker: () async => PermissionStatus.granted,
+        goalNotificationPresenter: ({required id, required title, body}) async {
+          showCount += 1;
+        },
+      );
+
+      final uiDb = await openAstraDatabase(databasePath: databasePath);
+      addTearDown(uiDb.close);
+      final userPreferences = UserPreferencesRepository(uiDb);
+      await userPreferences.setDailyStepGoal(5000);
+      final repository = StepRepository(db: uiDb, clock: clock);
+      await repository.upsertIngestionBucket(
+        NormalizedStepBucket(
+          startTimeUtc: DateTime.utc(2026, 6, 2, 6),
+          endTimeUtc: DateTime.utc(2026, 6, 2, 6, 5),
+          value: 4900,
+          provider: kInternalPhoneProvider,
+          deviceId: kSmartphoneDeviceId,
+          zoneOffset: '+02:00',
+        ),
+      );
+      await uiDb.close();
+
+      final success = await runStepCollectionWorkmanagerTask(
+        databasePath: databasePath,
+        sources: [
+          _FakeStepSource([
+            StepReading(
+              cumulativeSteps: 10,
+              observedAtUtc: DateTime.utc(2026, 6, 2, 8),
+            ),
+            StepReading(
+              cumulativeSteps: 200,
+              observedAtUtc: DateTime.utc(2026, 6, 2, 8, 1),
+            ),
+          ]),
+        ],
+        clock: clock,
+        notificationService: notificationService,
+        notificationPermissionGranted: () async => true,
+      );
+
+      final verifyDb = await openAstraDatabase(databasePath: databasePath);
+      addTearDown(verifyDb.close);
+      final verifyPrefs = UserPreferencesRepository(verifyDb);
+
+      expect(success, isTrue);
+      expect(showCount, 1);
+      expect(
+        await verifyPrefs.getCelebrationShownDate(),
+        formatLocalDayIso(clock.snapshot()),
       );
     });
 
@@ -105,6 +173,13 @@ void main() {
       expect(client.existingWorkPolicy, ExistingPeriodicWorkPolicy.keep);
     });
   });
+}
+
+NotificationService _testNotificationService() {
+  return NotificationService(
+    goalNotificationPresenter: ({required id, required title, body}) async {},
+    permissionChecker: () async => PermissionStatus.granted,
+  );
 }
 
 class _FakeStepSource implements DataIngestionSource {
