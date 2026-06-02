@@ -1,6 +1,6 @@
 # Story 3.3: History Screen with Bar Chart and Trend
 
-Status: review
+Status: done
 
 <!-- Note: Validation is optional. Run validate-create-story for quality check before dev-story. -->
 
@@ -367,8 +367,9 @@ Composer (Cursor)
 ### Change Log
 
 - 2026-06-02: Story 3.3 — History screen with bar chart, period toggle, weekly trend chip, cubit wiring, and tests.
+- 2026-06-02: Code review fixes — refresh error recovery, refreshGoal, PeriodToggle semantics, 30d chart labels, auto-30d when 7d empty.
 
 ## Story Completion Status
 
-- **Status:** review
-- **Completion note:** Ultimate context engine analysis completed — comprehensive developer guide created
+- **Status:** done
+- **Completion note:** History UI shipped with code review fixes; 242 tests passing.

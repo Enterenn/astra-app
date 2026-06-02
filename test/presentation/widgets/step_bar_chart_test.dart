@@ -79,5 +79,26 @@ void main() {
       expect(tester.takeException(), isNull);
       expect(find.byType(StepBarChart), findsOneWidget);
     });
+
+    testWidgets('ready state with 30 points builds without throw', (
+      tester,
+    ) async {
+      final points = [
+        for (var i = 0; i < 30; i++)
+          ChartDayAggregate(
+            localDay: DateTime.utc(2026, 5, 3 + i),
+            totalSteps: 500 + i * 50,
+          ),
+      ];
+
+      await pumpChart(
+        tester,
+        status: HistoryStatus.ready,
+        points: points,
+        dailyGoal: 8000,
+      );
+
+      expect(tester.takeException(), isNull);
+    });
   });
 }

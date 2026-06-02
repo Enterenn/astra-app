@@ -34,6 +34,24 @@ class HistoryCubit extends Cubit<HistoryState> {
     }
   }
 
+  /// Re-reads daily goal from preferences and updates the current state without
+  /// hitting the step repository (mirrors [TodayCubit.refreshMetadata] scope).
+  Future<void> refreshGoal() async {
+    if (isClosed || state.status == HistoryStatus.loading) {
+      return;
+    }
+
+    try {
+      final goal = await userPreferences.getDailyStepGoal();
+      if (isClosed) {
+        return;
+      }
+      _emitWithGoal(goal);
+    } catch (_) {
+      // Keep last known goal on preference read failure.
+    }
+  }
+
   void selectPeriod(HistoryPeriod period) {
     if (isClosed || period == state.period) {
       return;
@@ -49,14 +67,7 @@ class HistoryCubit extends Cubit<HistoryState> {
       return;
     }
 
-    emit(
-      HistoryState.ready(
-        period: period,
-        chartPoints: _sliceForPeriod(period),
-        dailyGoal: state.dailyGoal,
-        trend: _computeTrend(_cachedAggregates30d),
-      ),
-    );
+    _emitReady(period: period);
   }
 
   Future<void> _refreshImpl({required bool silent}) async {
@@ -64,40 +75,110 @@ class HistoryCubit extends Cubit<HistoryState> {
       emit(const HistoryState.loading());
     }
 
-    final results = await Future.wait<Object?>([
-      stepRepository.getChartDailyAggregates(days: 30),
-      userPreferences.getDailyStepGoal(),
-    ]);
-    if (isClosed) {
+    try {
+      final results = await Future.wait<Object?>([
+        stepRepository.getChartDailyAggregates(days: 30),
+        userPreferences.getDailyStepGoal(),
+      ]);
+      if (isClosed) {
+        return;
+      }
+
+      final aggregates = results[0]! as List<ChartDayAggregate>;
+      final goal = results[1]! as int;
+      _cachedAggregates30d = aggregates;
+
+      final totalSteps = aggregates.fold<int>(
+        0,
+        (sum, entry) => sum + entry.totalSteps,
+      );
+      if (totalSteps == 0) {
+        emit(
+          HistoryState.empty(
+            period: state.period,
+            dailyGoal: goal,
+          ),
+        );
+        return;
+      }
+
+      _emitReady(
+        period: _resolveDisplayPeriod(state.period),
+        dailyGoal: goal,
+        aggregates: aggregates,
+      );
+    } catch (_) {
+      if (isClosed) {
+        return;
+      }
+      _recoverFromRefreshFailure();
+    }
+  }
+
+  void _recoverFromRefreshFailure() {
+    if (_cachedAggregates30d.isNotEmpty) {
+      _emitReady(period: state.period);
       return;
     }
 
-    final aggregates = results[0]! as List<ChartDayAggregate>;
-    final goal = results[1]! as int;
-    _cachedAggregates30d = aggregates;
-
-    final totalSteps = aggregates.fold<int>(
-      0,
-      (sum, entry) => sum + entry.totalSteps,
-    );
-    if (totalSteps == 0) {
-      emit(
-        HistoryState.empty(
-          period: state.period,
-          dailyGoal: goal,
-        ),
-      );
+    if (state.status != HistoryStatus.loading) {
       return;
     }
 
     emit(
-      HistoryState.ready(
+      HistoryState.empty(
         period: state.period,
-        chartPoints: _sliceForPeriod(state.period),
-        dailyGoal: goal,
-        trend: _computeTrend(aggregates),
+        dailyGoal: state.dailyGoal,
       ),
     );
+  }
+
+  void _emitWithGoal(int goal) {
+    switch (state.status) {
+      case HistoryStatus.loading:
+        return;
+      case HistoryStatus.empty:
+        emit(HistoryState.empty(period: state.period, dailyGoal: goal));
+      case HistoryStatus.ready:
+        _emitReady(period: state.period, dailyGoal: goal);
+    }
+  }
+
+  void _emitReady({
+    required HistoryPeriod period,
+    int? dailyGoal,
+    List<ChartDayAggregate>? aggregates,
+  }) {
+    final source = aggregates ?? _cachedAggregates30d;
+    emit(
+      HistoryState.ready(
+        period: period,
+        chartPoints: _sliceForPeriod(period),
+        dailyGoal: dailyGoal ?? state.dailyGoal,
+        trend: _computeTrend(source),
+      ),
+    );
+  }
+
+  /// When 7d is selected but the last 7 days have no steps while older days do,
+  /// default to 30d so the chart is not a flat zero view on first load.
+  HistoryPeriod _resolveDisplayPeriod(HistoryPeriod requested) {
+    if (requested != HistoryPeriod.days7) {
+      return requested;
+    }
+
+    final recentSum = _cachedAggregates30d
+        .take(7)
+        .fold<int>(0, (sum, entry) => sum + entry.totalSteps);
+    if (recentSum > 0) {
+      return requested;
+    }
+
+    final totalSum = _cachedAggregates30d.fold<int>(
+      0,
+      (sum, entry) => sum + entry.totalSteps,
+    );
+    return totalSum > 0 ? HistoryPeriod.days30 : requested;
   }
 
   List<ChartDayAggregate> _sliceForPeriod(HistoryPeriod period) {

@@ -34,6 +34,43 @@ class _ChartAggregateSpyRepository implements StepRepository {
   }
 }
 
+class _ThrowingChartRepository implements StepRepository {
+  _ThrowingChartRepository(this._fallback);
+
+  final StepRepository _fallback;
+  int callCount = 0;
+
+  @override
+  Future<List<ChartDayAggregate>> getChartDailyAggregates({
+    required int days,
+  }) async {
+    callCount++;
+    if (callCount > 1) {
+      throw StateError('database unavailable');
+    }
+    return _fallback.getChartDailyAggregates(days: days);
+  }
+
+  @override
+  dynamic noSuchMethod(Invocation invocation) {
+    return super.noSuchMethod(invocation);
+  }
+}
+
+class _AlwaysThrowingChartRepository implements StepRepository {
+  @override
+  Future<List<ChartDayAggregate>> getChartDailyAggregates({
+    required int days,
+  }) async {
+    throw StateError('database unavailable');
+  }
+
+  @override
+  dynamic noSuchMethod(Invocation invocation) {
+    return super.noSuchMethod(invocation);
+  }
+}
+
 void main() {
   setUpAll(() async {
     await setUpSqfliteFfi();
@@ -191,6 +228,90 @@ void main() {
       expect(cubit.state.trend?.label, 'No prior week data');
       cubit.close();
     });
+
+    test('concurrent refresh calls share one repository read', () async {
+      await DataInjectService(repository: stepRepository).inject90Days(
+        clock: clock,
+      );
+      final spy = _ChartAggregateSpyRepository(stepRepository);
+      final cubit = buildCubit(repository: spy);
+
+      await Future.wait([cubit.refresh(), cubit.refresh()]);
+
+      expect(spy.chartAggregateCallCount, 1);
+      cubit.close();
+    });
+
+    test('refresh recovers from cache when repository throws', () async {
+      await DataInjectService(repository: stepRepository).inject90Days(
+        clock: clock,
+      );
+      final throwing = _ThrowingChartRepository(stepRepository);
+      final cubit = buildCubit(repository: throwing);
+
+      await cubit.refresh();
+      expect(cubit.state.status, HistoryStatus.ready);
+
+      await cubit.refresh(silent: true);
+
+      expect(cubit.state.status, HistoryStatus.ready);
+      expect(cubit.state.chartPoints, isNotEmpty);
+      cubit.close();
+    });
+
+    test('refresh leaves empty state when repository throws with no cache', () async {
+      final cubit = buildCubit(repository: _AlwaysThrowingChartRepository());
+
+      await cubit.refresh();
+
+      expect(cubit.state.status, HistoryStatus.empty);
+      cubit.close();
+    });
+
+    test('refreshGoal updates daily goal without chart repository call', () async {
+      await DataInjectService(repository: stepRepository).inject90Days(
+        clock: clock,
+      );
+      final spy = _ChartAggregateSpyRepository(stepRepository);
+      final cubit = buildCubit(repository: spy);
+
+      await cubit.refresh();
+      expect(spy.chartAggregateCallCount, 1);
+
+      await userPreferences.setDailyStepGoal(12_000);
+      await cubit.refreshGoal();
+
+      expect(spy.chartAggregateCallCount, 1);
+      expect(cubit.state.dailyGoal, 12_000);
+      expect(cubit.state.status, HistoryStatus.ready);
+      cubit.close();
+    });
+
+    test(
+      'refresh defaults to 30d when last 7 days are empty but older days have steps',
+      () async {
+        for (var dayOffset = 14; dayOffset < 21; dayOffset++) {
+          await stepRepository.upsertIngestionBucket(
+            _bucket(
+              startTimeUtc: DateTime.utc(2026, 6, 2 - dayOffset, 10),
+              value: 3000,
+              zoneOffset: '+02:00',
+            ),
+          );
+        }
+        final cubit = buildCubit();
+
+        await cubit.refresh();
+
+        expect(cubit.state.period, HistoryPeriod.days30);
+        expect(cubit.state.chartPoints, hasLength(30));
+        expect(
+          cubit.state.chartPoints.any((p) => p.totalSteps > 0),
+          isTrue,
+        );
+        cubit.close();
+      },
+    );
   });
 }
 

@@ -13,7 +13,7 @@ enum HistoryPeriod {
   };
 }
 
-enum TrendDirection { up, down, flat, hidden }
+enum TrendDirection { up, down, flat }
 
 class TrendSnapshot {
   const TrendSnapshot({
@@ -25,8 +25,6 @@ class TrendSnapshot {
   final TrendDirection direction;
   final int? percent;
   final String label;
-
-  bool get isVisible => direction != TrendDirection.hidden;
 }
 
 class HistoryState {
@@ -78,14 +76,13 @@ class HistoryState {
     List<ChartDayAggregate>? chartPoints,
     int? dailyGoal,
     TrendSnapshot? trend,
-    bool clearTrend = false,
   }) {
     return HistoryState(
       status: status ?? this.status,
       period: period ?? this.period,
       chartPoints: chartPoints ?? this.chartPoints,
       dailyGoal: dailyGoal ?? this.dailyGoal,
-      trend: clearTrend ? null : (trend ?? this.trend),
+      trend: trend ?? this.trend,
     );
   }
 }

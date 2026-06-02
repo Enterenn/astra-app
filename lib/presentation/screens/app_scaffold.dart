@@ -108,6 +108,7 @@ class _AppScaffoldState extends State<AppScaffold> {
     });
     if (returningToToday) {
       unawaited(_todayCubit.refreshMetadata());
+      unawaited(_historyCubit.refreshGoal());
     }
     if (openingHistory) {
       unawaited(_historyCubit.refresh());

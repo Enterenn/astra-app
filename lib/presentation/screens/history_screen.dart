@@ -47,6 +47,7 @@ class HistoryScreen extends StatelessWidget {
                   const SizedBox(height: AstraSpacing.kSpaceMd),
                   Expanded(
                     child: StepBarChart(
+                      key: ValueKey(state.period),
                       points: state.chartPoints,
                       dailyGoal: state.dailyGoal,
                       status: state.status,

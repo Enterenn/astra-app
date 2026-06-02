@@ -142,6 +142,7 @@ class _ReadyChart extends StatelessWidget {
             ? dailyGoal.toDouble().clamp(1, double.infinity)
             : yMax)
         .toDouble();
+    final chartMaxY = safeYMax * 1.05;
 
     return ExcludeSemantics(
       child: Padding(
@@ -154,7 +155,7 @@ class _ReadyChart extends StatelessWidget {
         child: BarChart(
           duration: Duration.zero,
           BarChartData(
-            maxY: safeYMax * 1.05,
+            maxY: chartMaxY,
             minY: 0,
             alignment: BarChartAlignment.spaceAround,
             gridData: const FlGridData(show: false),
@@ -171,9 +172,9 @@ class _ReadyChart extends StatelessWidget {
                 sideTitles: SideTitles(
                   showTitles: true,
                   reservedSize: 36,
-                  interval: safeYMax,
+                  interval: chartMaxY,
                   getTitlesWidget: (value, meta) {
-                    if (value == 0) {
+                    if (value.abs() < 0.01) {
                       return Text(
                         '0',
                         style: AstraTypography.captionFor(colors).copyWith(
@@ -181,7 +182,7 @@ class _ReadyChart extends StatelessWidget {
                         ),
                       );
                     }
-                    if ((value - safeYMax).abs() < 0.01) {
+                    if ((value - chartMaxY).abs() < chartMaxY * 0.001) {
                       return Text(
                         _formatAxisValue(safeYMax.round()),
                         style: AstraTypography.captionFor(colors).copyWith(
@@ -200,6 +201,10 @@ class _ReadyChart extends StatelessWidget {
                   getTitlesWidget: (value, meta) {
                     final index = value.toInt();
                     if (index < 0 || index >= points.length) {
+                      return const SizedBox.shrink();
+                    }
+                    if (points.length > 7 &&
+                        !_shouldShowBottomLabel(index, points.length)) {
                       return const SizedBox.shrink();
                     }
                     return Padding(
@@ -245,6 +250,14 @@ class _ReadyChart extends StatelessWidget {
         ),
       ),
     );
+  }
+
+  static bool _shouldShowBottomLabel(int index, int pointCount) {
+    if (pointCount <= 7) {
+      return true;
+    }
+    final step = (pointCount / 6).ceil().clamp(1, pointCount);
+    return index % step == 0 || index == pointCount - 1;
   }
 
   String _formatDayLabel(DateTime localDay) {

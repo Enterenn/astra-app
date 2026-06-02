@@ -15,16 +15,11 @@ class TrendChip extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    if (!trend.isVisible) {
-      return const SizedBox.shrink();
-    }
-
     final colors = context.astraColors;
     final (icon, color) = switch (trend.direction) {
       TrendDirection.up => (Icons.arrow_upward, colors.dataPositive),
       TrendDirection.down => (Icons.arrow_downward, colors.dataNegative),
       TrendDirection.flat => (Icons.remove, colors.textMuted),
-      TrendDirection.hidden => (Icons.remove, colors.textMuted),
     };
 
     return Semantics(

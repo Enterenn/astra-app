@@ -63,18 +63,5 @@ void main() {
       expect(find.byIcon(Icons.remove), findsOneWidget);
     });
 
-    testWidgets('hidden direction renders nothing', (tester) async {
-      await pumpChip(
-        tester,
-        trend: const TrendSnapshot(
-          direction: TrendDirection.hidden,
-          label: '',
-        ),
-      );
-
-      expect(find.byType(TrendChip), findsOneWidget);
-      expect(find.byType(Icon), findsNothing);
-      expect(find.byType(Text), findsNothing);
-    });
   });
 }

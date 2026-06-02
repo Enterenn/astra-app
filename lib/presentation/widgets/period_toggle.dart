@@ -25,30 +25,26 @@ class PeriodToggle extends StatelessWidget {
     final colors = context.astraColors;
     final disableAnimations = MediaQuery.disableAnimationsOf(context);
 
-    return Semantics(
-      label: 'Chart range',
-      value: selected == HistoryPeriod.days7 ? '7 days' : '30 days',
-      child: DecoratedBox(
-        decoration: BoxDecoration(
-          color: colors.bgSubtle,
-          borderRadius: BorderRadius.circular(AstraSpacing.kRadiusFull),
-        ),
-        child: Padding(
-          padding: const EdgeInsets.all(AstraSpacing.kSpaceXs),
-          child: Row(
-            children: [
-              for (final (period, label) in _options)
-                Expanded(
-                  child: _SegmentButton(
-                    label: label,
-                    selected: selected == period,
-                    colors: colors,
-                    disableAnimations: disableAnimations,
-                    onTap: () => onChanged(period),
-                  ),
+    return DecoratedBox(
+      decoration: BoxDecoration(
+        color: colors.bgSubtle,
+        borderRadius: BorderRadius.circular(AstraSpacing.kRadiusFull),
+      ),
+      child: Padding(
+        padding: const EdgeInsets.all(AstraSpacing.kSpaceXs),
+        child: Row(
+          children: [
+            for (final (period, label) in _options)
+              Expanded(
+                child: _SegmentButton(
+                  label: label,
+                  selected: selected == period,
+                  colors: colors,
+                  disableAnimations: disableAnimations,
+                  onTap: () => onChanged(period),
                 ),
-            ],
-          ),
+              ),
+          ],
         ),
       ),
     );
@@ -80,6 +76,7 @@ class _SegmentButton extends StatelessWidget {
       button: true,
       selected: selected,
       label: label,
+      hint: 'Chart range',
       child: Material(
         color: selected ? colors.bgElevated : Colors.transparent,
         borderRadius: BorderRadius.circular(AstraSpacing.kRadiusFull),
