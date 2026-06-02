@@ -47,7 +47,7 @@ So that phone (and future ADP) sources can feed buckets without duplicating delt
   - [x] Add `lib/data/datasources/adp_ble_source.dart` — implements interface; `watchStepReadings()` returns empty stream; document Phase 1 ADP activation in class dartdoc.
   - [x] **Stop → review brief → wait for Baptiste OK → commit**
 
-- [ ] **Sub-task D — StepNormalizer + unit tests** (AC: #2, #3 field shapes)
+- [x] **Sub-task D — StepNormalizer + unit tests** (AC: #2, #3 field shapes)
   - [x] Add `lib/data/datasources/step_normalizer.dart` — **only** place that converts cumulative readings → 5-minute bucket increments.
   - [x] Inject `TimeProvider`; **no** `DateTime.now()` in normalizer.
   - [x] Handle: first reading baseline, positive deltas, counter reset/reboot (`cumulative < lastBaseline` → re-baseline, non-negative increment), negative delta rejection, integer-only step values.
@@ -58,11 +58,11 @@ So that phone (and future ADP) sources can feed buckets without duplicating delt
   - [x] **Stop → review brief → wait for Baptiste OK → commit**
 
 - [ ] **Sub-task E — AppDependencies wiring** (AC: #1)
-  - [ ] Extend `lib/core/di/app_dependencies.dart` — expose `TimeProvider`, `List<DataIngestionSource> ingestionSources` (phone + ADP stub), `StepNormalizer`.
-  - [ ] Wire in `create()` and `test()`; pass `FakeTimeProvider` in `test()` when needed.
-  - [ ] **Do not** start `watchStepReadings()` subscriptions, `BackgroundCollector`, or WorkManager at app launch.
-  - [ ] Update existing tests only if constructor signatures require `deps` fields (keep changes minimal).
-  - [ ] **Stop → review brief → wait for Baptiste OK → commit**
+  - [x] Extend `lib/core/di/app_dependencies.dart` — expose `TimeProvider`, `List<DataIngestionSource> ingestionSources` (phone + ADP stub), `StepNormalizer`.
+  - [x] Wire in `create()` and `test()`; pass `FakeTimeProvider` in `test()` when needed.
+  - [x] **Do not** start `watchStepReadings()` subscriptions, `BackgroundCollector`, or WorkManager at app launch.
+  - [x] Update existing tests only if constructor signatures require `deps` fields (keep changes minimal).
+  - [x] **Stop → review brief → wait for Baptiste OK → commit**
 
 - [ ] **Sub-task F — Verification** (AC: #1–#3)
   - [ ] Run `flutter analyze`.
@@ -326,6 +326,8 @@ Expose getters on `AppDependencies` for later `BackgroundCollector` (Story 2.4).
 - 2026-06-02 — Sub-task C validation: `dart format ...`, `flutter analyze`, `flutter test test/data/datasources/`, and full `flutter test` all passed.
 - 2026-06-02 — Sub-task D red phase: `flutter test test/data/datasources/step_normalizer_test.dart` failed on missing `StepNormalizer`.
 - 2026-06-02 — Sub-task D validation: `dart format ...`, `flutter analyze`, `flutter test test/data/datasources/`, `flutter test test/core/time/`, and full `flutter test` all passed.
+- 2026-06-02 — Sub-task E red phase: `flutter test test/core/di/app_dependencies_test.dart` failed because `AppDependencies.test` did not expose `timeProvider`.
+- 2026-06-02 — Sub-task E validation: `dart format ...`, `flutter analyze`, `flutter test test/core/di/app_dependencies_test.dart`, and full `flutter test` all passed.
 
 ### Completion Notes List
 - Sub-task A implementation is ready for review: added raw step readings, normalized bucket DTO without persistence `id`, ingestion source interface, and provider/device/sample constants.
@@ -340,10 +342,15 @@ Expose getters on `AppDependencies` for later `BackgroundCollector` (Story 2.4).
 - Sub-task D implementation is ready for review: added `StepNormalizer` to convert cumulative readings into non-negative 5-minute `NormalizedStepBucket` increments.
 - Reset/reboot scenario covered: `1000 → 1050 → 200` yields `250` total in the bucket, never a negative delta.
 - Sub-task D review/commit gate completed after Baptiste approval.
+- Sub-task E implementation is ready for review: `AppDependencies` now exposes `TimeProvider`, ingestion sources, and `StepNormalizer`.
+- `create()` wires `SystemTimeProvider`, phone source, ADP stub, and normalizer without starting any source subscriptions.
+- `test()` accepts injectable `TimeProvider`/sources so tests can pass `FakeTimeProvider` when needed.
+- Sub-task E review/commit gate completed after Baptiste approval.
 
 ### File List
 - `lib/core/time/system_time_provider.dart`
 - `lib/core/time/time_provider.dart`
+- `lib/core/di/app_dependencies.dart`
 - `lib/data/datasources/adp_ble_source.dart`
 - `lib/data/datasources/data_ingestion_source.dart`
 - `lib/data/datasources/phone_pedometer_source.dart`
@@ -352,6 +359,7 @@ Expose getters on `AppDependencies` for later `BackgroundCollector` (Story 2.4).
 - `lib/data/models/step_reading.dart`
 - `test/core/time/fake_time_provider.dart`
 - `test/core/time/time_provider_test.dart`
+- `test/core/di/app_dependencies_test.dart`
 - `test/data/datasources/adp_ble_source_test.dart`
 - `test/data/datasources/data_ingestion_source_test.dart`
 - `test/data/datasources/phone_pedometer_source_test.dart`
@@ -362,6 +370,7 @@ Expose getters on `AppDependencies` for later `BackgroundCollector` (Story 2.4).
 - 2026-06-02 — Added Sub-task B time provider abstraction, system clock, fake clock, and tests.
 - 2026-06-02 — Added Sub-task C phone pedometer source, ADP no-op source, and datasource tests.
 - 2026-06-02 — Added Sub-task D step normalizer with reset/reboot handling and metadata tests.
+- 2026-06-02 — Added Sub-task E AppDependencies wiring for clock, sources, and normalizer.
 
 ## Story Completion Status
 
