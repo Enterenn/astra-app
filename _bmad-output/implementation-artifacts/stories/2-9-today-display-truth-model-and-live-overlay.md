@@ -1,6 +1,6 @@
 # Story 2.9: Today Display Truth Model & Live Overlay
 
-Status: review
+Status: done
 
 <!-- Note: Validation is optional. Run validate-create-story for quality check before dev-story. -->
 
@@ -263,8 +263,9 @@ Composer (dev-story)
 ### Change Log
 
 - 2026-06-02: Today Display Truth Model — cold-start DB refresh before live attach; audit threshold persist; COLD_START_RACE test; architecture doc links in source.
+- 2026-06-02: Code review — resume `monitor.restart()`, COLD_START_RACE integration test (production bind path), scoped `pre_test.ps1`.
 
 ## Story completion status
 
-- Status: **ready-for-dev** — Ultimate context engine analysis completed; comprehensive developer guide created.
-- **Note:** Most behavior already shipped in `ee87291`; primary code delta expected: cold-start `refresh()` ordering + audit/tests.
+- Status: **done** — AC #1–#2, #4–#6 verified in code/tests; AC #3 automated (resume sync). Manual field tests B / force-stop deferred to physical device (Sub-task E).
+- **Note:** Core behavior shipped in `ee87291`; Story 2.9 adds cold-start `refresh()` ordering, verification, and review hardening.
