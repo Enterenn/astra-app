@@ -7,6 +7,7 @@ import '../../core/constants/astra_spacing.dart';
 import '../../core/constants/astra_typography.dart';
 import '../cubits/today_cubit.dart';
 import '../cubits/today_state.dart';
+import '../widgets/goal_celebration.dart';
 import '../widgets/goal_ring.dart';
 import '../widgets/source_chip.dart';
 import '../widgets/status_banner.dart';
@@ -48,7 +49,13 @@ class TodayScreen extends StatelessWidget {
                 Expanded(
                   flex: 55,
                   child: Center(
-                    child: GoalRing(state: state),
+                    child: state.showCelebration
+                        ? GoalCelebration(
+                            state: state,
+                            onComplete: () =>
+                                context.read<TodayCubit>().dismissCelebration(),
+                          )
+                        : GoalRing(state: state),
                   ),
                 ),
                 Expanded(
