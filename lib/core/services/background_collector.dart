@@ -5,44 +5,76 @@ import 'package:flutter/foundation.dart';
 import '../../data/datasources/data_ingestion_source.dart';
 import '../../data/datasources/step_normalizer.dart';
 import '../../data/models/step_reading.dart';
+import '../../data/repositories/ingestion_baseline_repository.dart';
 import '../../data/repositories/step_repository.dart';
-import '../time/time_provider.dart';
 
 class BackgroundCollector {
   BackgroundCollector({
     required List<DataIngestionSource> sources,
     required this.normalizer,
     required this.repository,
-    required this.clock,
+    required this.baselineRepository,
     this.onIngestionComplete,
     this.sourceTimeout = const Duration(seconds: 2),
+    this.maxCollectionDuration = const Duration(seconds: 25),
   }) : _sources = List.unmodifiable(sources);
 
   final List<DataIngestionSource> _sources;
   final StepNormalizer normalizer;
   final StepRepository repository;
-
-  /// Injected for consistency with the ingestion pipeline; do not use DateTime.now().
-  final TimeProvider clock;
+  final IngestionBaselineRepository baselineRepository;
 
   /// UI isolate hook only. WorkManager isolates should leave this null.
   final VoidCallback? onIngestionComplete;
 
   final Duration sourceTimeout;
+  final Duration maxCollectionDuration;
+
+  bool _collectInFlight = false;
 
   Future<int> collectOnce({int maxReadingsPerSource = 50}) async {
+    if (_collectInFlight) {
+      return 0;
+    }
+    _collectInFlight = true;
+    try {
+      return await _collectOnce(maxReadingsPerSource: maxReadingsPerSource);
+    } finally {
+      _collectInFlight = false;
+    }
+  }
+
+  Future<int> _collectOnce({required int maxReadingsPerSource}) async {
     var upsertedCount = 0;
 
     for (final source in _sources) {
       try {
-        final buckets = await normalizer.normalize(
-          _TimeoutBoundedSource(source, timeout: sourceTimeout),
+        final initialBaseline = await baselineRepository.getBaseline(
+          provider: source.providerId,
+          deviceId: source.deviceId,
+        );
+        final result = await normalizer.normalize(
+          _TimeoutBoundedSource(
+            source,
+            timeout: sourceTimeout,
+            maxCollectionDuration: maxCollectionDuration,
+          ),
           maxReadings: maxReadingsPerSource,
+          initialBaseline: initialBaseline,
         );
 
-        for (final bucket in buckets) {
+        for (final bucket in result.buckets) {
           await repository.upsertIngestionBucket(bucket);
           upsertedCount += 1;
+        }
+
+        final terminalBaseline = result.terminalBaseline;
+        if (terminalBaseline != null) {
+          await baselineRepository.setBaseline(
+            provider: source.providerId,
+            deviceId: source.deviceId,
+            cumulative: terminalBaseline,
+          );
         }
       } catch (error, stackTrace) {
         debugPrint(
@@ -61,10 +93,15 @@ class BackgroundCollector {
 }
 
 class _TimeoutBoundedSource implements DataIngestionSource {
-  const _TimeoutBoundedSource(this._delegate, {required this.timeout});
+  const _TimeoutBoundedSource(
+    this._delegate, {
+    required this.timeout,
+    required this.maxCollectionDuration,
+  });
 
   final DataIngestionSource _delegate;
   final Duration timeout;
+  final Duration maxCollectionDuration;
 
   @override
   String get providerId => _delegate.providerId;
@@ -73,12 +110,18 @@ class _TimeoutBoundedSource implements DataIngestionSource {
   String get deviceId => _delegate.deviceId;
 
   @override
-  Stream<StepReading> watchStepReadings() {
-    return _delegate.watchStepReadings().timeout(
+  Stream<StepReading> watchStepReadings() async* {
+    final deadline = DateTime.now().add(maxCollectionDuration);
+    await for (final reading in _delegate.watchStepReadings().timeout(
       timeout,
       onTimeout: (sink) {
         sink.close();
       },
-    );
+    )) {
+      if (DateTime.now().isAfter(deadline)) {
+        break;
+      }
+      yield reading;
+    }
   }
 }

@@ -51,7 +51,6 @@ void main() {
         expect(deps.stepRepository, isA<StepRepository>());
         expect(deps.stepRepository.clock, same(clock));
         expect(deps.backgroundCollector, isA<BackgroundCollector>());
-        expect(deps.backgroundCollector.clock, same(clock));
         expect(deps.ingestionSources, hasLength(2));
         expect(deps.ingestionSources, contains(isA<PhonePedometerSource>()));
         expect(deps.ingestionSources, contains(isA<AdpBleSource>()));

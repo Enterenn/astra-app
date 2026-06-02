@@ -4,6 +4,7 @@ import '../../data/datasources/adp_ble_source.dart';
 import '../../data/datasources/data_ingestion_source.dart';
 import '../../data/datasources/phone_pedometer_source.dart';
 import '../../data/datasources/step_normalizer.dart';
+import '../../data/repositories/ingestion_baseline_repository.dart';
 import '../../data/repositories/step_repository.dart';
 import '../../data/repositories/user_preferences_repository.dart';
 import '../../presentation/cubits/theme_state.dart';
@@ -50,7 +51,7 @@ class AppDependencies {
       sources: ingestionSources,
       normalizer: stepNormalizer,
       repository: stepRepository,
-      clock: timeProvider,
+      baselineRepository: IngestionBaselineRepository(db),
     );
     return AppDependencies(
       userPreferences: userPreferences,
@@ -85,7 +86,7 @@ class AppDependencies {
       sources: sources,
       normalizer: stepNormalizer,
       repository: stepRepository,
-      clock: clock,
+      baselineRepository: IngestionBaselineRepository(db),
     );
     return AppDependencies(
       userPreferences: userPreferences,

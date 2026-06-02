@@ -9,6 +9,7 @@ import '../../data/datasources/adp_ble_source.dart';
 import '../../data/datasources/data_ingestion_source.dart';
 import '../../data/datasources/phone_pedometer_source.dart';
 import '../../data/datasources/step_normalizer.dart';
+import '../../data/repositories/ingestion_baseline_repository.dart';
 import '../../data/repositories/step_repository.dart';
 import '../database/isolate_database_factory.dart';
 import '../time/system_time_provider.dart';
@@ -95,7 +96,7 @@ Future<bool> runStepCollectionWorkmanagerTask({
       sources: sources ?? [PhonePedometerSource(), const AdpBleSource()],
       normalizer: normalizer,
       repository: repository,
-      clock: timeProvider,
+      baselineRepository: IngestionBaselineRepository(db),
     );
 
     await collector.collectOnce();

@@ -89,7 +89,8 @@ void main() {
           ),
         ]);
 
-        final buckets = await normalizer.normalize(source, maxReadings: 3);
+        final result = await normalizer.normalize(source, maxReadings: 3);
+        final buckets = result.buckets;
 
         expect(buckets, hasLength(2));
         expect(buckets.first.startTimeUtc, DateTime.utc(2026, 6, 2, 7));
@@ -123,7 +124,7 @@ void main() {
         ),
       ]);
 
-      final buckets = await normalizer.normalize(source, maxReadings: 3);
+      final buckets = (await normalizer.normalize(source, maxReadings: 3)).buckets;
 
       expect(buckets, hasLength(1));
       expect(buckets.single.value, 250);
@@ -145,7 +146,7 @@ void main() {
         ),
       ]);
 
-      final buckets = await normalizer.normalize(source, maxReadings: 2);
+      final buckets = (await normalizer.normalize(source, maxReadings: 2)).buckets;
       final bucket = buckets.single;
 
       expect(bucket.type, kStepSampleType);
@@ -179,7 +180,7 @@ void main() {
       final buckets = normalizer.normalizeReadings(
         source: source,
         readings: readings,
-      );
+      ).buckets;
 
       expect(buckets, hasLength(2));
       expect(buckets.first.startTimeUtc, DateTime.utc(2026, 6, 2, 7));
@@ -201,11 +202,37 @@ void main() {
         ),
       ]);
 
-      final buckets = await normalizer.normalize(source, maxReadings: 2);
+      final buckets = (await normalizer.normalize(source, maxReadings: 2)).buckets;
 
       expect(buckets, hasLength(1));
       expect(buckets.single.value, 5);
     });
+
+    test(
+      'applies persisted baseline when only one new reading is available',
+      () {
+        final normalizer = StepNormalizer(
+          clock: _SequenceTimeProvider([DateTime.utc(2026, 6, 2, 7, 1)]),
+        );
+        final readings = [
+          StepReading(
+            cumulativeSteps: 5100,
+            observedAtUtc: DateTime.utc(2026, 6, 2, 7, 1),
+          ),
+        ];
+        final source = _FakeStepSource(readings);
+
+        final result = normalizer.normalizeReadings(
+          source: source,
+          readings: readings,
+          initialBaseline: 5000,
+        );
+
+        expect(result.buckets, hasLength(1));
+        expect(result.buckets.single.value, 100);
+        expect(result.terminalBaseline, 5100);
+      },
+    );
 
     test('rejects small counter dips as glitches', () async {
       final normalizer = StepNormalizer(
@@ -230,7 +257,7 @@ void main() {
         ),
       ]);
 
-      final buckets = await normalizer.normalize(source, maxReadings: 4);
+      final buckets = (await normalizer.normalize(source, maxReadings: 4)).buckets;
 
       expect(buckets, hasLength(1));
       expect(buckets.single.value, 55);

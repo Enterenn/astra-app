@@ -3,6 +3,7 @@ import 'package:astra_app/core/services/background_collector.dart';
 import 'package:astra_app/data/datasources/data_ingestion_source.dart';
 import 'package:astra_app/data/datasources/step_normalizer.dart';
 import 'package:astra_app/data/models/step_reading.dart';
+import 'package:astra_app/data/repositories/ingestion_baseline_repository.dart';
 import 'package:astra_app/data/repositories/step_repository.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:sqflite/sqflite.dart';
@@ -19,6 +20,7 @@ void main() {
     late Database db;
     late StepRepository repository;
     late StepNormalizer normalizer;
+    late IngestionBaselineRepository baselineRepository;
     late FakeTimeProvider clock;
 
     setUp(() async {
@@ -29,6 +31,7 @@ void main() {
       );
       repository = StepRepository(db: db, clock: clock);
       normalizer = StepNormalizer(clock: clock);
+      baselineRepository = IngestionBaselineRepository(db);
     });
 
     tearDown(() async {
@@ -56,7 +59,7 @@ void main() {
         ],
         normalizer: normalizer,
         repository: repository,
-        clock: clock,
+        baselineRepository: baselineRepository,
         onIngestionComplete: () => callbackCount += 1,
         sourceTimeout: const Duration(milliseconds: 10),
       );
@@ -80,7 +83,7 @@ void main() {
         sources: [_FakeStepSource(const [])],
         normalizer: normalizer,
         repository: repository,
-        clock: clock,
+        baselineRepository: baselineRepository,
         onIngestionComplete: () => callbackCount += 1,
         sourceTimeout: const Duration(milliseconds: 10),
       );
@@ -107,7 +110,7 @@ void main() {
         ],
         normalizer: normalizer,
         repository: repository,
-        clock: clock,
+        baselineRepository: baselineRepository,
         sourceTimeout: const Duration(milliseconds: 10),
       );
 
@@ -115,12 +118,70 @@ void main() {
       expect(await db.query('timeseries_samples'), hasLength(1));
     });
 
+    test('writes a bucket from one reading when a persisted baseline exists', () async {
+      await baselineRepository.setBaseline(
+        provider: kInternalPhoneProvider,
+        deviceId: kSmartphoneDeviceId,
+        cumulative: 5000,
+      );
+      final collector = BackgroundCollector(
+        sources: [
+          _FakeStepSource([
+            StepReading(
+              cumulativeSteps: 5100,
+              observedAtUtc: DateTime.utc(2026, 6, 2, 8),
+            ),
+          ]),
+        ],
+        normalizer: normalizer,
+        repository: repository,
+        baselineRepository: baselineRepository,
+        sourceTimeout: const Duration(milliseconds: 10),
+      );
+
+      expect(await collector.collectOnce(), 1);
+      expect(await db.query('timeseries_samples'), hasLength(1));
+      expect(
+        await baselineRepository.getBaseline(
+          provider: kInternalPhoneProvider,
+          deviceId: kSmartphoneDeviceId,
+        ),
+        5100,
+      );
+    });
+
+    test('skips overlapping collectOnce calls while one is in flight', () async {
+      final collector = BackgroundCollector(
+        sources: [
+          _SlowStepSource(
+            StepReading(
+              cumulativeSteps: 10,
+              observedAtUtc: DateTime.utc(2026, 6, 2, 8),
+            ),
+            StepReading(
+              cumulativeSteps: 15,
+              observedAtUtc: DateTime.utc(2026, 6, 2, 8, 1),
+            ),
+          ),
+        ],
+        normalizer: normalizer,
+        repository: repository,
+        baselineRepository: baselineRepository,
+        sourceTimeout: const Duration(seconds: 1),
+      );
+
+      final first = collector.collectOnce();
+      final second = collector.collectOnce();
+      expect(await second, 0);
+      expect(await first, 1);
+    });
+
     test('returns when a live source emits no events', () async {
       final collector = BackgroundCollector(
         sources: [_NeverEmittingStepSource()],
         normalizer: normalizer,
         repository: repository,
-        clock: clock,
+        baselineRepository: baselineRepository,
         sourceTimeout: const Duration(milliseconds: 10),
       );
 
@@ -155,6 +216,26 @@ class _ThrowingStepSource implements DataIngestionSource {
   @override
   Stream<StepReading> watchStepReadings() async* {
     throw StateError('sensor unavailable');
+  }
+}
+
+class _SlowStepSource implements DataIngestionSource {
+  _SlowStepSource(this.first, this.second);
+
+  final StepReading first;
+  final StepReading second;
+
+  @override
+  String get providerId => kInternalPhoneProvider;
+
+  @override
+  String get deviceId => kSmartphoneDeviceId;
+
+  @override
+  Stream<StepReading> watchStepReadings() async* {
+    yield first;
+    await Future<void>.delayed(const Duration(milliseconds: 50));
+    yield second;
   }
 }
 

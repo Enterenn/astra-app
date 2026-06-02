@@ -6,7 +6,7 @@ import 'core/services/workmanager_callback.dart';
 
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
-  await registerStepCollectionWorkmanager();
   final deps = await AppDependencies.create();
+  await registerStepCollectionWorkmanager();
   runApp(AstraApp(deps: deps));
 }
