@@ -58,17 +58,17 @@ So that I can check progress at a glance.
   - [x] Add `lib/presentation/widgets/source_chip.dart` — pill "Phone sensor", `bgSubtle` / `textSecondary`, optional 14dp icon.
   - [x] Add `lib/presentation/widgets/status_banner.dart` — variant enum: `staleCompact` (Today), reserve `staleFull` stub for Epic 4.2; 3px left accent `statusStale`; copy: **"Steps may be delayed — see My Data"**; `onTap` navigates to My Data tab.
   - [x] Widget tests for compact stale visibility and tap callback.
-  - [ ] **Stop → review brief → wait for Baptiste OK → commit**
+  - [x] **Stop → review brief → wait for Baptiste OK → commit**
 
-- [ ] **Sub-task E — TodayScreen + AppScaffold integration** (AC: #1–#4, refresh triggers)
-  - [ ] Replace `TodayScreen` placeholder with `BlocProvider<TodayCubit>` + layout: optional compact stale banner → hero `GoalRing` (upper ~55%) → `SourceChip`.
-  - [ ] `AppScaffold`: hoist `TodayCubit` creation (needs `AppDependencies` via constructor or `InheritedWidget`); pass `onNavigateToMyData: () => setState(() => _selectedIndex = 2)`.
-  - [ ] Wire refresh triggers ([Source: `architecture.md` — Cubit refresh triggers]):
-    - [ ] Initial `refresh()` in cubit creation / screen init.
-    - [ ] `AppLifecycleState.resumed` → `todayCubit.refresh()` (in addition to existing `collectOnce()` in `AstraApp`).
-    - [ ] `backgroundCollector` ingestion callback → `todayCubit.refresh()` when buckets upserted.
-    - [ ] When Today tab selected (`_selectedIndex == 0`): `Timer.periodic(60s)` → `refresh()`; cancel when leaving tab or dispose.
-  - [ ] No-permission: optional text button / link → `openAppSettings()` via `permission_handler` (non-blocking).
+- [x] **Sub-task E — TodayScreen + AppScaffold integration** (AC: #1–#4, refresh triggers)
+  - [x] Replace `TodayScreen` placeholder with `BlocProvider<TodayCubit>` + layout: optional compact stale banner → hero `GoalRing` (upper ~55%) → `SourceChip`.
+  - [x] `AppScaffold`: hoist `TodayCubit` creation (needs `AppDependencies` via constructor or `InheritedWidget`); pass `onNavigateToMyData: () => setState(() => _selectedIndex = 2)`.
+  - [x] Wire refresh triggers ([Source: `architecture.md` — Cubit refresh triggers]):
+    - [x] Initial `refresh()` in cubit creation / screen init.
+    - [x] `AppLifecycleState.resumed` → `todayCubit.refresh()` (in addition to existing `collectOnce()` in `AstraApp`).
+    - [x] `backgroundCollector` ingestion callback → `todayCubit.refresh()` when buckets upserted.
+    - [x] When Today tab selected (`_selectedIndex == 0`): `Timer.periodic(60s)` → `refresh()`; cancel when leaving tab or dispose.
+  - [x] No-permission: optional text button / link → `openAppSettings()` via `permission_handler` (non-blocking).
   - [ ] **Stop → review brief → wait for Baptiste OK → commit**
 
 - [ ] **Sub-task F — Verification** (AC: #1–#4)
@@ -384,6 +384,7 @@ Run: `flutter analyze`, `flutter test test/core/health/ test/presentation/cubits
 - **Sub-task B (2026-06-02):** Added `TodayState` with 6 status variants and `TodayCubit.refresh()` read path (parallel repo reads, permission check, stale evaluation). 11 cubit tests cover permission, progress/goalMet/overflow, and stale boundaries.
 - **Sub-task C (2026-06-02):** Added `GoalRing` widget with `GoalRingPainter` (CustomPainter), step count formatter, loading pulse, dashed no-permission track, semantics. 8 widget tests pass.
 - **Sub-task D (2026-06-02):** Added `SourceChip` pill and `StatusBanner` with `staleCompact`/`staleFull` variants, 3px stale accent, tap callback. 5 widget tests pass.
+- **Sub-task E (2026-06-02):** Integrated Today dashboard — `AppScaffold` hoists `TodayCubit`, wires refresh triggers (init, resume, ingestion, 60s poll), `TodayScreen` layout with GoalRing/SourceChip/stale banner. Updated app_scaffold + widget tests.
 
 ### File List
 
@@ -400,6 +401,12 @@ Run: `flutter analyze`, `flutter test test/core/health/ test/presentation/cubits
 - `lib/presentation/widgets/source_chip.dart` (new)
 - `lib/presentation/widgets/status_banner.dart` (new)
 - `test/presentation/widgets/status_banner_test.dart` (new)
+- `lib/presentation/screens/today_screen.dart` (modified)
+- `lib/presentation/screens/app_scaffold.dart` (modified)
+- `lib/app.dart` (modified)
+- `lib/presentation/cubits/today_cubit.dart` (modified — isClosed guard)
+- `test/presentation/screens/app_scaffold_test.dart` (modified)
+- `test/widget_test.dart` (modified)
 
 ## Story completion status
 

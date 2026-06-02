@@ -9,15 +9,24 @@ import 'data/repositories/user_preferences_repository.dart';
 import 'presentation/cubits/onboarding_cubit.dart';
 import 'presentation/cubits/theme_cubit.dart';
 import 'presentation/cubits/theme_state.dart';
+import 'presentation/cubits/today_cubit.dart';
 import 'presentation/onboarding/onboarding_flow.dart';
 import 'presentation/screens/app_scaffold.dart';
 
 class AstraApp extends StatefulWidget {
-  const AstraApp({super.key, required this.deps, this.createOnboardingCubit});
+  const AstraApp({
+    super.key,
+    required this.deps,
+    this.createOnboardingCubit,
+    this.createTodayCubit,
+    this.enablePeriodicRefresh = true,
+  });
 
   final AppDependencies deps;
   final OnboardingCubit Function(UserPreferencesRepository userPreferences)?
   createOnboardingCubit;
+  final TodayCubit Function(AppDependencies deps)? createTodayCubit;
+  final bool enablePeriodicRefresh;
 
   @override
   State<AstraApp> createState() => _AstraAppState();
@@ -25,6 +34,7 @@ class AstraApp extends StatefulWidget {
 
 class _AstraAppState extends State<AstraApp> with WidgetsBindingObserver {
   late bool _showMainShell;
+  TodayCubit? _todayCubit;
 
   @override
   void initState() {
@@ -44,6 +54,7 @@ class _AstraAppState extends State<AstraApp> with WidgetsBindingObserver {
   void didChangeAppLifecycleState(AppLifecycleState state) {
     if (state == AppLifecycleState.resumed) {
       _collectForegroundBackfill();
+      unawaited(_todayCubit?.refresh());
     }
   }
 
@@ -73,7 +84,13 @@ class _AstraAppState extends State<AstraApp> with WidgetsBindingObserver {
             darkTheme: buildAstraDarkTheme(),
             themeMode: themeState.materialThemeMode,
             home: _showMainShell
-                ? const AppScaffold()
+                ? AppScaffold(
+                    deps: widget.deps,
+                    onTodayCubitReady: (cubit) => _todayCubit = cubit,
+                    onTodayCubitDisposed: () => _todayCubit = null,
+                    createTodayCubit: widget.createTodayCubit,
+                    enablePeriodicRefresh: widget.enablePeriodicRefresh,
+                  )
                 : OnboardingFlow(
                     deps: widget.deps,
                     onComplete: _onOnboardingComplete,

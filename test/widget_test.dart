@@ -7,6 +7,7 @@ import 'package:astra_app/data/repositories/step_repository.dart';
 import 'package:astra_app/data/repositories/user_preferences_repository.dart';
 import 'package:astra_app/presentation/cubits/onboarding_cubit.dart';
 import 'package:astra_app/presentation/cubits/theme_state.dart';
+import 'package:astra_app/presentation/cubits/today_cubit.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:permission_handler/permission_handler.dart';
@@ -15,6 +16,15 @@ import 'package:sqflite_common_ffi/sqflite_ffi.dart';
 
 import 'helpers/sqflite_test_helper.dart';
 import 'core/time/fake_time_provider.dart';
+
+TodayCubit _testTodayCubit(AppDependencies deps) {
+  return TodayCubit(
+    stepRepository: deps.stepRepository,
+    userPreferences: deps.userPreferences,
+    clock: deps.timeProvider,
+    activityPermissionGranted: () async => true,
+  );
+}
 
 void main() {
   setUpAll(() async {
@@ -42,7 +52,16 @@ void main() {
     testWidgets('shows NavigationBar and switches tab placeholders', (
       WidgetTester tester,
     ) async {
-      await tester.pumpWidget(AstraApp(deps: deps));
+      await tester.runAsync(() async {
+        await tester.pumpWidget(
+          AstraApp(
+            deps: deps,
+            createTodayCubit: _testTodayCubit,
+            enablePeriodicRefresh: false,
+          ),
+        );
+        await tester.pump();
+      });
 
       expect(find.byType(NavigationBar), findsOneWidget);
       expect(find.text('Today'), findsWidgets);
@@ -50,7 +69,7 @@ void main() {
       expect(find.text('My Data'), findsOneWidget);
 
       expect(
-        find.text('Step tracking and your goal ring will appear here.'),
+        find.text('steps today'),
         findsOneWidget,
       );
 
@@ -71,6 +90,11 @@ void main() {
         find.text('Data footprint, export, and settings will appear here.'),
         findsOneWidget,
       );
+
+      await tester.runAsync(() async {
+        await tester.pumpWidget(const SizedBox.shrink());
+        await tester.pump();
+      });
     });
   });
 
@@ -96,12 +120,26 @@ void main() {
     testWidgets(
       'MaterialApp themeMode reflects persisted theme on first frame',
       (WidgetTester tester) async {
-        await tester.pumpWidget(AstraApp(deps: deps));
+        await tester.runAsync(() async {
+          await tester.pumpWidget(
+            AstraApp(
+              deps: deps,
+              createTodayCubit: _testTodayCubit,
+              enablePeriodicRefresh: false,
+            ),
+          );
+          await tester.pump();
+        });
 
         final materialApp = tester.widget<MaterialApp>(
           find.byType(MaterialApp),
         );
         expect(materialApp.themeMode, ThemeMode.dark);
+
+        await tester.runAsync(() async {
+          await tester.pumpWidget(const SizedBox.shrink());
+          await tester.pump();
+        });
       },
     );
   });
@@ -138,10 +176,24 @@ void main() {
     });
 
     testWidgets('shows shell after onboarding complete flag', (tester) async {
-      await tester.pumpWidget(AstraApp(deps: completeDeps));
+      await tester.runAsync(() async {
+        await tester.pumpWidget(
+          AstraApp(
+            deps: completeDeps,
+            createTodayCubit: _testTodayCubit,
+            enablePeriodicRefresh: false,
+          ),
+        );
+        await tester.pump();
+      });
 
       expect(find.byType(NavigationBar), findsOneWidget);
       expect(find.text('Your steps stay on this device.'), findsNothing);
+
+      await tester.runAsync(() async {
+        await tester.pumpWidget(const SizedBox.shrink());
+        await tester.pump();
+      });
     });
 
     testWidgets('shows onboarding when completion flag is absent', (
@@ -158,22 +210,27 @@ void main() {
     ) async {
       OnboardingCubit? cubitRef;
 
-      await tester.pumpWidget(
-        AstraApp(
-          deps: incompleteDeps,
-          createOnboardingCubit: (repo) {
-            cubitRef = OnboardingCubit(
-              userPreferences: repo,
-              permissionRequester: (_) async => PermissionStatus.granted,
-            );
-            return cubitRef!;
-          },
-        ),
-      );
+      await tester.runAsync(() async {
+        await tester.pumpWidget(
+          AstraApp(
+            deps: incompleteDeps,
+            createTodayCubit: _testTodayCubit,
+            enablePeriodicRefresh: false,
+            createOnboardingCubit: (repo) {
+              cubitRef = OnboardingCubit(
+                userPreferences: repo,
+                permissionRequester: (_) async => PermissionStatus.granted,
+              );
+              return cubitRef!;
+            },
+          ),
+        );
+        await tester.pump();
+      });
 
       expect(find.text('Your steps stay on this device.'), findsOneWidget);
 
-      await tester.binding.runAsync(() async {
+      await tester.runAsync(() async {
         await cubitRef!.completeOnboarding(goal: 8000);
       });
       await tester.pump();
@@ -181,9 +238,15 @@ void main() {
       expect(find.byType(NavigationBar), findsOneWidget);
       expect(find.text('Your steps stay on this device.'), findsNothing);
       expect(
-        find.text('Step tracking and your goal ring will appear here.'),
+        find.text('steps today'),
         findsOneWidget,
       );
+
+      await tester.runAsync(() async {
+        await Future<void>.delayed(const Duration(milliseconds: 100));
+        await tester.pumpWidget(const SizedBox.shrink());
+        await tester.pump();
+      });
     });
   });
 
@@ -229,7 +292,14 @@ void main() {
       // flow must execute in runAsync — the fake-async zone never pumps real
       // database completions and the test would hang otherwise.
       await tester.runAsync(() async {
-        await tester.pumpWidget(AstraApp(deps: deps));
+        await tester.pumpWidget(
+          AstraApp(
+            deps: deps,
+            createTodayCubit: _testTodayCubit,
+            enablePeriodicRefresh: false,
+          ),
+        );
+        await tester.pump();
         final last = await _waitForIngestion(
           stepRepository,
           DateTime.utc(2026, 6, 2, 8, 5),
@@ -240,7 +310,14 @@ void main() {
 
     testWidgets('collects again when app resumes', (tester) async {
       await tester.runAsync(() async {
-        await tester.pumpWidget(AstraApp(deps: deps));
+        await tester.pumpWidget(
+          AstraApp(
+            deps: deps,
+            createTodayCubit: _testTodayCubit,
+            enablePeriodicRefresh: false,
+          ),
+        );
+        await tester.pump();
         await _waitForIngestion(stepRepository, DateTime.utc(2026, 6, 2, 8, 5));
 
         final source = deps.ingestionSources.single as _MutableStepSource;

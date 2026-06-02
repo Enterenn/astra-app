@@ -1,29 +1,111 @@
 import 'package:astra_app/core/constants/astra_colors.dart';
 import 'package:astra_app/core/constants/astra_spacing.dart';
 import 'package:astra_app/core/constants/astra_theme.dart';
+import 'package:astra_app/core/database/app_database.dart';
+import 'package:astra_app/core/di/app_dependencies.dart';
+import 'package:astra_app/data/repositories/user_preferences_repository.dart';
+import 'package:astra_app/presentation/cubits/today_cubit.dart';
+import 'package:astra_app/presentation/cubits/today_state.dart';
 import 'package:astra_app/presentation/screens/app_scaffold.dart';
+import 'package:astra_app/presentation/widgets/status_banner.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:sqflite/sqflite.dart';
+
+import '../../helpers/sqflite_test_helper.dart';
+
+TodayCubit _testTodayCubit(AppDependencies deps) {
+  return TodayCubit(
+    stepRepository: deps.stepRepository,
+    userPreferences: deps.userPreferences,
+    clock: deps.timeProvider,
+    activityPermissionGranted: () async => true,
+  );
+}
+
+class _StaleTodayCubit extends TodayCubit {
+  _StaleTodayCubit({
+    required super.stepRepository,
+    required super.userPreferences,
+    required super.clock,
+  }) : super(activityPermissionGranted: () async => true);
+
+  @override
+  Future<void> refresh() async {
+    emit(
+      TodayState.fromData(
+        steps: 1200,
+        goal: 8000,
+        isStale: true,
+        lastIngestionUtc: DateTime.utc(2020, 1, 1),
+      ),
+    );
+  }
+}
+
+Future<void> _pumpAppScaffold(
+  WidgetTester tester,
+  AppScaffold scaffold, {
+  bool disableAnimations = true,
+}) async {
+  await tester.runAsync(() async {
+    await tester.pumpWidget(
+      MaterialApp(
+        theme: buildAstraLightTheme(),
+        home: MediaQuery(
+          data: MediaQueryData(disableAnimations: disableAnimations),
+          child: scaffold,
+        ),
+      ),
+    );
+    await tester.pump();
+  });
+}
+
+Future<void> _disposeScaffold(WidgetTester tester) async {
+  await tester.runAsync(() async {
+    await tester.pumpWidget(const SizedBox.shrink());
+    await tester.pump();
+  });
+}
 
 void main() {
+  setUpAll(() async {
+    await setUpSqfliteFfi();
+  });
+
   group('AppScaffold', () {
+    late Database db;
+    late AppDependencies deps;
+
+    setUpAll(() async {
+      db = await openAstraDatabase(databasePath: inMemoryDatabasePath);
+      final userPreferences = UserPreferencesRepository(db);
+      await userPreferences.setOnboardingComplete(true);
+      deps = await AppDependencies.test(
+        db: db,
+        userPreferences: userPreferences,
+      );
+    });
+
+    tearDownAll(() async {
+      await db.close();
+    });
+
     testWidgets(
       'tab switch with reduce motion completes without hanging',
       (WidgetTester tester) async {
-        await tester.pumpWidget(
-          MaterialApp(
-            theme: buildAstraLightTheme(),
-            home: const MediaQuery(
-              data: MediaQueryData(disableAnimations: true),
-              child: AppScaffold(),
-            ),
+        await _pumpAppScaffold(
+          tester,
+          AppScaffold(
+            deps: deps,
+            createTodayCubit: _testTodayCubit,
+            enablePeriodicRefresh: false,
           ),
         );
 
-        expect(
-          find.text('Step tracking and your goal ring will appear here.'),
-          findsOneWidget,
-        );
+        expect(find.text('steps today'), findsOneWidget);
+        expect(find.text('Phone sensor'), findsOneWidget);
 
         await tester.tap(find.byIcon(Icons.bar_chart_outlined));
         await tester.pump();
@@ -40,27 +122,59 @@ void main() {
           find.text('Data footprint, export, and settings will appear here.'),
           findsOneWidget,
         );
+
+        await _disposeScaffold(tester);
       },
     );
 
-    testWidgets('placeholder layout survives large text scale', (
+    testWidgets('Today dashboard survives large text scale', (
       WidgetTester tester,
     ) async {
-      await tester.pumpWidget(
-        MaterialApp(
-          theme: buildAstraLightTheme(),
-          home: MediaQuery(
-            data: MediaQueryData(
-              textScaler: TextScaler.linear(2.5),
-            ),
-            child: const AppScaffold(),
-          ),
+      await _pumpAppScaffold(
+        tester,
+        AppScaffold(
+          deps: deps,
+          createTodayCubit: _testTodayCubit,
+          enablePeriodicRefresh: false,
         ),
+        disableAnimations: false,
       );
+
       await tester.pump();
 
       expect(tester.takeException(), isNull);
-      expect(find.byType(SingleChildScrollView), findsOneWidget);
+      expect(find.text('steps today'), findsOneWidget);
+
+      await _disposeScaffold(tester);
+    });
+
+    testWidgets('stale compact banner navigates to My Data tab', (
+      tester,
+    ) async {
+      await _pumpAppScaffold(
+        tester,
+        AppScaffold(
+          deps: deps,
+          createTodayCubit: (dependencies) => _StaleTodayCubit(
+            stepRepository: dependencies.stepRepository,
+            userPreferences: dependencies.userPreferences,
+            clock: dependencies.timeProvider,
+          ),
+          enablePeriodicRefresh: false,
+        ),
+      );
+
+      expect(find.byType(StatusBanner), findsOneWidget);
+
+      await tester.tap(find.byType(StatusBanner));
+      await tester.pump();
+
+      expect(
+        find.text('Data footprint, export, and settings will appear here.'),
+        findsOneWidget,
+      );
+
+      await _disposeScaffold(tester);
     });
 
     testWidgets('NavigationBar uses Astra navigation theme tokens', (
@@ -68,10 +182,12 @@ void main() {
     ) async {
       final colors = AstraColors.light();
 
-      await tester.pumpWidget(
-        MaterialApp(
-          theme: buildAstraLightTheme(),
-          home: const AppScaffold(),
+      await _pumpAppScaffold(
+        tester,
+        AppScaffold(
+          deps: deps,
+          createTodayCubit: _testTodayCubit,
+          enablePeriodicRefresh: false,
         ),
       );
 
@@ -97,8 +213,8 @@ void main() {
       expect(unselectedLabelStyle?.color, colors.textMuted);
 
       final decoratedBox = tester.widget<DecoratedBox>(
-        find.descendant(
-          of: find.byType(Scaffold),
+        find.ancestor(
+          of: find.byType(NavigationBar),
           matching: find.byType(DecoratedBox),
         ),
       );
@@ -106,6 +222,8 @@ void main() {
       final topBorder = decoration.border?.top;
       expect(topBorder, isNotNull);
       expect(topBorder!.color, colors.borderDefault);
+
+      await _disposeScaffold(tester);
     });
   });
 }

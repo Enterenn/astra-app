@@ -37,9 +37,15 @@ class TodayCubit extends Cubit<TodayState> {
   }
 
   Future<void> refresh() async {
+    if (isClosed) {
+      return;
+    }
     emit(const TodayState.loading());
 
     final granted = await _activityPermissionGranted();
+    if (isClosed) {
+      return;
+    }
     if (!granted) {
       emit(const TodayState.noPermission());
       return;
@@ -50,6 +56,9 @@ class TodayCubit extends Cubit<TodayState> {
       userPreferences.getDailyStepGoal(),
       stepRepository.getLastIngestionUtc(),
     ]);
+    if (isClosed) {
+      return;
+    }
 
     final steps = results[0]! as int;
     final goal = results[1]! as int;
