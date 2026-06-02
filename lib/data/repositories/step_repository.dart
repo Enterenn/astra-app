@@ -85,4 +85,19 @@ class StepRepository {
 
     return total;
   }
+
+  /// Latest step sample end time in UTC, or null when no step samples exist.
+  Future<DateTime?> getLastIngestionUtc() async {
+    final rows = await db.rawQuery(
+      '''
+      SELECT MAX(end_time) AS last_end_time
+      FROM timeseries_samples
+      WHERE type = ?
+      ''',
+      [kStepSampleType],
+    );
+    final value = rows.single['last_end_time'] as String?;
+
+    return value == null ? null : TimestampCodec.parseUtc(value);
+  }
 }

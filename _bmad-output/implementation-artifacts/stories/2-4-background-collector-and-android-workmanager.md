@@ -40,10 +40,10 @@ So that I get value without opening the app constantly.
   - [x] Add unit test proving two sequential `openAstraDatabase()` calls on same path both succeed with WAL (file-backed via FFI in test).
   - [x] **Stop → review brief → wait for Baptiste OK → commit**
 
-- [ ] **Sub-task B — StepRepository last-ingestion query** (AC: #2 downstream for 2.5)
-  - [ ] Add `Future<DateTime?> getLastIngestionUtc()` — `MAX(end_time)` for `type = 'steps'`, parsed via `TimestampCodec`; returns `null` when no rows.
-  - [ ] Add `test/data/repositories/step_repository_last_ingestion_test.dart`.
-  - [ ] **Stop → review brief → wait for Baptiste OK → commit**
+- [x] **Sub-task B — StepRepository last-ingestion query** (AC: #2 downstream for 2.5)
+  - [x] Add `Future<DateTime?> getLastIngestionUtc()` — `MAX(end_time)` for `type = 'steps'`, parsed via `TimestampCodec`; returns `null` when no rows.
+  - [x] Add `test/data/repositories/step_repository_last_ingestion_test.dart`.
+  - [x] **Stop → review brief → wait for Baptiste OK → commit**
 
 - [ ] **Sub-task C — BackgroundCollector core** (AC: #1, #5)
   - [ ] Add `lib/core/services/background_collector.dart`:
@@ -390,18 +390,27 @@ GPT-5.5
 - 2026-06-02: GREEN `flutter test test/core/database/isolate_database_factory_test.dart` passed after adding the isolate database factory.
 - 2026-06-02: REGRESSION `flutter test` passed, 91 tests.
 - 2026-06-02: QUALITY `flutter analyze` passed with no issues.
+- 2026-06-02: RED `flutter test test/data/repositories/step_repository_last_ingestion_test.dart` failed because `StepRepository.getLastIngestionUtc()` did not exist.
+- 2026-06-02: GREEN `flutter test test/data/repositories/step_repository_last_ingestion_test.dart` passed after adding the last-ingestion query.
+- 2026-06-02: REGRESSION `flutter test` passed, 93 tests.
+- 2026-06-02: QUALITY `flutter analyze` passed with no issues.
 
 ### Completion Notes List
 - Sub-task A implementation ready for review: added an isolate-safe database factory wrapper that returns a fresh `Database` connection on every call while reusing `openAstraDatabase()` for WAL, foreign keys, migrations, and `databasePath` test injection.
 - No `app_database.dart` refactor was needed because the existing `openAstraDatabase()` already centralizes PRAGMA and migration behavior.
 - Added a file-backed FFI test proving two sequential factory opens on the same database path both succeed with WAL enabled.
+- Sub-task B implementation ready for review: added `StepRepository.getLastIngestionUtc()` using `MAX(end_time)` filtered to step samples and parsed through `TimestampCodec.parseUtc()`.
+- Added repository tests for the empty-table `null` case and for ignoring newer non-step samples when calculating last step ingestion.
 
 ### File List
 - `lib/core/database/isolate_database_factory.dart`
 - `test/core/database/isolate_database_factory_test.dart`
+- `lib/data/repositories/step_repository.dart`
+- `test/data/repositories/step_repository_last_ingestion_test.dart`
 
 ### Change Log
 - 2026-06-02: Implemented Sub-task A isolate-safe database factory and WAL connection test.
+- 2026-06-02: Implemented Sub-task B last step ingestion query and repository tests.
 
 ## Story Completion Status
 
