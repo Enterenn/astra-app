@@ -84,6 +84,14 @@ class DataInjectService {
       }
     }
 
+    await db.transaction((txn) async {
+      await txn.delete(
+        'timeseries_samples',
+        where: 'type = ?',
+        whereArgs: [kStepSampleType],
+      );
+    });
+
     await repository.insertDevSamplesBatch(samples);
 
     return DataInjectResult(
