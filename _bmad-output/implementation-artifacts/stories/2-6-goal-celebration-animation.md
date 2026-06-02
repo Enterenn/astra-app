@@ -1,6 +1,6 @@
 # Story 2.6: Goal Celebration Animation
 
-Status: review
+Status: done
 
 <!-- Note: Validation is optional. Run validate-create-story for quality check before dev-story. -->
 
@@ -367,8 +367,9 @@ Composer
 ### Change Log
 
 - 2026-06-02: Story 2.6 — goal celebration animation, once-per-day dedup via `celebration_shown_date`, Today cubit trigger and screen integration.
+- 2026-06-02: Code review fixes — preserve in-flight celebration on refresh, shimmer alpha clamp, timer cleanup, reduce-motion ring sizing.
 
 ## Story completion status
 
 - Ultimate context engine analysis completed — comprehensive developer guide created
-- Status: **review**
+- Status: **done**

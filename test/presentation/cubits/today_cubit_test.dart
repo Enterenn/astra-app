@@ -335,6 +335,45 @@ void main() {
       cubit.close();
     });
 
+    test('refresh preserves in-flight celebration when pref already today', () async {
+      await userPreferences.setDailyStepGoal(5000);
+      await stepRepository.upsertIngestionBucket(
+        _bucket(
+          startTimeUtc: DateTime.utc(2026, 6, 2, 10),
+          value: 5000,
+          zoneOffset: '+02:00',
+        ),
+      );
+      final cubit = buildCubit();
+      await cubit.refresh();
+
+      expect(cubit.state.showCelebration, isTrue);
+
+      await cubit.refresh();
+
+      expect(cubit.state.showCelebration, isTrue);
+      cubit.close();
+    });
+
+    test('refresh clears celebration flag after dismiss when pref is today', () async {
+      await userPreferences.setDailyStepGoal(5000);
+      await stepRepository.upsertIngestionBucket(
+        _bucket(
+          startTimeUtc: DateTime.utc(2026, 6, 2, 10),
+          value: 5000,
+          zoneOffset: '+02:00',
+        ),
+      );
+      final cubit = buildCubit();
+      await cubit.refresh();
+      cubit.dismissCelebration();
+
+      await cubit.refresh();
+
+      expect(cubit.state.showCelebration, isFalse);
+      cubit.close();
+    });
+
     test('dismissCelebration clears showCelebration flag', () async {
       await userPreferences.setDailyStepGoal(5000);
       await stepRepository.upsertIngestionBucket(

@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'dart:io';
 import 'dart:math' as math;
 import 'dart:ui' show ImageFilter;
@@ -12,6 +13,11 @@ import 'goal_ring.dart';
 
 const _kCelebrationSequenceMs = 2500;
 const _kReducedMotionCopyFadeMs = 500;
+const _kRingMinDiameter = 220.0;
+const _kRingMaxDiameter = 260.0;
+
+double _ringDiameter(double maxWidth) =>
+    (maxWidth * 0.6).clamp(_kRingMinDiameter, _kRingMaxDiameter);
 
 class GoalCelebration extends StatefulWidget {
   const GoalCelebration({
@@ -35,6 +41,8 @@ class GoalCelebration extends StatefulWidget {
 class _GoalCelebrationState extends State<GoalCelebration>
     with TickerProviderStateMixin {
   AnimationController? _sequenceController;
+  Timer? _sequenceTimer;
+  Timer? _hapticTimer;
   bool _hapticFired = false;
   bool _onCompleteCalled = false;
   bool _sequenceStarted = false;
@@ -58,7 +66,8 @@ class _GoalCelebrationState extends State<GoalCelebration>
     _sequenceController = AnimationController(vsync: this, duration: duration)
       ..forward();
 
-    Future<void>.delayed(duration, _finishSequence);
+    _sequenceTimer?.cancel();
+    _sequenceTimer = Timer(duration, _finishSequence);
 
     if (!reduceMotion) {
       _scheduleHaptic();
@@ -66,7 +75,8 @@ class _GoalCelebrationState extends State<GoalCelebration>
   }
 
   void _scheduleHaptic() {
-    Future<void>.delayed(const Duration(milliseconds: 300), () {
+    _hapticTimer?.cancel();
+    _hapticTimer = Timer(const Duration(milliseconds: 300), () {
       if (!mounted || _hapticFired) {
         return;
       }
@@ -83,12 +93,24 @@ class _GoalCelebrationState extends State<GoalCelebration>
     if (!mounted || _onCompleteCalled) {
       return;
     }
+    _completeSequence();
+  }
+
+  void _completeSequence() {
+    if (_onCompleteCalled) {
+      return;
+    }
     _onCompleteCalled = true;
     widget.onComplete();
   }
 
   @override
   void dispose() {
+    _sequenceTimer?.cancel();
+    _hapticTimer?.cancel();
+    if (_sequenceStarted && !_onCompleteCalled) {
+      _completeSequence();
+    }
     _sequenceController?.dispose();
     super.dispose();
   }
@@ -128,7 +150,16 @@ class _GoalCelebrationState extends State<GoalCelebration>
 
   Widget _buildReducedMotionRing(AstraColors colors) {
     return ExcludeSemantics(
-      child: GoalRing(state: widget.state),
+      child: LayoutBuilder(
+        builder: (context, constraints) {
+          final diameter = _ringDiameter(constraints.maxWidth);
+          return SizedBox(
+            width: diameter,
+            height: diameter,
+            child: GoalRing(state: widget.state),
+          );
+        },
+      ),
     );
   }
 
@@ -161,7 +192,7 @@ class _GoalCelebrationState extends State<GoalCelebration>
     return ExcludeSemantics(
       child: LayoutBuilder(
         builder: (context, constraints) {
-          final diameter = (constraints.maxWidth * 0.6).clamp(220.0, 260.0);
+          final diameter = _ringDiameter(constraints.maxWidth);
           final size = Size.square(diameter);
           final progress = widget.state.progressRatio;
 
@@ -331,7 +362,9 @@ class _CelebrationShimmerPainter extends CustomPainter {
     final center = Offset(size.width / 2, size.height / 2);
     final radius = (size.width - strokeWidth) / 2;
     final rect = Rect.fromCircle(center: center, radius: radius);
-    final alpha = (255 * (1 + shimmerStrength).clamp(0.0, 1.25)).round();
+    final alpha = (255 * (1 + shimmerStrength).clamp(0.0, 1.25))
+        .round()
+        .clamp(0, 255);
 
     final paint = Paint()
       ..color = color.withAlpha(alpha)

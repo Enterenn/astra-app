@@ -132,7 +132,8 @@ class TodayCubit extends Cubit<TodayState> {
       return;
     }
     if (shownDate == todayIso) {
-      emit(baseState.copyWith(showCelebration: false));
+      // Keep an in-flight celebration alive across silent refresh / ingestion.
+      emit(baseState.copyWith(showCelebration: state.showCelebration));
       return;
     }
 

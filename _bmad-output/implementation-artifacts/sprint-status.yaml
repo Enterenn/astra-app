@@ -1,5 +1,5 @@
 # generated: 2026-05-25
-# last_updated: 2026-06-02 (story 2-6 review)
+# last_updated: 2026-06-02 (story 2-6 done)
 # project: astra-app
 # project_key: NOKEY
 # tracking_system: file-system
@@ -65,7 +65,7 @@ development_status:
   2-3-step-repository-and-time-semantics: done
   2-4-background-collector-and-android-workmanager: done
   2-5-today-dashboard-with-goal-ring: done
-  2-6-goal-celebration-animation: review
+  2-6-goal-celebration-animation: done
   2-7-daily-goal-local-notification: backlog
   epic-2-retrospective: optional
 

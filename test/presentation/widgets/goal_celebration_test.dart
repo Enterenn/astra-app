@@ -90,6 +90,37 @@ void main() {
       handle.dispose();
     });
 
+    testWidgets('onComplete fires when disposed before sequence ends', (
+      tester,
+    ) async {
+      var completed = false;
+      await pumpCelebration(
+        tester,
+        onComplete: () => completed = true,
+      );
+
+      await tester.pumpWidget(const SizedBox.shrink());
+      await tester.pump();
+
+      expect(completed, isTrue);
+    });
+
+    testWidgets('full motion renders glow layer', (tester) async {
+      var completed = false;
+      await pumpCelebration(
+        tester,
+        onComplete: () => completed = true,
+      );
+
+      await tester.pump();
+      await tester.pump(const Duration(milliseconds: 400));
+      expect(find.byType(ImageFiltered), findsOneWidget);
+
+      await tester.pump(GoalCelebration.celebrationSequenceDuration);
+      await tester.pump(const Duration(milliseconds: 1));
+      expect(completed, isTrue);
+    });
+
     testWidgets('onComplete fires after celebration sequence', (
       tester,
     ) async {
