@@ -91,9 +91,13 @@ class StepRepository {
   ///
   /// **Dev/test only** — only [DataInjectService] and unit tests may call this
   /// method. Production ingestion must use [upsertIngestionBucket].
+  ///
+  /// When [replaceExistingSteps] is true, existing `type='steps'` rows are
+  /// deleted in the same transaction before inserts (atomic clear-and-replace).
   Future<void> insertDevSamplesBatch(
-    List<TimeseriesSampleModel> samples,
-  ) async {
+    List<TimeseriesSampleModel> samples, {
+    bool replaceExistingSteps = false,
+  }) async {
     assert(() {
       if (!kDebugMode) {
         throw StateError(
@@ -104,6 +108,14 @@ class StepRepository {
     }());
 
     await db.transaction((txn) async {
+      if (replaceExistingSteps) {
+        await txn.delete(
+          'timeseries_samples',
+          where: 'type = ?',
+          whereArgs: [kStepSampleType],
+        );
+      }
+
       for (final sample in samples) {
         final row = sample.toMap();
         await txn.insert('timeseries_samples', row);

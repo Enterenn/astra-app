@@ -1,6 +1,6 @@
 # Story 3.1: Dev Data Inject and Lifecycle Simulator
 
-Status: review
+Status: done
 
 <!-- Note: Validation is optional. Run validate-create-story for quality check before dev-story. -->
 
@@ -388,6 +388,7 @@ Composer
 - ✅ Sub-task D: dev tests (5/5), README, clear-first inject policy (`b4286d8`).
 - ✅ Sub-task E: no `lib/dev/` imports in production paths; row-count math verified.
 - All ACs satisfied: FR28 inject + docs, FR11 predictable compaction, `kDebugMode` gates.
+- ✅ Code review fixes: atomic clear+insert via `replaceExistingSteps`, merge contiguity validation, tier-3 5min catch-up, `runDevLifecycleSimulate()`, expanded test suite (19 dev tests).
 
 ### File List
 
@@ -400,7 +401,9 @@ Composer
 - `test/data/repositories/step_repository_dev_batch_test.dart` (new)
 - `test/dev/data_inject_service_test.dart` (new)
 - `test/dev/lifecycle_simulator_test.dart` (new)
+- `test/dev/lifecycle_compaction_test.dart` (new)
 
 ### Change Log
 
 - 2026-06-02: Story 3.1 implemented — dev inject, lifecycle simulator, tests, and README (5 commits on main).
+- 2026-06-02: Code review fixes merged — atomic inject, compaction hardening, story marked done.

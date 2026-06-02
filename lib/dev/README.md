@@ -27,8 +27,8 @@ Downstream stories consume this data:
 | Stage | Resolution | Rows |
 |-------|------------|------|
 | After inject | `5min` | **25 920** |
-| After lifecycle simulate | `5min` (recent 30 days) | **8 640** |
-| After lifecycle simulate | `1hour` (days 31–90) | **1 440** |
+| After lifecycle simulate | `5min` (30 most recent local days, age 0–29) | **8 640** |
+| After lifecycle simulate | `1hour` (age 30–364) | **1 440** |
 | After lifecycle simulate | **Total** | **10 080** (~61% reduction) |
 | Tier 3 (`1d`) on 90-day inject | — | **0** (no-op) |
 
@@ -36,7 +36,7 @@ Daily step totals per injected day target **4 000–12 000** steps via seeded sc
 
 ## Idempotent inject
 
-`inject90Days()` **deletes existing `type='steps'` rows** before inserting fresh synthetic data. This makes re-runs safe for benchmarks. **`user_preferences` and other tables are untouched.**
+`inject90Days()` calls `insertDevSamplesBatch(replaceExistingSteps: true)`, which **deletes existing `type='steps'` rows and inserts fresh synthetic data in one transaction**. This makes re-runs safe for benchmarks and prevents partial data loss if the insert fails. **`user_preferences` and other tables are untouched.**
 
 ⚠️ Debug builds only — re-inject clears real step samples already stored on a dev device.
 
@@ -51,7 +51,7 @@ flutter analyze lib/dev/
 
 ## Release-build safety
 
-- Entry point `runDevInject()` throws unless `kDebugMode` is true.
+- Entry points `runDevInject()` and `runDevLifecycleSimulate()` throw unless `kDebugMode` is true.
 - `StepRepository.insertDevSamplesBatch()` is guarded with a debug `assert`.
 - **Do not import `lib/dev/` from `main.dart`, `app.dart`, or production widgets** without a `kDebugMode` guard.
 - Flutter release builds tree-shake unreachable debug paths when callers respect this policy; keep dev triggers in tests or debug-only code paths.

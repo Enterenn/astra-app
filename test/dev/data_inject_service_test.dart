@@ -33,7 +33,6 @@ void main() {
 
     test('writes 25920 canonical step samples with unique UUIDs', () async {
       final result = await DataInjectService(
-        db: db,
         repository: repository,
       ).inject90Days(clock: clock);
 
@@ -59,7 +58,7 @@ void main() {
     });
 
     test('clears existing step samples before re-injecting', () async {
-      final service = DataInjectService(db: db, repository: repository);
+      final service = DataInjectService(repository: repository);
 
       await service.inject90Days(clock: clock);
       await service.inject90Days(clock: clock);
@@ -73,7 +72,7 @@ void main() {
         'value': 'keep-me',
       });
 
-      await DataInjectService(db: db, repository: repository).inject90Days(
+      await DataInjectService(repository: repository).inject90Days(
         clock: clock,
       );
 
@@ -85,6 +84,60 @@ void main() {
 
       expect(prefs, hasLength(1));
       expect(prefs.single['value'], 'keep-me');
+    });
+
+    test('produces identical daily totals with fixed Random(42) seed', () async {
+      Future<int> injectAndSumDailyTotal() async {
+        await DataInjectService(repository: repository).inject90Days(
+          clock: clock,
+        );
+
+        final rows = await db.rawQuery(
+          '''
+          SELECT SUM(value) AS total
+          FROM timeseries_samples
+          WHERE type = ?
+          ''',
+          [kStepSampleType],
+        );
+
+        return (rows.single['total'] as num).toInt();
+      }
+
+      final firstTotal = await injectAndSumDailyTotal();
+      final secondTotal = await injectAndSumDailyTotal();
+
+      expect(firstTotal, greaterThan(0));
+      expect(secondTotal, firstTotal);
+    });
+  });
+
+  group('runDevInject', () {
+    late Database db;
+    late StepRepository repository;
+    late FakeTimeProvider clock;
+
+    setUp(() async {
+      db = await openAstraDatabase(databasePath: inMemoryDatabasePath);
+      clock = FakeTimeProvider(
+        fixedNowUtc: DateTime.utc(2026, 6, 2, 12),
+        zoneOffset: const Duration(hours: 2),
+      );
+      repository = StepRepository(db: db, clock: clock);
+    });
+
+    tearDown(() async {
+      await db.close();
+    });
+
+    test('delegates to inject90Days in debug builds', () async {
+      final result = await runDevInject(
+        repository: repository,
+        clock: clock,
+      );
+
+      expect(result.bucketsInserted, 25920);
+      expect(await repository.countStepSamples(), 25920);
     });
   });
 }

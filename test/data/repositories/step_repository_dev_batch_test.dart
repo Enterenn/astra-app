@@ -79,6 +79,24 @@ void main() {
 
       expect(await repository.countStepSamples(), 0);
     });
+
+    test('replaceExistingSteps rolls back delete when insert fails', () async {
+      await repository.insertDevSamplesBatch(_sampleBatch(count: 3));
+      const duplicateId = '00000000-0000-4000-8000-000000000099';
+
+      await expectLater(
+        repository.insertDevSamplesBatch(
+          [
+            _sample(id: duplicateId, startOffsetMinutes: 0),
+            _sample(id: duplicateId, startOffsetMinutes: 5),
+          ],
+          replaceExistingSteps: true,
+        ),
+        throwsA(isA<DatabaseException>()),
+      );
+
+      expect(await repository.countStepSamples(), 3);
+    });
   });
 }
 

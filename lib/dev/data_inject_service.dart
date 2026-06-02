@@ -1,7 +1,6 @@
 import 'dart:math';
 
 import 'package:flutter/foundation.dart';
-import 'package:sqflite/sqflite.dart';
 import 'package:uuid/uuid.dart';
 
 import '../core/time/local_day_calculator.dart';
@@ -31,14 +30,12 @@ class DataInjectResult {
 /// Dev-only service that writes synthetic step history for chart benchmarks.
 class DataInjectService {
   DataInjectService({
-    required this.db,
     required this.repository,
     Random? rng,
     Uuid? uuid,
   }) : _rng = rng ?? Random(42),
        _uuid = uuid ?? const Uuid();
 
-  final Database db;
   final StepRepository repository;
   final Random _rng;
   final Uuid _uuid;
@@ -84,15 +81,10 @@ class DataInjectService {
       }
     }
 
-    await db.transaction((txn) async {
-      await txn.delete(
-        'timeseries_samples',
-        where: 'type = ?',
-        whereArgs: [kStepSampleType],
-      );
-    });
-
-    await repository.insertDevSamplesBatch(samples);
+    await repository.insertDevSamplesBatch(
+      samples,
+      replaceExistingSteps: true,
+    );
 
     return DataInjectResult(
       daysInjected: kDevInjectDayCount,
@@ -103,7 +95,6 @@ class DataInjectService {
 }
 
 Future<DataInjectResult> runDevInject({
-  required Database db,
   required StepRepository repository,
   required TimeProvider clock,
   Random? rng,
@@ -113,7 +104,6 @@ Future<DataInjectResult> runDevInject({
   }
 
   return DataInjectService(
-    db: db,
     repository: repository,
     rng: rng,
   ).inject90Days(clock: clock);

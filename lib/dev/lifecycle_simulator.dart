@@ -1,3 +1,4 @@
+import 'package:flutter/foundation.dart';
 import 'package:sqflite/sqflite.dart';
 import 'package:uuid/uuid.dart';
 
@@ -48,99 +49,23 @@ class LifecycleSimulator {
     var dailyCreated = 0;
 
     await db.transaction((txn) async {
-      final fiveMinuteRows = await _loadStepSamples(
+      hourlyCreated += await _compactTierTwoFiveMinuteToHourly(
         txn: txn,
-        resolution: kFiveMinuteResolution,
+        referenceNowUtc: referenceNowUtc,
+        referenceZoneOffset: referenceZoneOffset,
       );
-      final groupedFiveMinute = <String, List<TimeseriesSampleModel>>{};
 
-      for (final sample in fiveMinuteRows) {
-        if (!isTierTwoFiveMinuteSample(
-          referenceNowUtc: referenceNowUtc,
-          referenceZoneOffset: referenceZoneOffset,
-          startTimeUtc: sample.startTimeUtc,
-          sampleZoneOffset: sample.zoneOffset,
-        )) {
-          continue;
-        }
-
-        groupedFiveMinute
-            .putIfAbsent(fiveMinuteGroupKey(sample), () => [])
-            .add(sample);
-      }
-
-      for (final buckets in groupedFiveMinute.values) {
-        buckets.sort((a, b) => a.startTimeUtc.compareTo(b.startTimeUtc));
-        for (var index = 0; index < buckets.length; index += 12) {
-          final end = index + 12;
-          if (end > buckets.length) {
-            continue;
-          }
-
-          final hourBuckets = buckets.sublist(index, end);
-          final hourlySample = mergeFiveMinuteBucketsToHourly(
-            buckets: hourBuckets,
-            newId: _uuid.v4(),
-          );
-          await txn.insert('timeseries_samples', hourlySample.toMap());
-          hourlyCreated++;
-
-          for (final bucket in hourBuckets) {
-            await txn.delete(
-              'timeseries_samples',
-              where: 'id = ?',
-              whereArgs: [bucket.id],
-            );
-          }
-        }
-      }
-
-      final hourlyRows = await _loadStepSamples(
+      dailyCreated += await _compactTierThreeHourlyToDaily(
         txn: txn,
-        resolution: kHourlyResolution,
+        referenceNowUtc: referenceNowUtc,
+        referenceZoneOffset: referenceZoneOffset,
       );
-      final groupedHourly = <String, List<TimeseriesSampleModel>>{};
 
-      for (final sample in hourlyRows) {
-        if (!isTierThreeHourlySample(
-          referenceNowUtc: referenceNowUtc,
-          referenceZoneOffset: referenceZoneOffset,
-          startTimeUtc: sample.startTimeUtc,
-          sampleZoneOffset: sample.zoneOffset,
-        )) {
-          continue;
-        }
-
-        groupedHourly
-            .putIfAbsent(hourlyGroupKey(sample), () => [])
-            .add(sample);
-      }
-
-      for (final buckets in groupedHourly.values) {
-        buckets.sort((a, b) => a.startTimeUtc.compareTo(b.startTimeUtc));
-        for (var index = 0; index < buckets.length; index += 24) {
-          final end = index + 24;
-          if (end > buckets.length) {
-            continue;
-          }
-
-          final dayBuckets = buckets.sublist(index, end);
-          final dailySample = mergeHourlyBucketsToDaily(
-            buckets: dayBuckets,
-            newId: _uuid.v4(),
-          );
-          await txn.insert('timeseries_samples', dailySample.toMap());
-          dailyCreated++;
-
-          for (final bucket in dayBuckets) {
-            await txn.delete(
-              'timeseries_samples',
-              where: 'id = ?',
-              whereArgs: [bucket.id],
-            );
-          }
-        }
-      }
+      dailyCreated += await _compactTierThreeFiveMinuteCatchUpToDaily(
+        txn: txn,
+        referenceNowUtc: referenceNowUtc,
+        referenceZoneOffset: referenceZoneOffset,
+      );
     });
 
     final countsByResolution = await repository.countStepSamplesByResolution();
@@ -153,6 +78,166 @@ class LifecycleSimulator {
       hourlyCreated: hourlyCreated,
       dailyCreated: dailyCreated,
     );
+  }
+
+  Future<int> _compactTierTwoFiveMinuteToHourly({
+    required Transaction txn,
+    required DateTime referenceNowUtc,
+    required String referenceZoneOffset,
+  }) async {
+    final fiveMinuteRows = await _loadStepSamples(
+      txn: txn,
+      resolution: kFiveMinuteResolution,
+    );
+    final groupedFiveMinute = <String, List<TimeseriesSampleModel>>{};
+
+    for (final sample in fiveMinuteRows) {
+      if (!isTierTwoFiveMinuteSample(
+        referenceNowUtc: referenceNowUtc,
+        referenceZoneOffset: referenceZoneOffset,
+        startTimeUtc: sample.startTimeUtc,
+        sampleZoneOffset: sample.zoneOffset,
+      )) {
+        continue;
+      }
+
+      groupedFiveMinute
+          .putIfAbsent(fiveMinuteGroupKey(sample), () => [])
+          .add(sample);
+    }
+
+    var hourlyCreated = 0;
+    for (final buckets in groupedFiveMinute.values) {
+      buckets.sort((a, b) => a.startTimeUtc.compareTo(b.startTimeUtc));
+      for (final hourBuckets in contiguousFiveMinuteHourGroups(buckets)) {
+        if (!isCompleteFiveMinuteHourGroup(hourBuckets)) {
+          continue;
+        }
+
+        final hourlySample = mergeFiveMinuteBucketsToHourly(
+          buckets: hourBuckets,
+          newId: _uuid.v4(),
+        );
+        await txn.insert('timeseries_samples', hourlySample.toMap());
+        hourlyCreated++;
+
+        for (final bucket in hourBuckets) {
+          await txn.delete(
+            'timeseries_samples',
+            where: 'id = ?',
+            whereArgs: [bucket.id],
+          );
+        }
+      }
+    }
+
+    return hourlyCreated;
+  }
+
+  Future<int> _compactTierThreeHourlyToDaily({
+    required Transaction txn,
+    required DateTime referenceNowUtc,
+    required String referenceZoneOffset,
+  }) async {
+    final hourlyRows = await _loadStepSamples(
+      txn: txn,
+      resolution: kHourlyResolution,
+    );
+    final groupedHourly = <String, List<TimeseriesSampleModel>>{};
+
+    for (final sample in hourlyRows) {
+      if (!isTierThreeHourlySample(
+        referenceNowUtc: referenceNowUtc,
+        referenceZoneOffset: referenceZoneOffset,
+        startTimeUtc: sample.startTimeUtc,
+        sampleZoneOffset: sample.zoneOffset,
+      )) {
+        continue;
+      }
+
+      groupedHourly.putIfAbsent(hourlyGroupKey(sample), () => []).add(sample);
+    }
+
+    var dailyCreated = 0;
+    for (final buckets in groupedHourly.values) {
+      buckets.sort((a, b) => a.startTimeUtc.compareTo(b.startTimeUtc));
+      for (final dayBuckets in contiguousHourlyDayGroups(buckets)) {
+        if (!isCompleteHourlyDayGroup(dayBuckets)) {
+          continue;
+        }
+
+        final dailySample = mergeHourlyBucketsToDaily(
+          buckets: dayBuckets,
+          newId: _uuid.v4(),
+        );
+        await txn.insert('timeseries_samples', dailySample.toMap());
+        dailyCreated++;
+
+        for (final bucket in dayBuckets) {
+          await txn.delete(
+            'timeseries_samples',
+            where: 'id = ?',
+            whereArgs: [bucket.id],
+          );
+        }
+      }
+    }
+
+    return dailyCreated;
+  }
+
+  Future<int> _compactTierThreeFiveMinuteCatchUpToDaily({
+    required Transaction txn,
+    required DateTime referenceNowUtc,
+    required String referenceZoneOffset,
+  }) async {
+    final fiveMinuteRows = await _loadStepSamples(
+      txn: txn,
+      resolution: kFiveMinuteResolution,
+    );
+    final groupedFiveMinute = <String, List<TimeseriesSampleModel>>{};
+
+    for (final sample in fiveMinuteRows) {
+      if (!isTierThreeFiveMinuteSample(
+        referenceNowUtc: referenceNowUtc,
+        referenceZoneOffset: referenceZoneOffset,
+        startTimeUtc: sample.startTimeUtc,
+        sampleZoneOffset: sample.zoneOffset,
+      )) {
+        continue;
+      }
+
+      groupedFiveMinute
+          .putIfAbsent(fiveMinuteDayGroupKey(sample), () => [])
+          .add(sample);
+    }
+
+    var dailyCreated = 0;
+    for (final buckets in groupedFiveMinute.values) {
+      buckets.sort((a, b) => a.startTimeUtc.compareTo(b.startTimeUtc));
+      for (final dayBuckets in contiguousFiveMinuteDayGroups(buckets)) {
+        if (!isCompleteFiveMinuteDayGroup(dayBuckets)) {
+          continue;
+        }
+
+        final dailySample = mergeFiveMinuteBucketsToDaily(
+          buckets: dayBuckets,
+          newId: _uuid.v4(),
+        );
+        await txn.insert('timeseries_samples', dailySample.toMap());
+        dailyCreated++;
+
+        for (final bucket in dayBuckets) {
+          await txn.delete(
+            'timeseries_samples',
+            where: 'id = ?',
+            whereArgs: [bucket.id],
+          );
+        }
+      }
+    }
+
+    return dailyCreated;
   }
 
   Future<List<TimeseriesSampleModel>> _loadStepSamples({
@@ -168,4 +253,20 @@ class LifecycleSimulator {
 
     return rows.map(TimeseriesSampleModel.fromMap).toList();
   }
+}
+
+Future<LifecycleSimResult> runDevLifecycleSimulate({
+  required Database db,
+  required StepRepository repository,
+  required TimeProvider clock,
+}) async {
+  if (!kDebugMode) {
+    throw StateError('Dev lifecycle simulate is only available in debug builds');
+  }
+
+  return LifecycleSimulator(
+    db: db,
+    repository: repository,
+    clock: clock,
+  ).simulateDownsampling();
 }
