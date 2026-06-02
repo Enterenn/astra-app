@@ -44,14 +44,14 @@ So that I can check progress at a glance.
     - [x] `Future<void> refresh()` — parallel `getTodaySteps()`, `getDailyStepGoal()`, `getLastIngestionUtc()`, permission status; compute stale via evaluator; map to state (overflow when `steps > goal`, goalMet when `steps >= goal` and not overflow semantics per UX).
     - [x] **Read-only** — never call `upsertIngestionBucket()`.
   - [x] Add `test/presentation/cubits/today_cubit_test.dart` — fake repos, permission granted/denied, stale boundary at 12h/4h, overflow vs goalMet.
-  - [ ] **Stop → review brief → wait for Baptiste OK → commit**
+  - [x] **Stop → review brief → wait for Baptiste OK → commit**
 
-- [ ] **Sub-task C — GoalRing widget** (AC: #1–#3)
-  - [ ] Add `lib/presentation/widgets/goal_ring.dart` — `CustomPainter` or `CircularProgressIndicator` styled to UX; diameter 220–260 via `LayoutBuilder`; 9dp stroke; track `accentPrimaryMuted`, arc `accentPrimary` round caps.
-  - [ ] States: loading skeleton pulse, empty `0`, progress 0–99%, goalMet/overflow full arc (100% cap), no-permission dashed track + center `--`.
-  - [ ] Center: `AstraTypography.displayFor`, sublabels Figtree caption "steps today" / "goal {formatted}".
-  - [ ] Semantics: `label: Steps today: N of goal`, `value`/`min`/`max` for progress ([Source: UX §4.3]).
-  - [ ] Add `test/presentation/widgets/goal_ring_test.dart` — pump widget states, semantics, overflow arc capped.
+- [x] **Sub-task C — GoalRing widget** (AC: #1–#3)
+  - [x] Add `lib/presentation/widgets/goal_ring.dart` — `CustomPainter` or `CircularProgressIndicator` styled to UX; diameter 220–260 via `LayoutBuilder`; 9dp stroke; track `accentPrimaryMuted`, arc `accentPrimary` round caps.
+  - [x] States: loading skeleton pulse, empty `0`, progress 0–99%, goalMet/overflow full arc (100% cap), no-permission dashed track + center `--`.
+  - [x] Center: `AstraTypography.displayFor`, sublabels Figtree caption "steps today" / "goal {formatted}".
+  - [x] Semantics: `label: Steps today: N of goal`, `value`/`min`/`max` for progress ([Source: UX §4.3]).
+  - [x] Add `test/presentation/widgets/goal_ring_test.dart` — pump widget states, semantics, overflow arc capped.
   - [ ] **Stop → review brief → wait for Baptiste OK → commit**
 
 - [ ] **Sub-task D — SourceChip + StatusBanner (compact stale)** (AC: #1, #4)
@@ -382,6 +382,7 @@ Run: `flutter analyze`, `flutter test test/core/health/ test/presentation/cubits
 
 - **Sub-task A (2026-06-02):** Added `isStaleData()` pure function with 12h Android / 4h iOS thresholds; null last ingestion → not stale. Refactored `BackgroundCollector` to use `registerOnIngestionComplete()` for post-construction UI wiring. 15 tests pass (7 stale evaluator + 8 collector).
 - **Sub-task B (2026-06-02):** Added `TodayState` with 6 status variants and `TodayCubit.refresh()` read path (parallel repo reads, permission check, stale evaluation). 11 cubit tests cover permission, progress/goalMet/overflow, and stale boundaries.
+- **Sub-task C (2026-06-02):** Added `GoalRing` widget with `GoalRingPainter` (CustomPainter), step count formatter, loading pulse, dashed no-permission track, semantics. 8 widget tests pass.
 
 ### File List
 
@@ -392,6 +393,9 @@ Run: `flutter analyze`, `flutter test test/core/health/ test/presentation/cubits
 - `lib/presentation/cubits/today_state.dart` (new)
 - `lib/presentation/cubits/today_cubit.dart` (new)
 - `test/presentation/cubits/today_cubit_test.dart` (new)
+- `lib/presentation/formatters/step_count_formatter.dart` (new)
+- `lib/presentation/widgets/goal_ring.dart` (new)
+- `test/presentation/widgets/goal_ring_test.dart` (new)
 
 ## Story completion status
 
