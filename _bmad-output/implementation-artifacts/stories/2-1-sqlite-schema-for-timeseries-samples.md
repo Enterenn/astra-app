@@ -40,18 +40,18 @@ So that step buckets can be persisted correctly for charts and export later.
 
 ## Tasks / Subtasks
 
-- [ ] **Sub-task A - Add migration v2 DDL** (AC: #1, #2, #4)
+- [x] **Sub-task A - Add migration v2 DDL** (AC: #1, #2, #4)
   - [x] Update `lib/core/database/migrations.dart`: bump `kDbVersion` from `1` to `2`.
   - [x] Add a `case 2:` migration function, for example `onCreateV2(db)`, called by the existing `runMigrations` loop.
   - [x] Create `timeseries_samples` with exact column names and constraints from PRD/architecture.
   - [x] Create `idx_timeseries_query` and unique `idx_bucket_identity`.
   - [x] Keep `onCreateV1(db)` unchanged except for comments if needed.
-  - [ ] **Stop -> review brief -> wait for Baptiste OK -> commit**
+  - [x] **Stop -> review brief -> wait for Baptiste OK -> commit**
 
 - [ ] **Sub-task B - Preserve database open behavior** (AC: #3)
-  - [ ] Review `lib/core/database/app_database.dart`; keep `onConfigure` before migrations and preserve current `rawQuery('PRAGMA journal_mode=WAL')` Android-compatible behavior.
-  - [ ] Do not introduce a shared static database singleton; WorkManager/UI isolate safety depends on each isolate opening its own handle.
-  - [ ] Do not add Android manifest WAL metadata in this story unless existing tests prove it is required; current code-level PRAGMA is accepted by architecture.
+  - [x] Review `lib/core/database/app_database.dart`; keep `onConfigure` before migrations and preserve current `rawQuery('PRAGMA journal_mode=WAL')` Android-compatible behavior.
+  - [x] Do not introduce a shared static database singleton; WorkManager/UI isolate safety depends on each isolate opening its own handle.
+  - [x] Do not add Android manifest WAL metadata in this story unless existing tests prove it is required; current code-level PRAGMA is accepted by architecture.
   - [ ] **Stop -> review brief -> wait for Baptiste OK -> commit**
 
 - [ ] **Sub-task C - Add migration tests** (AC: #1, #2, #4, #5)
@@ -288,6 +288,8 @@ GPT-5.5
 - 2026-06-02: Ran `dart format lib/core/database/migrations.dart test/core/database/migrations_test.dart`.
 - 2026-06-02: Re-ran `flutter test test/core/database/migrations_test.dart`; all targeted migration tests passed.
 - 2026-06-02: Restored `onCreateV1(db)` formatting to keep the v1 migration diff unchanged; re-ran `flutter test test/core/database/migrations_test.dart`; all targeted migration tests passed.
+- 2026-06-02: Committed Sub-task A as `5c52e32 feat(database): add timeseries samples migration v2`.
+- 2026-06-02: Reviewed `lib/core/database/app_database.dart` for Sub-task B; existing open behavior already satisfies AC #3 and required no code change.
 
 ### Completion Notes List
 
@@ -295,6 +297,7 @@ GPT-5.5
 - Added migration v2 through the existing incremental `runMigrations` loop, preserving `onCreateV1(db)` behavior and user preference seeding.
 - Added `timeseries_samples` with canonical Phase 0 columns, non-negative `value` check, integer-only `steps` check, `idx_timeseries_query`, and unique `idx_bucket_identity`.
 - Added focused migration tests covering v2 fresh install table creation, default preference seeding, canonical columns, indexes, and step value constraints; v1 direct-target behavior remains covered.
+- Sub-task B required no production change: `openAstraDatabase()` still opens a fresh handle per call, runs `onConfigure` before migrations, enables WAL for file-backed databases with `rawQuery`, and enables foreign keys for all database paths.
 
 ### File List
 
