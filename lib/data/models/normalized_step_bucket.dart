@@ -1,6 +1,8 @@
 const kStepSampleType = 'steps';
 const kStepSampleUnit = 'count';
 const kFiveMinuteResolution = '5min';
+const kHourlyResolution = '1hour';
+const kDailyResolution = '1d';
 
 class NormalizedStepBucket {
   NormalizedStepBucket({

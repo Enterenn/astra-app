@@ -1,3 +1,4 @@
+import 'package:flutter/foundation.dart';
 import 'package:sqflite/sqflite.dart';
 import 'package:uuid/uuid.dart';
 
@@ -84,6 +85,62 @@ class StepRepository {
     }
 
     return total;
+  }
+
+  /// Inserts pre-built sample rows in a single transaction.
+  ///
+  /// **Dev/test only** — only [DataInjectService] and unit tests may call this
+  /// method. Production ingestion must use [upsertIngestionBucket].
+  Future<void> insertDevSamplesBatch(
+    List<TimeseriesSampleModel> samples,
+  ) async {
+    assert(() {
+      if (!kDebugMode) {
+        throw StateError(
+          'insertDevSamplesBatch is only available in debug builds',
+        );
+      }
+      return true;
+    }());
+
+    await db.transaction((txn) async {
+      for (final sample in samples) {
+        final row = sample.toMap();
+        await txn.insert('timeseries_samples', row);
+      }
+    });
+  }
+
+  /// Returns the total number of step samples in the database.
+  Future<int> countStepSamples() async {
+    final rows = await db.rawQuery(
+      '''
+      SELECT COUNT(*) AS count
+      FROM timeseries_samples
+      WHERE type = ?
+      ''',
+      [kStepSampleType],
+    );
+
+    return (rows.single['count']! as num).toInt();
+  }
+
+  /// Returns step sample counts grouped by resolution.
+  Future<Map<String, int>> countStepSamplesByResolution() async {
+    final rows = await db.rawQuery(
+      '''
+      SELECT resolution, COUNT(*) AS count
+      FROM timeseries_samples
+      WHERE type = ?
+      GROUP BY resolution
+      ''',
+      [kStepSampleType],
+    );
+
+    return {
+      for (final row in rows)
+        row['resolution']! as String: (row['count']! as num).toInt(),
+    };
   }
 
   /// Latest step sample end time in UTC, or null when no step samples exist.
