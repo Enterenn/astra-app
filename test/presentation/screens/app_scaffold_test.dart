@@ -4,6 +4,7 @@ import 'package:astra_app/core/constants/astra_theme.dart';
 import 'package:astra_app/core/database/app_database.dart';
 import 'package:astra_app/core/di/app_dependencies.dart';
 import 'package:astra_app/data/repositories/user_preferences_repository.dart';
+import 'package:astra_app/presentation/cubits/history_cubit.dart';
 import 'package:astra_app/presentation/cubits/today_cubit.dart';
 import 'package:astra_app/presentation/cubits/today_state.dart';
 import 'package:astra_app/presentation/screens/app_scaffold.dart';
@@ -20,6 +21,13 @@ TodayCubit _testTodayCubit(AppDependencies deps) {
     userPreferences: deps.userPreferences,
     clock: deps.timeProvider,
     activityPermissionGranted: () async => true,
+  );
+}
+
+HistoryCubit _testHistoryCubit(AppDependencies deps) {
+  return HistoryCubit(
+    stepRepository: deps.stepRepository,
+    userPreferences: deps.userPreferences,
   );
 }
 
@@ -99,6 +107,13 @@ Future<void> _disposeScaffold(WidgetTester tester) async {
   });
 }
 
+Future<void> _awaitHistoryRefresh(WidgetTester tester) async {
+  await tester.runAsync(() async {
+    await Future<void>.delayed(const Duration(milliseconds: 50));
+  });
+  await tester.pump();
+}
+
 void main() {
   setUpAll(() async {
     await setUpSqfliteFfi();
@@ -130,6 +145,7 @@ void main() {
           AppScaffold(
             deps: deps,
             createTodayCubit: _testTodayCubit,
+            createHistoryCubit: _testHistoryCubit,
           ),
         );
 
@@ -138,11 +154,11 @@ void main() {
 
         await tester.tap(find.byIcon(Icons.bar_chart_outlined));
         await tester.pump();
+        await _awaitHistoryRefresh(tester);
 
-        expect(
-          find.text('Your 7-day and 30-day charts will appear here.'),
-          findsOneWidget,
-        );
+        expect(find.text('History'), findsWidgets);
+        expect(find.text('7 days'), findsOneWidget);
+        expect(find.text('30 days'), findsOneWidget);
 
         await tester.tap(find.byIcon(Icons.shield_outlined));
         await tester.pump();
@@ -193,6 +209,7 @@ void main() {
             );
             return cubit!;
           },
+          createHistoryCubit: _testHistoryCubit,
         ),
       );
       await tester.pump();
@@ -202,6 +219,7 @@ void main() {
 
       await tester.tap(find.byIcon(Icons.bar_chart_outlined));
       await tester.pump();
+      await _awaitHistoryRefresh(tester);
 
       await tester.tap(find.byIcon(Icons.circle_outlined));
       await tester.pump();

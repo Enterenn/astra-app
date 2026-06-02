@@ -7,6 +7,7 @@ import 'package:astra_app/data/repositories/step_repository.dart';
 import 'package:astra_app/data/repositories/user_preferences_repository.dart';
 import 'package:astra_app/presentation/cubits/onboarding_cubit.dart';
 import 'package:astra_app/presentation/cubits/theme_state.dart';
+import 'package:astra_app/presentation/cubits/history_cubit.dart';
 import 'package:astra_app/presentation/cubits/today_cubit.dart';
 import 'package:astra_app/presentation/cubits/today_state.dart';
 import 'package:flutter/material.dart';
@@ -24,6 +25,13 @@ TodayCubit _testTodayCubit(AppDependencies deps) {
     userPreferences: deps.userPreferences,
     clock: deps.timeProvider,
     activityPermissionGranted: () async => true,
+  );
+}
+
+HistoryCubit _testHistoryCubit(AppDependencies deps) {
+  return HistoryCubit(
+    stepRepository: deps.stepRepository,
+    userPreferences: deps.userPreferences,
   );
 }
 
@@ -58,6 +66,7 @@ void main() {
           AstraApp(
             deps: deps,
             createTodayCubit: _testTodayCubit,
+            createHistoryCubit: _testHistoryCubit,
             enablePeriodicPersist: false,
             enableLiveStepPipeline: false,
           ),
@@ -67,7 +76,7 @@ void main() {
 
       expect(find.byType(NavigationBar), findsOneWidget);
       expect(find.text('Today'), findsWidgets);
-      expect(find.text('History'), findsOneWidget);
+      expect(find.text('History'), findsWidgets);
       expect(find.text('My Data'), findsOneWidget);
 
       expect(
@@ -77,10 +86,17 @@ void main() {
 
       await tester.tap(find.byIcon(Icons.bar_chart_outlined));
       await tester.pump();
+      await tester.runAsync(() async {
+        await Future<void>.delayed(const Duration(milliseconds: 50));
+      });
       await tester.pump(const Duration(milliseconds: 200));
 
+      expect(find.text('7 days'), findsOneWidget);
+      expect(find.text('30 days'), findsOneWidget);
       expect(
-        find.text('Your 7-day and 30-day charts will appear here.'),
+        find.text(
+          'No history yet. Walk a bit — data stays on this device.',
+        ),
         findsOneWidget,
       );
 
@@ -127,6 +143,7 @@ void main() {
             AstraApp(
               deps: deps,
               createTodayCubit: _testTodayCubit,
+            createHistoryCubit: _testHistoryCubit,
             ),
           );
           await tester.pump();
@@ -182,6 +199,7 @@ void main() {
           AstraApp(
             deps: completeDeps,
             createTodayCubit: _testTodayCubit,
+            createHistoryCubit: _testHistoryCubit,
             enablePeriodicPersist: false,
             enableLiveStepPipeline: false,
           ),
@@ -226,6 +244,7 @@ void main() {
           AstraApp(
             deps: incompleteDeps,
             createTodayCubit: _testTodayCubit,
+            createHistoryCubit: _testHistoryCubit,
             createOnboardingCubit: (repo) {
               cubitRef = OnboardingCubit(
                 userPreferences: repo,
@@ -308,6 +327,7 @@ void main() {
           AstraApp(
             deps: deps,
             createTodayCubit: _testTodayCubit,
+            createHistoryCubit: _testHistoryCubit,
             enablePeriodicPersist: false,
             enableLiveStepPipeline: false,
           ),
@@ -327,6 +347,7 @@ void main() {
           AstraApp(
             deps: deps,
             createTodayCubit: _testTodayCubit,
+            createHistoryCubit: _testHistoryCubit,
             enablePeriodicPersist: false,
             enableLiveStepPipeline: false,
           ),
@@ -370,6 +391,7 @@ void main() {
               todayCubit = _testTodayCubit(dependencies);
               return todayCubit!;
             },
+            createHistoryCubit: _testHistoryCubit,
           ),
         );
         await tester.pump();
