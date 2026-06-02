@@ -67,15 +67,15 @@ So that I get value without opening the app constantly.
   - [x] Register in `main.dart` (Android only): `Workmanager().initialize(callbackDispatcher)` then `registerPeriodicTask` with frequency ≥ 15 minutes (Android minimum); use `ExistingPeriodicWorkPolicy.keep` on re-register.
   - [x] **Stop → review brief → wait for Baptiste OK → commit**
 
-- [ ] **Sub-task E — Android manifest + FGS compliance** (AC: #3)
-  - [ ] Update `android/app/src/main/AndroidManifest.xml`:
-    - [ ] `FOREGROUND_SERVICE` + `FOREGROUND_SERVICE_HEALTH` permissions.
-    - [ ] `RECEIVE_BOOT_COMPLETED` if required by workmanager plugin docs.
-    - [ ] **Do not** use `foregroundServiceType="dataSync"` for health/pedometer work.
-    - [ ] Declare FGS service type per Android 14+ if/when a health FGS is started; at minimum permissions + correct type for future FGS — verify against [workmanager](https://pub.dev/packages/workmanager) and [pedometer](https://pub.dev/packages/pedometer) README for required receivers/services.
-  - [ ] Confirm `ACTIVITY_RECOGNITION` already present (Story 1.x deferred wiring).
-  - [ ] Document manifest changes in review brief; update `docs/DEPENDENCIES.md` network/manifest notes if new permissions listed.
-  - [ ] **Stop → review brief → wait for Baptiste OK → commit**
+- [x] **Sub-task E — Android manifest + FGS compliance** (AC: #3)
+  - [x] Update `android/app/src/main/AndroidManifest.xml`:
+    - [x] `FOREGROUND_SERVICE` + `FOREGROUND_SERVICE_HEALTH` permissions.
+    - [x] `RECEIVE_BOOT_COMPLETED` if required by workmanager plugin docs.
+    - [x] **Do not** use `foregroundServiceType="dataSync"` for health/pedometer work.
+    - [x] Declare FGS service type per Android 14+ if/when a health FGS is started; at minimum permissions + correct type for future FGS — verify against [workmanager](https://pub.dev/packages/workmanager) and [pedometer](https://pub.dev/packages/pedometer) README for required receivers/services.
+  - [x] Confirm `ACTIVITY_RECOGNITION` already present (Story 1.x deferred wiring).
+  - [x] Document manifest changes in review brief; update `docs/DEPENDENCIES.md` network/manifest notes if new permissions listed.
+  - [x] **Stop → review brief → wait for Baptiste OK → commit**
 
 - [ ] **Sub-task F — Foreground backfill + lifecycle wiring** (AC: #2, #5)
   - [ ] Wire `BackgroundCollector` in `AppDependencies.create()` / `.test()`; expose getter.
@@ -402,6 +402,10 @@ GPT-5.5
 - 2026-06-02: GREEN `flutter test test/core/services/workmanager_callback_test.dart` passed after adding callback, task constants, and registration helper.
 - 2026-06-02: REGRESSION `flutter test` passed, 101 tests.
 - 2026-06-02: QUALITY `flutter analyze` passed with no issues.
+- 2026-06-02: RED `flutter test test/android/android_manifest_test.dart` failed because `FOREGROUND_SERVICE` and `FOREGROUND_SERVICE_HEALTH` were missing.
+- 2026-06-02: GREEN `flutter test test/android/android_manifest_test.dart` passed after adding Android health FGS permissions and manifest guard tests.
+- 2026-06-02: REGRESSION `flutter test` passed, 103 tests.
+- 2026-06-02: QUALITY `flutter analyze` passed with no issues.
 
 ### Completion Notes List
 - Sub-task A implementation ready for review: added an isolate-safe database factory wrapper that returns a fresh `Database` connection on every call while reusing `openAstraDatabase()` for WAL, foreign keys, migrations, and `databasePath` test injection.
@@ -414,6 +418,9 @@ GPT-5.5
 - Verified `upsertIngestionBucket()` is only called by `BackgroundCollector` in `lib/` production code.
 - Sub-task D implementation ready for review: added WorkManager 0.9 callback dispatcher, isolate-local task bootstrap, task constants, and Android-only periodic registration from `main.dart`.
 - Added WorkManager tests proving a background task writes via an isolate-local DB connection readable by a separate UI connection, returns `false` on bootstrap failure, skips non-Android registration, and uses `ExistingPeriodicWorkPolicy.keep`.
+- Sub-task E implementation ready for review: added Android `FOREGROUND_SERVICE` and `FOREGROUND_SERVICE_HEALTH` permissions while preserving `ACTIVITY_RECOGNITION` and avoiding `foregroundServiceType="dataSync"`.
+- Verified local `workmanager` and `pedometer` README/manifests: `pedometer` requires `ACTIVITY_RECOGNITION`; WorkManager docs/package manifest did not require app-level `RECEIVE_BOOT_COMPLETED`, so it was not added.
+- Updated `docs/DEPENDENCIES.md` with health pipeline manifest notes and the no-network/no-`dataSync` constraint.
 
 ### File List
 - `lib/core/database/isolate_database_factory.dart`
@@ -426,12 +433,16 @@ GPT-5.5
 - `lib/core/services/workmanager_tasks.dart`
 - `lib/main.dart`
 - `test/core/services/workmanager_callback_test.dart`
+- `android/app/src/main/AndroidManifest.xml`
+- `docs/DEPENDENCIES.md`
+- `test/android/android_manifest_test.dart`
 
 ### Change Log
 - 2026-06-02: Implemented Sub-task A isolate-safe database factory and WAL connection test.
 - 2026-06-02: Implemented Sub-task B last step ingestion query and repository tests.
 - 2026-06-02: Implemented Sub-task C BackgroundCollector core and service tests.
 - 2026-06-02: Implemented Sub-task D WorkManager callback, Android registration, and tests.
+- 2026-06-02: Implemented Sub-task E Android health FGS manifest permissions and documentation.
 
 ## Story Completion Status
 

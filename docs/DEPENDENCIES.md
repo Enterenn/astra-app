@@ -6,6 +6,20 @@ Living inventory of third-party code and bundled assets. Full package audit (FR-
 
 Phase 0: **no runtime network fetch** for fonts or health data processing. Fonts are bundled under `assets/fonts/`.
 
+## Android manifest permissions (health pipeline)
+
+Phase 0 step collection declares only local device-health/background permissions:
+
+| Permission | Why it is present |
+|------------|-------------------|
+| `ACTIVITY_RECOGNITION` | Required by `pedometer` on Android 10+ to read step-count sensor data |
+| `FOREGROUND_SERVICE` | Base permission for future Android foreground service health work |
+| `FOREGROUND_SERVICE_HEALTH` | Android 14+ health-specific foreground service permission; avoids misusing `dataSync` for pedometer work |
+| `POST_NOTIFICATIONS` | Already used by the app for later local notification UX; not a network permission |
+
+- `INTERNET` is intentionally absent from the release manifest.
+- No foreground service is started in Story 2.4, so no `foregroundServiceType` service declaration is added yet. When a health foreground service is introduced, it must use `foregroundServiceType="health"`, not `dataSync`.
+
 ## Bundled fonts (offline)
 
 | Family | File | License | Weights (via variable font) | Used for |
