@@ -30,6 +30,7 @@ class TimeseriesSampleModel {
     required NormalizedStepBucket bucket,
     required String id,
   }) {
+    TimestampCodec.parseZoneOffset(bucket.zoneOffset);
     return TimeseriesSampleModel(
       id: id,
       startTimeUtc: bucket.startTimeUtc,
@@ -60,6 +61,7 @@ class TimeseriesSampleModel {
   }
 
   Map<String, Object?> toMap() {
+    TimestampCodec.parseZoneOffset(zoneOffset);
     return {
       'id': id,
       'start_time': TimestampCodec.formatUtc(startTimeUtc),

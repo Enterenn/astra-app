@@ -76,6 +76,25 @@ void main() {
         throwsA(isA<DatabaseException>()),
       );
     });
+
+    test('rejects malformed zone offsets before writing', () async {
+      await expectLater(
+        repository.upsertIngestionBucket(
+          NormalizedStepBucket(
+            startTimeUtc: DateTime.utc(2026, 6, 2, 8),
+            endTimeUtc: DateTime.utc(2026, 6, 2, 8, 5),
+            value: 100,
+            provider: kInternalPhoneProvider,
+            deviceId: kSmartphoneDeviceId,
+            zoneOffset: '+2:00',
+          ),
+        ),
+        throwsFormatException,
+      );
+
+      final rows = await db.query('timeseries_samples');
+      expect(rows, isEmpty);
+    });
   });
 }
 

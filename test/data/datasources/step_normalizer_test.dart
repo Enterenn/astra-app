@@ -59,6 +59,11 @@ class _SequenceTimeProvider implements TimeProvider {
 
   @override
   Duration currentZoneOffset() => const Duration(hours: 2);
+
+  @override
+  TimeSnapshot snapshot() {
+    return TimeSnapshot(nowUtc: nowUtc(), zoneOffset: currentZoneOffset());
+  }
 }
 
 void main() {

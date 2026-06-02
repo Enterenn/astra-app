@@ -21,6 +21,47 @@ void main() {
         throwsFormatException,
       );
     });
+
+    test('rejects sub-second timestamps instead of truncating them', () {
+      expect(
+        () => TimestampCodec.formatUtc(DateTime.utc(2026, 6, 2, 10, 0, 0, 1)),
+        throwsFormatException,
+      );
+      expect(
+        () =>
+            TimestampCodec.formatUtc(DateTime.utc(2026, 6, 2, 10, 0, 0, 0, 1)),
+        throwsFormatException,
+      );
+    });
+
+    test('parses and validates civil zone offsets', () {
+      expect(
+        TimestampCodec.parseZoneOffset('+14:00'),
+        const Duration(hours: 14),
+      );
+      expect(
+        TimestampCodec.parseZoneOffset('-05:30'),
+        const Duration(hours: -5, minutes: -30),
+      );
+      expect(
+        () => TimestampCodec.parseZoneOffset('+14:01'),
+        throwsFormatException,
+      );
+      expect(
+        () => TimestampCodec.parseZoneOffset('+02:60'),
+        throwsFormatException,
+      );
+      expect(
+        () => TimestampCodec.parseZoneOffset('+2:00'),
+        throwsFormatException,
+      );
+      expect(
+        () => TimestampCodec.formatZoneOffset(
+          const Duration(hours: 1, microseconds: 1),
+        ),
+        throwsFormatException,
+      );
+    });
   });
 
   group('TimeseriesSampleModel', () {

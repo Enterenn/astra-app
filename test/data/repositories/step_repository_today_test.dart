@@ -1,4 +1,5 @@
 import 'package:astra_app/core/database/app_database.dart';
+import 'package:astra_app/core/time/time_provider.dart';
 import 'package:astra_app/data/datasources/data_ingestion_source.dart';
 import 'package:astra_app/data/models/normalized_step_bucket.dart';
 import 'package:astra_app/data/repositories/step_repository.dart';
@@ -105,6 +106,37 @@ void main() {
       expect(await parisToday.getTodaySteps(), 100);
       expect(await newYorkPreviousDay.getTodaySteps(), 50);
     });
+
+    test(
+      'uses a coherent provider snapshot for the reference local day',
+      () async {
+        await StepRepository(
+          db: db,
+          clock: FakeTimeProvider(
+            fixedNowUtc: DateTime.utc(2026, 6, 2, 10),
+            zoneOffset: const Duration(hours: 2),
+          ),
+        ).upsertIngestionBucket(
+          _bucket(
+            startTimeUtc: DateTime.utc(2026, 6, 1, 22, 30),
+            value: 100,
+            zoneOffset: '+02:00',
+          ),
+        );
+
+        final repository = StepRepository(
+          db: db,
+          clock: _SnapshotOnlyTimeProvider(
+            TimeSnapshot(
+              nowUtc: DateTime.utc(2026, 6, 2, 10),
+              zoneOffset: const Duration(hours: 2),
+            ),
+          ),
+        );
+
+        expect(await repository.getTodaySteps(), 100);
+      },
+    );
   });
 }
 
@@ -122,3 +154,18 @@ NormalizedStepBucket _bucket({
   deviceId: deviceId,
   zoneOffset: zoneOffset,
 );
+
+class _SnapshotOnlyTimeProvider implements TimeProvider {
+  const _SnapshotOnlyTimeProvider(this._snapshot);
+
+  final TimeSnapshot _snapshot;
+
+  @override
+  DateTime nowUtc() => throw StateError('Use snapshot');
+
+  @override
+  Duration currentZoneOffset() => throw StateError('Use snapshot');
+
+  @override
+  TimeSnapshot snapshot() => _snapshot;
+}

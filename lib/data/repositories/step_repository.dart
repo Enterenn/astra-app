@@ -60,9 +60,10 @@ class StepRepository {
   }
 
   Future<int> getTodaySteps() async {
+    final timeSnapshot = clock.snapshot();
     final referenceToday = LocalDayCalculator.localDay(
-      utc: clock.nowUtc(),
-      zoneOffset: TimestampCodec.formatZoneOffset(clock.currentZoneOffset()),
+      utc: timeSnapshot.nowUtc,
+      zoneOffset: TimestampCodec.formatZoneOffset(timeSnapshot.zoneOffset),
     );
     final rows = await db.query(
       'timeseries_samples',

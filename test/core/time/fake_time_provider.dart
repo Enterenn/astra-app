@@ -16,4 +16,9 @@ class FakeTimeProvider implements TimeProvider {
 
   @override
   Duration currentZoneOffset() => _zoneOffset;
+
+  @override
+  TimeSnapshot snapshot() {
+    return TimeSnapshot(nowUtc: _fixedNowUtc, zoneOffset: _zoneOffset);
+  }
 }

@@ -8,4 +8,10 @@ class SystemTimeProvider implements TimeProvider {
 
   @override
   Duration currentZoneOffset() => DateTime.now().timeZoneOffset;
+
+  @override
+  TimeSnapshot snapshot() {
+    final now = DateTime.now();
+    return TimeSnapshot(nowUtc: now.toUtc(), zoneOffset: now.timeZoneOffset);
+  }
 }

@@ -1,6 +1,6 @@
 # Story 2.3: Step Repository and Time Semantics
 
-Status: review
+Status: done
 
 <!-- Note: Validation is optional. Run validate-create-story for quality check before dev-story. -->
 
