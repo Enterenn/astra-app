@@ -101,6 +101,10 @@ class _AppScaffoldState extends State<AppScaffold> {
             await _myDataCubit.refresh(silent: true);
             unawaited(widget.deps.dataLifecycleService.runMaintenance(force: true));
           },
+          postGoalUpdate: () async {
+            await _todayCubit.refreshMetadata();
+            await _historyCubit.refreshGoal();
+          },
         );
     widget.onTodayCubitReady?.call(_todayCubit);
     widget.onHistoryCubitReady?.call(_historyCubit);

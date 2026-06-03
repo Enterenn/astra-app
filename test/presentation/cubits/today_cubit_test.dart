@@ -555,6 +555,22 @@ void main() {
       cubit.close();
     });
 
+    test('refreshMetadata updates goal without changing steps', () async {
+      await userPreferences.setDailyStepGoal(8000);
+      final cubit = buildCubit();
+      await cubit.refresh();
+      await cubit.syncSteps(5000);
+      expect(cubit.state.goal, 8000);
+      expect(cubit.state.steps, 5000);
+
+      await userPreferences.setDailyStepGoal(4000);
+      await cubit.refreshMetadata();
+
+      expect(cubit.state.steps, 5000);
+      expect(cubit.state.goal, 4000);
+      cubit.close();
+    });
+
     test('coalesced refresh awaits a single in-flight operation', () async {
       final permissionGate = Completer<bool>();
       final cubit = buildCubit(
