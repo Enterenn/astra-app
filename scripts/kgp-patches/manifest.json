@@ -1,0 +1,17 @@
+[
+  {
+    "package": "pedometer",
+    "patchFile": "pedometer-4.2.0-build.gradle",
+    "target": "android/build.gradle"
+  },
+  {
+    "package": "share_plus",
+    "patchFile": "share_plus-13.1.0-build.gradle",
+    "target": "android/build.gradle"
+  },
+  {
+    "package": "workmanager_android",
+    "patchFile": "workmanager_android-0.9.0+2-build.gradle",
+    "target": "android/build.gradle"
+  }
+]
