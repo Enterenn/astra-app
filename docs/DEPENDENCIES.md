@@ -100,6 +100,36 @@ See `pubspec.yaml` and `pubspec.lock`. Package-level audit table → Epic 5 Stor
 |---------|---------|---------|
 | `file_picker` ^12.0.0-beta.5 | My Data CSV import — local file selection only (Story 4.4). Beta required for `win32` ^6 compat with `share_plus` ^13.1 | No data upload; OS file picker UI only |
 
+### Android Built-in Kotlin / KGP (Story 5.5)
+
+AGP 9.0.1 + Flutter 3.44.0 use **built-in Kotlin** (no `kotlin-android` on the app module). Three Phase 0 plugins still shipped KGP on pub.dev at audit time (2026-06-03); no newer pub release fixes them.
+
+| Plugin | Locked version | Upstream | ASTRA workaround |
+|--------|----------------|----------|------------------|
+| `pedometer` | 4.2.0 | [cachet pedometer](https://github.com/cph-cachet/flutter-plugins/tree/master/packages/pedometer) — no migration PR merged | `scripts/patch_kgp_plugins.*` → `scripts/kgp-patches/pedometer-4.2.0-build.gradle` |
+| `share_plus` | 13.1.0 | [plus_plugins#3745](https://github.com/fluttercommunity/plus_plugins/issues/3745) | `scripts/kgp-patches/share_plus-13.1.0-build.gradle` |
+| `workmanager_android` | 0.9.0+2 (via `workmanager` 0.9.0+3) | [flutter_workmanager](https://github.com/fluttercommunity/flutter_workmanager) — track AGP 9 / built-in Kotlin | `scripts/kgp-patches/workmanager_android-0.9.0+2-build.gradle` |
+
+**After every `flutter pub get` on Android CI/local:**
+
+```powershell
+.\scripts\patch_kgp_plugins.ps1
+flutter build apk --debug
+```
+
+```bash
+./scripts/patch_kgp_plugins.sh
+flutter build apk --debug
+```
+
+**Removal criteria:** delete patch files + script when each plugin publishes a built-in-Kotlin release and `flutter build apk` emits no KGP warnings without patching.
+
+**App-level flags removed (Story 5.5):** `android.builtInKotlin=false`, `android.newDsl=false`, `kotlin.incremental=false` from `android/gradle.properties`; `org.jetbrains.kotlin.android` removed from `android/settings.gradle.kts`.
+
+**Pub upgrades skipped for KGP:** `pedometer`, `share_plus`, `workmanager`, `file_picker` already at latest compatible versions; `permission_handler` / `sqflite` minor bumps are unrelated to KGP (deferred).
+
+**`file_picker` 12.0.0-beta.5:** AGP9-aware — applies KGP only when `android.builtInKotlin=false`; no patch required once built-in Kotlin is enabled.
+
 ### Dev / test only
 
 | Package | Purpose |

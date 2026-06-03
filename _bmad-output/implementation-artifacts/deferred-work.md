@@ -4,7 +4,7 @@
 
 - **Plugin manifest permissions not wired** — workmanager, pedometer, flutter_local_notifications require manifest/Gradle/iOS capability changes; intentionally out of scope for Story 1.1 (Epic 2).
 
-- **Legacy Kotlin Gradle Plugin warnings** — `android.builtInKotlin=false` and `kotlin.incremental=false` are non-blocking workarounds for plugin compatibility; migration tracked for Epic 6 Story 6.2.
+- **Legacy Kotlin Gradle Plugin warnings** — **Resolved in Epic 5 Story 5.5** (2026-06-03). Workaround flags removed; three plugins patched via `scripts/patch_kgp_plugins.*` until upstream releases. See `docs/DEPENDENCIES.md` § Android Built-in Kotlin / KGP.
 
 ## Deferred from: code review of 1-2-design-tokens-and-theme-system (2026-05-28)
 

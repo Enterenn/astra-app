@@ -42,3 +42,14 @@ handle.exe -nobanner build\native_assets\windows\sqlite3.dll
 (Sysinternals Handle: https://learn.microsoft.com/sysinternals/downloads/handle)
 
 Project-wide test config: `dart_test.yaml` (`concurrency: 1`, `timeout: 60s`) and `test/flutter_test_config.dart` (Windows sqflite FFI warm-up).
+
+## `patch_kgp_plugins.ps1` / `patch_kgp_plugins.sh`
+
+Copies version-checked Built-in Kotlin `build.gradle` patches from `scripts/kgp-patches/` into pub-cache after `flutter pub get`. Required for Android builds until `pedometer`, `share_plus`, and `workmanager_android` publish upstream migrations.
+
+```powershell
+flutter pub get
+.\scripts\patch_kgp_plugins.ps1
+```
+
+See `docs/DEPENDENCIES.md` § Android Built-in Kotlin / KGP.

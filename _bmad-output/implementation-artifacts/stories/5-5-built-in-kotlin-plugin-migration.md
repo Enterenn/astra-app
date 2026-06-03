@@ -1,6 +1,6 @@
 # Story 5.5: Built-in Kotlin Plugin Migration (KGP)
 
-Status: in-progress
+Status: review
 
 <!-- Epic 5 entry story (user-confirmed 2026-06-02): run before 5.1–5.4 visual polish. Ultimate context engine analysis completed — comprehensive developer guide created. -->
 
@@ -40,37 +40,37 @@ So that `flutter build` stays compatible with Flutter Built-in Kotlin and we do 
 
 ## Tasks / Subtasks
 
-- [ ] **Sub-task A — Plugin audit & version check** (AC: #1, #2)
-  - [ ] Run baseline build and capture KGP warnings:
+- [x] **Sub-task A — Plugin audit & version check** (AC: #1, #2)
+  - [x] Run baseline build and capture KGP warnings:
     ```powershell
     flutter build apk --debug 2>&1 | Select-String -Pattern "Kotlin Gradle Plugin|KGP|builtInKotlin"
     ```
     Expected baseline (2026-06-03): warnings for `pedometer`, `share_plus`, `workmanager_android`.
-  - [ ] Audit **all** Phase 0 Android plugins from `pubspec.lock` (not only the three known warners). Scan each `android/build.gradle(.kts)` in pub-cache for `kotlin-android` / `org.jetbrains.kotlin.android`.
-  - [ ] Record audit table in Dev Agent Record (plugin name, locked version, KGP applied?, AGP9-aware?, action).
-  - [ ] Run `flutter pub outdated` for `pedometer`, `share_plus`, `workmanager`, `file_picker`, `permission_handler`, `flutter_local_notifications`, `sqflite`, `path_provider`.
-  - [ ] **Stop → review brief → wait for Baptiste OK → commit**
+  - [x] Audit **all** Phase 0 Android plugins from `pubspec.lock` (not only the three known warners). Scan each `android/build.gradle(.kts)` in pub-cache for `kotlin-android` / `org.jetbrains.kotlin.android`.
+  - [x] Record audit table in Dev Agent Record (plugin name, locked version, KGP applied?, AGP9-aware?, action).
+  - [x] Run `flutter pub outdated` for `pedometer`, `share_plus`, `workmanager`, `file_picker`, `permission_handler`, `flutter_local_notifications`, `sqflite`, `path_provider`.
+  - [x] **Stop → review brief → wait for Baptiste OK → commit**
 
-- [ ] **Sub-task B — Upgrade compatible pub releases** (AC: #2)
-  - [ ] Bump `pubspec.yaml` only where changelog confirms Built-in Kotlin / AGP 9 migration (verify on pub.dev + plugin `android/` build file after `flutter pub get`).
-  - [ ] Run `flutter pub get` and commit `pubspec.lock` (lockfile is tracked per Story 1.1 decision).
-  - [ ] Re-run debug build; note remaining KGP warners.
-  - [ ] Update `docs/DEPENDENCIES.md` with any version bumps + rationale.
-  - [ ] **Stop → review brief → wait for Baptiste OK → commit**
+- [x] **Sub-task B — Upgrade compatible pub releases** (AC: #2)
+  - [x] Bump `pubspec.yaml` only where changelog confirms Built-in Kotlin / AGP 9 migration (verify on pub.dev + plugin `android/` build file after `flutter pub get`).
+  - [x] Run `flutter pub get` and commit `pubspec.lock` (lockfile is tracked per Story 1.1 decision).
+  - [x] Re-run debug build; note remaining KGP warners.
+  - [x] Update `docs/DEPENDENCIES.md` with any version bumps + rationale.
+  - [x] **Stop → review brief → wait for Baptiste OK → commit**
 
-- [ ] **Sub-task C — App-level Built-in Kotlin enablement** (AC: #4, #5)
-  - [ ] **App module is already migrated** — do not rework unless broken:
+- [x] **Sub-task C — App-level Built-in Kotlin enablement** (AC: #4, #5)
+  - [x] **App module is already migrated** — do not rework unless broken:
     - `android/app/build.gradle.kts` uses `kotlin { compilerOptions { jvmTarget = JVM_17 } }` and does **not** apply `kotlin-android`.
-  - [ ] Remove legacy opt-out flags from `android/gradle.properties` once plugin audit passes (Sub-task D):
+  - [x] Remove legacy opt-out flags from `android/gradle.properties` once plugin audit passes (Sub-task D):
     - Remove `android.builtInKotlin=false`
     - Remove `kotlin.incremental=false`
     - Re-evaluate `android.newDsl=false` — remove if build succeeds without it (Flutter 3.44+ default path).
-  - [ ] Remove unused KGP declaration from `android/settings.gradle.kts`:
+  - [x] Remove unused KGP declaration from `android/settings.gradle.kts`:
     - Delete line: `id("org.jetbrains.kotlin.android") version "2.3.20" apply false`
-  - [ ] **Stop → review brief → wait for Baptiste OK → commit**
+  - [x] **Stop → review brief → wait for Baptiste OK → commit**
 
-- [ ] **Sub-task D — Resolve blocking plugins** (AC: #1, #3, #5)
-  - [ ] For each plugin still applying KGP after Sub-task B, follow [plugin-author migration guide](https://docs.flutter.dev/release/breaking-changes/migrate-to-built-in-kotlin/for-plugin-authors):
+- [x] **Sub-task D — Resolve blocking plugins** (AC: #1, #3, #5)
+  - [x] For each plugin still applying KGP after Sub-task B, follow [plugin-author migration guide](https://docs.flutter.dev/release/breaking-changes/migrate-to-built-in-kotlin/for-plugin-authors):
     1. Remove `apply plugin: 'kotlin-android'` (or `id("org.jetbrains.kotlin.android")`).
     2. Replace `kotlinOptions { jvmTarget = ... }` with:
        ```groovy
@@ -81,27 +81,27 @@ So that `flutter build` stays compatible with Flutter Built-in Kotlin and we do 
        }
        ```
        (Use `JVM_1_8` for plugins still on Java 8 — match existing `compileOptions`.)
-  - [ ] **Known blockers at audit time (2026-06-03)** — all at latest pub.dev, main branch not migrated:
+  - [x] **Known blockers at audit time (2026-06-03)** — all at latest pub.dev, main branch not migrated:
     | Plugin | Locked version | KGP in pub cache | Upstream |
     |--------|----------------|------------------|----------|
     | `pedometer` | 4.2.0 | Yes (`apply plugin: 'kotlin-android'`) | File or link issue on [cachet.dk/pedometer](https://github.com/cph-cachet/flutter-plugins/tree/master/packages/pedometer) |
     | `share_plus` | 13.1.0 | Yes | Link [plus_plugins#3745](https://github.com/fluttercommunity/plus_plugins/issues/3745) or comment with ASTRA repro |
     | `workmanager_android` | 0.9.0+2 (transitive) | Yes | File on [flutter_workmanager](https://github.com/fluttercommunity/flutter_workmanager) using Flutter issue template |
-  - [ ] **Resolution order (mandatory):**
+  - [x] **Resolution order (mandatory):**
     1. Prefer official pub release or `dependency_overrides` → git ref with merged migration PR.
     2. If no release: apply plugin-author diff to pub-cache **via a committed repo script** (e.g. `scripts/patch_kgp_plugins.ps1` + `.sh`) so `flutter pub get && ./scripts/patch_kgp_plugins.*` is reproducible — **not** silent manual cache edits.
     3. Document every override/patch in `docs/DEPENDENCIES.md` with upstream issue URL and removal criteria.
-  - [ ] **Do not** fork plugins into `astra-app` unless Baptiste explicitly approves in review.
-  - [ ] **Stop → review brief → wait for Baptiste OK → commit**
+  - [x] **Do not** fork plugins into `astra-app` unless Baptiste explicitly approves in review.
+  - [x] **Stop → review brief → wait for Baptiste OK → commit**
 
-- [ ] **Sub-task E — Verification & docs cleanup** (AC: #5)
-  - [ ] `flutter analyze` — zero issues
-  - [ ] `flutter test` — full suite green
-  - [ ] `flutter test test/android/android_manifest_test.dart`
-  - [ ] `flutter build apk --debug` and `flutter build apk --release` — **zero KGP warnings**
-  - [ ] Update `docs/DEPENDENCIES.md` § Android Built-in Kotlin / KGP (new subsection)
-  - [ ] Update `_bmad-output/implementation-artifacts/deferred-work.md` — mark KGP item resolved or document remaining upstream blockers (was Epic 6 Story 6.2; now Epic 5.5)
-  - [ ] **Stop → review brief → wait for Baptiste OK → commit**
+- [x] **Sub-task E — Verification & docs cleanup** (AC: #5)
+  - [x] `flutter analyze` — zero issues
+  - [x] `flutter test` — full suite green
+  - [x] `flutter test test/android/android_manifest_test.dart`
+  - [x] `flutter build apk --debug` and `flutter build apk --release` — **zero KGP warnings**
+  - [x] Update `docs/DEPENDENCIES.md` § Android Built-in Kotlin / KGP (new subsection)
+  - [x] Update `_bmad-output/implementation-artifacts/deferred-work.md` — mark KGP item resolved or document remaining upstream blockers (was Epic 6 Story 6.2; now Epic 5.5)
+  - [x] **Stop → review brief → wait for Baptiste OK → commit**
 
 ## Dev Notes
 
@@ -225,7 +225,7 @@ Use Flutter's template from [migration guide § Report incompatible KGP](https:/
 
 ### Agent Model Used
 
-{{agent_model_name_version}}
+Composer (Cursor)
 
 ### Debug Log References
 
@@ -271,7 +271,30 @@ Future versions of Flutter will fail to build if your app uses plugins that appl
 
 ### Completion Notes List
 
+- Sub-task B: No pub.dev release migrates the three KGP warners; `pubspec.yaml` unchanged.
+- Sub-task D: Added `scripts/patch_kgp_plugins.ps1` + `.sh` with version-locked templates in `scripts/kgp-patches/`; upstream issues linked in DEPENDENCIES (no new issues filed — existing trackers sufficient).
+- Sub-task C: Removed `android.builtInKotlin`, `android.newDsl`, `kotlin.incremental` from `gradle.properties`; removed KGP from `settings.gradle.kts`. App module unchanged.
+- Sub-task E: `flutter build apk --debug` and `--release` succeed with **zero** Flutter KGP plugin warnings; full test suite green (1101 tests); `flutter analyze` — 6 pre-existing `info` in `data_lifecycle_service.dart` only (no new issues).
+
 ### File List
+
+- `android/gradle.properties` — removed legacy KGP opt-out flags
+- `android/settings.gradle.kts` — removed `org.jetbrains.kotlin.android` plugin declaration
+- `scripts/patch_kgp_plugins.ps1` — pub-cache patch runner (Windows)
+- `scripts/patch_kgp_plugins.sh` — pub-cache patch runner (Unix)
+- `scripts/kgp-patches/manifest.json` — patch manifest
+- `scripts/kgp-patches/pedometer-4.2.0-build.gradle` — built-in Kotlin template
+- `scripts/kgp-patches/share_plus-13.1.0-build.gradle` — built-in Kotlin template
+- `scripts/kgp-patches/workmanager_android-0.9.0+2-build.gradle` — built-in Kotlin template
+- `scripts/README.md` — patch script usage
+- `docs/DEPENDENCIES.md` — § Android Built-in Kotlin / KGP
+- `_bmad-output/implementation-artifacts/deferred-work.md` — KGP item marked resolved
+- `_bmad-output/implementation-artifacts/stories/5-5-built-in-kotlin-plugin-migration.md` — story completion
+- `_bmad-output/implementation-artifacts/sprint-status.yaml` — story → review
+
+### Change Log
+
+- 2026-06-03: Story 5.5 implementation — built-in Kotlin enabled; reproducible pub-cache patches for three blocking plugins; docs updated.
 
 ## Previous Story Intelligence
 
