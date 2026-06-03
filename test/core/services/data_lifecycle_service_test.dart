@@ -1,6 +1,8 @@
+import 'dart:io';
+
 import 'package:astra_app/core/database/app_database.dart';
 import 'package:astra_app/core/services/data_lifecycle_service.dart';
-import 'package:astra_app/data/models/normalized_step_bucket.dart';
+import 'package:astra_app/core/services/workmanager_callback.dart';
 import 'package:astra_app/data/repositories/step_repository.dart';
 import 'package:astra_app/data/repositories/user_preferences_repository.dart';
 import 'package:astra_app/dev/data_inject_service.dart';
@@ -104,6 +106,93 @@ void main() {
       expect(result.skipped, isFalse);
       expect(vacuumInvoked, 1);
       expect(await userPreferences.getLastDatabaseOptimizedAt(), isNotNull);
+    });
+  });
+
+  group('bounded growth (file database)', () {
+    late Directory tempDir;
+    late String databasePath;
+
+    setUp(() async {
+      tempDir = await Directory.systemTemp.createTemp('astra_lifecycle_growth_');
+      databasePath = '${tempDir.path}${Platform.pathSeparator}astra.db';
+    });
+
+    tearDown(() async {
+      if (await tempDir.exists()) {
+        await tempDir.delete(recursive: true);
+      }
+    });
+
+    test(
+      'two maintenance passes keep row count stable and file size bounded',
+      () async {
+        final clock = FakeTimeProvider(
+          fixedNowUtc: DateTime.utc(2026, 6, 2, 12),
+          zoneOffset: const Duration(hours: 2),
+        );
+        final db = await openAstraDatabase(databasePath: databasePath);
+        addTearDown(db.close);
+        final repository = StepRepository(db: db, clock: clock);
+        final service = DataLifecycleService(
+          db: db,
+          databasePath: databasePath,
+          repository: repository,
+          userPreferences: UserPreferencesRepository(db),
+          clock: clock,
+          optimizeAndVacuum: runPragmaOptimizeAndVacuumOnWorkerIsolate,
+        );
+
+        await DataInjectService(repository: repository).inject90Days(
+          clock: clock,
+        );
+
+        await service.runMaintenance(force: true);
+        final rowsAfterFirst = await repository.countStepSamples();
+        final sizeAfterFirst = File(databasePath).lengthSync();
+
+        await service.runMaintenance(force: true);
+        final rowsAfterSecond = await repository.countStepSamples();
+        final sizeAfterSecond = File(databasePath).lengthSync();
+
+        expect(rowsAfterFirst, 10080);
+        expect(rowsAfterSecond, rowsAfterFirst);
+        expect(
+          sizeAfterSecond,
+          lessThanOrEqualTo(sizeAfterFirst + 65536),
+        );
+      },
+    );
+
+    test('second maintenance compaction creates no new hourly or daily rows',
+        () async {
+      final clock = FakeTimeProvider(
+        fixedNowUtc: DateTime.utc(2026, 6, 2, 12),
+        zoneOffset: const Duration(hours: 2),
+      );
+      final db = await openAstraDatabase(databasePath: inMemoryDatabasePath);
+      addTearDown(db.close);
+      final repository = StepRepository(db: db, clock: clock);
+      final service = DataLifecycleService(
+        db: db,
+        databasePath: inMemoryDatabasePath,
+        repository: repository,
+        userPreferences: UserPreferencesRepository(db),
+        clock: clock,
+        optimizeAndVacuum: (_, _) async {},
+      );
+
+      await DataInjectService(repository: repository).inject90Days(
+        clock: clock,
+      );
+
+      final first = await service.runMaintenance(force: true);
+      final second = await service.runMaintenance(force: true);
+
+      expect(first.compaction!.hourlyCreated, 1440);
+      expect(second.compaction!.hourlyCreated, 0);
+      expect(second.compaction!.dailyCreated, 0);
+      expect(await repository.countStepSamples(), 10080);
     });
   });
 }

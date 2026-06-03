@@ -1,7 +1,6 @@
 import 'package:flutter/foundation.dart';
 import 'package:sqflite/sqflite.dart';
 
-import '../core/lifecycle/sample_compaction_runner.dart';
 import '../core/time/time_provider.dart';
 import '../data/models/normalized_step_bucket.dart';
 import '../data/repositories/step_repository.dart';

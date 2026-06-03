@@ -5,14 +5,23 @@ FR28 dev-only helpers for Epic 3 chart development and storage benchmarks. **Not
 ## Purpose
 
 - **`DataInjectService`** — writes 90 days of synthetic 5-minute step samples (25 920 rows).
-- **`LifecycleSimulator`** — previews FR11 downsampling (5 min → 1 hour → 1 day) inside SQLite transactions.
+- **`LifecycleSimulator`** — dev-only FR11 preview; delegates to `StepRepository.downsampleStepSamples()` (same path as production).
 - **`ChartBenchmark`** — KPI-01 query + toggle/render latency harness (`runChartBenchmark`).
+
+### Production lifecycle (Story 4.1+)
+
+Real devices use **`DataLifecycleService`** (`lib/core/services/data_lifecycle_service.dart`):
+
+- Android: weekly WorkManager task (`astra_database_maintenance`)
+- iOS / foreground: opportunistic `runMaintenance()` on app resume when due
+
+Keep **`runDevLifecycleSimulate()`** for KPI-01 compacted profile (`kDatasetLabelCompacted10080`) and debug benchmarks — do not route production scheduling through `lib/dev/`.
 
 Downstream stories consume this data:
 
 - Story 3.2 — `getChartDailyAggregates()`
 - Story 3.4 — KPI-01 chart benchmark
-- Story 4.1 — promote compaction logic to `DataLifecycleService`
+- Story 4.1 — production `DataLifecycleService` (downsampling + weekly maintenance)
 
 ## Reproducibility
 
@@ -122,8 +131,7 @@ Chart render is measured when `pumpChart` is set (device FAB uses `createOverlay
 | File | Role |
 |------|------|
 | `data_inject_service.dart` | 90-day synthetic inject |
-| `lifecycle_simulator.dart` | FR11 compaction orchestration |
-| `lifecycle_compaction.dart` | Pure merge/age helpers (Epic 4.1 reuse) |
+| `lifecycle_simulator.dart` | Dev FR11 preview (delegates to repository downsample) |
 | `chart_benchmark.dart` | KPI-01 harness + `runDevChartBenchmark()` |
 | `chart_benchmark_render_pump.dart` | Off-screen `StepBarChart` pump for device/tests |
 | `chart_benchmark_dev_fab.dart` | History-tab debug FAB to run KPI-01 on device |
