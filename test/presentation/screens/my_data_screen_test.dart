@@ -322,6 +322,25 @@ void main() {
       expect(selector.enabled, isFalse);
     });
 
+    testWidgets('theme selector disabled while import in flight', (
+      tester,
+    ) async {
+      final cubit = buildSeededCubit(_readyState(isImporting: true));
+      addTearDown(cubit.close);
+      final themeCubit = buildThemeCubit();
+      addTearDown(themeCubit.close);
+
+      await pumpScreen(tester, cubit: cubit, themeCubit: themeCubit);
+
+      final selector = tester.widget<ThemeSelector>(find.byType(ThemeSelector));
+      expect(selector.enabled, isFalse);
+
+      await tester.tap(find.text('Light'));
+      await tester.pump();
+
+      expect(themeCubit.state.preference, AstraThemePreference.system);
+    });
+
     testWidgets('shows Your data section with Export CSV button', (tester) async {
       final cubit = buildSeededCubit(_readyState());
       addTearDown(cubit.close);

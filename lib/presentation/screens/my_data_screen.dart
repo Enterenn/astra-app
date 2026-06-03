@@ -1,3 +1,5 @@
+import 'dart:async' show unawaited;
+
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:permission_handler/permission_handler.dart';
@@ -215,9 +217,11 @@ class MyDataScreen extends StatelessWidget {
                                   selected: themeState.preference,
                                   enabled: !dataActionInFlight,
                                   onChanged: (preference) {
-                                    context
-                                        .read<ThemeCubit>()
-                                        .setThemePreference(preference);
+                                    unawaited(
+                                      context
+                                          .read<ThemeCubit>()
+                                          .setThemePreference(preference),
+                                    );
                                   },
                                 );
                               },

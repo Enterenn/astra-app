@@ -59,5 +59,35 @@ void main() {
 
       await cubit.close();
     });
+
+    test('setThemePreference no-ops when preference unchanged', () async {
+      final cubit = ThemeCubit(
+        userPreferences: repository,
+        initialPreference: AstraThemePreference.dark,
+      );
+      await repository.setThemeMode(AstraThemePreference.light);
+
+      await cubit.setThemePreference(AstraThemePreference.dark);
+
+      expect(cubit.state.preference, AstraThemePreference.dark);
+      expect(await repository.getThemeMode(), AstraThemePreference.light);
+
+      await cubit.close();
+    });
+
+    test('rapid changes end on last preference in DB and state', () async {
+      final cubit = ThemeCubit(userPreferences: repository);
+
+      await Future.wait([
+        cubit.setThemePreference(AstraThemePreference.dark),
+        cubit.setThemePreference(AstraThemePreference.light),
+        cubit.setThemePreference(AstraThemePreference.dark),
+      ]);
+
+      expect(cubit.state.preference, AstraThemePreference.dark);
+      expect(await repository.getThemeMode(), AstraThemePreference.dark);
+
+      await cubit.close();
+    });
   });
 }

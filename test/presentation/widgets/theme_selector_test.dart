@@ -69,6 +69,31 @@ void main() {
       expect(dark.flagsCollection.isSelected, Tristate.isFalse);
     });
 
+    testWidgets('does not fire onChanged when tapping selected segment', (
+      tester,
+    ) async {
+      var tapCount = 0;
+      await pumpSelector(
+        tester,
+        selected: AstraThemePreference.dark,
+        onChanged: (_) => tapCount++,
+      );
+
+      await tester.tap(find.text('Dark'));
+      await tester.pump();
+
+      expect(tapCount, 0);
+    });
+
+    testWidgets('disabled segments are not enabled in semantics', (tester) async {
+      await pumpSelector(tester, enabled: false);
+
+      for (final label in ['System', 'Light', 'Dark']) {
+        final node = tester.getSemantics(find.text(label));
+        expect(node.flagsCollection.isEnabled, Tristate.isFalse);
+      }
+    });
+
     testWidgets('does not fire onChanged when disabled', (tester) async {
       var tapCount = 0;
       await pumpSelector(

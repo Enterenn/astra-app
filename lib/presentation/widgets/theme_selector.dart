@@ -43,9 +43,12 @@ class ThemeSelector extends StatelessWidget {
                   label: label,
                   semanticsLabel: semanticsLabel,
                   selected: selected == preference,
+                  enabled: enabled,
                   colors: colors,
                   disableAnimations: disableAnimations,
-                  onTap: enabled ? () => onChanged(preference) : null,
+                  onTap: enabled && selected != preference
+                      ? () => onChanged(preference)
+                      : null,
                 ),
               ),
           ],
@@ -60,6 +63,7 @@ class _SegmentButton extends StatelessWidget {
     required this.label,
     required this.semanticsLabel,
     required this.selected,
+    required this.enabled,
     required this.colors,
     required this.disableAnimations,
     required this.onTap,
@@ -68,6 +72,7 @@ class _SegmentButton extends StatelessWidget {
   final String label;
   final String semanticsLabel;
   final bool selected;
+  final bool enabled;
   final AstraColors colors;
   final bool disableAnimations;
   final VoidCallback? onTap;
@@ -78,8 +83,11 @@ class _SegmentButton extends StatelessWidget {
       color: selected ? colors.textPrimary : colors.textMuted,
     );
 
+    final interactionEnabled = enabled && onTap != null;
+
     return Semantics(
-      button: true,
+      button: interactionEnabled,
+      enabled: interactionEnabled,
       selected: selected,
       label: semanticsLabel,
       hint: 'App theme',
