@@ -2,6 +2,7 @@ import 'package:flutter/foundation.dart';
 import 'package:sqflite/sqflite.dart';
 import 'package:uuid/uuid.dart';
 
+import '../../core/lifecycle/sample_compaction_runner.dart';
 import '../../core/time/local_day_calculator.dart';
 import '../../core/time/time_provider.dart';
 import '../../core/time/timestamp_codec.dart';
@@ -188,6 +189,38 @@ class StepRepository {
     );
 
     return (rows.single['count']! as num).toInt();
+  }
+
+  /// FR11 administrative downsampling — merges aged tiers and deletes finer rows.
+  ///
+  /// Owns [db.transaction] when [txn] is null. Pass [txn] to batch with other
+  /// admin writes in the same transaction (D-24).
+  Future<CompactionResult> downsampleStepSamples({Transaction? txn}) async {
+    final timeSnapshot = clock.snapshot();
+    final referenceNowUtc = timeSnapshot.nowUtc;
+    final referenceZoneOffset = TimestampCodec.formatZoneOffset(
+      timeSnapshot.zoneOffset,
+    );
+    final runner = SampleCompactionRunner(uuid: _uuid);
+
+    Future<CompactionResult> run(Transaction transaction) {
+      final writer = TransactionCompactionWriter(transaction);
+      return runner.runAllTiers(
+        writer: writer,
+        referenceNowUtc: referenceNowUtc,
+        referenceZoneOffset: referenceZoneOffset,
+      );
+    }
+
+    if (txn != null) {
+      return run(txn);
+    }
+
+    late final CompactionResult result;
+    await db.transaction((transaction) async {
+      result = await run(transaction);
+    });
+    return result;
   }
 
   /// Returns step sample counts grouped by resolution.
