@@ -1,13 +1,16 @@
 import 'dart:io';
 
 import 'package:flutter/foundation.dart';
+import 'package:path/path.dart' as p;
 import 'package:sqflite/sqflite.dart';
 import 'package:uuid/uuid.dart';
 
 import '../../core/lifecycle/sample_compaction_runner.dart';
+import '../../core/time/local_day_formatter.dart';
 import '../../core/time/local_day_calculator.dart';
 import '../../core/time/time_provider.dart';
 import '../../core/time/timestamp_codec.dart';
+import '../csv/timeseries_csv_codec.dart';
 import '../models/chart_day_aggregate.dart';
 import '../models/database_footprint.dart';
 import '../models/normalized_step_bucket.dart';
@@ -282,5 +285,71 @@ class StepRepository {
     final value = rows.single['last_end_time'] as String?;
 
     return value == null ? null : TimestampCodec.parseUtc(value);
+  }
+
+  /// Exports all step samples to an OW-aligned CSV file (FR-19).
+  ///
+  /// Writes to [outputDirectory] with filename `astra-export-{yyyy-MM-dd}.csv`
+  /// using the local calendar date from [clock]. Returns the absolute file path.
+  /// Empty databases produce a header-only CSV.
+  Future<String> exportCsv({required String outputDirectory}) async {
+    // Yield so synchronous IO errors surface through the returned Future.
+    await Future<void>.value();
+
+    final dateStr = formatLocalDayIso(clock.snapshot());
+    final filePath = p.join(outputDirectory, 'astra-export-$dateStr.csv');
+    final file = File(filePath);
+    final sink = file.openWrite();
+    var succeeded = false;
+
+    try {
+      sink.writeln(TimeseriesCsvCodec.headerRow);
+
+      const batchSize = 500;
+      String? afterStartTime;
+      String? afterId;
+      while (true) {
+        final rows = await db.query(
+          'timeseries_samples',
+          where: afterStartTime == null
+              ? 'type = ?'
+              : 'type = ? AND (start_time > ? OR (start_time = ? AND id > ?))',
+          whereArgs: afterStartTime == null
+              ? [kStepSampleType]
+              : [
+                  kStepSampleType,
+                  afterStartTime,
+                  afterStartTime,
+                  afterId,
+                ],
+          orderBy: 'start_time ASC, id ASC',
+          limit: batchSize,
+        );
+
+        if (rows.isEmpty) {
+          break;
+        }
+
+        for (final row in rows) {
+          final sample = TimeseriesSampleModel.fromMap(row);
+          sink.writeln(TimeseriesCsvCodec.serializeRow(sample));
+        }
+
+        final lastRow = rows.last;
+        afterStartTime = lastRow['start_time']! as String;
+        afterId = lastRow['id']! as String;
+        if (rows.length < batchSize) {
+          break;
+        }
+      }
+      succeeded = true;
+    } finally {
+      await sink.close();
+      if (!succeeded && file.existsSync()) {
+        await file.delete();
+      }
+    }
+
+    return file.absolute.path;
   }
 }

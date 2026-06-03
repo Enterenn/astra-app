@@ -13,18 +13,23 @@ enum StatusBannerVariant {
 
   /// iOS backfill info tone.
   info,
+
+  /// Action error with optional custom copy (My Data export/import).
+  error,
 }
 
 class StatusBanner extends StatelessWidget {
   const StatusBanner({
     required this.variant,
     this.isIos = false,
+    this.message,
     this.onTap,
     super.key,
   });
 
   final StatusBannerVariant variant;
   final bool isIos;
+  final String? message;
   final VoidCallback? onTap;
 
   static const _kAccentWidth = 3.0;
@@ -37,12 +42,15 @@ class StatusBanner extends StatelessWidget {
         : 'No new steps in 12+ hours. Background collection may be delayed on this device.',
     StatusBannerVariant.info =>
       'Steps update when you open the app on this device.',
+    StatusBannerVariant.error =>
+      message ?? 'Something went wrong. Try again.',
   };
 
   Color _accentColor(AstraColors colors) => switch (variant) {
     StatusBannerVariant.staleCompact => colors.statusStale,
     StatusBannerVariant.staleFull => colors.statusStale,
     StatusBannerVariant.info => colors.statusInfo,
+    StatusBannerVariant.error => colors.statusDanger,
   };
 
   EdgeInsets get _padding => switch (variant) {
@@ -52,6 +60,7 @@ class StatusBanner extends StatelessWidget {
     ),
     StatusBannerVariant.staleFull => const EdgeInsets.all(AstraSpacing.kSpaceMd),
     StatusBannerVariant.info => const EdgeInsets.all(AstraSpacing.kSpaceMd),
+    StatusBannerVariant.error => const EdgeInsets.all(AstraSpacing.kSpaceMd),
   };
 
   @override

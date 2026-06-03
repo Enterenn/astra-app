@@ -19,6 +19,8 @@ class MyDataState {
     this.backgroundStatus = BackgroundCollectionStatus.healthy,
     this.capabilitySnapshot,
     this.isIos = false,
+    this.isExporting = false,
+    this.exportErrorMessage,
   });
 
   final MyDataStatus status;
@@ -29,6 +31,8 @@ class MyDataState {
   final BackgroundCollectionStatus backgroundStatus;
   final BackgroundHealthCapabilitySnapshot? capabilitySnapshot;
   final bool isIos;
+  final bool isExporting;
+  final String? exportErrorMessage;
 
   const MyDataState.loading() : this(status: MyDataStatus.loading);
 
@@ -64,6 +68,8 @@ class MyDataState {
     BackgroundCollectionStatus? backgroundStatus,
     BackgroundHealthCapabilitySnapshot? capabilitySnapshot,
     bool? isIos,
+    bool? isExporting,
+    Object? exportErrorMessage = _unset,
   }) {
     return MyDataState(
       status: status ?? this.status,
@@ -74,6 +80,12 @@ class MyDataState {
       backgroundStatus: backgroundStatus ?? this.backgroundStatus,
       capabilitySnapshot: capabilitySnapshot ?? this.capabilitySnapshot,
       isIos: isIos ?? this.isIos,
+      isExporting: isExporting ?? this.isExporting,
+      exportErrorMessage: exportErrorMessage == _unset
+          ? this.exportErrorMessage
+          : exportErrorMessage as String?,
     );
   }
 }
+
+const _unset = Object();
