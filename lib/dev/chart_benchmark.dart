@@ -94,7 +94,6 @@ Future<ChartBenchmarkResult> runChartBenchmark({
 
     if (runLifecycleCompaction) {
       await LifecycleSimulator(
-        db: db!,
         repository: repository,
         clock: clock,
       ).simulateDownsampling();

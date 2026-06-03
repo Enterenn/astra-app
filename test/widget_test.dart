@@ -296,6 +296,7 @@ void main() {
         fixedNowUtc: DateTime.utc(2026, 6, 2, 8),
         zoneOffset: const Duration(hours: 2),
       );
+      await userPreferences.setLastDatabaseOptimizedAt(clock.snapshot().nowUtc);
       deps = await AppDependencies.test(
         db: db,
         userPreferences: userPreferences,
@@ -340,6 +341,7 @@ void main() {
           DateTime.utc(2026, 6, 2, 8, 5),
         );
         expect(last, DateTime.utc(2026, 6, 2, 8, 5));
+        await _disposePumpedApp(tester);
       });
     });
 
@@ -377,6 +379,7 @@ void main() {
           DateTime.utc(2026, 6, 2, 8, 10),
         );
         expect(last, DateTime.utc(2026, 6, 2, 8, 10));
+        await _disposePumpedApp(tester);
       });
     });
 
@@ -414,6 +417,7 @@ void main() {
           DateTime.utc(2026, 6, 2, 8, 10),
         );
         expect(lastOnPause, DateTime.utc(2026, 6, 2, 8, 10));
+        await _disposePumpedApp(tester);
       });
     });
 
@@ -463,9 +467,16 @@ void main() {
 
         final stepsAfterResume = await _waitForStableTodaySteps(todayCubit!);
         expect(stepsAfterResume, greaterThan(stepsBeforeResume));
+        await _disposePumpedApp(tester);
       });
     });
   });
+}
+
+Future<void> _disposePumpedApp(WidgetTester tester) async {
+  await tester.pumpWidget(const SizedBox.shrink());
+  await tester.pump();
+  await Future<void>.delayed(const Duration(milliseconds: 100));
 }
 
 Future<int> _waitForStableTodaySteps(

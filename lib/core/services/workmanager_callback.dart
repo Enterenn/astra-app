@@ -147,7 +147,7 @@ Future<bool> runDatabaseMaintenanceWorkmanagerTask({
       repository: StepRepository(db: db, clock: timeProvider),
       userPreferences: UserPreferencesRepository(db),
       clock: timeProvider,
-      optimizeAndVacuum: runPragmaOptimizeAndVacuumOnWorkerIsolate,
+      maintenanceOnCurrentConnection: true,
     );
     final maintenance =
         runMaintenance ?? ((svc) => svc.runMaintenance());
@@ -160,18 +160,6 @@ Future<bool> runDatabaseMaintenanceWorkmanagerTask({
   } finally {
     await db?.close();
   }
-}
-
-/// Runs optimize/VACUUM on a worker isolate without spawning [compute].
-///
-/// Uses the caller's open [db] so preference writes after maintenance stay valid.
-/// WorkManager and other background entry points are already off the UI thread.
-Future<void> runPragmaOptimizeAndVacuumOnWorkerIsolate(
-  Database db,
-  String databasePath,
-) async {
-  await db.rawQuery('PRAGMA optimize');
-  await db.execute('VACUUM');
 }
 
 /// Cancels any in-flight Android step-collection WM work before UI-isolate init.
@@ -233,6 +221,7 @@ Future<void> registerDatabaseMaintenanceWorkmanager({
   }
 
   final workmanager = client ?? PluginStepCollectionWorkmanagerClient();
+  await workmanager.initialize(callbackDispatcher);
   await workmanager.registerPeriodicTask(
     kDatabaseMaintenanceUniqueName,
     kDatabaseMaintenanceTaskName,

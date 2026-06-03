@@ -216,7 +216,6 @@ void main() {
       userPreferences = UserPreferencesRepository(db);
       await DataInjectService(repository: repository).inject90Days(clock: clock);
       await LifecycleSimulator(
-        db: db,
         repository: repository,
         clock: clock,
       ).simulateDownsampling();

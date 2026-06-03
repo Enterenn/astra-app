@@ -161,7 +161,6 @@ void main() {
       final beforeThirtyDay = await repository.getChartDailyAggregates(days: 30);
 
       await LifecycleSimulator(
-        db: db,
         repository: repository,
         clock: clock,
       ).simulateDownsampling();

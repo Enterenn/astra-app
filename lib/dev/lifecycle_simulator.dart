@@ -1,5 +1,4 @@
 import 'package:flutter/foundation.dart';
-import 'package:sqflite/sqflite.dart';
 
 import '../core/time/time_provider.dart';
 import '../data/models/normalized_step_bucket.dart';
@@ -24,12 +23,10 @@ class LifecycleSimResult {
 /// Dev-only FR11 downsampling preview for chart benchmark datasets.
 class LifecycleSimulator {
   LifecycleSimulator({
-    required this.db,
     required this.repository,
     required this.clock,
   });
 
-  final Database db;
   final StepRepository repository;
   final TimeProvider clock;
 
@@ -50,7 +47,6 @@ class LifecycleSimulator {
 }
 
 Future<LifecycleSimResult> runDevLifecycleSimulate({
-  required Database db,
   required StepRepository repository,
   required TimeProvider clock,
 }) async {
@@ -59,7 +55,6 @@ Future<LifecycleSimResult> runDevLifecycleSimulate({
   }
 
   return LifecycleSimulator(
-    db: db,
     repository: repository,
     clock: clock,
   ).simulateDownsampling();

@@ -41,7 +41,6 @@ void main() {
       );
 
       final result = await LifecycleSimulator(
-        db: db,
         repository: repository,
         clock: clock,
       ).simulateDownsampling();
@@ -64,7 +63,6 @@ void main() {
       final totalBefore = await _sumStepValues(db);
 
       await LifecycleSimulator(
-        db: db,
         repository: repository,
         clock: clock,
       ).simulateDownsampling();
@@ -107,7 +105,6 @@ void main() {
       final totalBefore = await _sumStepValues(db);
 
       await LifecycleSimulator(
-        db: db,
         repository: repository,
         clock: clock,
       ).simulateDownsampling();
@@ -153,7 +150,6 @@ void main() {
       }
 
       final result = await LifecycleSimulator(
-        db: db,
         repository: repository,
         clock: FakeTimeProvider(
           fixedNowUtc: referenceNow,
@@ -194,7 +190,6 @@ void main() {
       );
 
       final result = await runDevLifecycleSimulate(
-        db: db,
         repository: repository,
         clock: clock,
       );

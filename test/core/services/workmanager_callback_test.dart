@@ -326,17 +326,13 @@ void main() {
 
     test('registers weekly maintenance with databasePath inputData', () async {
       final client = _FakeWorkmanagerClient();
-      await registerStepCollectionWorkmanager(
-        isAndroid: true,
-        client: client,
-      );
-
       await registerDatabaseMaintenanceWorkmanager(
         isAndroid: true,
         databasePath: '/data/user/0/com.astraapp/databases/astra_app.db',
         client: client,
       );
 
+      expect(client.initialized, isTrue);
       expect(client.uniqueName, kDatabaseMaintenanceUniqueName);
       expect(client.taskName, kDatabaseMaintenanceTaskName);
       expect(client.frequency, kDatabaseMaintenanceInterval);

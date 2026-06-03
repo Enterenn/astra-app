@@ -2,7 +2,6 @@ import 'dart:io';
 
 import 'package:astra_app/core/database/app_database.dart';
 import 'package:astra_app/core/services/data_lifecycle_service.dart';
-import 'package:astra_app/core/services/workmanager_callback.dart';
 import 'package:astra_app/data/repositories/step_repository.dart';
 import 'package:astra_app/data/repositories/user_preferences_repository.dart';
 import 'package:astra_app/dev/data_inject_service.dart';
@@ -107,6 +106,39 @@ void main() {
       expect(vacuumInvoked, 1);
       expect(await userPreferences.getLastDatabaseOptimizedAt(), isNotNull);
     });
+
+    test('concurrent runMaintenance executes a single maintenance pass', () async {
+      var vacuumInProgress = false;
+      var vacuumPasses = 0;
+
+      service = DataLifecycleService(
+        db: db,
+        databasePath: inMemoryDatabasePath,
+        repository: repository,
+        userPreferences: userPreferences,
+        clock: clock,
+        optimizeAndVacuum: (_, _) async {
+          expect(vacuumInProgress, isFalse);
+          vacuumInProgress = true;
+          vacuumPasses++;
+          await Future<void>.delayed(const Duration(milliseconds: 50));
+          vacuumInProgress = false;
+        },
+      );
+
+      await DataInjectService(repository: repository).inject90Days(
+        clock: clock,
+      );
+
+      final results = await Future.wait([
+        service.runMaintenance(force: true),
+        service.runMaintenance(force: true),
+      ]);
+
+      expect(vacuumPasses, 1);
+      expect(results.every((r) => !r.skipped), isTrue);
+      expect(results.first.compaction?.hourlyCreated, 1440);
+    });
   });
 
   group('bounded growth (file database)', () {
@@ -140,6 +172,7 @@ void main() {
           repository: repository,
           userPreferences: UserPreferencesRepository(db),
           clock: clock,
+          maintenanceOnCurrentConnection: true,
           optimizeAndVacuum: runPragmaOptimizeAndVacuumOnWorkerIsolate,
         );
 
@@ -192,6 +225,35 @@ void main() {
       expect(first.compaction!.hourlyCreated, 1440);
       expect(second.compaction!.hourlyCreated, 0);
       expect(second.compaction!.dailyCreated, 0);
+      expect(await repository.countStepSamples(), 10080);
+    });
+
+    test('runMaintenanceOnConnection compacts exclusive file connection',
+        () async {
+      final clock = FakeTimeProvider(
+        fixedNowUtc: DateTime.utc(2026, 6, 2, 12),
+        zoneOffset: const Duration(hours: 2),
+      );
+      final db = await openAstraDatabase(databasePath: databasePath);
+      addTearDown(db.close);
+      final repository = StepRepository(db: db, clock: clock);
+      final userPreferences = UserPreferencesRepository(db);
+
+      await DataInjectService(repository: repository).inject90Days(
+        clock: clock,
+      );
+
+      final result = await runMaintenanceOnConnection(
+        db: db,
+        databasePath: databasePath,
+        repository: repository,
+        userPreferences: userPreferences,
+        clock: clock,
+        force: true,
+      );
+
+      expect(result.skipped, isFalse);
+      expect(result.compaction?.hourlyCreated, 1440);
       expect(await repository.countStepSamples(), 10080);
     });
   });
