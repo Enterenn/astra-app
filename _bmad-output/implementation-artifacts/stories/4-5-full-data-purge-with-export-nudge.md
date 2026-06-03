@@ -1,6 +1,6 @@
 # Story 4.5: Full Data Purge with Export Nudge
 
-Status: review
+Status: done
 
 <!-- Note: Validation is optional. Run validate-create-story for quality check before dev-story. -->
 
@@ -353,6 +353,7 @@ When `display_name` lands in `user_preferences`, purge allowlist must include th
 - Sub-task C: `MyDataCubit.confirmAndPurge` with in-flight guards, `postPurgeRefresh` wired in AppScaffold (LiveStepMonitor reconcile + Today sync + maintenance). 5 cubit tests pass.
 - Sub-task D: `DataPurgeButton` + My Data screen wiring (snackbar, error banner, mutual disable). 4 widget tests added.
 - Sub-task E: Full suite 417 tests pass; analyze clean (pre-existing infos only). Manual verification steps documented below for Baptiste on device.
+- Code review: allow delete-confirmed purge while export in flight (FR-21); emit success only after post-purge refresh; distinct refresh-failure message; 25 purge-related tests pass.
 
 ### File List
 
@@ -376,3 +377,4 @@ When `display_name` lands in `user_preferences`, purge allowlist must include th
 
 - 2026-06-03: Story 4.5 created — full data purge context engine analysis complete
 - 2026-06-03: Story 4.5 implementation complete — purge repository, confirm dialog, cubit orchestration, My Data UI, 417 tests pass
+- 2026-06-03: Code review fixes — export-first delete path, refresh ordering, test stability; story done
