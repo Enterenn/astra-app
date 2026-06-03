@@ -4,6 +4,7 @@ import 'package:astra_app/core/health/background_health_capability_snapshot.dart
 import 'package:astra_app/core/services/background_collector.dart';
 import 'package:astra_app/core/services/background_health_capability_evaluator.dart';
 import 'package:astra_app/core/services/platform_capability_probe.dart';
+import 'package:astra_app/core/services/data_lifecycle_service.dart';
 import 'package:astra_app/core/services/live_step_monitor.dart';
 import 'package:astra_app/data/datasources/monitor_drain_source.dart';
 import 'package:astra_app/core/services/notification_service.dart';
@@ -58,6 +59,7 @@ void main() {
         expect(deps.stepRepository.clock, same(clock));
         expect(deps.backgroundCollector, isA<BackgroundCollector>());
         expect(deps.liveStepMonitor, isA<LiveStepMonitor>());
+        expect(deps.dataLifecycleService, isA<DataLifecycleService>());
         expect(deps.notificationService, isA<NotificationService>());
         expect(deps.ingestionSources, hasLength(2));
         expect(deps.ingestionSources, contains(isA<PhonePedometerSource>()));

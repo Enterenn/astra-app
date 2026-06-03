@@ -1,5 +1,6 @@
 import 'dart:io';
 
+import 'package:path/path.dart' as p;
 import 'package:permission_handler/permission_handler.dart';
 import 'package:sqflite/sqflite.dart';
 
@@ -16,6 +17,7 @@ import '../database/app_database.dart';
 import '../permissions/activity_permission_resolver.dart';
 import '../services/android_platform_capability_probe.dart';
 import '../services/background_collector.dart';
+import '../services/data_lifecycle_service.dart';
 import '../services/background_health_capability_evaluator.dart';
 import '../services/health_foreground_service.dart';
 import '../services/platform_capability_probe.dart';
@@ -41,6 +43,7 @@ class AppDependencies {
     required this.activityPermissionGranted,
     required this.backgroundHealthCapabilityEvaluator,
     required this.healthForegroundCoordinator,
+    required this.dataLifecycleService,
   });
 
   final UserPreferencesRepository userPreferences;
@@ -56,6 +59,7 @@ class AppDependencies {
   final ActivityPermissionChecker activityPermissionGranted;
   final BackgroundHealthCapabilityEvaluator backgroundHealthCapabilityEvaluator;
   final HealthForegroundServiceCoordinator healthForegroundCoordinator;
+  final DataLifecycleService dataLifecycleService;
 
   static Future<bool> resolveActivityRecognitionGranted() =>
       isActivityRecognitionGranted();
@@ -89,7 +93,8 @@ class AppDependencies {
   static Future<AppDependencies> create({
     required NotificationService notificationService,
   }) async {
-    final db = await openAstraDatabase();
+    final databasePath = p.join(await getDatabasesPath(), 'astra_app.db');
+    final db = await openAstraDatabase(databasePath: databasePath);
     final userPreferences = UserPreferencesRepository(db);
     final initialTheme = await userPreferences.getThemeMode();
     final initialOnboardingComplete = await userPreferences
@@ -125,6 +130,13 @@ class AppDependencies {
       activityPermissionGranted: resolveActivityRecognitionGranted,
     );
     healthForeground.registerPlatformHandlers();
+    final dataLifecycleService = DataLifecycleService(
+      db: db,
+      databasePath: databasePath,
+      repository: stepRepository,
+      userPreferences: userPreferences,
+      clock: timeProvider,
+    );
 
     return AppDependencies(
       userPreferences: userPreferences,
@@ -140,6 +152,7 @@ class AppDependencies {
       activityPermissionGranted: resolveActivityRecognitionGranted,
       backgroundHealthCapabilityEvaluator: capabilityEvaluator,
       healthForegroundCoordinator: healthForeground,
+      dataLifecycleService: dataLifecycleService,
     );
   }
 
@@ -157,6 +170,8 @@ class AppDependencies {
     BackgroundHealthCapabilityEvaluator? backgroundHealthCapabilityEvaluator,
     PlatformCapabilityProbe? platformCapabilityProbe,
     HealthForegroundServiceCoordinator? healthForegroundCoordinator,
+    DataLifecycleService? dataLifecycleService,
+    String? databasePath,
     bool Function()? isAndroidPlatform,
   }) async {
     final initialTheme = await userPreferences.getThemeMode();
@@ -214,6 +229,15 @@ class AppDependencies {
       notificationService: notifications,
       notificationPermissionGranted: notificationCheck,
     );
+    final lifecycleService =
+        dataLifecycleService ??
+        DataLifecycleService(
+          db: db,
+          databasePath: databasePath ?? inMemoryDatabasePath,
+          repository: stepRepository,
+          userPreferences: userPreferences,
+          clock: clock,
+        );
     return AppDependencies(
       userPreferences: userPreferences,
       initialTheme: initialTheme,
@@ -228,6 +252,7 @@ class AppDependencies {
       activityPermissionGranted: permissionCheck,
       backgroundHealthCapabilityEvaluator: capabilityEvaluator,
       healthForegroundCoordinator: healthForeground,
+      dataLifecycleService: lifecycleService,
     );
   }
 }

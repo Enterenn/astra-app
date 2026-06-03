@@ -1,6 +1,7 @@
 import 'package:sqflite/sqflite.dart';
 
 import '../../core/constants/preference_keys.dart';
+import '../../core/time/timestamp_codec.dart';
 import '../../presentation/cubits/theme_state.dart';
 
 /// Sole writer to the `user_preferences` table.
@@ -55,6 +56,22 @@ class UserPreferencesRepository {
 
   Future<void> setCelebrationShownDate(String localDayIso) async {
     await _writeValue(kCelebrationShownDateKey, localDayIso);
+  }
+
+  /// UTC instant of the last successful `PRAGMA optimize` / `VACUUM` run.
+  Future<DateTime?> getLastDatabaseOptimizedAt() async {
+    final value = await _readValue(kLastDatabaseOptimizedAtKey);
+    if (value == null) {
+      return null;
+    }
+    return TimestampCodec.parseUtc(value);
+  }
+
+  Future<void> setLastDatabaseOptimizedAt(DateTime optimizedAtUtc) async {
+    await _writeValue(
+      kLastDatabaseOptimizedAtKey,
+      TimestampCodec.formatUtc(optimizedAtUtc.toUtc()),
+    );
   }
 
   /// Atomically records [localDayIso] when not already set for that day.

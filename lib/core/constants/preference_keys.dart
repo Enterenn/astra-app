@@ -4,6 +4,7 @@ const kThemeModeKey = 'theme_mode';
 const kOnboardingCompleteKey = 'onboarding_complete';
 const kCelebrationShownDateKey = 'celebration_shown_date';
 const kIngestionCollectLockKey = 'ingestion_collect_lock';
+const kLastDatabaseOptimizedAtKey = 'last_database_optimized_at';
 
 const kDefaultStepGoal = 8000;
 const kMinStepGoal = 1000;
