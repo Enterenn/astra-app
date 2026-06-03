@@ -10,9 +10,11 @@ import '../../core/time/local_day_formatter.dart';
 import '../../core/time/local_day_calculator.dart';
 import '../../core/time/time_provider.dart';
 import '../../core/time/timestamp_codec.dart';
+import '../csv/import_validation_exception.dart';
 import '../csv/timeseries_csv_codec.dart';
 import '../models/chart_day_aggregate.dart';
 import '../models/database_footprint.dart';
+import '../models/import_result.dart';
 import '../models/normalized_step_bucket.dart';
 import '../models/timeseries_sample_model.dart';
 
@@ -351,5 +353,73 @@ class StepRepository {
     }
 
     return file.absolute.path;
+  }
+
+  /// Imports OW-aligned CSV rows in a single transaction (FR-30, D-16/D-24).
+  ///
+  /// Validates the entire file before any write. Merge-only: existing rows are
+  /// not deleted; duplicate `id` or bucket identity increments [ImportResult.skippedCount].
+  Future<ImportResult> importCsv({required String filePath}) async {
+    await Future<void>.value();
+
+    final file = File(filePath);
+    if (!file.existsSync()) {
+      throw ImportValidationException('CSV file not found');
+    }
+
+    final rawLines = await file.readAsLines();
+    if (rawLines.isEmpty) {
+      throw ImportValidationException('CSV file is empty');
+    }
+
+    TimeseriesCsvCodec.parseHeaderRow(rawLines.first);
+
+    final samples = <TimeseriesSampleModel>[];
+    var dataRowNumber = 0;
+    for (var lineIndex = 1; lineIndex < rawLines.length; lineIndex++) {
+      final line = rawLines[lineIndex].replaceAll('\r', '');
+      if (line.trim().isEmpty) {
+        continue;
+      }
+      dataRowNumber++;
+      samples.add(
+        TimeseriesCsvCodec.parseDataRow(
+          line,
+          rowNumber: dataRowNumber,
+        ),
+      );
+    }
+
+    if (samples.isEmpty) {
+      return const ImportResult(
+        totalRowsInFile: 0,
+        insertedCount: 0,
+        skippedCount: 0,
+      );
+    }
+
+    var insertedCount = 0;
+    var skippedCount = 0;
+
+    await db.transaction((txn) async {
+      for (final sample in samples) {
+        final rowId = await txn.insert(
+          'timeseries_samples',
+          sample.toMap(),
+          conflictAlgorithm: ConflictAlgorithm.ignore,
+        );
+        if (rowId == 0) {
+          skippedCount++;
+        } else {
+          insertedCount++;
+        }
+      }
+    });
+
+    return ImportResult(
+      totalRowsInFile: samples.length,
+      insertedCount: insertedCount,
+      skippedCount: skippedCount,
+    );
   }
 }
