@@ -8,18 +8,23 @@ enum StatusBannerVariant {
   /// Today compact stale line (~40dp, single line).
   staleCompact,
 
-  /// My Data full stale banner — stub for Epic 4.2.
+  /// My Data full stale banner.
   staleFull,
+
+  /// iOS backfill info tone.
+  info,
 }
 
 class StatusBanner extends StatelessWidget {
   const StatusBanner({
     required this.variant,
+    this.isIos = false,
     this.onTap,
     super.key,
   });
 
   final StatusBannerVariant variant;
+  final bool isIos;
   final VoidCallback? onTap;
 
   static const _kAccentWidth = 3.0;
@@ -27,8 +32,17 @@ class StatusBanner extends StatelessWidget {
 
   String get _copy => switch (variant) {
     StatusBannerVariant.staleCompact => 'Steps may be delayed — see My Data',
-    StatusBannerVariant.staleFull =>
-      'No new steps in 12+ hours. Background collection may be delayed on this device.',
+    StatusBannerVariant.staleFull => isIos
+        ? 'No new steps in 4+ hours. Steps update when you open the app on this device.'
+        : 'No new steps in 12+ hours. Background collection may be delayed on this device.',
+    StatusBannerVariant.info =>
+      'Steps update when you open the app on this device.',
+  };
+
+  Color _accentColor(AstraColors colors) => switch (variant) {
+    StatusBannerVariant.staleCompact => colors.statusStale,
+    StatusBannerVariant.staleFull => colors.statusStale,
+    StatusBannerVariant.info => colors.statusInfo,
   };
 
   EdgeInsets get _padding => switch (variant) {
@@ -37,6 +51,7 @@ class StatusBanner extends StatelessWidget {
       vertical: AstraSpacing.kSpaceSm,
     ),
     StatusBannerVariant.staleFull => const EdgeInsets.all(AstraSpacing.kSpaceMd),
+    StatusBannerVariant.info => const EdgeInsets.all(AstraSpacing.kSpaceMd),
   };
 
   @override
@@ -48,7 +63,7 @@ class StatusBanner extends StatelessWidget {
         color: colors.bgElevated,
         borderRadius: BorderRadius.circular(AstraSpacing.kRadiusMd),
         border: Border(
-          left: BorderSide(color: colors.statusStale, width: _kAccentWidth),
+          left: BorderSide(color: _accentColor(colors), width: _kAccentWidth),
         ),
       ),
       child: ConstrainedBox(

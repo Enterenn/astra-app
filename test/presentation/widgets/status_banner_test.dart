@@ -68,7 +68,7 @@ void main() {
       expect(tapped, isTrue);
     });
 
-    testWidgets('staleFull stub renders full diagnostic copy', (tester) async {
+    testWidgets('staleFull stub renders Android diagnostic copy', (tester) async {
       await tester.pumpWidget(
         MaterialApp(
           theme: buildAstraLightTheme(),
@@ -80,6 +80,43 @@ void main() {
 
       expect(
         find.textContaining('No new steps in 12+ hours'),
+        findsOneWidget,
+      );
+    });
+
+    testWidgets('staleFull renders iOS diagnostic copy when isIos is true', (
+      tester,
+    ) async {
+      await tester.pumpWidget(
+        MaterialApp(
+          theme: buildAstraLightTheme(),
+          home: const Scaffold(
+            body: StatusBanner(
+              variant: StatusBannerVariant.staleFull,
+              isIos: true,
+            ),
+          ),
+        ),
+      );
+
+      expect(
+        find.textContaining('No new steps in 4+ hours'),
+        findsOneWidget,
+      );
+    });
+
+    testWidgets('info variant renders iOS backfill copy', (tester) async {
+      await tester.pumpWidget(
+        MaterialApp(
+          theme: buildAstraLightTheme(),
+          home: const Scaffold(
+            body: StatusBanner(variant: StatusBannerVariant.info),
+          ),
+        ),
+      );
+
+      expect(
+        find.text('Steps update when you open the app on this device.'),
         findsOneWidget,
       );
     });
