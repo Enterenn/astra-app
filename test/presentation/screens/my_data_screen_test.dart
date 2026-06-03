@@ -15,6 +15,7 @@ import 'package:astra_app/presentation/widgets/data_export_button.dart';
 import 'package:astra_app/presentation/widgets/data_import_button.dart';
 import 'package:astra_app/presentation/widgets/data_purge_button.dart';
 import 'package:astra_app/presentation/widgets/display_name_editor_row.dart';
+import 'package:astra_app/presentation/widgets/profile_initials_badge.dart';
 import 'package:astra_app/presentation/widgets/goal_editor_row.dart';
 import 'dart:ui' show Tristate;
 
@@ -274,6 +275,52 @@ void main() {
         find.byType(DisplayNameEditorRow),
       );
       expect(row.onTap, isNull);
+    });
+
+    testWidgets('profile header shows initials for display name', (
+      tester,
+    ) async {
+      final cubit = buildSeededCubit(
+        _readyState(displayName: 'Marie Dupont'),
+      );
+      addTearDown(cubit.close);
+
+      await pumpScreen(tester, cubit: cubit);
+
+      expect(find.byType(ProfileInitialsBadge), findsOneWidget);
+      expect(find.text('MD'), findsOneWidget);
+
+      final backgroundY = tester.getTopLeft(find.text('Background')).dy;
+      final badgeY = tester.getTopLeft(find.byType(ProfileInitialsBadge)).dy;
+      expect(badgeY < backgroundY, isTrue);
+    });
+
+    testWidgets('profile header shows placeholder when display name is null', (
+      tester,
+    ) async {
+      final cubit = buildSeededCubit(_readyState());
+      addTearDown(cubit.close);
+
+      await pumpScreen(tester, cubit: cubit);
+
+      expect(find.byType(ProfileInitialsBadge), findsOneWidget);
+      expect(find.byIcon(Icons.person_outline), findsOneWidget);
+    });
+
+    testWidgets('profile badge does not open editor while export in flight', (
+      tester,
+    ) async {
+      final cubit = buildSeededCubit(
+        _readyState(isExporting: true, displayName: 'Alex'),
+      );
+      addTearDown(cubit.close);
+
+      await pumpScreen(tester, cubit: cubit);
+
+      final badge = tester.widget<ProfileInitialsBadge>(
+        find.byType(ProfileInitialsBadge),
+      );
+      expect(badge.onTap, isNull);
     });
 
     testWidgets('Profile section sits between Appearance and Your data', (

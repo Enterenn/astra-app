@@ -19,9 +19,11 @@ import '../widgets/data_export_button.dart';
 import '../widgets/data_import_button.dart';
 import '../widgets/data_purge_button.dart';
 import '../widgets/footprint_kpi_row.dart';
+import '../utils/display_name_initials.dart';
 import '../widgets/display_name_editor_row.dart';
 import '../widgets/display_name_editor_sheet.dart';
 import '../widgets/goal_editor_row.dart';
+import '../widgets/profile_initials_badge.dart';
 import '../widgets/goal_editor_sheet.dart';
 import '../widgets/section_card.dart';
 import '../widgets/status_banner.dart';
@@ -87,250 +89,300 @@ class MyDataScreen extends StatelessWidget {
           ],
           child: BlocBuilder<MyDataCubit, MyDataState>(
             builder: (context, state) {
-              final nowUtc = clock.nowUtc();
-              final cubit = context.read<MyDataCubit>();
-              final dataActionInFlight = state.isExporting ||
-                  state.isImporting ||
-                  state.isPurging;
-
-              return SingleChildScrollView(
-                padding: const EdgeInsets.symmetric(
-                  horizontal: AstraSpacing.kScreenHorizontalPadding,
-                ),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.stretch,
-                  children: [
-                    const SizedBox(height: AstraSpacing.kSpaceMd),
-                    Text('My Data', style: AstraTypography.title(context)),
-                    const SizedBox(height: AstraSpacing.kSpaceMd),
-                    if (state.isStale) ...[
-                      StatusBanner(
-                        variant: StatusBannerVariant.staleFull,
-                        isIos: state.isIos,
-                      ),
-                      const SizedBox(height: AstraSpacing.kSpaceMd),
-                    ],
-                    if (state.exportErrorMessage != null) ...[
-                      StatusBanner(
-                        variant: StatusBannerVariant.error,
-                        message: state.exportErrorMessage,
-                        onTap: () => cubit.exportAndShare(
-                          sharePositionOrigin: sharePositionOriginFor(context),
-                        ),
-                      ),
-                      const SizedBox(height: AstraSpacing.kSpaceMd),
-                    ],
-                    if (state.importErrorMessage != null) ...[
-                      StatusBanner(
-                        variant: StatusBannerVariant.error,
-                        message: state.importErrorMessage,
-                        onTap: () => cubit.pickAndImport(
-                          confirmImport: (csvRowCount, existingSampleCount) =>
-                              showImportConfirmDialog(
-                            context,
-                            csvRowCount: csvRowCount,
-                            existingSampleCount: existingSampleCount,
-                          ),
-                        ),
-                      ),
-                      const SizedBox(height: AstraSpacing.kSpaceMd),
-                    ],
-                    if (state.purgeErrorMessage != null) ...[
-                      StatusBanner(
-                        variant: StatusBannerVariant.error,
-                        message: state.purgeErrorMessage,
-                        onTap: () => cubit.confirmAndPurge(
-                          confirmedAction: PurgeConfirmAction.deleteConfirmed,
-                        ),
-                      ),
-                      const SizedBox(height: AstraSpacing.kSpaceMd),
-                    ],
-                    SectionCard(
-                      headline: 'Background',
-                      child: state.status == MyDataStatus.loading
-                          ? const _SectionLoadingIndicator()
-                          : BackgroundStatusCard(
-                              status: state.backgroundStatus,
-                              lastIngestionUtc: state.lastIngestionUtc,
-                              nowUtc: nowUtc,
-                              capabilities: state.capabilitySnapshot,
-                              onOpenSettings: () => openAppSettings(),
-                            ),
-                    ),
-                    const SizedBox(height: AstraSpacing.kSpaceMd),
-                    SectionCard(
-                      headline: 'Footprint',
-                      child: state.status == MyDataStatus.loading
-                          ? const _SectionLoadingIndicator()
-                          : FootprintKpiRow(
-                              sampleCount: state.sampleCount,
-                              fileSizeBytes: state.fileSizeBytes,
-                              lastOptimizedUtc: state.lastOptimizedUtc,
-                              nowUtc: nowUtc,
-                            ),
-                    ),
-                    const SizedBox(height: AstraSpacing.kSpaceMd),
-                    SectionCard(
-                      headline: 'Daily goal',
-                      child: state.status == MyDataStatus.loading
-                          ? const _SectionLoadingIndicator()
-                          : GoalEditorRow(
-                              dailyStepGoal: state.dailyStepGoal,
-                              enabled: !dataActionInFlight,
-                              onTap: dataActionInFlight
-                                  ? null
-                                  : () async {
-                                      final result = await showGoalEditorSheet(
-                                        context,
-                                        currentGoal: state.dailyStepGoal,
-                                      );
-                                      if (result == null || !context.mounted) {
-                                        return;
-                                      }
-                                      final saved =
-                                          await cubit.updateDailyStepGoal(
-                                        result,
-                                      );
-                                      if (!context.mounted) {
-                                        return;
-                                      }
-                                      if (!saved) {
-                                        ScaffoldMessenger.of(context)
-                                            .showSnackBar(
-                                          const SnackBar(
-                                            content: Text(
-                                              'Daily goal could not be saved. Try again.',
-                                            ),
-                                            duration: Duration(seconds: 3),
-                                          ),
-                                        );
-                                      }
-                                    },
-                            ),
-                    ),
-                    const SizedBox(height: AstraSpacing.kSpaceMd),
-                    SectionCard(
-                      headline: 'Appearance',
-                      child: state.status == MyDataStatus.loading
-                          ? const _SectionLoadingIndicator()
-                          : BlocBuilder<ThemeCubit, ThemeState>(
-                              builder: (context, themeState) {
-                                return ThemeSelector(
-                                  selected: themeState.preference,
-                                  enabled: !dataActionInFlight,
-                                  onChanged: (preference) {
-                                    unawaited(
-                                      context
-                                          .read<ThemeCubit>()
-                                          .setThemePreference(preference),
-                                    );
-                                  },
-                                );
-                              },
-                            ),
-                    ),
-                    const SizedBox(height: AstraSpacing.kSpaceMd),
-                    SectionCard(
-                      headline: 'Profile',
-                      child: state.status == MyDataStatus.loading
-                          ? const _SectionLoadingIndicator()
-                          : DisplayNameEditorRow(
-                              displayName: state.displayName,
-                              enabled: !dataActionInFlight,
-                              onTap: dataActionInFlight
-                                  ? null
-                                  : () async {
-                                      final result =
-                                          await showDisplayNameEditorSheet(
-                                        context,
-                                        currentName: state.displayName,
-                                      );
-                                      if (result == null || !context.mounted) {
-                                        return;
-                                      }
-                                      final saved =
-                                          await cubit.updateDisplayName(
-                                        result,
-                                      );
-                                      if (!context.mounted) {
-                                        return;
-                                      }
-                                      if (!saved) {
-                                        ScaffoldMessenger.of(context)
-                                            .showSnackBar(
-                                          const SnackBar(
-                                            content: Text(
-                                              'Display name could not be saved. Try again.',
-                                            ),
-                                            duration: Duration(seconds: 3),
-                                          ),
-                                        );
-                                      }
-                                    },
-                            ),
-                    ),
-                    const SizedBox(height: AstraSpacing.kSpaceMd),
-                    SectionCard(
-                      headline: 'Your data',
-                      child: state.status == MyDataStatus.loading
-                          ? const _SectionLoadingIndicator()
-                          : Column(
-                              crossAxisAlignment: CrossAxisAlignment.stretch,
-                              children: [
-                                Builder(
-                                  builder: (buttonContext) => DataExportButton(
-                                    label: 'Export CSV',
-                                    semanticsLabel: 'Export data as CSV file',
-                                    isLoading: state.isExporting,
-                                    onPressed: dataActionInFlight
-                                        ? null
-                                        : () => cubit.exportAndShare(
-                                            sharePositionOrigin:
-                                                sharePositionOriginFor(
-                                              buttonContext,
-                                            ),
-                                          ),
-                                  ),
-                                ),
-                                const SizedBox(height: AstraSpacing.kSpaceSm),
-                                DataImportButton(
-                                  isLoading: state.isImporting,
-                                  onPressed: dataActionInFlight
-                                      ? null
-                                      : () => cubit.pickAndImport(
-                                          confirmImport:
-                                              (csvRowCount, existingSampleCount) =>
-                                                  showImportConfirmDialog(
-                                            context,
-                                            csvRowCount: csvRowCount,
-                                            existingSampleCount:
-                                                existingSampleCount,
-                                          ),
-                                        ),
-                                ),
-                                const SizedBox(height: AstraSpacing.kSpaceSm),
-                                Builder(
-                                  builder: (buttonContext) => DataPurgeButton(
-                                    isLoading: state.isPurging,
-                                    onPressed: dataActionInFlight
-                                        ? null
-                                        : () => _confirmAndPurge(
-                                              context,
-                                              cubit,
-                                              shareContext: buttonContext,
-                                            ),
-                                  ),
-                                ),
-                              ],
-                            ),
-                    ),
-                    const SizedBox(height: AstraSpacing.kSpaceMd),
-                  ],
-                ),
+              return _MyDataScreenBody(
+                state: state,
+                clock: clock,
               );
             },
           ),
         ),
+      ),
+    );
+  }
+}
+
+class _MyDataScreenBody extends StatefulWidget {
+  const _MyDataScreenBody({
+    required this.state,
+    required this.clock,
+  });
+
+  final MyDataState state;
+  final TimeProvider clock;
+
+  @override
+  State<_MyDataScreenBody> createState() => _MyDataScreenBodyState();
+}
+
+class _MyDataScreenBodyState extends State<_MyDataScreenBody> {
+  final GlobalKey _profileSectionKey = GlobalKey();
+
+  Future<void> _openDisplayNameEditor(BuildContext context) async {
+    final cubit = context.read<MyDataCubit>();
+    final result = await showDisplayNameEditorSheet(
+      context,
+      currentName: widget.state.displayName,
+    );
+    if (result == null || !context.mounted) {
+      return;
+    }
+    final saved = await cubit.updateDisplayName(result);
+    if (!context.mounted) {
+      return;
+    }
+    if (!saved) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('Display name could not be saved. Try again.'),
+          duration: Duration(seconds: 3),
+        ),
+      );
+    }
+  }
+
+  void _scrollToProfileSection() {
+    final profileContext = _profileSectionKey.currentContext;
+    if (profileContext == null) {
+      return;
+    }
+    unawaited(
+      Scrollable.ensureVisible(
+        profileContext,
+        duration: const Duration(milliseconds: 300),
+        curve: Curves.easeInOut,
+        alignment: 0.1,
+      ),
+    );
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final state = widget.state;
+    final nowUtc = widget.clock.nowUtc();
+    final cubit = context.read<MyDataCubit>();
+    final dataActionInFlight =
+        state.isExporting || state.isImporting || state.isPurging;
+    final nameIsSet = hasTrimmedDisplayName(state.displayName);
+
+    return SingleChildScrollView(
+      padding: const EdgeInsets.symmetric(
+        horizontal: AstraSpacing.kScreenHorizontalPadding,
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: [
+          const SizedBox(height: AstraSpacing.kSpaceMd),
+          Text('My Data', style: AstraTypography.title(context)),
+          const SizedBox(height: AstraSpacing.kSpaceMd),
+          if (state.isStale) ...[
+            StatusBanner(
+              variant: StatusBannerVariant.staleFull,
+              isIos: state.isIos,
+            ),
+            const SizedBox(height: AstraSpacing.kSpaceMd),
+          ],
+          if (state.exportErrorMessage != null) ...[
+            StatusBanner(
+              variant: StatusBannerVariant.error,
+              message: state.exportErrorMessage,
+              onTap: () => cubit.exportAndShare(
+                sharePositionOrigin: sharePositionOriginFor(context),
+              ),
+            ),
+            const SizedBox(height: AstraSpacing.kSpaceMd),
+          ],
+          if (state.importErrorMessage != null) ...[
+            StatusBanner(
+              variant: StatusBannerVariant.error,
+              message: state.importErrorMessage,
+              onTap: () => cubit.pickAndImport(
+                confirmImport: (csvRowCount, existingSampleCount) =>
+                    showImportConfirmDialog(
+                  context,
+                  csvRowCount: csvRowCount,
+                  existingSampleCount: existingSampleCount,
+                ),
+              ),
+            ),
+            const SizedBox(height: AstraSpacing.kSpaceMd),
+          ],
+          if (state.purgeErrorMessage != null) ...[
+            StatusBanner(
+              variant: StatusBannerVariant.error,
+              message: state.purgeErrorMessage,
+              onTap: () => cubit.confirmAndPurge(
+                confirmedAction: PurgeConfirmAction.deleteConfirmed,
+              ),
+            ),
+            const SizedBox(height: AstraSpacing.kSpaceMd),
+          ],
+          Align(
+            alignment: Alignment.centerLeft,
+            child: ProfileInitialsBadge(
+              displayName: state.displayName,
+              enabled: !dataActionInFlight,
+              onTap: dataActionInFlight
+                  ? null
+                  : () {
+                      if (nameIsSet) {
+                        _scrollToProfileSection();
+                      } else {
+                        unawaited(_openDisplayNameEditor(context));
+                      }
+                    },
+            ),
+          ),
+          const SizedBox(height: AstraSpacing.kSpaceMd),
+          SectionCard(
+            headline: 'Background',
+            child: state.status == MyDataStatus.loading
+                ? const _SectionLoadingIndicator()
+                : BackgroundStatusCard(
+                    status: state.backgroundStatus,
+                    lastIngestionUtc: state.lastIngestionUtc,
+                    nowUtc: nowUtc,
+                    capabilities: state.capabilitySnapshot,
+                    onOpenSettings: () => openAppSettings(),
+                  ),
+          ),
+          const SizedBox(height: AstraSpacing.kSpaceMd),
+          SectionCard(
+            headline: 'Footprint',
+            child: state.status == MyDataStatus.loading
+                ? const _SectionLoadingIndicator()
+                : FootprintKpiRow(
+                    sampleCount: state.sampleCount,
+                    fileSizeBytes: state.fileSizeBytes,
+                    lastOptimizedUtc: state.lastOptimizedUtc,
+                    nowUtc: nowUtc,
+                  ),
+          ),
+          const SizedBox(height: AstraSpacing.kSpaceMd),
+          SectionCard(
+            headline: 'Daily goal',
+            child: state.status == MyDataStatus.loading
+                ? const _SectionLoadingIndicator()
+                : GoalEditorRow(
+                    dailyStepGoal: state.dailyStepGoal,
+                    enabled: !dataActionInFlight,
+                    onTap: dataActionInFlight
+                        ? null
+                        : () async {
+                            final result = await showGoalEditorSheet(
+                              context,
+                              currentGoal: state.dailyStepGoal,
+                            );
+                            if (result == null || !context.mounted) {
+                              return;
+                            }
+                            final saved = await cubit.updateDailyStepGoal(
+                              result,
+                            );
+                            if (!context.mounted) {
+                              return;
+                            }
+                            if (!saved) {
+                              ScaffoldMessenger.of(context).showSnackBar(
+                                const SnackBar(
+                                  content: Text(
+                                    'Daily goal could not be saved. Try again.',
+                                  ),
+                                  duration: Duration(seconds: 3),
+                                ),
+                              );
+                            }
+                          },
+                  ),
+          ),
+          const SizedBox(height: AstraSpacing.kSpaceMd),
+          SectionCard(
+            headline: 'Appearance',
+            child: state.status == MyDataStatus.loading
+                ? const _SectionLoadingIndicator()
+                : BlocBuilder<ThemeCubit, ThemeState>(
+                    builder: (context, themeState) {
+                      return ThemeSelector(
+                        selected: themeState.preference,
+                        enabled: !dataActionInFlight,
+                        onChanged: (preference) {
+                          unawaited(
+                            context
+                                .read<ThemeCubit>()
+                                .setThemePreference(preference),
+                          );
+                        },
+                      );
+                    },
+                  ),
+          ),
+          const SizedBox(height: AstraSpacing.kSpaceMd),
+          SectionCard(
+            key: _profileSectionKey,
+            headline: 'Profile',
+            child: state.status == MyDataStatus.loading
+                ? const _SectionLoadingIndicator()
+                : DisplayNameEditorRow(
+                    displayName: state.displayName,
+                    enabled: !dataActionInFlight,
+                    onTap: dataActionInFlight
+                        ? null
+                        : () => unawaited(_openDisplayNameEditor(context)),
+                  ),
+          ),
+          const SizedBox(height: AstraSpacing.kSpaceMd),
+          SectionCard(
+            headline: 'Your data',
+            child: state.status == MyDataStatus.loading
+                ? const _SectionLoadingIndicator()
+                : Column(
+                    crossAxisAlignment: CrossAxisAlignment.stretch,
+                    children: [
+                      Builder(
+                        builder: (buttonContext) => DataExportButton(
+                          label: 'Export CSV',
+                          semanticsLabel: 'Export data as CSV file',
+                          isLoading: state.isExporting,
+                          onPressed: dataActionInFlight
+                              ? null
+                              : () => cubit.exportAndShare(
+                                    sharePositionOrigin:
+                                        sharePositionOriginFor(buttonContext),
+                                  ),
+                        ),
+                      ),
+                      const SizedBox(height: AstraSpacing.kSpaceSm),
+                      DataImportButton(
+                        isLoading: state.isImporting,
+                        onPressed: dataActionInFlight
+                            ? null
+                            : () => cubit.pickAndImport(
+                                  confirmImport:
+                                      (csvRowCount, existingSampleCount) =>
+                                          showImportConfirmDialog(
+                                    context,
+                                    csvRowCount: csvRowCount,
+                                    existingSampleCount: existingSampleCount,
+                                  ),
+                                ),
+                      ),
+                      const SizedBox(height: AstraSpacing.kSpaceSm),
+                      Builder(
+                        builder: (buttonContext) => DataPurgeButton(
+                          isLoading: state.isPurging,
+                          onPressed: dataActionInFlight
+                              ? null
+                              : () => _confirmAndPurge(
+                                    context,
+                                    cubit,
+                                    shareContext: buttonContext,
+                                  ),
+                        ),
+                      ),
+                    ],
+                  ),
+          ),
+          const SizedBox(height: AstraSpacing.kSpaceMd),
+        ],
       ),
     );
   }
