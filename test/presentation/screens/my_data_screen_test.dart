@@ -6,12 +6,17 @@ import 'package:astra_app/data/repositories/step_repository.dart';
 import 'package:astra_app/data/repositories/user_preferences_repository.dart';
 import 'package:astra_app/presentation/cubits/my_data_cubit.dart';
 import 'package:astra_app/presentation/cubits/my_data_state.dart';
+import 'package:astra_app/presentation/cubits/theme_cubit.dart';
+import 'package:astra_app/presentation/cubits/theme_state.dart';
 import 'package:astra_app/presentation/screens/my_data_screen.dart';
+import 'package:astra_app/presentation/widgets/theme_selector.dart';
 import 'package:astra_app/presentation/widgets/confirm_dialog.dart';
 import 'package:astra_app/presentation/widgets/data_export_button.dart';
 import 'package:astra_app/presentation/widgets/data_import_button.dart';
 import 'package:astra_app/presentation/widgets/data_purge_button.dart';
 import 'package:astra_app/presentation/widgets/goal_editor_row.dart';
+import 'dart:ui' show Tristate;
+
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:flutter_test/flutter_test.dart';
@@ -129,19 +134,42 @@ void main() {
       );
     }
 
+    ThemeCubit buildThemeCubit({
+      AstraThemePreference initial = AstraThemePreference.system,
+    }) {
+      return ThemeCubit(
+        userPreferences: userPreferences,
+        initialPreference: initial,
+      );
+    }
+
     Future<void> pumpScreen(
       WidgetTester tester, {
       required MyDataCubit cubit,
+      ThemeCubit? themeCubit,
       bool disableAnimations = false,
     }) async {
+      final theme = themeCubit ?? buildThemeCubit();
+      if (themeCubit == null) {
+        addTearDown(theme.close);
+      }
+
+      tester.view.physicalSize = const Size(800, 2000);
+      tester.view.devicePixelRatio = 1.0;
+      addTearDown(tester.view.resetPhysicalSize);
+      addTearDown(tester.view.resetDevicePixelRatio);
+
       await tester.pumpWidget(
         MaterialApp(
           theme: buildAstraLightTheme(),
           home: MediaQuery(
             data: MediaQueryData(disableAnimations: disableAnimations),
             child: Scaffold(
-              body: BlocProvider<MyDataCubit>.value(
-                value: cubit,
+              body: MultiBlocProvider(
+                providers: [
+                  BlocProvider<MyDataCubit>.value(value: cubit),
+                  BlocProvider<ThemeCubit>.value(value: theme),
+                ],
                 child: MyDataScreen(clock: clock),
               ),
             ),
@@ -190,6 +218,108 @@ void main() {
       await tester.pump();
 
       expect(find.text('Save'), findsNothing);
+    });
+
+    testWidgets('Appearance section sits between Daily goal and Your data', (
+      tester,
+    ) async {
+      final cubit = buildSeededCubit(_readyState());
+      addTearDown(cubit.close);
+
+      await pumpScreen(tester, cubit: cubit);
+
+      expect(find.text('Appearance'), findsOneWidget);
+      expect(find.byType(ThemeSelector), findsOneWidget);
+
+      final dailyGoalY = tester.getTopLeft(find.text('Daily goal')).dy;
+      final appearanceY = tester.getTopLeft(find.text('Appearance')).dy;
+      final yourDataY = tester.getTopLeft(find.text('Your data')).dy;
+
+      expect(dailyGoalY < appearanceY, isTrue);
+      expect(appearanceY < yourDataY, isTrue);
+    });
+
+    testWidgets('tapping Dark updates ThemeCubit and selector selection', (
+      tester,
+    ) async {
+      final cubit = buildSeededCubit(_readyState());
+      addTearDown(cubit.close);
+      final themeCubit = buildThemeCubit();
+      addTearDown(themeCubit.close);
+
+      tester.view.physicalSize = const Size(800, 2000);
+      tester.view.devicePixelRatio = 1.0;
+      addTearDown(tester.view.resetPhysicalSize);
+      addTearDown(tester.view.resetDevicePixelRatio);
+
+      // SQLite + stream emit must run entirely in runAsync (see widget_test.dart).
+      await tester.runAsync(() async {
+        await tester.pumpWidget(
+          MaterialApp(
+            theme: buildAstraLightTheme(),
+            home: MultiBlocProvider(
+              providers: [
+                BlocProvider<MyDataCubit>.value(value: cubit),
+                BlocProvider<ThemeCubit>.value(value: themeCubit),
+              ],
+              child: Scaffold(body: MyDataScreen(clock: clock)),
+            ),
+          ),
+        );
+        await tester.pump();
+
+        await tester.tap(
+          find.descendant(
+            of: find.byType(ThemeSelector),
+            matching: find.text('Dark'),
+          ),
+        );
+        await tester.pump();
+
+        await themeCubit.stream
+            .firstWhere(
+              (state) => state.preference == AstraThemePreference.dark,
+            )
+            .timeout(const Duration(seconds: 2));
+      });
+      await tester.pump();
+
+      expect(themeCubit.state.preference, AstraThemePreference.dark);
+      expect(
+        tester.getSemantics(find.text('Dark')).flagsCollection.isSelected,
+        Tristate.isTrue,
+      );
+    });
+
+    testWidgets('theme selector disabled while export in flight', (
+      tester,
+    ) async {
+      final cubit = buildSeededCubit(_readyState(isExporting: true));
+      addTearDown(cubit.close);
+      final themeCubit = buildThemeCubit();
+      addTearDown(themeCubit.close);
+
+      await pumpScreen(tester, cubit: cubit, themeCubit: themeCubit);
+
+      final selector = tester.widget<ThemeSelector>(find.byType(ThemeSelector));
+      expect(selector.enabled, isFalse);
+
+      await tester.tap(find.text('Light'));
+      await tester.pump();
+
+      expect(themeCubit.state.preference, AstraThemePreference.system);
+    });
+
+    testWidgets('theme selector disabled while purge in flight', (
+      tester,
+    ) async {
+      final cubit = buildSeededCubit(_readyState(isPurging: true));
+      addTearDown(cubit.close);
+
+      await pumpScreen(tester, cubit: cubit);
+
+      final selector = tester.widget<ThemeSelector>(find.byType(ThemeSelector));
+      expect(selector.enabled, isFalse);
     });
 
     testWidgets('shows Your data section with Export CSV button', (tester) async {
