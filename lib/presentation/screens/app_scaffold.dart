@@ -90,6 +90,17 @@ class _AppScaffoldState extends State<AppScaffold> {
             await _historyCubit.refresh(silent: true);
             await _myDataCubit.refresh(silent: true);
           },
+          postPurgeRefresh: () async {
+            await widget.deps.liveStepMonitor.reconcileFromDatabase();
+            await _todayCubit.refresh(silent: true);
+            await _todayCubit.syncSteps(
+              widget.deps.liveStepMonitor.currentTodaySteps,
+            );
+            await _todayCubit.refreshMetadata();
+            await _historyCubit.refresh(silent: true);
+            await _myDataCubit.refresh(silent: true);
+            unawaited(widget.deps.dataLifecycleService.runMaintenance(force: true));
+          },
         );
     widget.onTodayCubitReady?.call(_todayCubit);
     widget.onHistoryCubitReady?.call(_historyCubit);

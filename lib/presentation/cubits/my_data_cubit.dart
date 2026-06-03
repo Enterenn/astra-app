@@ -20,6 +20,7 @@ import '../../data/csv/timeseries_csv_codec.dart';
 import '../../data/models/database_footprint.dart';
 import '../../data/repositories/step_repository.dart';
 import '../../data/repositories/user_preferences_repository.dart';
+import '../widgets/confirm_dialog.dart';
 import 'my_data_state.dart';
 
 typedef ActivityPermissionChecker = Future<bool> Function();
@@ -30,6 +31,8 @@ typedef PickCsvFileCallback = Future<String?> Function();
 typedef ConfirmImportCallback =
     Future<bool> Function(int csvRowCount, int existingSampleCount);
 typedef PostImportRefreshCallback = Future<void> Function();
+typedef ConfirmPurgeCallback = Future<PurgeConfirmAction> Function();
+typedef PostPurgeRefreshCallback = Future<void> Function();
 
 class MyDataCubit extends Cubit<MyDataState> {
   MyDataCubit({
@@ -44,6 +47,7 @@ class MyDataCubit extends Cubit<MyDataState> {
     PickCsvFileCallback? pickCsvFile,
     ConfirmImportCallback? confirmImport,
     PostImportRefreshCallback? postImportRefresh,
+    PostPurgeRefreshCallback? postPurgeRefresh,
     bool? isIos,
   }) : _activityPermissionGranted =
            activityPermissionGranted ?? isActivityRecognitionGranted,
@@ -53,6 +57,7 @@ class MyDataCubit extends Cubit<MyDataState> {
        _pickCsvFile = pickCsvFile ?? _defaultPickCsvFile,
        _confirmImport = confirmImport,
        _postImportRefresh = postImportRefresh,
+       _postPurgeRefresh = postPurgeRefresh,
        _isIos = isIos ?? Platform.isIOS,
        super(const MyDataState.loading());
 
@@ -67,10 +72,12 @@ class MyDataCubit extends Cubit<MyDataState> {
   final PickCsvFileCallback _pickCsvFile;
   final ConfirmImportCallback? _confirmImport;
   final PostImportRefreshCallback? _postImportRefresh;
+  final PostPurgeRefreshCallback? _postPurgeRefresh;
   final bool _isIos;
 
   Future<void>? _refreshInFlight;
   Future<void>? _importInFlight;
+  Future<void>? _purgeInFlight;
 
   static Future<String> _defaultTempDirectoryProvider() async {
     final directory = await getTemporaryDirectory();
@@ -101,7 +108,7 @@ class MyDataCubit extends Cubit<MyDataState> {
   Future<void> pickAndImport({
     ConfirmImportCallback? confirmImport,
   }) async {
-    if (isClosed || state.isImporting || state.isExporting) {
+    if (isClosed || state.isImporting || state.isExporting || state.isPurging) {
       return;
     }
     if (_importInFlight != null) {
@@ -206,7 +213,10 @@ class MyDataCubit extends Cubit<MyDataState> {
   }
 
   Future<void> exportAndShare({Rect? sharePositionOrigin}) async {
-    if (isClosed || state.isExporting || state.isImporting) {
+    if (isClosed ||
+        state.isExporting ||
+        state.isImporting ||
+        state.isPurging) {
       return;
     }
 
@@ -251,6 +261,90 @@ class MyDataCubit extends Cubit<MyDataState> {
     }
   }
 
+  Future<void> confirmAndPurge({
+    ConfirmPurgeCallback? confirmPurge,
+    PurgeConfirmAction? confirmedAction,
+  }) async {
+    if (isClosed ||
+        state.isPurging ||
+        state.isExporting ||
+        state.isImporting) {
+      return;
+    }
+    if (_purgeInFlight != null) {
+      return _purgeInFlight!;
+    }
+
+    _purgeInFlight = _confirmAndPurgeImpl(
+      confirmPurge: confirmPurge,
+      confirmedAction: confirmedAction,
+    );
+    try {
+      await _purgeInFlight!;
+    } finally {
+      _purgeInFlight = null;
+    }
+  }
+
+  Future<void> _confirmAndPurgeImpl({
+    ConfirmPurgeCallback? confirmPurge,
+    PurgeConfirmAction? confirmedAction,
+  }) async {
+    final action = confirmedAction ??
+        (confirmPurge != null
+            ? await confirmPurge()
+            : PurgeConfirmAction.cancelled);
+
+    if (action == PurgeConfirmAction.cancelled || isClosed) {
+      return;
+    }
+    if (action == PurgeConfirmAction.exportFirst) {
+      await exportAndShare();
+      return;
+    }
+
+    emit(
+      state.copyWith(
+        isPurging: true,
+        purgeErrorMessage: null,
+        purgeSuccessPending: false,
+      ),
+    );
+
+    try {
+      await stepRepository.purge();
+      if (isClosed) {
+        return;
+      }
+
+      emit(
+        state.copyWith(
+          isPurging: false,
+          purgeErrorMessage: null,
+          purgeSuccessPending: true,
+        ),
+      );
+      await _postPurgeRefresh?.call();
+      if (!isClosed) {
+        await refresh(silent: true);
+      }
+    } catch (error, stackTrace) {
+      if (kDebugMode) {
+        debugPrint('MyDataCubit.confirmAndPurge failed: $error');
+        debugPrintStack(stackTrace: stackTrace);
+      }
+      if (isClosed) {
+        return;
+      }
+      emit(
+        state.copyWith(
+          isPurging: false,
+          purgeErrorMessage: 'Purge could not be completed. Try again.',
+        ),
+      );
+    }
+  }
+
   Future<void> refresh({bool silent = true}) async {
     if (isClosed) {
       return;
@@ -272,7 +366,8 @@ class MyDataCubit extends Cubit<MyDataState> {
     if (!silent &&
         state.status != MyDataStatus.loading &&
         !state.isExporting &&
-        !state.isImporting) {
+        !state.isImporting &&
+        !state.isPurging) {
       emit(const MyDataState.loading());
     }
 
@@ -367,6 +462,9 @@ class MyDataCubit extends Cubit<MyDataState> {
         isImporting: state.isImporting,
         importErrorMessage: state.importErrorMessage,
         importSuccessPending: state.importSuccessPending,
+        isPurging: state.isPurging,
+        purgeErrorMessage: state.purgeErrorMessage,
+        purgeSuccessPending: state.purgeSuccessPending,
       ),
     );
   }

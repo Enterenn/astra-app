@@ -24,6 +24,9 @@ class MyDataState {
     this.isImporting = false,
     this.importErrorMessage,
     this.importSuccessPending = false,
+    this.isPurging = false,
+    this.purgeErrorMessage,
+    this.purgeSuccessPending = false,
   });
 
   final MyDataStatus status;
@@ -40,6 +43,10 @@ class MyDataState {
   final String? importErrorMessage;
   /// True after import with at least one data row; drives success snackbar once.
   final bool importSuccessPending;
+  final bool isPurging;
+  final String? purgeErrorMessage;
+  /// True after successful purge; drives success snackbar once.
+  final bool purgeSuccessPending;
 
   const MyDataState.loading() : this(status: MyDataStatus.loading);
 
@@ -80,6 +87,9 @@ class MyDataState {
     bool? isImporting,
     Object? importErrorMessage = _unset,
     bool? importSuccessPending,
+    bool? isPurging,
+    Object? purgeErrorMessage = _unset,
+    bool? purgeSuccessPending,
   }) {
     return MyDataState(
       status: status ?? this.status,
@@ -100,6 +110,11 @@ class MyDataState {
           : importErrorMessage as String?,
       importSuccessPending:
           importSuccessPending ?? this.importSuccessPending,
+      isPurging: isPurging ?? this.isPurging,
+      purgeErrorMessage: purgeErrorMessage == _unset
+          ? this.purgeErrorMessage
+          : purgeErrorMessage as String?,
+      purgeSuccessPending: purgeSuccessPending ?? this.purgeSuccessPending,
     );
   }
 }
