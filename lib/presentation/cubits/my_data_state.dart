@@ -23,6 +23,7 @@ class MyDataState {
     this.exportErrorMessage,
     this.isImporting = false,
     this.importErrorMessage,
+    this.importSuccessPending = false,
   });
 
   final MyDataStatus status;
@@ -37,6 +38,8 @@ class MyDataState {
   final String? exportErrorMessage;
   final bool isImporting;
   final String? importErrorMessage;
+  /// True after import with at least one data row; drives success snackbar once.
+  final bool importSuccessPending;
 
   const MyDataState.loading() : this(status: MyDataStatus.loading);
 
@@ -76,6 +79,7 @@ class MyDataState {
     Object? exportErrorMessage = _unset,
     bool? isImporting,
     Object? importErrorMessage = _unset,
+    bool? importSuccessPending,
   }) {
     return MyDataState(
       status: status ?? this.status,
@@ -94,6 +98,8 @@ class MyDataState {
       importErrorMessage: importErrorMessage == _unset
           ? this.importErrorMessage
           : importErrorMessage as String?,
+      importSuccessPending:
+          importSuccessPending ?? this.importSuccessPending,
     );
   }
 }

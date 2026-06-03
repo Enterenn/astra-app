@@ -70,6 +70,7 @@ class MyDataCubit extends Cubit<MyDataState> {
   final bool _isIos;
 
   Future<void>? _refreshInFlight;
+  Future<void>? _importInFlight;
 
   static Future<String> _defaultTempDirectoryProvider() async {
     final directory = await getTemporaryDirectory();
@@ -103,48 +104,76 @@ class MyDataCubit extends Cubit<MyDataState> {
     if (isClosed || state.isImporting || state.isExporting) {
       return;
     }
+    if (_importInFlight != null) {
+      return _importInFlight!;
+    }
 
+    _importInFlight = _pickAndImportImpl(confirmImport: confirmImport);
+    try {
+      await _importInFlight!;
+    } finally {
+      _importInFlight = null;
+    }
+  }
+
+  Future<void> _pickAndImportImpl({
+    ConfirmImportCallback? confirmImport,
+  }) async {
     final path = await _pickCsvFile();
     if (path == null || isClosed) {
       return;
-    }
-
-    final csvRowCount = await _countCsvDataRows(path);
-    if (isClosed) {
-      return;
-    }
-
-    if (state.sampleCount > 0) {
-      final confirm = confirmImport ?? _confirmImport;
-      if (confirm == null) {
-        if (kDebugMode) {
-          debugPrint(
-            'MyDataCubit.pickAndImport: confirmImport required when DB has samples',
-          );
-        }
-        return;
-      }
-      final approved = await confirm(csvRowCount, state.sampleCount);
-      if (!approved || isClosed) {
-        return;
-      }
     }
 
     emit(
       state.copyWith(
         isImporting: true,
         importErrorMessage: null,
+        importSuccessPending: false,
       ),
     );
 
     try {
-      await stepRepository.importCsv(filePath: path);
-
+      final samples = await TimeseriesCsvCodec.parseImportFile(path);
       if (isClosed) {
         return;
       }
 
-      emit(state.copyWith(isImporting: false, importErrorMessage: null));
+      final existingSampleCount = await stepRepository.countStepSamples();
+      if (isClosed) {
+        return;
+      }
+
+      if (existingSampleCount > 0) {
+        final confirm = confirmImport ?? _confirmImport;
+        if (confirm == null) {
+          emit(
+            state.copyWith(
+              isImporting: false,
+              importErrorMessage:
+                  'Import could not be completed. Try again.',
+            ),
+          );
+          return;
+        }
+        final approved = await confirm(samples.length, existingSampleCount);
+        if (!approved || isClosed) {
+          emit(state.copyWith(isImporting: false));
+          return;
+        }
+      }
+
+      final result = await stepRepository.importSamples(samples);
+      if (isClosed) {
+        return;
+      }
+
+      emit(
+        state.copyWith(
+          isImporting: false,
+          importErrorMessage: null,
+          importSuccessPending: result.totalRowsInFile > 0,
+        ),
+      );
       await _postImportRefresh?.call();
       if (!isClosed) {
         await refresh(silent: true);
@@ -174,21 +203,6 @@ class MyDataCubit extends Cubit<MyDataState> {
         ),
       );
     }
-  }
-
-  Future<int> _countCsvDataRows(String filePath) async {
-    final lines = await File(filePath).readAsLines();
-    if (lines.isEmpty) {
-      throw ImportValidationException('CSV file is empty');
-    }
-    TimeseriesCsvCodec.parseHeaderRow(lines.first);
-    var count = 0;
-    for (var i = 1; i < lines.length; i++) {
-      if (lines[i].replaceAll('\r', '').trim().isNotEmpty) {
-        count++;
-      }
-    }
-    return count;
   }
 
   Future<void> exportAndShare({Rect? sharePositionOrigin}) async {
@@ -257,7 +271,8 @@ class MyDataCubit extends Cubit<MyDataState> {
   Future<void> _refreshImpl({required bool silent}) async {
     if (!silent &&
         state.status != MyDataStatus.loading &&
-        !state.isExporting) {
+        !state.isExporting &&
+        !state.isImporting) {
       emit(const MyDataState.loading());
     }
 
@@ -298,19 +313,30 @@ class MyDataCubit extends Cubit<MyDataState> {
       if (isClosed) {
         return;
       }
-      _recoverFromRefreshFailure();
+      await _recoverFromRefreshFailure();
     }
   }
 
-  void _recoverFromRefreshFailure() {
+  Future<void> _recoverFromRefreshFailure() async {
     if (state.status == MyDataStatus.ready) {
       // Re-emit so listeners see a stable ready snapshot after a failed refresh.
       emit(state);
       return;
     }
 
+    var sampleCount = 0;
+    try {
+      sampleCount = await stepRepository.countStepSamples();
+    } catch (_) {
+      sampleCount = 0;
+    }
+
+    if (isClosed) {
+      return;
+    }
+
     _emitReadySnapshot(
-      sampleCount: 0,
+      sampleCount: sampleCount,
       fileSizeBytes: 0,
       backgroundStatus: _isIos
           ? BackgroundCollectionStatus.iosBackfill
@@ -340,6 +366,7 @@ class MyDataCubit extends Cubit<MyDataState> {
         exportErrorMessage: state.exportErrorMessage,
         isImporting: state.isImporting,
         importErrorMessage: state.importErrorMessage,
+        importSuccessPending: state.importSuccessPending,
       ),
     );
   }

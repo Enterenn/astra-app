@@ -10,7 +10,6 @@ import '../../core/time/local_day_formatter.dart';
 import '../../core/time/local_day_calculator.dart';
 import '../../core/time/time_provider.dart';
 import '../../core/time/timestamp_codec.dart';
-import '../csv/import_validation_exception.dart';
 import '../csv/timeseries_csv_codec.dart';
 import '../models/chart_day_aggregate.dart';
 import '../models/database_footprint.dart';
@@ -361,35 +360,12 @@ class StepRepository {
   /// not deleted; duplicate `id` or bucket identity increments [ImportResult.skippedCount].
   Future<ImportResult> importCsv({required String filePath}) async {
     await Future<void>.value();
+    final samples = await TimeseriesCsvCodec.parseImportFile(filePath);
+    return importSamples(samples);
+  }
 
-    final file = File(filePath);
-    if (!file.existsSync()) {
-      throw ImportValidationException('CSV file not found');
-    }
-
-    final rawLines = await file.readAsLines();
-    if (rawLines.isEmpty) {
-      throw ImportValidationException('CSV file is empty');
-    }
-
-    TimeseriesCsvCodec.parseHeaderRow(rawLines.first);
-
-    final samples = <TimeseriesSampleModel>[];
-    var dataRowNumber = 0;
-    for (var lineIndex = 1; lineIndex < rawLines.length; lineIndex++) {
-      final line = rawLines[lineIndex].replaceAll('\r', '');
-      if (line.trim().isEmpty) {
-        continue;
-      }
-      dataRowNumber++;
-      samples.add(
-        TimeseriesCsvCodec.parseDataRow(
-          line,
-          rowNumber: dataRowNumber,
-        ),
-      );
-    }
-
+  /// Persists pre-validated samples in a single transaction (used after parse/confirm).
+  Future<ImportResult> importSamples(List<TimeseriesSampleModel> samples) async {
     if (samples.isEmpty) {
       return const ImportResult(
         totalRowsInFile: 0,

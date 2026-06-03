@@ -48,10 +48,12 @@ class _ImportDelayStepRepository extends StepRepository {
   var importCalls = 0;
 
   @override
-  Future<ImportResult> importCsv({required String filePath}) async {
+  Future<ImportResult> importSamples(
+    List<TimeseriesSampleModel> samples,
+  ) async {
     importCalls++;
     await Future<void>.delayed(importDelay);
-    return super.importCsv(filePath: filePath);
+    return super.importSamples(samples);
   }
 }
 
@@ -228,6 +230,38 @@ void main() {
 
       expect(confirmCalls, 1);
       expect(cubit.state.isImporting, isFalse);
+      expect(await stepRepository.countStepSamples(), 1);
+
+      await cubit.close();
+    });
+
+    test('emits validation error for bad header before import', () async {
+      final badFile = File('${tempDir.path}/bad-header.csv');
+      await badFile.writeAsString('not,a,valid,header\n');
+
+      final cubit = buildCubit(pickCsvFile: () async => badFile.path);
+
+      await cubit.refresh();
+      await cubit.pickAndImport();
+
+      expect(cubit.state.isImporting, isFalse);
+      expect(cubit.state.importErrorMessage, isNotNull);
+      expect(cubit.state.importErrorMessage, contains('header'));
+
+      await cubit.close();
+    });
+
+    test('header-only import does not set importSuccessPending', () async {
+      final headerOnly = File('${tempDir.path}/header-only.csv');
+      await headerOnly.writeAsString('${TimeseriesCsvCodec.headerRow}\n');
+
+      final cubit = buildCubit(pickCsvFile: () async => headerOnly.path);
+
+      await cubit.refresh();
+      await cubit.pickAndImport();
+
+      expect(cubit.state.importSuccessPending, isFalse);
+      expect(cubit.state.importErrorMessage, isNull);
 
       await cubit.close();
     });

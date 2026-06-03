@@ -67,6 +67,7 @@ MyDataState _readyState({
   String? exportErrorMessage,
   bool isImporting = false,
   String? importErrorMessage,
+  bool importSuccessPending = false,
 }) {
   return MyDataState(
     status: MyDataStatus.ready,
@@ -78,6 +79,7 @@ MyDataState _readyState({
     exportErrorMessage: exportErrorMessage,
     isImporting: isImporting,
     importErrorMessage: importErrorMessage,
+    importSuccessPending: importSuccessPending,
   );
 }
 
@@ -210,9 +212,10 @@ void main() {
 
       await pumpScreen(tester, cubit: cubit);
 
-      cubit.emit(_readyState(isImporting: true));
+      cubit.emit(_readyState());
       await tester.pump();
-      cubit.emit(_readyState(isImporting: false));
+      cubit.emit(_readyState(importSuccessPending: true));
+      await tester.pump();
       await tester.pump();
 
       expect(find.text('Import complete'), findsOneWidget);
@@ -244,7 +247,56 @@ void main() {
 
       expect(cubit.exportAttempts, 1);
     });
+
+    testWidgets('shows import error banner with retry tap', (tester) async {
+      final cubit = _RetryImportMyDataCubit(
+        stepRepository: stepRepository,
+        userPreferences: userPreferences,
+        capabilityEvaluator: _FixedCapabilityEvaluator(),
+        clock: clock,
+        databasePath: inMemoryDatabasePath,
+      );
+      addTearDown(cubit.close);
+
+      await pumpScreen(tester, cubit: cubit);
+
+      expect(
+        find.text('Row 1: expected 10 columns'),
+        findsOneWidget,
+      );
+
+      await tester.tap(find.text('Row 1: expected 10 columns'));
+      await tester.pump();
+
+      expect(cubit.importAttempts, 1);
+    });
   });
+}
+
+class _RetryImportMyDataCubit extends _SeededMyDataCubit {
+  _RetryImportMyDataCubit({
+    required super.stepRepository,
+    required super.userPreferences,
+    required super.capabilityEvaluator,
+    required super.clock,
+    required super.databasePath,
+  }) : super(
+         seededState: MyDataState(
+           status: MyDataStatus.ready,
+           sampleCount: 10,
+           fileSizeBytes: 1024,
+           backgroundStatus: BackgroundCollectionStatus.healthy,
+           isIos: false,
+           importErrorMessage: 'Row 1: expected 10 columns',
+         ),
+       );
+
+  int importAttempts = 0;
+
+  @override
+  Future<void> pickAndImport({ConfirmImportCallback? confirmImport}) async {
+    importAttempts++;
+  }
 }
 
 class _RetryExportMyDataCubit extends _SeededMyDataCubit {

@@ -1,3 +1,5 @@
+import 'dart:io';
+
 import 'package:astra_app/data/csv/import_validation_exception.dart';
 import 'package:astra_app/data/csv/timeseries_csv_codec.dart';
 import 'package:astra_app/data/datasources/data_ingestion_source.dart';
@@ -83,6 +85,29 @@ void main() {
       );
     });
 
+    test('parseHeaderRow accepts UTF-8 BOM prefix', () {
+      expect(
+        () => TimeseriesCsvCodec.parseHeaderRow(
+          '\uFEFF${TimeseriesCsvCodec.headerRow}',
+        ),
+        returnsNormally,
+      );
+    });
+
+    test('parseImportFile round-trips row with quoted newline in field', () async {
+      final sample = _sample(deviceId: 'phone\ntest');
+      final file = await _writeTempCsv([
+        TimeseriesCsvCodec.headerRow,
+        TimeseriesCsvCodec.serializeRow(sample),
+      ]);
+
+      final parsed = await TimeseriesCsvCodec.parseImportFile(file.path);
+      expect(parsed, hasLength(1));
+      expect(parsed.single.deviceId, 'phone\ntest');
+
+      await file.delete();
+    });
+
     test('parseDataRow rejects non-steps type', () {
       expect(
         () => TimeseriesCsvCodec.parseDataRow(
@@ -100,6 +125,14 @@ void main() {
       );
     });
   });
+}
+
+Future<File> _writeTempCsv(List<String> lines) async {
+  final file = File(
+    '${Directory.systemTemp.path}/astra_codec_${DateTime.now().microsecondsSinceEpoch}.csv',
+  );
+  await file.writeAsString(lines.join('\n'));
+  return file;
 }
 
 TimeseriesSampleModel _sample({String deviceId = kSmartphoneDeviceId}) {

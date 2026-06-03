@@ -51,9 +51,8 @@ class MyDataScreen extends StatelessWidget {
             ),
             BlocListener<MyDataCubit, MyDataState>(
               listenWhen: (previous, current) =>
-                  previous.isImporting &&
-                  !current.isImporting &&
-                  current.importErrorMessage == null,
+                  !previous.importSuccessPending &&
+                  current.importSuccessPending,
               listener: (context, state) {
                 ScaffoldMessenger.of(context).showSnackBar(
                   const SnackBar(

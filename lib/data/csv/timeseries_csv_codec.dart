@@ -1,3 +1,5 @@
+import 'dart:io';
+
 import '../../core/time/timestamp_codec.dart';
 import '../models/normalized_step_bucket.dart';
 import '../models/timeseries_sample_model.dart';
@@ -29,6 +31,11 @@ class TimeseriesCsvCodec {
     kDailyResolution,
   };
 
+  static final _uuidPattern = RegExp(
+    r'^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$',
+    caseSensitive: false,
+  );
+
   static String serializeRow(TimeseriesSampleModel sample) {
     final map = sample.toMap();
     final fields = _headerColumns.map((column) {
@@ -43,9 +50,101 @@ class TimeseriesCsvCodec {
     return fields.map(_escapeField).join(',');
   }
 
+  /// Reads and validates an entire import file (RFC 4180 records, UTF-8 BOM).
+  static Future<List<TimeseriesSampleModel>> parseImportFile(String filePath) async {
+    final file = File(filePath);
+    if (!file.existsSync()) {
+      throw ImportValidationException('CSV file not found');
+    }
+
+    final content = stripUtf8Bom(await file.readAsString());
+    if (content.trim().isEmpty) {
+      throw ImportValidationException('CSV file is empty');
+    }
+
+    final records = splitCsvRecords(content);
+    if (records.isEmpty) {
+      throw ImportValidationException('CSV file is empty');
+    }
+
+    parseHeaderRow(records.first);
+
+    final samples = <TimeseriesSampleModel>[];
+    var dataRowNumber = 0;
+    for (var i = 1; i < records.length; i++) {
+      if (records[i].trim().isEmpty) {
+        continue;
+      }
+      dataRowNumber++;
+      samples.add(
+        parseDataRow(records[i], rowNumber: dataRowNumber),
+      );
+    }
+    return samples;
+  }
+
+  /// Strips a leading UTF-8 BOM (common in Excel exports).
+  static String stripUtf8Bom(String content) {
+    if (content.startsWith('\uFEFF')) {
+      return content.substring(1);
+    }
+    return content;
+  }
+
+  /// Splits file content into RFC 4180 records (newlines inside quotes stay in-record).
+  static List<String> splitCsvRecords(String content) {
+    final records = <String>[];
+    final buffer = StringBuffer();
+    var inQuotes = false;
+    var i = 0;
+
+    while (i < content.length) {
+      final char = content[i];
+      if (inQuotes) {
+        if (char == '"') {
+          if (i + 1 < content.length && content[i + 1] == '"') {
+            buffer.write('"');
+            i += 2;
+            continue;
+          }
+          inQuotes = false;
+          buffer.write(char);
+          i++;
+          continue;
+        }
+        buffer.write(char);
+        i++;
+        continue;
+      }
+
+      if (char == '"') {
+        inQuotes = true;
+        buffer.write(char);
+        i++;
+        continue;
+      }
+      if (char == '\r' || char == '\n') {
+        if (char == '\r' && i + 1 < content.length && content[i + 1] == '\n') {
+          i++;
+        }
+        records.add(buffer.toString());
+        buffer.clear();
+        i++;
+        continue;
+      }
+      buffer.write(char);
+      i++;
+    }
+
+    if (buffer.isNotEmpty) {
+      records.add(buffer.toString());
+    }
+    return records;
+  }
+
   /// Parses and validates the header line (exact OW column order).
   static void parseHeaderRow(String line) {
-    final fields = parseCsvFields(line.replaceAll('\r', ''));
+    final fields = parseCsvFields(stripUtf8Bom(line).replaceAll('\r', ''));
     if (fields.length != _headerColumns.length) {
       throw ImportValidationException(
         'CSV header must have ${_headerColumns.length} columns',
@@ -143,6 +242,13 @@ class TimeseriesCsvCodec {
       requireNonEmpty(key);
     }
 
+    final id = map['id']! as String;
+    if (!_uuidPattern.hasMatch(id)) {
+      throw ImportValidationException(
+        'Row $rowNumber: id must be a valid UUID',
+      );
+    }
+
     final type = map['type']! as String;
     if (type != kStepSampleType) {
       throw ImportValidationException(
@@ -173,8 +279,13 @@ class TimeseriesCsvCodec {
       );
     }
 
-    TimestampCodec.parseUtc(map['start_time']! as String);
-    TimestampCodec.parseUtc(map['end_time']! as String);
+    final startTime = TimestampCodec.parseUtc(map['start_time']! as String);
+    final endTime = TimestampCodec.parseUtc(map['end_time']! as String);
+    if (endTime.isBefore(startTime)) {
+      throw ImportValidationException(
+        'Row $rowNumber: end_time must not be before start_time',
+      );
+    }
     TimestampCodec.parseZoneOffset(map['zone_offset']! as String);
   }
 
