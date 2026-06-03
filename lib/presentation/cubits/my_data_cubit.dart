@@ -265,10 +265,13 @@ class MyDataCubit extends Cubit<MyDataState> {
     ConfirmPurgeCallback? confirmPurge,
     PurgeConfirmAction? confirmedAction,
   }) async {
-    if (isClosed ||
-        state.isPurging ||
-        state.isExporting ||
-        state.isImporting) {
+    final deleteAlreadyConfirmed =
+        confirmedAction == PurgeConfirmAction.deleteConfirmed;
+
+    if (isClosed || state.isPurging || state.isImporting) {
+      return;
+    }
+    if (state.isExporting && !deleteAlreadyConfirmed) {
       return;
     }
     if (_purgeInFlight != null) {
@@ -311,8 +314,18 @@ class MyDataCubit extends Cubit<MyDataState> {
       ),
     );
 
+    var purged = false;
     try {
       await stepRepository.purge();
+      purged = true;
+      if (isClosed) {
+        return;
+      }
+
+      await _postPurgeRefresh?.call();
+      if (!isClosed) {
+        await refresh(silent: true);
+      }
       if (isClosed) {
         return;
       }
@@ -324,10 +337,6 @@ class MyDataCubit extends Cubit<MyDataState> {
           purgeSuccessPending: true,
         ),
       );
-      await _postPurgeRefresh?.call();
-      if (!isClosed) {
-        await refresh(silent: true);
-      }
     } catch (error, stackTrace) {
       if (kDebugMode) {
         debugPrint('MyDataCubit.confirmAndPurge failed: $error');
@@ -339,7 +348,9 @@ class MyDataCubit extends Cubit<MyDataState> {
       emit(
         state.copyWith(
           isPurging: false,
-          purgeErrorMessage: 'Purge could not be completed. Try again.',
+          purgeErrorMessage: purged
+              ? 'All local data was removed, but the app could not refresh. Try again.'
+              : 'Purge could not be completed. Try again.',
         ),
       );
     }

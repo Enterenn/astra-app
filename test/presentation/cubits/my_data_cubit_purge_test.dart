@@ -149,7 +149,7 @@ void main() {
       expect(exportCalled, isTrue);
     });
 
-    test('blocks purge while export is in flight', () async {
+    test('deleteConfirmed purges while export is in flight', () async {
       final cubit = buildCubit();
       addTearDown(cubit.close);
 
@@ -159,7 +159,42 @@ void main() {
         confirmedAction: PurgeConfirmAction.deleteConfirmed,
       );
 
+      expect(stepRepository.purgeCalls, 1);
+      expect(cubit.state.purgeSuccessPending, isTrue);
+    });
+
+    test('blocks purge while export is in flight without dialog confirmation', () async {
+      final cubit = buildCubit();
+      addTearDown(cubit.close);
+
+      await cubit.refresh();
+      cubit.emit(cubit.state.copyWith(isExporting: true));
+      await cubit.confirmAndPurge(
+        confirmPurge: () async => PurgeConfirmAction.deleteConfirmed,
+      );
+
       expect(stepRepository.purgeCalls, 0);
+    });
+
+    test('sets refresh error when purge succeeds but postPurgeRefresh fails', () async {
+      final cubit = buildCubit(
+        postPurgeRefresh: () async {
+          throw StateError('refresh failed');
+        },
+      );
+      addTearDown(cubit.close);
+
+      await cubit.refresh();
+      await cubit.confirmAndPurge(
+        confirmedAction: PurgeConfirmAction.deleteConfirmed,
+      );
+
+      expect(stepRepository.purgeCalls, 1);
+      expect(cubit.state.purgeSuccessPending, isFalse);
+      expect(
+        cubit.state.purgeErrorMessage,
+        'All local data was removed, but the app could not refresh. Try again.',
+      );
     });
 
     test('emits purge error message when repository fails', () async {

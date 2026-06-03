@@ -130,14 +130,18 @@ void main() {
     Future<void> pumpScreen(
       WidgetTester tester, {
       required MyDataCubit cubit,
+      bool disableAnimations = false,
     }) async {
       await tester.pumpWidget(
         MaterialApp(
           theme: buildAstraLightTheme(),
-          home: Scaffold(
-            body: BlocProvider<MyDataCubit>.value(
-              value: cubit,
-              child: MyDataScreen(clock: clock),
+          home: MediaQuery(
+            data: MediaQueryData(disableAnimations: disableAnimations),
+            child: Scaffold(
+              body: BlocProvider<MyDataCubit>.value(
+                value: cubit,
+                child: MyDataScreen(clock: clock),
+              ),
             ),
           ),
         ),
@@ -344,6 +348,37 @@ void main() {
 
       expect(cubit.purgeAttempts, 1);
     });
+
+    testWidgets('delete anyway confirms purge while export from dialog is in flight', (
+      tester,
+    ) async {
+      final cubit = _DialogPurgeFlowMyDataCubit(
+        stepRepository: stepRepository,
+        userPreferences: userPreferences,
+        capabilityEvaluator: _FixedCapabilityEvaluator(),
+        clock: clock,
+        databasePath: inMemoryDatabasePath,
+      );
+      addTearDown(cubit.close);
+
+      await pumpScreen(tester, cubit: cubit, disableAnimations: true);
+
+      await tester.tap(find.text('Delete all local data'));
+      await tester.pump();
+      expect(find.text('Export first'), findsOneWidget);
+
+      await tester.tap(find.text('Export first'));
+      await tester.pump();
+      expect(cubit.state.isExporting, isTrue);
+
+      await tester.tap(find.text('Delete anyway'));
+      await tester.pump();
+      await tester.pump();
+
+      expect(cubit.confirmedPurgeWhileExporting, isTrue);
+      expect(cubit.state.purgeSuccessPending, isTrue);
+      expect(find.text('All local data removed'), findsOneWidget);
+    });
   });
 }
 
@@ -396,6 +431,35 @@ class _RetryExportMyDataCubit extends _SeededMyDataCubit {
   @override
   Future<void> exportAndShare({Rect? sharePositionOrigin}) async {
     exportAttempts++;
+  }
+}
+
+class _DialogPurgeFlowMyDataCubit extends _SeededMyDataCubit {
+  _DialogPurgeFlowMyDataCubit({
+    required super.stepRepository,
+    required super.userPreferences,
+    required super.capabilityEvaluator,
+    required super.clock,
+    required super.databasePath,
+  }) : super(seededState: _readyState());
+
+  var confirmedPurgeWhileExporting = false;
+
+  @override
+  Future<void> exportAndShare({Rect? sharePositionOrigin}) async {
+    emit(_readyState(isExporting: true));
+  }
+
+  @override
+  Future<void> confirmAndPurge({
+    ConfirmPurgeCallback? confirmPurge,
+    PurgeConfirmAction? confirmedAction,
+  }) async {
+    if (state.isExporting &&
+        confirmedAction == PurgeConfirmAction.deleteConfirmed) {
+      confirmedPurgeWhileExporting = true;
+      emit(_readyState(isExporting: true, purgeSuccessPending: true));
+    }
   }
 }
 
