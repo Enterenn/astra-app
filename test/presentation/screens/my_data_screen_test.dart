@@ -11,6 +11,7 @@ import 'package:astra_app/presentation/widgets/confirm_dialog.dart';
 import 'package:astra_app/presentation/widgets/data_export_button.dart';
 import 'package:astra_app/presentation/widgets/data_import_button.dart';
 import 'package:astra_app/presentation/widgets/data_purge_button.dart';
+import 'package:astra_app/presentation/widgets/goal_editor_row.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:flutter_test/flutter_test.dart';
@@ -73,6 +74,7 @@ MyDataState _readyState({
   bool isPurging = false,
   String? purgeErrorMessage,
   bool purgeSuccessPending = false,
+  int dailyStepGoal = 8000,
 }) {
   return MyDataState(
     status: MyDataStatus.ready,
@@ -80,6 +82,7 @@ MyDataState _readyState({
     fileSizeBytes: 1024,
     backgroundStatus: BackgroundCollectionStatus.healthy,
     isIos: false,
+    dailyStepGoal: dailyStepGoal,
     isExporting: isExporting,
     exportErrorMessage: exportErrorMessage,
     isImporting: isImporting,
@@ -148,6 +151,30 @@ void main() {
       );
       await tester.pump();
     }
+
+    testWidgets('shows Daily goal section with formatted value', (tester) async {
+      final cubit = buildSeededCubit(_readyState(dailyStepGoal: 12000));
+      addTearDown(cubit.close);
+
+      await pumpScreen(tester, cubit: cubit);
+
+      expect(find.text('Daily goal'), findsOneWidget);
+      expect(find.byType(GoalEditorRow), findsOneWidget);
+      expect(find.text('12\u2009000'), findsOneWidget);
+    });
+
+    testWidgets('tapping goal row opens editor sheet', (tester) async {
+      final cubit = buildSeededCubit(_readyState(dailyStepGoal: 8000));
+      addTearDown(cubit.close);
+
+      await pumpScreen(tester, cubit: cubit);
+
+      await tester.tap(find.byType(GoalEditorRow));
+      await tester.pumpAndSettle();
+
+      expect(find.text('Daily step goal'), findsWidgets);
+      expect(find.text('Save'), findsOneWidget);
+    });
 
     testWidgets('shows Your data section with Export CSV button', (tester) async {
       final cubit = buildSeededCubit(_readyState());
@@ -363,6 +390,11 @@ void main() {
 
       await pumpScreen(tester, cubit: cubit, disableAnimations: true);
 
+      await tester.scrollUntilVisible(
+        find.text('Delete all local data'),
+        120,
+        scrollable: find.byType(Scrollable).first,
+      );
       await tester.tap(find.text('Delete all local data'));
       await tester.pump();
       expect(find.text('Export first'), findsOneWidget);

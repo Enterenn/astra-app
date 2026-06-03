@@ -15,6 +15,8 @@ import '../widgets/data_export_button.dart';
 import '../widgets/data_import_button.dart';
 import '../widgets/data_purge_button.dart';
 import '../widgets/footprint_kpi_row.dart';
+import '../widgets/goal_editor_row.dart';
+import '../widgets/goal_editor_sheet.dart';
 import '../widgets/section_card.dart';
 import '../widgets/status_banner.dart';
 
@@ -158,6 +160,24 @@ class MyDataScreen extends StatelessWidget {
                               fileSizeBytes: state.fileSizeBytes,
                               lastOptimizedUtc: state.lastOptimizedUtc,
                               nowUtc: nowUtc,
+                            ),
+                    ),
+                    const SizedBox(height: AstraSpacing.kSpaceMd),
+                    SectionCard(
+                      headline: 'Daily goal',
+                      child: state.status == MyDataStatus.loading
+                          ? const _SectionLoadingIndicator()
+                          : GoalEditorRow(
+                              dailyStepGoal: state.dailyStepGoal,
+                              onTap: () async {
+                                final result = await showGoalEditorSheet(
+                                  context,
+                                  currentGoal: state.dailyStepGoal,
+                                );
+                                if (result != null && context.mounted) {
+                                  await cubit.updateDailyStepGoal(result);
+                                }
+                              },
                             ),
                     ),
                     const SizedBox(height: AstraSpacing.kSpaceMd),
