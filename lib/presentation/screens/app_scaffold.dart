@@ -105,6 +105,9 @@ class _AppScaffoldState extends State<AppScaffold> {
             await _todayCubit.refreshMetadata();
             await _historyCubit.refreshGoal();
           },
+          postDisplayNameUpdate: () async {
+            await _todayCubit.refreshMetadata();
+          },
         );
     widget.onTodayCubitReady?.call(_todayCubit);
     widget.onHistoryCubitReady?.call(_historyCubit);

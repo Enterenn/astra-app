@@ -14,6 +14,7 @@ import 'package:astra_app/presentation/widgets/confirm_dialog.dart';
 import 'package:astra_app/presentation/widgets/data_export_button.dart';
 import 'package:astra_app/presentation/widgets/data_import_button.dart';
 import 'package:astra_app/presentation/widgets/data_purge_button.dart';
+import 'package:astra_app/presentation/widgets/display_name_editor_row.dart';
 import 'package:astra_app/presentation/widgets/goal_editor_row.dart';
 import 'dart:ui' show Tristate;
 
@@ -79,6 +80,7 @@ MyDataState _readyState({
   String? purgeErrorMessage,
   bool purgeSuccessPending = false,
   int dailyStepGoal = 8000,
+  String? displayName,
 }) {
   return MyDataState(
     status: MyDataStatus.ready,
@@ -87,6 +89,7 @@ MyDataState _readyState({
     backgroundStatus: BackgroundCollectionStatus.healthy,
     isIos: false,
     dailyStepGoal: dailyStepGoal,
+    displayName: displayName,
     isExporting: isExporting,
     exportErrorMessage: exportErrorMessage,
     isImporting: isImporting,
@@ -220,7 +223,27 @@ void main() {
       expect(find.text('Save'), findsNothing);
     });
 
-    testWidgets('Appearance section sits between Daily goal and Your data', (
+    testWidgets('Profile section sits between Appearance and Your data', (
+      tester,
+    ) async {
+      final cubit = buildSeededCubit(_readyState(displayName: 'Alex'));
+      addTearDown(cubit.close);
+
+      await pumpScreen(tester, cubit: cubit);
+
+      expect(find.text('Profile'), findsOneWidget);
+      expect(find.byType(DisplayNameEditorRow), findsOneWidget);
+      expect(find.text('Alex'), findsOneWidget);
+
+      final appearanceY = tester.getTopLeft(find.text('Appearance')).dy;
+      final profileY = tester.getTopLeft(find.text('Profile')).dy;
+      final yourDataY = tester.getTopLeft(find.text('Your data')).dy;
+
+      expect(appearanceY < profileY, isTrue);
+      expect(profileY < yourDataY, isTrue);
+    });
+
+    testWidgets('Appearance section sits between Daily goal and Profile', (
       tester,
     ) async {
       final cubit = buildSeededCubit(_readyState());
@@ -233,10 +256,35 @@ void main() {
 
       final dailyGoalY = tester.getTopLeft(find.text('Daily goal')).dy;
       final appearanceY = tester.getTopLeft(find.text('Appearance')).dy;
-      final yourDataY = tester.getTopLeft(find.text('Your data')).dy;
+      final profileY = tester.getTopLeft(find.text('Profile')).dy;
 
       expect(dailyGoalY < appearanceY, isTrue);
-      expect(appearanceY < yourDataY, isTrue);
+      expect(appearanceY < profileY, isTrue);
+    });
+
+    testWidgets('updateDisplayName invokes postDisplayNameUpdate callback', (
+      tester,
+    ) async {
+      var refreshCalled = false;
+      final cubit = MyDataCubit(
+        stepRepository: stepRepository,
+        userPreferences: userPreferences,
+        capabilityEvaluator: _FixedCapabilityEvaluator(),
+        clock: clock,
+        databasePath: ':memory:',
+        postDisplayNameUpdate: () async {
+          refreshCalled = true;
+        },
+      );
+      addTearDown(cubit.close);
+      cubit.emit(_readyState());
+
+      await tester.binding.runAsync(() async {
+        final saved = await cubit.updateDisplayName('Sam');
+        expect(saved, isTrue);
+        expect(refreshCalled, isTrue);
+        expect(cubit.state.displayName, 'Sam');
+      });
     });
 
     testWidgets('tapping Dark updates ThemeCubit and selector selection', (

@@ -29,6 +29,7 @@ class MyDataState {
     this.purgeErrorMessage,
     this.purgeSuccessPending = false,
     this.dailyStepGoal = kDefaultStepGoal,
+    this.displayName,
   });
 
   final MyDataStatus status;
@@ -50,6 +51,7 @@ class MyDataState {
   /// True after successful purge; drives success snackbar once.
   final bool purgeSuccessPending;
   final int dailyStepGoal;
+  final String? displayName;
 
   const MyDataState.loading() : this(status: MyDataStatus.loading);
 
@@ -62,6 +64,7 @@ class MyDataState {
     BackgroundHealthCapabilitySnapshot? capabilitySnapshot,
     required bool isIos,
     int dailyStepGoal = kDefaultStepGoal,
+    String? displayName,
   }) {
     return MyDataState(
       status: MyDataStatus.ready,
@@ -73,6 +76,7 @@ class MyDataState {
       capabilitySnapshot: capabilitySnapshot,
       isIos: isIos,
       dailyStepGoal: dailyStepGoal,
+      displayName: displayName,
     );
   }
 
@@ -96,6 +100,7 @@ class MyDataState {
     Object? purgeErrorMessage = _unset,
     bool? purgeSuccessPending,
     int? dailyStepGoal,
+    Object? displayName = _unset,
   }) {
     return MyDataState(
       status: status ?? this.status,
@@ -122,6 +127,9 @@ class MyDataState {
           : purgeErrorMessage as String?,
       purgeSuccessPending: purgeSuccessPending ?? this.purgeSuccessPending,
       dailyStepGoal: dailyStepGoal ?? this.dailyStepGoal,
+      displayName: displayName == _unset
+          ? this.displayName
+          : displayName as String?,
     );
   }
 }

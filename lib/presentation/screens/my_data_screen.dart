@@ -19,6 +19,8 @@ import '../widgets/data_export_button.dart';
 import '../widgets/data_import_button.dart';
 import '../widgets/data_purge_button.dart';
 import '../widgets/footprint_kpi_row.dart';
+import '../widgets/display_name_editor_row.dart';
+import '../widgets/display_name_editor_sheet.dart';
 import '../widgets/goal_editor_row.dart';
 import '../widgets/goal_editor_sheet.dart';
 import '../widgets/section_card.dart';
@@ -225,6 +227,29 @@ class MyDataScreen extends StatelessWidget {
                                   },
                                 );
                               },
+                            ),
+                    ),
+                    const SizedBox(height: AstraSpacing.kSpaceMd),
+                    SectionCard(
+                      headline: 'Profile',
+                      child: state.status == MyDataStatus.loading
+                          ? const _SectionLoadingIndicator()
+                          : DisplayNameEditorRow(
+                              displayName: state.displayName,
+                              enabled: !dataActionInFlight,
+                              onTap: dataActionInFlight
+                                  ? null
+                                  : () async {
+                                      final result =
+                                          await showDisplayNameEditorSheet(
+                                        context,
+                                        currentName: state.displayName,
+                                      );
+                                      if (result == null || !context.mounted) {
+                                        return;
+                                      }
+                                      await cubit.updateDisplayName(result);
+                                    },
                             ),
                     ),
                     const SizedBox(height: AstraSpacing.kSpaceMd),

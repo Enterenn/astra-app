@@ -5,8 +5,11 @@ import 'package:astra_app/core/database/app_database.dart';
 import 'package:astra_app/core/di/app_dependencies.dart';
 import 'package:astra_app/data/repositories/user_preferences_repository.dart';
 import 'package:astra_app/presentation/cubits/history_cubit.dart';
+import 'package:astra_app/presentation/cubits/theme_cubit.dart';
+import 'package:astra_app/presentation/cubits/theme_state.dart';
 import 'package:astra_app/presentation/cubits/today_cubit.dart';
 import 'package:astra_app/presentation/cubits/today_state.dart';
+import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:astra_app/presentation/screens/app_scaffold.dart';
 import 'package:astra_app/presentation/widgets/status_banner.dart';
 import 'package:flutter/material.dart';
@@ -85,6 +88,7 @@ Future<void> _pumpAppScaffold(
   WidgetTester tester,
   AppScaffold scaffold, {
   bool disableAnimations = true,
+  required UserPreferencesRepository userPreferences,
 }) async {
   await tester.runAsync(() async {
     await tester.pumpWidget(
@@ -92,7 +96,13 @@ Future<void> _pumpAppScaffold(
         theme: buildAstraLightTheme(),
         home: MediaQuery(
           data: MediaQueryData(disableAnimations: disableAnimations),
-          child: scaffold,
+          child: BlocProvider(
+            create: (_) => ThemeCubit(
+              userPreferences: userPreferences,
+              initialPreference: AstraThemePreference.system,
+            ),
+            child: scaffold,
+          ),
         ),
       ),
     );
@@ -147,6 +157,7 @@ void main() {
             createTodayCubit: _testTodayCubit,
             createHistoryCubit: _testHistoryCubit,
           ),
+          userPreferences: deps.userPreferences,
         );
 
         expect(find.text('steps today'), findsOneWidget);
@@ -184,6 +195,7 @@ void main() {
           createTodayCubit: _testTodayCubit,
         ),
         disableAnimations: false,
+        userPreferences: deps.userPreferences,
       );
 
       await tester.pump();
@@ -213,6 +225,7 @@ void main() {
           },
           createHistoryCubit: _testHistoryCubit,
         ),
+        userPreferences: deps.userPreferences,
       );
       await tester.pump();
 
@@ -253,6 +266,7 @@ void main() {
             return staleCubit!;
           },
         ),
+        userPreferences: deps.userPreferences,
       );
 
       await tester.runAsync(() async {
@@ -289,6 +303,7 @@ void main() {
           deps: deps,
           createTodayCubit: _testTodayCubit,
         ),
+        userPreferences: deps.userPreferences,
       );
 
       final navContext = tester.element(find.byType(NavigationBar));

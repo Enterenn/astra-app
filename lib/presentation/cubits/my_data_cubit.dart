@@ -35,6 +35,7 @@ typedef PostImportRefreshCallback = Future<void> Function();
 typedef ConfirmPurgeCallback = Future<PurgeConfirmAction> Function();
 typedef PostPurgeRefreshCallback = Future<void> Function();
 typedef PostGoalUpdateCallback = Future<void> Function();
+typedef PostDisplayNameUpdateCallback = Future<void> Function();
 
 class MyDataCubit extends Cubit<MyDataState> {
   MyDataCubit({
@@ -47,10 +48,11 @@ class MyDataCubit extends Cubit<MyDataState> {
     TempDirectoryProvider? tempDirectoryProvider,
     ShareCsvFileCallback? shareCsvFile,
     PickCsvFileCallback? pickCsvFile,
-    ConfirmImportCallback? confirmImport,
-    PostImportRefreshCallback? postImportRefresh,
-    PostPurgeRefreshCallback? postPurgeRefresh,
-    PostGoalUpdateCallback? postGoalUpdate,
+    this._confirmImport,
+    this._postImportRefresh,
+    this._postPurgeRefresh,
+    this._postGoalUpdate,
+    this._postDisplayNameUpdate,
     bool? isIos,
   }) : _activityPermissionGranted =
            activityPermissionGranted ?? isActivityRecognitionGranted,
@@ -58,10 +60,6 @@ class MyDataCubit extends Cubit<MyDataState> {
            tempDirectoryProvider ?? _defaultTempDirectoryProvider,
        _shareCsvFile = shareCsvFile ?? _defaultShareCsvFile,
        _pickCsvFile = pickCsvFile ?? _defaultPickCsvFile,
-       _confirmImport = confirmImport,
-       _postImportRefresh = postImportRefresh,
-       _postPurgeRefresh = postPurgeRefresh,
-       _postGoalUpdate = postGoalUpdate,
        _isIos = isIos ?? Platform.isIOS,
        super(const MyDataState.loading());
 
@@ -78,6 +76,7 @@ class MyDataCubit extends Cubit<MyDataState> {
   final PostImportRefreshCallback? _postImportRefresh;
   final PostPurgeRefreshCallback? _postPurgeRefresh;
   final PostGoalUpdateCallback? _postGoalUpdate;
+  final PostDisplayNameUpdateCallback? _postDisplayNameUpdate;
   final bool _isIos;
 
   Future<void>? _refreshInFlight;
@@ -413,6 +412,58 @@ class MyDataCubit extends Cubit<MyDataState> {
     return true;
   }
 
+  /// Persists display name and refreshes Today greeting metadata.
+  ///
+  /// [name] is trimmed; empty clears the stored name.
+  Future<bool> updateDisplayName(String name) async {
+    if (isClosed ||
+        state.isExporting ||
+        state.isImporting ||
+        state.isPurging) {
+      return false;
+    }
+
+    final trimmed = name.trim();
+    final current = state.displayName?.trim();
+    if (trimmed == (current ?? '')) {
+      return false;
+    }
+
+    try {
+      await userPreferences.setDisplayName(trimmed.isEmpty ? null : trimmed);
+    } catch (error, stackTrace) {
+      if (kDebugMode) {
+        debugPrint('MyDataCubit.updateDisplayName persist failed: $error');
+        debugPrintStack(stackTrace: stackTrace);
+      }
+      return false;
+    }
+
+    if (isClosed) {
+      return false;
+    }
+
+    if (state.status == MyDataStatus.ready) {
+      emit(
+        state.copyWith(
+          displayName: trimmed.isEmpty ? null : trimmed,
+        ),
+      );
+    }
+
+    try {
+      await _postDisplayNameUpdate?.call();
+    } catch (error, stackTrace) {
+      if (kDebugMode) {
+        debugPrint('MyDataCubit.updateDisplayName refresh failed: $error');
+        debugPrintStack(stackTrace: stackTrace);
+      }
+      return false;
+    }
+
+    return true;
+  }
+
   Future<void> refresh({bool silent = true}) async {
     if (isClosed) {
       return;
@@ -458,7 +509,12 @@ class MyDataCubit extends Cubit<MyDataState> {
       final capabilitySnapshot =
           results[3]! as BackgroundHealthCapabilitySnapshot;
       final activityGranted = results[4]! as bool;
-      final dailyStepGoal = await userPreferences.getDailyStepGoal();
+      final prefs = await Future.wait<Object?>([
+        userPreferences.getDailyStepGoal(),
+        userPreferences.getDisplayName(),
+      ]);
+      final dailyStepGoal = prefs[0]! as int;
+      final displayName = prefs[1] as String?;
       final nowUtc = clock.nowUtc();
 
       if (isClosed) {
@@ -477,6 +533,7 @@ class MyDataCubit extends Cubit<MyDataState> {
         ),
         capabilitySnapshot: capabilitySnapshot,
         dailyStepGoal: dailyStepGoal,
+        displayName: displayName,
       );
     } catch (_) {
       if (isClosed) {
@@ -521,6 +578,7 @@ class MyDataCubit extends Cubit<MyDataState> {
     required BackgroundCollectionStatus backgroundStatus,
     BackgroundHealthCapabilitySnapshot? capabilitySnapshot,
     int? dailyStepGoal,
+    String? displayName,
   }) {
     emit(
       MyDataState.ready(
@@ -532,6 +590,7 @@ class MyDataCubit extends Cubit<MyDataState> {
         capabilitySnapshot: capabilitySnapshot,
         isIos: _isIos,
         dailyStepGoal: dailyStepGoal ?? state.dailyStepGoal,
+        displayName: displayName ?? state.displayName,
       ).copyWith(
         isExporting: state.isExporting,
         exportErrorMessage: state.exportErrorMessage,
