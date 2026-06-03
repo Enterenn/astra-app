@@ -27,6 +27,14 @@ dev_dependencies:
   sqflite_common_ffi: ^2.4.0+3
   sqlite3: ^3.0.0
 
+hooks:
+  user_defines:
+    sqlite3:
+      # Windows tests/dev: use built-in winsqlite3.dll instead of copying
+      # build/native_assets/windows/sqlite3.dll (avoids PathAccessException locks).
+      source: system
+      name_windows: winsqlite3
+
 flutter:
   uses-material-design: true
   fonts:

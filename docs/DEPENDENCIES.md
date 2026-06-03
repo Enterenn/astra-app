@@ -106,3 +106,5 @@ See `pubspec.yaml` and `pubspec.lock`. Package-level audit table → Epic 5 Stor
 |---------|---------|
 | `sqflite_common_ffi` | Run sqflite-backed unit tests on VM/desktop without an emulator |
 | `sqlite3` | Native SQLite bindings required by `sqflite_common_ffi` 2.4+ |
+
+Windows tests use `hooks.user_defines.sqlite3` with `source: system` and `name_windows: winsqlite3` so Flutter does not copy `sqlite3.dll` into `build/native_assets/` (avoids file-lock errors). See `test/flutter_test_config.dart`.

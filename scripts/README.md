@@ -2,6 +2,10 @@
 
 ## `pre_test.ps1` (Windows)
 
+**Primary fix (since 2026-06):** `pubspec.yaml` `hooks.user_defines.sqlite3` uses `winsqlite3.dll` on Windows so tests no longer copy or lock `build/native_assets/windows/sqlite3.dll`. You should not need this script for normal `flutter test` runs.
+
+Fallback when a hung test or old native-asset copy still holds `sqlite3.dll`:
+
 Releases `build/native_assets/windows/sqlite3.dll` before `flutter test` when a prior run was killed or left a Dart process holding the FFI DLL. Only stops `dart` / `flutter_tester` processes whose command line references this repo (does not kill global `flutter` CLI).
 
 ```powershell
@@ -37,4 +41,4 @@ handle.exe -nobanner build\native_assets\windows\sqlite3.dll
 
 (Sysinternals Handle: https://learn.microsoft.com/sysinternals/downloads/handle)
 
-Project-wide test config: `dart_test.yaml` (`concurrency: 1`, `timeout: 60s`).
+Project-wide test config: `dart_test.yaml` (`concurrency: 1`, `timeout: 60s`) and `test/flutter_test_config.dart` (Windows sqflite FFI warm-up).
