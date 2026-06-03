@@ -47,7 +47,7 @@
 # NAVIGATION: _bmad-output/README.md
 
 generated: 2026-05-25
-last_updated: 2026-06-03 (story 4-9 done)
+last_updated: 2026-06-03 (story 5-5 in-progress)
 project: astra-app
 project_key: NOKEY
 tracking_system: file-system
@@ -94,8 +94,8 @@ development_status:
   4-9-profile-initials-on-my-data: done
   epic-4-retrospective: optional
 
-  epic-5: backlog
-  5-5-built-in-kotlin-plugin-migration: backlog  # priority — run before 5.1–5.4
+  epic-5: in-progress
+  5-5-built-in-kotlin-plugin-migration: in-progress  # priority — run before 5.1–5.4
   5-1-accent-color-and-contrast-token-revision: backlog
   5-2-navigation-bar-and-spacing-polish: backlog
   5-3-cross-screen-visual-cohesion-audit: backlog
