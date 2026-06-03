@@ -54,7 +54,7 @@ void main() {
     expect(saveButton.onPressed, isNull);
     expect(
       find.text('Enter a value between 1,000 and 100,000.'),
-      findsWidgets,
+      findsOneWidget,
     );
   });
 

@@ -361,33 +361,56 @@ class MyDataCubit extends Cubit<MyDataState> {
     }
   }
 
-  Future<void> updateDailyStepGoal(int goal) async {
+  /// Persists a new daily step goal and refreshes dependent tabs.
+  ///
+  /// Returns `false` when blocked, invalid, unchanged, persist fails, or
+  /// [postGoalUpdate] fails (goal may still be saved in that last case).
+  Future<bool> updateDailyStepGoal(int goal) async {
     if (isClosed ||
         state.isExporting ||
         state.isImporting ||
         state.isPurging) {
-      return;
+      return false;
     }
 
     final validation = validateStepGoalInput(goal.toString());
     if (!validation.isValid || validation.parsedGoal == null) {
-      return;
+      return false;
     }
     final parsed = validation.parsedGoal!;
     if (parsed == state.dailyStepGoal) {
-      return;
+      return false;
     }
 
-    await userPreferences.setDailyStepGoal(parsed);
+    try {
+      await userPreferences.setDailyStepGoal(parsed);
+    } catch (error, stackTrace) {
+      if (kDebugMode) {
+        debugPrint('MyDataCubit.updateDailyStepGoal persist failed: $error');
+        debugPrintStack(stackTrace: stackTrace);
+      }
+      return false;
+    }
+
     if (isClosed) {
-      return;
+      return false;
     }
 
     if (state.status == MyDataStatus.ready) {
       emit(state.copyWith(dailyStepGoal: parsed));
     }
 
-    await _postGoalUpdate?.call();
+    try {
+      await _postGoalUpdate?.call();
+    } catch (error, stackTrace) {
+      if (kDebugMode) {
+        debugPrint('MyDataCubit.updateDailyStepGoal refresh failed: $error');
+        debugPrintStack(stackTrace: stackTrace);
+      }
+      return false;
+    }
+
+    return true;
   }
 
   Future<void> refresh({bool silent = true}) async {
@@ -423,7 +446,6 @@ class MyDataCubit extends Cubit<MyDataState> {
         stepRepository.getLastIngestionUtc(),
         capabilityEvaluator.evaluate(),
         _activityPermissionGranted(),
-        userPreferences.getDailyStepGoal(),
       ]);
 
       if (isClosed) {
@@ -436,8 +458,12 @@ class MyDataCubit extends Cubit<MyDataState> {
       final capabilitySnapshot =
           results[3]! as BackgroundHealthCapabilitySnapshot;
       final activityGranted = results[4]! as bool;
-      final dailyStepGoal = results[5]! as int;
+      final dailyStepGoal = await userPreferences.getDailyStepGoal();
       final nowUtc = clock.nowUtc();
+
+      if (isClosed) {
+        return;
+      }
 
       _emitReadySnapshot(
         sampleCount: footprint.sampleCount,

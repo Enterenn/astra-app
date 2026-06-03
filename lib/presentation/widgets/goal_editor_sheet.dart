@@ -107,15 +107,6 @@ class _GoalEditorSheetBodyState extends State<_GoalEditorSheetBody> {
                   errorText: validation.isValid ? null : validation.errorMessage,
                 ),
               ),
-              if (!validation.isValid) ...[
-                const SizedBox(height: AstraSpacing.kSpaceXs),
-                Text(
-                  validation.errorMessage ?? kStepGoalValidationErrorMessage,
-                  style: AstraTypography.caption(context).copyWith(
-                    color: colors.statusDanger,
-                  ),
-                ),
-              ],
               const SizedBox(height: AstraSpacing.kSpaceLg),
               AstraButton(
                 label: 'Save',

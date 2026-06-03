@@ -169,15 +169,36 @@ class MyDataScreen extends StatelessWidget {
                           ? const _SectionLoadingIndicator()
                           : GoalEditorRow(
                               dailyStepGoal: state.dailyStepGoal,
-                              onTap: () async {
-                                final result = await showGoalEditorSheet(
-                                  context,
-                                  currentGoal: state.dailyStepGoal,
-                                );
-                                if (result != null && context.mounted) {
-                                  await cubit.updateDailyStepGoal(result);
-                                }
-                              },
+                              enabled: !dataActionInFlight,
+                              onTap: dataActionInFlight
+                                  ? null
+                                  : () async {
+                                      final result = await showGoalEditorSheet(
+                                        context,
+                                        currentGoal: state.dailyStepGoal,
+                                      );
+                                      if (result == null || !context.mounted) {
+                                        return;
+                                      }
+                                      final saved =
+                                          await cubit.updateDailyStepGoal(
+                                        result,
+                                      );
+                                      if (!context.mounted) {
+                                        return;
+                                      }
+                                      if (!saved) {
+                                        ScaffoldMessenger.of(context)
+                                            .showSnackBar(
+                                          const SnackBar(
+                                            content: Text(
+                                              'Daily goal could not be saved. Try again.',
+                                            ),
+                                            duration: Duration(seconds: 3),
+                                          ),
+                                        );
+                                      }
+                                    },
                             ),
                     ),
                     const SizedBox(height: AstraSpacing.kSpaceMd),

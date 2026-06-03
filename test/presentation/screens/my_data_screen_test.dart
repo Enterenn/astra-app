@@ -49,7 +49,6 @@ class _SeededMyDataCubit extends MyDataCubit {
     required super.clock,
     required super.databasePath,
     required MyDataState seededState,
-    super.isIos,
   }) : _seededState = seededState {
     emit(seededState);
   }
@@ -174,6 +173,23 @@ void main() {
 
       expect(find.text('Daily step goal'), findsWidgets);
       expect(find.text('Save'), findsOneWidget);
+    });
+
+    testWidgets('goal row does not open editor while export in flight', (
+      tester,
+    ) async {
+      final cubit = buildSeededCubit(_readyState(isExporting: true));
+      addTearDown(cubit.close);
+
+      await pumpScreen(tester, cubit: cubit);
+
+      final row = tester.widget<GoalEditorRow>(find.byType(GoalEditorRow));
+      expect(row.onTap, isNull);
+
+      await tester.tap(find.byType(GoalEditorRow));
+      await tester.pump();
+
+      expect(find.text('Save'), findsNothing);
     });
 
     testWidgets('shows Your data section with Export CSV button', (tester) async {

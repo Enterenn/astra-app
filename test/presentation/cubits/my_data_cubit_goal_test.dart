@@ -12,15 +12,20 @@ import '../../core/time/fake_time_provider.dart';
 import '../../helpers/sqflite_test_helper.dart';
 
 class _FixedCapabilityEvaluator extends BackgroundHealthCapabilityEvaluator {
-  _FixedCapabilityEvaluator()
+  _FixedCapabilityEvaluator({this.evaluateDelay = Duration.zero})
     : super(
         activityRecognitionGranted: () async => true,
         notificationGranted: () async => true,
         isAndroidPlatform: () => true,
       );
 
+  final Duration evaluateDelay;
+
   @override
   Future<BackgroundHealthCapabilitySnapshot> evaluate() async {
+    if (evaluateDelay > Duration.zero) {
+      await Future<void>.delayed(evaluateDelay);
+    }
     return const BackgroundHealthCapabilitySnapshot(
       activityRecognitionGranted: true,
       notificationGranted: true,
@@ -56,11 +61,15 @@ void main() {
       await db.close();
     });
 
-    MyDataCubit buildCubit({PostGoalUpdateCallback? postGoalUpdate}) {
+    MyDataCubit buildCubit({
+      PostGoalUpdateCallback? postGoalUpdate,
+      BackgroundHealthCapabilityEvaluator? capabilityEvaluator,
+    }) {
       return MyDataCubit(
         stepRepository: stepRepository,
         userPreferences: userPreferences,
-        capabilityEvaluator: _FixedCapabilityEvaluator(),
+        capabilityEvaluator:
+            capabilityEvaluator ?? _FixedCapabilityEvaluator(),
         clock: clock,
         databasePath: inMemoryDatabasePath,
         activityPermissionGranted: () async => true,
@@ -86,7 +95,7 @@ void main() {
       addTearDown(cubit.close);
 
       await cubit.refresh();
-      await cubit.updateDailyStepGoal(15000);
+      expect(await cubit.updateDailyStepGoal(15000), isTrue);
 
       expect(cubit.state.dailyStepGoal, 15000);
       expect(await userPreferences.getDailyStepGoal(), 15000);
@@ -102,7 +111,7 @@ void main() {
       addTearDown(cubit.close);
 
       await cubit.refresh();
-      await cubit.updateDailyStepGoal(9000);
+      expect(await cubit.updateDailyStepGoal(9000), isTrue);
 
       expect(callbackCalled, isTrue);
     });
@@ -113,7 +122,7 @@ void main() {
       addTearDown(cubit.close);
 
       await cubit.refresh();
-      await cubit.updateDailyStepGoal(999);
+      expect(await cubit.updateDailyStepGoal(999), isFalse);
 
       expect(cubit.state.dailyStepGoal, 8000);
       expect(await userPreferences.getDailyStepGoal(), 8000);
@@ -130,9 +139,24 @@ void main() {
       addTearDown(cubit.close);
 
       await cubit.refresh();
-      await cubit.updateDailyStepGoal(8000);
+      expect(await cubit.updateDailyStepGoal(8000), isFalse);
 
       expect(callbackCalled, isFalse);
+    });
+
+    test('returns false when postGoalUpdate throws', () async {
+      final cubit = buildCubit(
+        postGoalUpdate: () async {
+          throw StateError('refresh failed');
+        },
+      );
+      addTearDown(cubit.close);
+
+      await cubit.refresh();
+      expect(await cubit.updateDailyStepGoal(12000), isFalse);
+
+      expect(cubit.state.dailyStepGoal, 12000);
+      expect(await userPreferences.getDailyStepGoal(), 12000);
     });
 
     test('blocked while purge in flight', () async {
@@ -141,10 +165,50 @@ void main() {
 
       await cubit.refresh();
       cubit.emit(cubit.state.copyWith(isPurging: true));
-      await cubit.updateDailyStepGoal(10000);
+      expect(await cubit.updateDailyStepGoal(10000), isFalse);
 
       expect(cubit.state.dailyStepGoal, isNot(10000));
       expect(await userPreferences.getDailyStepGoal(), isNot(10000));
+    });
+
+    test('blocked while export in flight', () async {
+      final cubit = buildCubit();
+      addTearDown(cubit.close);
+
+      await cubit.refresh();
+      cubit.emit(cubit.state.copyWith(isExporting: true));
+      expect(await cubit.updateDailyStepGoal(10000), isFalse);
+
+      expect(await userPreferences.getDailyStepGoal(), isNot(10000));
+    });
+
+    test('blocked while import in flight', () async {
+      final cubit = buildCubit();
+      addTearDown(cubit.close);
+
+      await cubit.refresh();
+      cubit.emit(cubit.state.copyWith(isImporting: true));
+      expect(await cubit.updateDailyStepGoal(10000), isFalse);
+
+      expect(await userPreferences.getDailyStepGoal(), isNot(10000));
+    });
+
+    test('refresh completing after goal save keeps new dailyStepGoal', () async {
+      final cubit = buildCubit(
+        capabilityEvaluator: _FixedCapabilityEvaluator(
+          evaluateDelay: const Duration(milliseconds: 80),
+        ),
+      );
+      addTearDown(cubit.close);
+
+      await cubit.refresh();
+      final refreshFuture = cubit.refresh(silent: true);
+      await Future<void>.delayed(const Duration(milliseconds: 20));
+      expect(await cubit.updateDailyStepGoal(15000), isTrue);
+      await refreshFuture;
+
+      expect(cubit.state.dailyStepGoal, 15000);
+      expect(await userPreferences.getDailyStepGoal(), 15000);
     });
   });
 }

@@ -10,24 +10,33 @@ class GoalEditorRow extends StatelessWidget {
   const GoalEditorRow({
     required this.dailyStepGoal,
     required this.onTap,
+    this.enabled = true,
     super.key,
   });
 
   final int dailyStepGoal;
-  final VoidCallback onTap;
+  final VoidCallback? onTap;
+  final bool enabled;
+
+  bool get _isEnabled => enabled && onTap != null;
 
   @override
   Widget build(BuildContext context) {
     final colors = context.astraColors;
     final formattedGoal = formatStepCount(dailyStepGoal);
+    final valueColor =
+        _isEnabled ? colors.textPrimary : colors.textMuted;
 
     return Semantics(
       button: true,
-      label: 'Daily step goal, $formattedGoal. Double tap to edit.',
+      enabled: _isEnabled,
+      label: _isEnabled
+          ? 'Daily step goal, $formattedGoal. Double tap to edit.'
+          : 'Daily step goal, $formattedGoal.',
       child: Material(
         color: Colors.transparent,
         child: InkWell(
-          onTap: onTap,
+          onTap: _isEnabled ? onTap : null,
           borderRadius: BorderRadius.circular(AstraSpacing.kRadiusSm),
           child: Padding(
             padding: const EdgeInsets.symmetric(vertical: AstraSpacing.kSpaceXs),
@@ -45,7 +54,7 @@ class GoalEditorRow extends StatelessWidget {
                       Text(
                         formattedGoal,
                         style: AstraTypography.headline(context).copyWith(
-                          color: colors.textPrimary,
+                          color: valueColor,
                         ),
                       ),
                     ],
@@ -53,7 +62,7 @@ class GoalEditorRow extends StatelessWidget {
                 ),
                 Icon(
                   Icons.chevron_right,
-                  color: colors.textSecondary,
+                  color: _isEnabled ? colors.textSecondary : colors.textMuted,
                   semanticLabel: 'Edit daily step goal',
                 ),
               ],
