@@ -8,6 +8,8 @@ import '../../core/constants/astra_typography.dart';
 import '../../core/time/time_provider.dart';
 import '../cubits/my_data_cubit.dart';
 import '../cubits/my_data_state.dart';
+import '../cubits/theme_cubit.dart';
+import '../cubits/theme_state.dart';
 import '../utils/share_position_origin.dart';
 import '../widgets/background_status_card.dart';
 import '../widgets/confirm_dialog.dart';
@@ -19,6 +21,7 @@ import '../widgets/goal_editor_row.dart';
 import '../widgets/goal_editor_sheet.dart';
 import '../widgets/section_card.dart';
 import '../widgets/status_banner.dart';
+import '../widgets/theme_selector.dart';
 
 class MyDataScreen extends StatelessWidget {
   const MyDataScreen({
@@ -199,6 +202,25 @@ class MyDataScreen extends StatelessWidget {
                                         );
                                       }
                                     },
+                            ),
+                    ),
+                    const SizedBox(height: AstraSpacing.kSpaceMd),
+                    SectionCard(
+                      headline: 'Appearance',
+                      child: state.status == MyDataStatus.loading
+                          ? const _SectionLoadingIndicator()
+                          : BlocBuilder<ThemeCubit, ThemeState>(
+                              builder: (context, themeState) {
+                                return ThemeSelector(
+                                  selected: themeState.preference,
+                                  enabled: !dataActionInFlight,
+                                  onChanged: (preference) {
+                                    context
+                                        .read<ThemeCubit>()
+                                        .setThemePreference(preference);
+                                  },
+                                );
+                              },
                             ),
                     ),
                     const SizedBox(height: AstraSpacing.kSpaceMd),
