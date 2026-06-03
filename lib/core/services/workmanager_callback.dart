@@ -8,7 +8,11 @@ import 'package:workmanager/workmanager.dart';
 import '../../data/datasources/data_ingestion_source.dart';
 import '../database/isolate_database_factory.dart';
 import '../time/time_provider.dart';
+import '../../data/repositories/step_repository.dart';
+import '../../data/repositories/user_preferences_repository.dart';
+import '../time/system_time_provider.dart';
 import 'background_collector_factory.dart';
+import 'data_lifecycle_service.dart';
 import 'notification_service.dart';
 import 'workmanager_tasks.dart';
 
@@ -75,13 +79,18 @@ Future<bool> handleWorkmanagerTask(
   WidgetsFlutterBinding.ensureInitialized();
   DartPluginRegistrant.ensureInitialized();
 
-  if (task != kStepCollectionTaskName) {
-    debugPrint('WorkManager ignored unknown task: $task');
-    return true;
+  final databasePath = inputData?['databasePath'] as String?;
+
+  if (task == kStepCollectionTaskName) {
+    return runStepCollectionWorkmanagerTask(databasePath: databasePath);
   }
 
-  final databasePath = inputData?['databasePath'] as String?;
-  return runStepCollectionWorkmanagerTask(databasePath: databasePath);
+  if (task == kDatabaseMaintenanceTaskName) {
+    return runDatabaseMaintenanceWorkmanagerTask(databasePath: databasePath);
+  }
+
+  debugPrint('WorkManager ignored unknown task: $task');
+  return true;
 }
 
 @visibleForTesting
@@ -113,6 +122,56 @@ Future<bool> runStepCollectionWorkmanagerTask({
   } finally {
     await db?.close();
   }
+}
+
+@visibleForTesting
+Future<bool> runDatabaseMaintenanceWorkmanagerTask({
+  String? databasePath,
+  TimeProvider? clock,
+  AstraDatabaseOpener openDatabase = openIsolateAstraDatabase,
+  Future<LifecycleRunResult> Function(DataLifecycleService service)?
+  runMaintenance,
+}) async {
+  if (databasePath == null) {
+    debugPrint('WorkManager database maintenance skipped: missing databasePath');
+    return false;
+  }
+
+  Database? db;
+  try {
+    db = await openDatabase(databasePath: databasePath);
+    final timeProvider = clock ?? const SystemTimeProvider();
+    final service = DataLifecycleService(
+      db: db,
+      databasePath: databasePath,
+      repository: StepRepository(db: db, clock: timeProvider),
+      userPreferences: UserPreferencesRepository(db),
+      clock: timeProvider,
+      optimizeAndVacuum: runPragmaOptimizeAndVacuumOnWorkerIsolate,
+    );
+    final maintenance =
+        runMaintenance ?? ((svc) => svc.runMaintenance());
+    await maintenance(service);
+    return true;
+  } catch (error, stackTrace) {
+    debugPrint('WorkManager database maintenance failed: $error');
+    debugPrintStack(stackTrace: stackTrace);
+    return false;
+  } finally {
+    await db?.close();
+  }
+}
+
+/// Runs optimize/VACUUM on a worker isolate without spawning [compute].
+///
+/// Uses the caller's open [db] so preference writes after maintenance stay valid.
+/// WorkManager and other background entry points are already off the UI thread.
+Future<void> runPragmaOptimizeAndVacuumOnWorkerIsolate(
+  Database db,
+  String databasePath,
+) async {
+  await db.rawQuery('PRAGMA optimize');
+  await db.execute('VACUUM');
 }
 
 /// Cancels any in-flight Android step-collection WM work before UI-isolate init.
@@ -158,5 +217,27 @@ Future<void> registerStepCollectionWorkmanager({
     frequency: const Duration(minutes: 15),
     existingWorkPolicy: existingWorkPolicy,
     inputData: inputData,
+  );
+}
+
+/// Registers Android weekly database maintenance (FR12).
+///
+/// Call after [registerStepCollectionWorkmanager] so WorkManager is initialized.
+Future<void> registerDatabaseMaintenanceWorkmanager({
+  bool? isAndroid,
+  required String databasePath,
+  StepCollectionWorkmanagerClient? client,
+}) async {
+  if (!(isAndroid ?? Platform.isAndroid)) {
+    return;
+  }
+
+  final workmanager = client ?? PluginStepCollectionWorkmanagerClient();
+  await workmanager.registerPeriodicTask(
+    kDatabaseMaintenanceUniqueName,
+    kDatabaseMaintenanceTaskName,
+    frequency: kDatabaseMaintenanceInterval,
+    existingWorkPolicy: ExistingPeriodicWorkPolicy.update,
+    inputData: <String, dynamic>{'databasePath': databasePath},
   );
 }

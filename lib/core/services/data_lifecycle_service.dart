@@ -26,6 +26,10 @@ typedef DatabaseOptimizeRunner = Future<void> Function(
 );
 
 /// FR11 downsampling and FR12 `PRAGMA optimize` / `VACUUM` maintenance.
+///
+/// Phase 0 scheduling: Android weekly WorkManager; iOS opportunistic on
+/// [AppLifecycleState.resumed] when due. Reliable iOS background VACUUM is not
+/// required for acceptance — foreground/resume is sufficient.
 class DataLifecycleService {
   DataLifecycleService({
     required Database db,

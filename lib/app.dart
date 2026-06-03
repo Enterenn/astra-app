@@ -100,6 +100,7 @@ class _AstraAppState extends State<AstraApp> with WidgetsBindingObserver {
     final healthFgs = widget.deps.healthForegroundCoordinator;
     await healthFgs.stopHealthCollectionService();
     await healthFgs.setUiActive(true);
+    unawaited(widget.deps.dataLifecycleService.runMaintenance());
     await _collectAndRefreshToday();
     if (_livePipelineStarted && widget.enablePeriodicPersist) {
       _startPeriodicPersist();

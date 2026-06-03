@@ -27,5 +27,6 @@ Future<void> main() async {
   // WM registers regardless of FGS — reconciliation fallback (D-04), not realtime cadence.
   final databasePath = join(await getDatabasesPath(), 'astra_app.db');
   await registerStepCollectionWorkmanager(databasePath: databasePath);
+  await registerDatabaseMaintenanceWorkmanager(databasePath: databasePath);
   runApp(AstraApp(deps: deps));
 }

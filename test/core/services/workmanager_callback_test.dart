@@ -2,8 +2,10 @@ import 'dart:io';
 
 import 'package:astra_app/core/database/app_database.dart';
 import 'package:astra_app/core/services/notification_service.dart';
+import 'package:astra_app/core/services/data_lifecycle_service.dart';
 import 'package:astra_app/core/services/workmanager_callback.dart';
 import 'package:astra_app/core/services/workmanager_tasks.dart';
+import 'package:astra_app/dev/data_inject_service.dart';
 import 'package:astra_app/core/time/local_day_formatter.dart';
 import 'package:astra_app/data/datasources/data_ingestion_source.dart';
 import 'package:astra_app/data/models/normalized_step_bucket.dart';
@@ -230,6 +232,119 @@ void main() {
       );
 
       expect(success, isFalse);
+    });
+  });
+
+  group('runDatabaseMaintenanceWorkmanagerTask', () {
+    late Directory tempDir;
+    late String databasePath;
+    late FakeTimeProvider clock;
+
+    setUp(() async {
+      tempDir = await Directory.systemTemp.createTemp('astra_wm_maint_test_');
+      databasePath = '${tempDir.path}${Platform.pathSeparator}astra_maint.db';
+      clock = FakeTimeProvider(
+        fixedNowUtc: DateTime.utc(2026, 6, 2, 12),
+        zoneOffset: const Duration(hours: 2),
+      );
+    });
+
+    tearDown(() async {
+      if (await tempDir.exists()) {
+        await tempDir.delete(recursive: true);
+      }
+    });
+
+    test('downsamples injected data when maintenance is due', () async {
+      final seedDb = await openAstraDatabase(databasePath: databasePath);
+      final repository = StepRepository(db: seedDb, clock: clock);
+      await DataInjectService(repository: repository).inject90Days(clock: clock);
+      await seedDb.close();
+
+      final success = await runDatabaseMaintenanceWorkmanagerTask(
+        databasePath: databasePath,
+        clock: clock,
+      );
+
+      final verifyDb = await openAstraDatabase(databasePath: databasePath);
+      addTearDown(verifyDb.close);
+      final verifyRepository = StepRepository(db: verifyDb, clock: clock);
+      final verifyPrefs = UserPreferencesRepository(verifyDb);
+
+      expect(success, isTrue);
+      expect(await verifyRepository.countStepSamples(), 10080);
+      expect(await verifyPrefs.getLastDatabaseOptimizedAt(), isNotNull);
+    });
+
+    test('skips compaction when maintenance is not due', () async {
+      final seedDb = await openAstraDatabase(databasePath: databasePath);
+      final repository = StepRepository(db: seedDb, clock: clock);
+      await DataInjectService(repository: repository).inject90Days(clock: clock);
+      final prefs = UserPreferencesRepository(seedDb);
+      await prefs.setLastDatabaseOptimizedAt(clock.snapshot().nowUtc);
+      await seedDb.close();
+
+      LifecycleRunResult? captured;
+      final success = await runDatabaseMaintenanceWorkmanagerTask(
+        databasePath: databasePath,
+        clock: clock,
+        runMaintenance: (service) async {
+          captured = await service.runMaintenance();
+          return captured!;
+        },
+      );
+
+      final verifyDb = await openAstraDatabase(databasePath: databasePath);
+      addTearDown(verifyDb.close);
+      final verifyRepository = StepRepository(db: verifyDb, clock: clock);
+
+      expect(success, isTrue);
+      expect(captured!.skipped, isTrue);
+      expect(await verifyRepository.countStepSamples(), 25920);
+    });
+
+    test('returns false when databasePath is missing', () async {
+      expect(
+        await runDatabaseMaintenanceWorkmanagerTask(),
+        isFalse,
+      );
+    });
+  });
+
+  group('registerDatabaseMaintenanceWorkmanager', () {
+    test('skips registration on non-Android platforms', () async {
+      final client = _FakeWorkmanagerClient();
+
+      await registerDatabaseMaintenanceWorkmanager(
+        isAndroid: false,
+        databasePath: '/tmp/astra.db',
+        client: client,
+      );
+
+      expect(client.registered, isFalse);
+    });
+
+    test('registers weekly maintenance with databasePath inputData', () async {
+      final client = _FakeWorkmanagerClient();
+      await registerStepCollectionWorkmanager(
+        isAndroid: true,
+        client: client,
+      );
+
+      await registerDatabaseMaintenanceWorkmanager(
+        isAndroid: true,
+        databasePath: '/data/user/0/com.astraapp/databases/astra_app.db',
+        client: client,
+      );
+
+      expect(client.uniqueName, kDatabaseMaintenanceUniqueName);
+      expect(client.taskName, kDatabaseMaintenanceTaskName);
+      expect(client.frequency, kDatabaseMaintenanceInterval);
+      expect(client.existingWorkPolicy, ExistingPeriodicWorkPolicy.update);
+      expect(
+        client.inputData,
+        {'databasePath': '/data/user/0/com.astraapp/databases/astra_app.db'},
+      );
     });
   });
 
