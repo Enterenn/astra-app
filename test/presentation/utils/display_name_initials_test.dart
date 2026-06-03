@@ -29,12 +29,29 @@ void main() {
       expect(initialsFromDisplayName(' '), isNull);
     });
 
-    test('punctuation-only returns first grapheme', () {
-      expect(initialsFromDisplayName('!!!'), '!');
+    test('punctuation-only returns null', () {
+      expect(initialsFromDisplayName('!!!'), isNull);
+    });
+
+    test('digits-only returns null', () {
+      expect(initialsFromDisplayName('123'), isNull);
     });
 
     test('collapses internal whitespace', () {
       expect(initialsFromDisplayName('Marie   Dupont'), 'MD');
+    });
+  });
+
+  group('hasDisplayNameInitials', () {
+    test('true when initials can be derived', () {
+      expect(hasDisplayNameInitials('Alex'), isTrue);
+      expect(hasDisplayNameInitials('Marie Dupont'), isTrue);
+    });
+
+    test('false when null, whitespace, or no letters', () {
+      expect(hasDisplayNameInitials(null), isFalse);
+      expect(hasDisplayNameInitials('   '), isFalse);
+      expect(hasDisplayNameInitials('!!!'), isFalse);
     });
   });
 

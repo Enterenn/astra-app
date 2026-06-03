@@ -1,6 +1,6 @@
 # Story 4.9: Profile Initials on My Data (Settings Entry)
 
-Status: review
+Status: done
 
 <!-- Depends on Story 4.8 `display_name`. English-only Phase 0. Ultimate context engine analysis completed — comprehensive developer guide created. -->
 
@@ -286,6 +286,7 @@ Composer (Cursor Agent)
 - Added `ProfileInitialsBadge` (40dp circle, 48dp touch target, placeholder `Icons.person_outline`, semantics per AC).
 - Extracted `_MyDataScreenBody` StatefulWidget for `GlobalKey` scroll-to-Profile; header badge above Background; shared `_openDisplayNameEditor` with Profile row.
 - `flutter test` full suite green; `flutter analyze` no new issues.
+- Code review: letter-only initials, `hasDisplayNameInitials` tap routing, trimmed display name row, `context.watch` for live badge, scroll post-frame retry, expanded tests.
 
 ### File List
 
@@ -300,3 +301,4 @@ Composer (Cursor Agent)
 
 - 2026-06-03: Ultimate context engine analysis completed — ready-for-dev comprehensive developer guide
 - 2026-06-03: Story 4.9 implemented — profile initials header on My Data; status → review
+- 2026-06-03: Code review fixes applied; status → done; epic 4 complete

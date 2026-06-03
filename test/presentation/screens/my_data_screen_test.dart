@@ -152,13 +152,14 @@ void main() {
       required MyDataCubit cubit,
       ThemeCubit? themeCubit,
       bool disableAnimations = false,
+      Size viewSize = const Size(800, 2000),
     }) async {
       final theme = themeCubit ?? buildThemeCubit();
       if (themeCubit == null) {
         addTearDown(theme.close);
       }
 
-      tester.view.physicalSize = const Size(800, 2000);
+      tester.view.physicalSize = viewSize;
       tester.view.devicePixelRatio = 1.0;
       addTearDown(tester.view.resetPhysicalSize);
       addTearDown(tester.view.resetDevicePixelRatio);
@@ -321,6 +322,131 @@ void main() {
         find.byType(ProfileInitialsBadge),
       );
       expect(badge.onTap, isNull);
+      expect(badge.enabled, isFalse);
+    });
+
+    testWidgets('profile badge disabled while import in flight', (
+      tester,
+    ) async {
+      final cubit = buildSeededCubit(
+        _readyState(isImporting: true, displayName: 'Alex'),
+      );
+      addTearDown(cubit.close);
+
+      await pumpScreen(tester, cubit: cubit);
+
+      final badge = tester.widget<ProfileInitialsBadge>(
+        find.byType(ProfileInitialsBadge),
+      );
+      expect(badge.onTap, isNull);
+      expect(badge.enabled, isFalse);
+    });
+
+    testWidgets('profile badge disabled while purge in flight', (
+      tester,
+    ) async {
+      final cubit = buildSeededCubit(
+        _readyState(isPurging: true, displayName: 'Alex'),
+      );
+      addTearDown(cubit.close);
+
+      await pumpScreen(tester, cubit: cubit);
+
+      final badge = tester.widget<ProfileInitialsBadge>(
+        find.byType(ProfileInitialsBadge),
+      );
+      expect(badge.onTap, isNull);
+      expect(badge.enabled, isFalse);
+    });
+
+    testWidgets('profile header shows placeholder for punctuation-only name', (
+      tester,
+    ) async {
+      final cubit = buildSeededCubit(_readyState(displayName: '!!!'));
+      addTearDown(cubit.close);
+
+      await pumpScreen(tester, cubit: cubit);
+
+      expect(find.byIcon(Icons.person_outline), findsOneWidget);
+      expect(find.text('!'), findsNothing);
+    });
+
+    testWidgets('display name row shows Not set for whitespace-only name', (
+      tester,
+    ) async {
+      final cubit = buildSeededCubit(_readyState(displayName: '   '));
+      addTearDown(cubit.close);
+
+      await pumpScreen(tester, cubit: cubit);
+
+      expect(find.text('Not set'), findsOneWidget);
+    });
+
+    testWidgets('tapping profile badge with name scrolls Profile into view', (
+      tester,
+    ) async {
+      final cubit = buildSeededCubit(_readyState(displayName: 'Marie Dupont'));
+      addTearDown(cubit.close);
+
+      await pumpScreen(
+        tester,
+        cubit: cubit,
+        viewSize: const Size(400, 480),
+      );
+
+      final scrollable = find.byType(Scrollable).first;
+      final position = tester.state<ScrollableState>(scrollable).position;
+      expect(position.maxScrollExtent, greaterThan(0));
+
+      await tester.tap(find.byType(ProfileInitialsBadge));
+      await tester.pumpAndSettle();
+
+      expect(position.pixels, greaterThan(0));
+    });
+
+    testWidgets('tapping profile badge without name opens display name sheet', (
+      tester,
+    ) async {
+      final cubit = buildSeededCubit(_readyState());
+      addTearDown(cubit.close);
+
+      await pumpScreen(tester, cubit: cubit);
+
+      await tester.tap(find.byType(ProfileInitialsBadge));
+      await tester.pumpAndSettle();
+
+      expect(find.text('First name'), findsOneWidget);
+      expect(find.text('Save'), findsOneWidget);
+    });
+
+    testWidgets('profile header initials update when display name changes', (
+      tester,
+    ) async {
+      final cubit = buildSeededCubit(
+        _readyState(displayName: 'Marie Dupont'),
+      );
+      addTearDown(cubit.close);
+
+      await pumpScreen(tester, cubit: cubit);
+
+      final badgeFinder = find.byType(ProfileInitialsBadge);
+      expect(
+        find.descendant(of: badgeFinder, matching: find.text('MD')),
+        findsOneWidget,
+      );
+
+      await tester.runAsync(() => cubit.updateDisplayName('Jean'));
+      await tester.pump();
+
+      expect(cubit.state.displayName, 'Jean');
+      expect(
+        find.descendant(of: badgeFinder, matching: find.text('MD')),
+        findsNothing,
+      );
+      expect(
+        find.descendant(of: badgeFinder, matching: find.text('J')),
+        findsOneWidget,
+      );
     });
 
     testWidgets('Profile section sits between Appearance and Your data', (

@@ -1,5 +1,5 @@
 # generated: 2026-05-25
-# last_updated: 2026-06-03 (story 4-9 review)
+# last_updated: 2026-06-03 (story 4-9 done)
 # PAUSE: epic-4+ until epic-2 correction complete
 # project: astra-app
 # project_key: NOKEY
@@ -46,7 +46,7 @@
 # NAVIGATION: _bmad-output/README.md
 
 generated: 2026-05-25
-last_updated: 2026-06-03 (story 4-9 review)
+last_updated: 2026-06-03 (story 4-9 done)
 project: astra-app
 project_key: NOKEY
 tracking_system: file-system
@@ -81,7 +81,7 @@ development_status:
   3-4-chart-performance-benchmark-kpi-01: done
   epic-3-retrospective: optional
 
-  epic-4: in-progress
+  epic-4: done
   4-1-data-lifecycle-service-downsampling-and-maintenance: done
   4-2-my-data-footprint-and-background-status: done
   4-3-csv-export: done
@@ -90,7 +90,7 @@ development_status:
   4-6-daily-goal-editor-on-my-data: done
   4-7-theme-selector-and-my-data-integration: done
   4-8-local-display-name-and-today-greeting: done
-  4-9-profile-initials-on-my-data: review
+  4-9-profile-initials-on-my-data: done
   epic-4-retrospective: optional
 
   epic-5: backlog

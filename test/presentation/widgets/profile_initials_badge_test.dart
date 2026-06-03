@@ -45,6 +45,15 @@ void main() {
       expect(find.text('U'), findsNothing);
     });
 
+    testWidgets('shows placeholder for punctuation-only display name', (
+      tester,
+    ) async {
+      await pumpBadge(tester, displayName: '!!!', onTap: () {});
+
+      expect(find.byIcon(Icons.person_outline), findsOneWidget);
+      expect(find.text('!'), findsNothing);
+    });
+
     testWidgets('semantics label includes initials when set', (tester) async {
       await pumpBadge(tester, displayName: 'Alex', onTap: () {});
 

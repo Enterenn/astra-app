@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import '../../core/constants/astra_colors.dart';
 import '../../core/constants/astra_spacing.dart';
 import '../../core/constants/astra_typography.dart';
+import '../utils/display_name_initials.dart';
 
 /// Tappable row showing the local display name with edit affordance.
 class DisplayNameEditorRow extends StatelessWidget {
@@ -19,8 +20,12 @@ class DisplayNameEditorRow extends StatelessWidget {
 
   bool get _isEnabled => enabled && onTap != null;
 
-  String get _valueLabel =>
-      displayName == null || displayName!.isEmpty ? 'Not set' : displayName!;
+  String get _valueLabel {
+    if (!hasTrimmedDisplayName(displayName)) {
+      return 'Not set';
+    }
+    return displayName!.trim();
+  }
 
   @override
   Widget build(BuildContext context) {

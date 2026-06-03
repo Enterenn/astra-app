@@ -87,14 +87,7 @@ class MyDataScreen extends StatelessWidget {
               },
             ),
           ],
-          child: BlocBuilder<MyDataCubit, MyDataState>(
-            builder: (context, state) {
-              return _MyDataScreenBody(
-                state: state,
-                clock: clock,
-              );
-            },
-          ),
+          child: _MyDataScreenBody(clock: clock),
         ),
       ),
     );
@@ -102,12 +95,8 @@ class MyDataScreen extends StatelessWidget {
 }
 
 class _MyDataScreenBody extends StatefulWidget {
-  const _MyDataScreenBody({
-    required this.state,
-    required this.clock,
-  });
+  const _MyDataScreenBody({required this.clock});
 
-  final MyDataState state;
   final TimeProvider clock;
 
   @override
@@ -121,7 +110,7 @@ class _MyDataScreenBodyState extends State<_MyDataScreenBody> {
     final cubit = context.read<MyDataCubit>();
     final result = await showDisplayNameEditorSheet(
       context,
-      currentName: widget.state.displayName,
+      currentName: context.read<MyDataCubit>().state.displayName,
     );
     if (result == null || !context.mounted) {
       return;
@@ -141,28 +130,45 @@ class _MyDataScreenBodyState extends State<_MyDataScreenBody> {
   }
 
   void _scrollToProfileSection() {
-    final profileContext = _profileSectionKey.currentContext;
-    if (profileContext == null) {
+    const scroll = Duration(milliseconds: 300);
+
+    void scrollIfMounted() {
+      if (!mounted) {
+        return;
+      }
+      final profileContext = _profileSectionKey.currentContext;
+      if (profileContext == null) {
+        assert(
+          false,
+          'Profile section is not mounted; cannot scroll into view.',
+        );
+        return;
+      }
+      unawaited(
+        Scrollable.ensureVisible(
+          profileContext,
+          duration: scroll,
+          curve: Curves.easeInOut,
+          alignment: 0.1,
+        ),
+      );
+    }
+
+    if (_profileSectionKey.currentContext != null) {
+      scrollIfMounted();
       return;
     }
-    unawaited(
-      Scrollable.ensureVisible(
-        profileContext,
-        duration: const Duration(milliseconds: 300),
-        curve: Curves.easeInOut,
-        alignment: 0.1,
-      ),
-    );
+    WidgetsBinding.instance.addPostFrameCallback((_) => scrollIfMounted());
   }
 
   @override
   Widget build(BuildContext context) {
-    final state = widget.state;
+    final state = context.watch<MyDataCubit>().state;
     final nowUtc = widget.clock.nowUtc();
     final cubit = context.read<MyDataCubit>();
     final dataActionInFlight =
         state.isExporting || state.isImporting || state.isPurging;
-    final nameIsSet = hasTrimmedDisplayName(state.displayName);
+    final showProfileInitials = hasDisplayNameInitials(state.displayName);
 
     return SingleChildScrollView(
       padding: const EdgeInsets.symmetric(
@@ -224,7 +230,7 @@ class _MyDataScreenBodyState extends State<_MyDataScreenBody> {
               onTap: dataActionInFlight
                   ? null
                   : () {
-                      if (nameIsSet) {
+                      if (showProfileInitials) {
                         _scrollToProfileSection();
                       } else {
                         unawaited(_openDisplayNameEditor(context));
