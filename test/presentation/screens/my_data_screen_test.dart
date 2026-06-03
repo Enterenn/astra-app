@@ -7,8 +7,10 @@ import 'package:astra_app/data/repositories/user_preferences_repository.dart';
 import 'package:astra_app/presentation/cubits/my_data_cubit.dart';
 import 'package:astra_app/presentation/cubits/my_data_state.dart';
 import 'package:astra_app/presentation/screens/my_data_screen.dart';
+import 'package:astra_app/presentation/widgets/confirm_dialog.dart';
 import 'package:astra_app/presentation/widgets/data_export_button.dart';
 import 'package:astra_app/presentation/widgets/data_import_button.dart';
+import 'package:astra_app/presentation/widgets/data_purge_button.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:flutter_test/flutter_test.dart';
@@ -68,6 +70,9 @@ MyDataState _readyState({
   bool isImporting = false,
   String? importErrorMessage,
   bool importSuccessPending = false,
+  bool isPurging = false,
+  String? purgeErrorMessage,
+  bool purgeSuccessPending = false,
 }) {
   return MyDataState(
     status: MyDataStatus.ready,
@@ -80,6 +85,9 @@ MyDataState _readyState({
     isImporting: isImporting,
     importErrorMessage: importErrorMessage,
     importSuccessPending: importSuccessPending,
+    isPurging: isPurging,
+    purgeErrorMessage: purgeErrorMessage,
+    purgeSuccessPending: purgeSuccessPending,
   );
 }
 
@@ -270,6 +278,72 @@ void main() {
 
       expect(cubit.importAttempts, 1);
     });
+
+    testWidgets('shows Delete all local data purge button below import', (
+      tester,
+    ) async {
+      final cubit = buildSeededCubit(_readyState());
+      addTearDown(cubit.close);
+
+      await pumpScreen(tester, cubit: cubit);
+
+      expect(find.text('Delete all local data'), findsOneWidget);
+      expect(find.byType(DataPurgeButton), findsOneWidget);
+    });
+
+    testWidgets('purge button shows spinner while purging', (tester) async {
+      final cubit = buildSeededCubit(_readyState(isPurging: true));
+      addTearDown(cubit.close);
+
+      await pumpScreen(tester, cubit: cubit);
+
+      expect(find.byType(DataPurgeButton), findsOneWidget);
+      expect(find.byType(CircularProgressIndicator), findsWidgets);
+    });
+
+    testWidgets('shows All local data removed snackbar for 3s after purge', (
+      tester,
+    ) async {
+      final cubit = buildSeededCubit(_readyState());
+      addTearDown(cubit.close);
+
+      await pumpScreen(tester, cubit: cubit);
+
+      cubit.emit(_readyState());
+      await tester.pump();
+      cubit.emit(_readyState(purgeSuccessPending: true));
+      await tester.pump();
+      await tester.pump();
+
+      expect(find.text('All local data removed'), findsOneWidget);
+      final snackBar = tester.widget<SnackBar>(find.byType(SnackBar));
+      expect(snackBar.duration, const Duration(seconds: 3));
+    });
+
+    testWidgets('shows purge error banner with retry tap', (tester) async {
+      final cubit = _RetryPurgeMyDataCubit(
+        stepRepository: stepRepository,
+        userPreferences: userPreferences,
+        capabilityEvaluator: _FixedCapabilityEvaluator(),
+        clock: clock,
+        databasePath: inMemoryDatabasePath,
+      );
+      addTearDown(cubit.close);
+
+      await pumpScreen(tester, cubit: cubit);
+
+      expect(
+        find.text('Purge could not be completed. Try again.'),
+        findsOneWidget,
+      );
+
+      await tester.tap(
+        find.text('Purge could not be completed. Try again.'),
+      );
+      await tester.pump();
+
+      expect(cubit.purgeAttempts, 1);
+    });
   });
 }
 
@@ -322,5 +396,34 @@ class _RetryExportMyDataCubit extends _SeededMyDataCubit {
   @override
   Future<void> exportAndShare({Rect? sharePositionOrigin}) async {
     exportAttempts++;
+  }
+}
+
+class _RetryPurgeMyDataCubit extends _SeededMyDataCubit {
+  _RetryPurgeMyDataCubit({
+    required super.stepRepository,
+    required super.userPreferences,
+    required super.capabilityEvaluator,
+    required super.clock,
+    required super.databasePath,
+  }) : super(
+         seededState: MyDataState(
+           status: MyDataStatus.ready,
+           sampleCount: 10,
+           fileSizeBytes: 1024,
+           backgroundStatus: BackgroundCollectionStatus.healthy,
+           isIos: false,
+           purgeErrorMessage: 'Purge could not be completed. Try again.',
+         ),
+       );
+
+  int purgeAttempts = 0;
+
+  @override
+  Future<void> confirmAndPurge({
+    ConfirmPurgeCallback? confirmPurge,
+    PurgeConfirmAction? confirmedAction,
+  }) async {
+    purgeAttempts++;
   }
 }

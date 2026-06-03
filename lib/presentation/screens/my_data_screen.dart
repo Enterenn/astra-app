@@ -13,6 +13,7 @@ import '../widgets/background_status_card.dart';
 import '../widgets/confirm_dialog.dart';
 import '../widgets/data_export_button.dart';
 import '../widgets/data_import_button.dart';
+import '../widgets/data_purge_button.dart';
 import '../widgets/footprint_kpi_row.dart';
 import '../widgets/section_card.dart';
 import '../widgets/status_banner.dart';
@@ -62,11 +63,26 @@ class MyDataScreen extends StatelessWidget {
                 );
               },
             ),
+            BlocListener<MyDataCubit, MyDataState>(
+              listenWhen: (previous, current) =>
+                  !previous.purgeSuccessPending && current.purgeSuccessPending,
+              listener: (context, state) {
+                ScaffoldMessenger.of(context).showSnackBar(
+                  const SnackBar(
+                    content: Text('All local data removed'),
+                    duration: Duration(seconds: 3),
+                  ),
+                );
+              },
+            ),
           ],
           child: BlocBuilder<MyDataCubit, MyDataState>(
             builder: (context, state) {
               final nowUtc = clock.nowUtc();
               final cubit = context.read<MyDataCubit>();
+              final dataActionInFlight = state.isExporting ||
+                  state.isImporting ||
+                  state.isPurging;
 
               return SingleChildScrollView(
                 padding: const EdgeInsets.symmetric(
@@ -110,6 +126,16 @@ class MyDataScreen extends StatelessWidget {
                       ),
                       const SizedBox(height: AstraSpacing.kSpaceMd),
                     ],
+                    if (state.purgeErrorMessage != null) ...[
+                      StatusBanner(
+                        variant: StatusBannerVariant.error,
+                        message: state.purgeErrorMessage,
+                        onTap: () => cubit.confirmAndPurge(
+                          confirmedAction: PurgeConfirmAction.deleteConfirmed,
+                        ),
+                      ),
+                      const SizedBox(height: AstraSpacing.kSpaceMd),
+                    ],
                     SectionCard(
                       headline: 'Background',
                       child: state.status == MyDataStatus.loading
@@ -147,8 +173,7 @@ class MyDataScreen extends StatelessWidget {
                                     label: 'Export CSV',
                                     semanticsLabel: 'Export data as CSV file',
                                     isLoading: state.isExporting,
-                                    onPressed: state.isExporting ||
-                                            state.isImporting
+                                    onPressed: dataActionInFlight
                                         ? null
                                         : () => cubit.exportAndShare(
                                             sharePositionOrigin:
@@ -161,8 +186,7 @@ class MyDataScreen extends StatelessWidget {
                                 const SizedBox(height: AstraSpacing.kSpaceSm),
                                 DataImportButton(
                                   isLoading: state.isImporting,
-                                  onPressed: state.isImporting ||
-                                          state.isExporting
+                                  onPressed: dataActionInFlight
                                       ? null
                                       : () => cubit.pickAndImport(
                                           confirmImport:
@@ -175,6 +199,19 @@ class MyDataScreen extends StatelessWidget {
                                           ),
                                         ),
                                 ),
+                                const SizedBox(height: AstraSpacing.kSpaceSm),
+                                Builder(
+                                  builder: (buttonContext) => DataPurgeButton(
+                                    isLoading: state.isPurging,
+                                    onPressed: dataActionInFlight
+                                        ? null
+                                        : () => _confirmAndPurge(
+                                              context,
+                                              cubit,
+                                              shareContext: buttonContext,
+                                            ),
+                                  ),
+                                ),
                               ],
                             ),
                     ),
@@ -186,6 +223,24 @@ class MyDataScreen extends StatelessWidget {
           ),
         ),
       ),
+    );
+  }
+}
+
+Future<void> _confirmAndPurge(
+  BuildContext context,
+  MyDataCubit cubit, {
+  BuildContext? shareContext,
+}) async {
+  final action = await showPurgeConfirmDialog(
+    context,
+    onExportFirst: () => cubit.exportAndShare(
+      sharePositionOrigin: sharePositionOriginFor(shareContext ?? context),
+    ),
+  );
+  if (action == PurgeConfirmAction.deleteConfirmed) {
+    await cubit.confirmAndPurge(
+      confirmedAction: PurgeConfirmAction.deleteConfirmed,
     );
   }
 }
