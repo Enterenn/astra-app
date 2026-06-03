@@ -96,5 +96,47 @@ void main() {
       expect(await repository.tryClaimCelebrationShownDate('2026-06-02'), isTrue);
       expect(await repository.getCelebrationShownDate(), '2026-06-02');
     });
+
+    test('display name is null when unset', () async {
+      expect(await repository.getDisplayName(), isNull);
+    });
+
+    test('round-trips display name', () async {
+      await repository.setDisplayName('Alex');
+      expect(await repository.getDisplayName(), 'Alex');
+    });
+
+    test('trims display name on write and read', () async {
+      await repository.setDisplayName('  Sam  ');
+      expect(await repository.getDisplayName(), 'Sam');
+    });
+
+    test('clears display name when empty or whitespace-only', () async {
+      await repository.setDisplayName('Alex');
+      await repository.setDisplayName('');
+      expect(await repository.getDisplayName(), isNull);
+
+      await repository.setDisplayName('Alex');
+      await repository.setDisplayName('   ');
+      expect(await repository.getDisplayName(), isNull);
+    });
+
+    test('rejects display name over max length', () async {
+      final tooLong = 'a' * (kMaxDisplayNameLength + 1);
+      expect(
+        () => repository.setDisplayName(tooLong),
+        throwsA(isA<ArgumentError>()),
+      );
+      expect(await repository.getDisplayName(), isNull);
+    });
+
+    test('returns null for whitespace-only stored value', () async {
+      await db.insert(
+        'user_preferences',
+        {'key': kDisplayNameKey, 'value': '   '},
+        conflictAlgorithm: ConflictAlgorithm.replace,
+      );
+      expect(await repository.getDisplayName(), isNull);
+    });
   });
 }

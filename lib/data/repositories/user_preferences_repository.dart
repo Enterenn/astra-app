@@ -49,6 +49,36 @@ class UserPreferencesRepository {
     await _writeValue(kOnboardingCompleteKey, complete ? 'true' : 'false');
   }
 
+  /// Optional first name for Today greeting; null when unset or blank after trim.
+  Future<String?> getDisplayName() async {
+    final value = await _readValue(kDisplayNameKey);
+    if (value == null) {
+      return null;
+    }
+    final trimmed = value.trim();
+    return trimmed.isEmpty ? null : trimmed;
+  }
+
+  Future<void> setDisplayName(String? name) async {
+    if (name == null) {
+      await _deleteValue(kDisplayNameKey);
+      return;
+    }
+    final trimmed = name.trim();
+    if (trimmed.isEmpty) {
+      await _deleteValue(kDisplayNameKey);
+      return;
+    }
+    if (trimmed.length > kMaxDisplayNameLength) {
+      throw ArgumentError.value(
+        name,
+        'name',
+        'must be at most $kMaxDisplayNameLength characters',
+      );
+    }
+    await _writeValue(kDisplayNameKey, trimmed);
+  }
+
   /// Local calendar day (`YYYY-MM-DD`) when goal celebration was last shown.
   Future<String?> getCelebrationShownDate() async {
     return _readValue(kCelebrationShownDateKey);
@@ -119,6 +149,14 @@ class UserPreferencesRepository {
       'user_preferences',
       {'key': key, 'value': value},
       conflictAlgorithm: ConflictAlgorithm.replace,
+    );
+  }
+
+  Future<void> _deleteValue(String key) async {
+    await _db.delete(
+      'user_preferences',
+      where: 'key = ?',
+      whereArgs: [key],
     );
   }
 

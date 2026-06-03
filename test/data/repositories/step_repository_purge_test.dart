@@ -73,6 +73,7 @@ void main() {
         kDailyStepGoalKey: '9500',
         kThemeModeKey: 'dark',
         kOnboardingCompleteKey: 'true',
+        kDisplayNameKey: 'Baptiste',
       }.entries) {
         await db.insert(
           'user_preferences',
@@ -101,6 +102,7 @@ void main() {
       expect(prefs[kDailyStepGoalKey], '9500');
       expect(prefs[kThemeModeKey], 'dark');
       expect(prefs[kOnboardingCompleteKey], 'true');
+      expect(prefs[kDisplayNameKey], 'Baptiste');
       expect(
         prefs.keys.where((k) => k.startsWith('ingestion_baseline/')),
         isEmpty,
