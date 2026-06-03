@@ -344,6 +344,10 @@ Composer (dev-story workflow)
 - test/presentation/screens/app_scaffold_test.dart
 - _bmad-output/implementation-artifacts/sprint-status.yaml
 
+## Field feedback (2026-06-03)
+
+Greeting **Hello, {name}** visible but too small for intended UX — shipped per AC #3 as caption/secondary. **Engaging title-scale typography → Story 5.3** (see epics.md AC).
+
 ## Change Log
 
 - 2026-06-03: Code review fixes — clear display name on onboarding skip; My Data save error SnackBar; Profile row disabled tests.

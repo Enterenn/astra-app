@@ -343,6 +343,21 @@ Composer (Cursor)
 - No manifest/DEPENDENCIES changes (POST_NOTIFICATIONS already present; no extra receivers required).
 - Code review fixes: atomic `tryClaimCelebrationShownDate`, notify-before-callback ordering, goal eval without upserts, cold-start backfill coordination, init timeout.
 
+### Field feedback (2026-06-03) — regression candidate (fix deferred post–Story 6.3)
+
+**Report:** Background step collection works (steps counted while app closed), but **no local notification** when daily goal is reached. Baptiste: app **must** request notification permission (onboarding); **confirm OS grant** on checklist run — not verified in walk repro notes.
+
+**Repro (Baptiste walk, 2026-06-03):** App **killed** during walk → reopen mid-walk → Today shows **goal passed** → **no notification**. End of walk: screen off, app process still alive — no false step spike. At home: kill + reopen → step count **decreased** (tracked separately in deferred-work / 2.x hotfix).
+
+**Investigate when hotfix batch opens (after 6.3):**
+
+- WM / FGS paths still call `collectOnce(enableGoalNotification: true)` when goal crossed with `upsertedCount > 0`.
+- `celebration_shown_date` not written early by another path (foreground celebration, cold-start race).
+- `NotificationService` init in background isolate (timeout → silent no-op per spec-notification-startup-init).
+- Android notification channel / POST_NOTIFICATIONS / OEM battery restrictions.
+
+**Re-open 2.7 or add hotfix story** if device repro confirms permission granted and FR25 still fails. Track in `deferred-work.md` and Story 6.3 beta checklist.
+
 ### File List
 
 - lib/core/services/notification_service.dart (new)

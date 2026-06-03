@@ -21,3 +21,45 @@
 - **No dedicated unit tests for `astra_theme`, `astra_spacing`, `astra_typography`** — coverage via colors/cubit/widget smoke tests only.
 
 - **AC #2 OS brightness toggle automated test** — spec explicitly requires manual verification; no widget test for platformBrightness changes.
+
+## Field feedback triage (2026-06-03) — Baptiste device pass
+
+### Sequencing decision (2026-06-03, Baptiste)
+
+**Order:** Epic **5** (polish) → Story **6.3** beta acceptance checklist (surface more issues) → **consolidated debug/hotfix pass** (Epic 2/4 regressions below).
+
+Do **not** open hotfix stories before 6.3 unless a blocker prevents running the checklist on release APK.
+
+### Mapped to Epic 5 (polish — ship before hotfix)
+
+| Item | Target story | Notes |
+|------|--------------|-------|
+| Hello greeting too small / not bold | **5.3** (+ AC in epics.md) | 4.8 shipped `type.caption`; user wants title-scale engaging greeting |
+| Donut + chart bars green when goal met | **5.1** (+ AC in epics.md) | Semantic `status.ok` for goal-met days |
+
+### Deferred hotfix batch (post–6.3) — checklist + debug pass
+
+| Item | Suggested track | Notes |
+|------|-----------------|-------|
+| No goal notification when goal reached in background | **2.7** re-open or **2.x hotfix** | See repro below; onboarding must request notification permission (Baptiste); **verify grant status** on 6.3 checklist run |
+| Today steps: reopen OK, then **decrease after kill+reopen** | **2.x hotfix** (e.g. 2-11) | See repro below; P0 for post-6.3 pass |
+| Purge fails (2/2 attempts) | **4.5** re-open or **4.x hotfix** | "Purge could not be completed. Try again." |
+| "Last sync 30 minutes ago" vs 60s persist | **6.3** checklist item + optional **4.2** copy | Educate: last **ingestion**, not 60s timer |
+
+### Device repro — walk session (2026-06-03)
+
+1. **During walk:** app **fully killed** (swipe away / force stop).
+2. **Mid-walk reopen:** opened app to check progress → UI showed **goal already passed** → **no goal local notification** (FR25 failure; permission granted).
+3. **End of walk:** phone **screen off**, app **still running** (process alive, not killed) → **no spurious step inflation** (good).
+4. **At home:** **killed app again** and reopened → **displayed step count went down** (monotonicity / cold-start regression).
+
+**Implications for investigation (post-6.3):**
+
+- Notification: goal visible in SQLite on reopen but notify path (WM/FGS/cold-start `enableGoalNotification: true`) did not fire when goal crossed while killed; may also need eval on first collect after kill.
+- Step decrease: failure on **second** kill+reopen after a session that included foreground + screen-off — not only "stale until refresh"; overlaps 2.9 truth model / reconcile / cold-start ordering.
+
+### Discuss only (not a beta-user story)
+
+| Item | Notes |
+|------|-------|
+| History FAB "KPI-01 running (50 iterations…)" | **Debug-only** (`kDebugMode` + `ChartBenchmarkDevFab`). Not in release APK. `Database_closed` = dev benchmark touching DB while app lifecycle closes DB — ignore for beta; optional dev-tool hardening later |

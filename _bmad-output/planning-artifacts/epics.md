@@ -1063,6 +1063,11 @@ So that the interface stays calm and legible on my phone in any appearance mode.
 **When** viewed on light `bg.base` and dark `bg.base`
 **Then** accent-muted tracks and data semantics remain distinguishable (UX-DR21)
 
+**Given** a local calendar day where daily steps meet or exceed `daily_step_goal` (field feedback 2026-06-03)
+**When** user views Today goal ring and History bar chart for that day
+**Then** progress arc / bar fill uses a distinct **goal-met** semantic (e.g. `color.status.ok` green) instead of default amber accent — ring track may stay muted; overflow days still readable
+**And** days below goal keep existing amber/data styling (no false-positive green)
+
 **Given** token changes
 **When** `flutter analyze` and existing widget tests run
 **Then** no regressions; update UX spec token table if hex values change
@@ -1118,6 +1123,15 @@ So that the app feels cohesive before OSS beta release.
 **Given** findings from Epics 1–4 device testing
 **When** logged in story completion notes
 **Then** residual polish items are either fixed in this story or explicitly deferred with rationale
+
+**Given** Today greeting with stored `display_name` (Story 4.8 shipped as caption — field feedback 2026-06-03)
+**When** user opens Today
+**Then** **Hello, {name}** reads as an engaging hero line — `type.title` or `type.headline`, **semibold/bold**, `text.primary` (not `type.caption` / `text.secondary`)
+**And** ring remains the sole step-count hero; greeting does not duplicate step totals
+
+**Given** My Data background status copy (field feedback 2026-06-03)
+**When** user reads "Last sync {relative time}" on device
+**Then** checklist documents expected semantics: **last successful ingestion** timestamp (WM/FGS/collect), **not** the 60s foreground persist timer — optional UX copy tweak if confusion persists after doc pass
 
 ---
 
@@ -1229,6 +1243,11 @@ So that Phase 0 exit criteria are objectively verifiable before sharing the OSS 
 **Given** checklist execution on release APK
 **When** run by Baptiste or ≥1 external beta tester
 **Then** 100% pass is required for Phase 0 exit (SM-7)
+
+**Given** field regression items from 2026-06-03 device pass (fix in post-checklist hotfix batch — Baptiste sequencing)
+**When** checklist is authored and executed on release APK
+**Then** explicit manual cases exist for: (1) goal local notification — app **killed** during walk, reopen after goal crossed, **notification permission granted in OS settings** → one notification same day (FR25); (2) walk repro — kill mid-walk → reopen shows goal met; screen-off with app alive → no spurious steps; **kill+reopen at home** → count must **not decrease**; (3) Delete all local data — **2 consecutive** attempts succeed (FR20); (4) purge + footprint empty state on all tabs
+**And** failures are logged with device model / Android version / build type for the consolidated debug pass after checklist
 **And** README demo GIF capture is documented as checklist item
 
 **Given** install size check

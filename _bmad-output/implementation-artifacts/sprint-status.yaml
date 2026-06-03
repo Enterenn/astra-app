@@ -1,6 +1,7 @@
 # generated: 2026-05-25
-# last_updated: 2026-06-03 (story 4-9 done)
-# PAUSE: epic-4+ until epic-2 correction complete
+# last_updated: 2026-06-03 (field feedback triage; hotfix deferred post-6.3)
+# NEXT: epic-5 → 6.3 beta checklist → consolidated debug/hotfix (2.7 notif, 2.x steps, 4.5 purge)
+# PAUSE (obsolete): epic-4+ until epic-2 correction — superseded by Baptiste 2026-06-03 sequencing
 # project: astra-app
 # project_key: NOKEY
 # tracking_system: file-system
