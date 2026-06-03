@@ -1,5 +1,5 @@
-import '../../core/time/local_day_calculator.dart';
-import '../../core/time/timestamp_codec.dart';
+import '../time/local_day_calculator.dart';
+import '../time/timestamp_codec.dart';
 import '../../data/models/normalized_step_bucket.dart';
 import '../../data/models/timeseries_sample_model.dart';
 
