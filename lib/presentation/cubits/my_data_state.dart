@@ -1,3 +1,4 @@
+import '../../core/constants/preference_keys.dart';
 import '../../core/health/background_health_capability_snapshot.dart';
 
 enum MyDataStatus { loading, ready }
@@ -27,6 +28,7 @@ class MyDataState {
     this.isPurging = false,
     this.purgeErrorMessage,
     this.purgeSuccessPending = false,
+    this.dailyStepGoal = kDefaultStepGoal,
   });
 
   final MyDataStatus status;
@@ -47,6 +49,7 @@ class MyDataState {
   final String? purgeErrorMessage;
   /// True after successful purge; drives success snackbar once.
   final bool purgeSuccessPending;
+  final int dailyStepGoal;
 
   const MyDataState.loading() : this(status: MyDataStatus.loading);
 
@@ -58,6 +61,7 @@ class MyDataState {
     required BackgroundCollectionStatus backgroundStatus,
     BackgroundHealthCapabilitySnapshot? capabilitySnapshot,
     required bool isIos,
+    int dailyStepGoal = kDefaultStepGoal,
   }) {
     return MyDataState(
       status: MyDataStatus.ready,
@@ -68,6 +72,7 @@ class MyDataState {
       backgroundStatus: backgroundStatus,
       capabilitySnapshot: capabilitySnapshot,
       isIos: isIos,
+      dailyStepGoal: dailyStepGoal,
     );
   }
 
@@ -90,6 +95,7 @@ class MyDataState {
     bool? isPurging,
     Object? purgeErrorMessage = _unset,
     bool? purgeSuccessPending,
+    int? dailyStepGoal,
   }) {
     return MyDataState(
       status: status ?? this.status,
@@ -115,6 +121,7 @@ class MyDataState {
           ? this.purgeErrorMessage
           : purgeErrorMessage as String?,
       purgeSuccessPending: purgeSuccessPending ?? this.purgeSuccessPending,
+      dailyStepGoal: dailyStepGoal ?? this.dailyStepGoal,
     );
   }
 }

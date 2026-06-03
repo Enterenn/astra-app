@@ -10,6 +10,7 @@ import 'package:path_provider/path_provider.dart';
 import 'package:share_plus/share_plus.dart';
 
 import '../../core/health/background_health_capability_snapshot.dart';
+import '../../core/validation/step_goal_validator.dart';
 import '../../data/csv/import_validation_exception.dart';
 import '../../core/health/stale_data_evaluator.dart';
 import '../../core/permissions/activity_permission_resolver.dart'
@@ -33,6 +34,7 @@ typedef ConfirmImportCallback =
 typedef PostImportRefreshCallback = Future<void> Function();
 typedef ConfirmPurgeCallback = Future<PurgeConfirmAction> Function();
 typedef PostPurgeRefreshCallback = Future<void> Function();
+typedef PostGoalUpdateCallback = Future<void> Function();
 
 class MyDataCubit extends Cubit<MyDataState> {
   MyDataCubit({
@@ -48,6 +50,7 @@ class MyDataCubit extends Cubit<MyDataState> {
     ConfirmImportCallback? confirmImport,
     PostImportRefreshCallback? postImportRefresh,
     PostPurgeRefreshCallback? postPurgeRefresh,
+    PostGoalUpdateCallback? postGoalUpdate,
     bool? isIos,
   }) : _activityPermissionGranted =
            activityPermissionGranted ?? isActivityRecognitionGranted,
@@ -58,6 +61,7 @@ class MyDataCubit extends Cubit<MyDataState> {
        _confirmImport = confirmImport,
        _postImportRefresh = postImportRefresh,
        _postPurgeRefresh = postPurgeRefresh,
+       _postGoalUpdate = postGoalUpdate,
        _isIos = isIos ?? Platform.isIOS,
        super(const MyDataState.loading());
 
@@ -73,6 +77,7 @@ class MyDataCubit extends Cubit<MyDataState> {
   final ConfirmImportCallback? _confirmImport;
   final PostImportRefreshCallback? _postImportRefresh;
   final PostPurgeRefreshCallback? _postPurgeRefresh;
+  final PostGoalUpdateCallback? _postGoalUpdate;
   final bool _isIos;
 
   Future<void>? _refreshInFlight;
@@ -356,6 +361,35 @@ class MyDataCubit extends Cubit<MyDataState> {
     }
   }
 
+  Future<void> updateDailyStepGoal(int goal) async {
+    if (isClosed ||
+        state.isExporting ||
+        state.isImporting ||
+        state.isPurging) {
+      return;
+    }
+
+    final validation = validateStepGoalInput(goal.toString());
+    if (!validation.isValid || validation.parsedGoal == null) {
+      return;
+    }
+    final parsed = validation.parsedGoal!;
+    if (parsed == state.dailyStepGoal) {
+      return;
+    }
+
+    await userPreferences.setDailyStepGoal(parsed);
+    if (isClosed) {
+      return;
+    }
+
+    if (state.status == MyDataStatus.ready) {
+      emit(state.copyWith(dailyStepGoal: parsed));
+    }
+
+    await _postGoalUpdate?.call();
+  }
+
   Future<void> refresh({bool silent = true}) async {
     if (isClosed) {
       return;
@@ -389,6 +423,7 @@ class MyDataCubit extends Cubit<MyDataState> {
         stepRepository.getLastIngestionUtc(),
         capabilityEvaluator.evaluate(),
         _activityPermissionGranted(),
+        userPreferences.getDailyStepGoal(),
       ]);
 
       if (isClosed) {
@@ -401,6 +436,7 @@ class MyDataCubit extends Cubit<MyDataState> {
       final capabilitySnapshot =
           results[3]! as BackgroundHealthCapabilitySnapshot;
       final activityGranted = results[4]! as bool;
+      final dailyStepGoal = results[5]! as int;
       final nowUtc = clock.nowUtc();
 
       _emitReadySnapshot(
@@ -414,6 +450,7 @@ class MyDataCubit extends Cubit<MyDataState> {
           nowUtc: nowUtc,
         ),
         capabilitySnapshot: capabilitySnapshot,
+        dailyStepGoal: dailyStepGoal,
       );
     } catch (_) {
       if (isClosed) {
@@ -457,6 +494,7 @@ class MyDataCubit extends Cubit<MyDataState> {
     DateTime? lastIngestionUtc,
     required BackgroundCollectionStatus backgroundStatus,
     BackgroundHealthCapabilitySnapshot? capabilitySnapshot,
+    int? dailyStepGoal,
   }) {
     emit(
       MyDataState.ready(
@@ -467,6 +505,7 @@ class MyDataCubit extends Cubit<MyDataState> {
         backgroundStatus: backgroundStatus,
         capabilitySnapshot: capabilitySnapshot,
         isIos: _isIos,
+        dailyStepGoal: dailyStepGoal ?? state.dailyStepGoal,
       ).copyWith(
         isExporting: state.isExporting,
         exportErrorMessage: state.exportErrorMessage,
