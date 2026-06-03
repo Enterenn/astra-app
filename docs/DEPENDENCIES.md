@@ -106,25 +106,26 @@ AGP 9.0.1 + Flutter 3.44.0 use **built-in Kotlin** (no `kotlin-android` on the a
 
 | Plugin | Locked version | Upstream | ASTRA workaround |
 |--------|----------------|----------|------------------|
-| `pedometer` | 4.2.0 | [cachet pedometer](https://github.com/cph-cachet/flutter-plugins/tree/master/packages/pedometer) — no migration PR merged | `scripts/patch_kgp_plugins.*` → `scripts/kgp-patches/pedometer-4.2.0-build.gradle` |
+| `pedometer` | 4.2.0 | [carp-dk/flutter-plugins](https://github.com/carp-dk/flutter-plugins) — no built-in Kotlin release; track [Flutter AGP 9 umbrella #181383](https://github.com/flutter/flutter/issues/181383) | `scripts/kgp-patches/pedometer-4.2.0-build.gradle` |
 | `share_plus` | 13.1.0 | [plus_plugins#3745](https://github.com/fluttercommunity/plus_plugins/issues/3745) | `scripts/kgp-patches/share_plus-13.1.0-build.gradle` |
 | `workmanager_android` | 0.9.0+2 (via `workmanager` 0.9.0+3) | [flutter_workmanager](https://github.com/fluttercommunity/flutter_workmanager) — track AGP 9 / built-in Kotlin | `scripts/kgp-patches/workmanager_android-0.9.0+2-build.gradle` |
 
-**After every `flutter pub get` on Android CI/local:**
+**Patch application (Story 5.5):**
+
+- **Automatic:** `android/settings.gradle.kts` copies version-checked patches from `scripts/kgp-patches/` into pub-cache before Flutter loads plugin Gradle projects (every `flutter build` / `flutter run` on Android).
+- **Manual fallback** (IDE-only Gradle sync, or after `flutter pub get` without a build):
 
 ```powershell
 .\scripts\patch_kgp_plugins.ps1
-flutter build apk --debug
 ```
 
 ```bash
 ./scripts/patch_kgp_plugins.sh
-flutter build apk --debug
 ```
 
-**Removal criteria:** delete patch files + script when each plugin publishes a built-in-Kotlin release and `flutter build apk` emits no KGP warnings without patching.
+**Removal criteria:** delete patch files + script + `settings.gradle.kts` patch block when each plugin publishes a built-in-Kotlin release and `flutter build apk` emits no KGP warnings without patching.
 
-**App-level flags removed (Story 5.5):** `android.builtInKotlin=false`, `android.newDsl=false`, `kotlin.incremental=false` from `android/gradle.properties`; `org.jetbrains.kotlin.android` removed from `android/settings.gradle.kts`.
+**App-level migration (Story 5.5):** `android.builtInKotlin=false`, `android.newDsl=false`, and `kotlin.incremental=false` removed from `android/gradle.properties`; `org.jetbrains.kotlin.android` removed from `android/settings.gradle.kts`. Built-in Kotlin is now the default AGP 9 path. **Kotlin toolchain:** AGP 9 defaults to KGP 2.2.10; ASTRA pins `kotlin_version=2.3.20` in `gradle.properties` (Flutter minimum 2.2.20; KGP 2.3.10+ compatible with AGP 9.0.x per Kotlin docs).
 
 **Pub upgrades skipped for KGP:** `pedometer`, `share_plus`, `workmanager`, `file_picker` already at latest compatible versions; `permission_handler` / `sqflite` minor bumps are unrelated to KGP (deferred).
 

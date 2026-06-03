@@ -1,17 +1,23 @@
 # Copies version-checked Built-in Kotlin build.gradle patches into pub-cache.
-# Run after `flutter pub get` when building with AGP 9 built-in Kotlin enabled.
+# Run after `flutter pub get` when building outside Gradle (e.g. IDE-only flows).
+# Android builds also auto-apply patches via android/settings.gradle.kts.
 # See docs/DEPENDENCIES.md § Android Built-in Kotlin / KGP.
 
 $ErrorActionPreference = "Stop"
 
 $ScriptDir = $PSScriptRoot
 $ProjectRoot = Split-Path $ScriptDir -Parent
-$PubCache = Join-Path $env:LOCALAPPDATA "Pub\Cache\hosted\pub.dev"
 $LockFile = Join-Path $ProjectRoot "pubspec.lock"
 $ManifestFile = Join-Path $ScriptDir "kgp-patches\manifest.json"
 
 if (-not (Test-Path $LockFile)) {
     throw "pubspec.lock not found at $LockFile"
+}
+
+if ($env:PUB_CACHE) {
+    $PubCache = Join-Path $env:PUB_CACHE "hosted\pub.dev"
+} else {
+    $PubCache = Join-Path $env:LOCALAPPDATA "Pub\Cache\hosted\pub.dev"
 }
 
 function Get-LockedVersion {

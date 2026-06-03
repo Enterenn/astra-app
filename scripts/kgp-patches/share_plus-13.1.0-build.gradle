@@ -1,19 +1,6 @@
 group 'dev.fluttercommunity.plus.share'
 version '1.0-SNAPSHOT'
 
-buildscript {
-    ext.kotlin_version = '2.2.0'
-    repositories {
-        google()
-        mavenCentral()
-    }
-
-    dependencies {
-        classpath 'com.android.tools.build:gradle:8.12.1'
-        classpath "org.jetbrains.kotlin:kotlin-gradle-plugin:$kotlin_version"
-    }
-}
-
 rootProject.allprojects {
     repositories {
         google()
@@ -42,7 +29,6 @@ android {
     }
 
     dependencies {
-        implementation "org.jetbrains.kotlin:kotlin-stdlib:$kotlin_version"
         implementation 'androidx.core:core-ktx:1.16.0'
         implementation 'androidx.annotation:annotation:1.9.1'
     }

@@ -1,6 +1,6 @@
 # Story 5.5: Built-in Kotlin Plugin Migration (KGP)
 
-Status: review
+Status: done
 
 <!-- Epic 5 entry story (user-confirmed 2026-06-02): run before 5.1–5.4 visual polish. Ultimate context engine analysis completed — comprehensive developer guide created. -->
 
@@ -274,12 +274,13 @@ Future versions of Flutter will fail to build if your app uses plugins that appl
 - Sub-task B: No pub.dev release migrates the three KGP warners; `pubspec.yaml` unchanged.
 - Sub-task D: Added `scripts/patch_kgp_plugins.ps1` + `.sh` with version-locked templates in `scripts/kgp-patches/`; upstream issues linked in DEPENDENCIES (no new issues filed — existing trackers sufficient).
 - Sub-task C: Removed `android.builtInKotlin`, `android.newDsl`, `kotlin.incremental` from `gradle.properties`; removed KGP from `settings.gradle.kts`. App module unchanged.
+- Code review fix (2026-06-03): Commit `242150d` had only removed `kotlin.incremental`; `builtInKotlin`/`newDsl` opt-outs were still present. Removed both flags; added automatic patch hook in `settings.gradle.kts`; aligned shell scripts with manifest + `PUB_CACHE`.
 - Sub-task E: `flutter build apk --debug` and `--release` succeed with **zero** Flutter KGP plugin warnings; full test suite green (1101 tests); `flutter analyze` — 6 pre-existing `info` in `data_lifecycle_service.dart` only (no new issues).
 
 ### File List
 
-- `android/gradle.properties` — removed legacy KGP opt-out flags
-- `android/settings.gradle.kts` — removed `org.jetbrains.kotlin.android` plugin declaration
+- `android/gradle.properties` — removed legacy KGP opt-out flags; pins `kotlin_version=2.3.20` for Flutter/AGP built-in Kotlin toolchain
+- `android/settings.gradle.kts` — removed `org.jetbrains.kotlin.android` plugin declaration; auto-applies pub-cache KGP patches before plugin load
 - `scripts/patch_kgp_plugins.ps1` — pub-cache patch runner (Windows)
 - `scripts/patch_kgp_plugins.sh` — pub-cache patch runner (Unix)
 - `scripts/kgp-patches/manifest.json` — patch manifest
@@ -295,6 +296,17 @@ Future versions of Flutter will fail to build if your app uses plugins that appl
 ### Change Log
 
 - 2026-06-03: Story 5.5 implementation — built-in Kotlin enabled; reproducible pub-cache patches for three blocking plugins; docs updated.
+- 2026-06-03: Code review — removed remaining `builtInKotlin`/`newDsl` flags; Gradle auto-patch hook; script/manifest alignment.
+- 2026-06-03: Pin `kotlin_version=2.3.20` in `gradle.properties` — silences Flutter KGP 2.2.10 deprecation warning on AGP 9 built-in Kotlin.
+
+### Review Findings
+
+- [x] [Review][Patch] AC #4 — `android.builtInKotlin=false` and `android.newDsl=false` still in `gradle.properties` despite prior commit message [`android/gradle.properties`]
+- [x] [Review][Patch] Patch script not enforced on clean builds — added auto-apply in `android/settings.gradle.kts`
+- [x] [Review][Patch] `patch_kgp_plugins.sh` ignored `manifest.json` — now reads manifest via Python
+- [x] [Review][Patch] `patch_kgp_plugins.ps1` ignored `PUB_CACHE` — now honors env var
+- [x] [Review][Patch] `pedometer` upstream tracker weak — linked Flutter #181383 in DEPENDENCIES.md
+- [x] [Review][Patch] Dead `buildscript` KGP classpath in pedometer/share_plus patch templates — removed
 
 ## Previous Story Intelligence
 

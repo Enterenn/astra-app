@@ -1,6 +1,7 @@
 #!/usr/bin/env bash
 # Copies version-checked Built-in Kotlin build.gradle patches into pub-cache.
-# Run after `flutter pub get` when building with AGP 9 built-in Kotlin enabled.
+# Run after `flutter pub get` when building outside Gradle (e.g. IDE-only flows).
+# Android builds also auto-apply patches via android/settings.gradle.kts.
 # See docs/DEPENDENCIES.md § Android Built-in Kotlin / KGP.
 
 set -euo pipefail
@@ -15,6 +16,11 @@ if [[ ! -f "$LOCK_FILE" ]]; then
   exit 1
 fi
 
+if [[ ! -f "$MANIFEST_FILE" ]]; then
+  echo "Patch manifest not found at $MANIFEST_FILE" >&2
+  exit 1
+fi
+
 if [[ -z "${PUB_CACHE:-}" ]]; then
   PUB_CACHE="$HOME/.pub-cache"
 fi
@@ -22,7 +28,8 @@ PUB_HOSTED="$PUB_CACHE/hosted/pub.dev"
 
 get_locked_version() {
   local package="$1"
-  awk -v pkg="$package" '
+  local version
+  version="$(awk -v pkg="$package" '
     $0 ~ "^  " pkg ":$" { found=1; next }
     found && $0 ~ /^  [a-zA-Z0-9_]+:/ { exit 1 }
     found && $0 ~ /version: "/ {
@@ -31,7 +38,12 @@ get_locked_version() {
       print
       exit
     }
-  ' "$LOCK_FILE"
+  ' "$LOCK_FILE")"
+  if [[ -z "$version" ]]; then
+    echo "Could not read locked version for '$package' from pubspec.lock" >&2
+    exit 1
+  fi
+  printf '%s' "$version"
 }
 
 apply_patch() {
@@ -67,8 +79,15 @@ apply_patch() {
   echo "Patched: $patch_target"
 }
 
-apply_patch "pedometer" "pedometer-4.2.0-build.gradle" "android/build.gradle"
-apply_patch "share_plus" "share_plus-13.1.0-build.gradle" "android/build.gradle"
-apply_patch "workmanager_android" "workmanager_android-0.9.0+2-build.gradle" "android/build.gradle"
+while IFS=$'\t' read -r package patch_file target_rel; do
+  apply_patch "$package" "$patch_file" "$target_rel"
+done < <(python3 - "$MANIFEST_FILE" <<'PY'
+import json
+import sys
+
+for entry in json.load(open(sys.argv[1], encoding="utf-8")):
+    print(f"{entry['package']}\t{entry['patchFile']}\t{entry['target']}")
+PY
+)
 
 echo "KGP plugin patches applied."

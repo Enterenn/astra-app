@@ -45,7 +45,7 @@ Project-wide test config: `dart_test.yaml` (`concurrency: 1`, `timeout: 60s`) an
 
 ## `patch_kgp_plugins.ps1` / `patch_kgp_plugins.sh`
 
-Copies version-checked Built-in Kotlin `build.gradle` patches from `scripts/kgp-patches/` into pub-cache after `flutter pub get`. Required for Android builds until `pedometer`, `share_plus`, and `workmanager_android` publish upstream migrations.
+Manual fallback for version-checked Built-in Kotlin `build.gradle` patches in `scripts/kgp-patches/`. **Normal Android builds apply patches automatically** via `android/settings.gradle.kts` before plugin projects load. Run these scripts only after `flutter pub get` when Gradle is invoked outside Flutter (e.g. Android Studio sync without a prior `flutter build`).
 
 ```powershell
 flutter pub get
