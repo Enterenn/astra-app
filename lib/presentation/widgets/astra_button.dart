@@ -4,7 +4,7 @@ import '../../core/constants/astra_colors.dart';
 import '../../core/constants/astra_spacing.dart';
 import '../../core/constants/astra_typography.dart';
 
-enum AstraButtonVariant { primary, secondary, ghost }
+enum AstraButtonVariant { primary, secondary, ghost, danger }
 
 class AstraButton extends StatelessWidget {
   const AstraButton({
@@ -71,6 +71,20 @@ class AstraButton extends StatelessWidget {
             ),
             child: _buildChild(labelStyle),
           ),
+        AstraButtonVariant.danger => FilledButton(
+            onPressed: _isDisabled ? null : onPressed,
+            style: FilledButton.styleFrom(
+              minimumSize: const Size.fromHeight(AstraSpacing.kMinTouchTarget),
+              backgroundColor: colors.statusDanger,
+              disabledBackgroundColor: colors.statusDanger.withValues(alpha: 0.5),
+              foregroundColor: colors.textInverse,
+              disabledForegroundColor: colors.textMuted,
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(AstraSpacing.kRadiusSm),
+              ),
+            ),
+            child: _buildChild(labelStyle),
+          ),
       },
     );
   }
@@ -79,6 +93,7 @@ class AstraButton extends StatelessWidget {
         AstraButtonVariant.primary => colors.textInverse,
         AstraButtonVariant.secondary => colors.textPrimary,
         AstraButtonVariant.ghost => colors.textSecondary,
+        AstraButtonVariant.danger => colors.textInverse,
       };
 
   Widget _buildChild(TextStyle labelStyle) {
