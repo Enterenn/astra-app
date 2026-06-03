@@ -96,6 +96,10 @@ Physical-device confirmation remains the reference gate before beta.
 
 See `pubspec.yaml` and `pubspec.lock`. Package-level audit table → Epic 5 Story 5.1.
 
+| Package | Purpose | Network |
+|---------|---------|---------|
+| `file_picker` ^12.0.0-beta.5 | My Data CSV import — local file selection only (Story 4.4). Beta required for `win32` ^6 compat with `share_plus` ^13.1 | No data upload; OS file picker UI only |
+
 ### Dev / test only
 
 | Package | Purpose |
