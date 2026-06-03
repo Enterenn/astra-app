@@ -2,7 +2,7 @@
 
 
 
-Status: review
+Status: done
 
 
 
@@ -635,4 +635,6 @@ Composer
 - 2026-06-03: Story 4.6 created — daily goal editor on My Data context engine analysis complete
 
 - 2026-06-03: Story 4.6 implemented — shared validator, goal editor UI, My Data cubit/screen, cross-tab refresh wiring
+
+- 2026-06-03: Code review fixes — refresh race, disabled row during data ops, bool result + error snackbar, tests
 
