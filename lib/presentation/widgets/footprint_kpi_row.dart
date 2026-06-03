@@ -24,9 +24,14 @@ class FootprintKpiRow extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final colors = context.astraColors;
-    final optimizedLabel = lastOptimizedUtc == null
-        ? 'not optimized yet'
-        : 'optimized ${formatRelativeTime(instantUtc: lastOptimizedUtc, nowUtc: nowUtc)}';
+    final optimizedRelative = lastOptimizedUtc == null
+        ? null
+        : formatRelativeTime(instantUtc: lastOptimizedUtc, nowUtc: nowUtc);
+    final optimizedValue =
+        optimizedRelative ?? 'not optimized yet';
+    final optimizedLabel = optimizedRelative == null
+        ? 'last optimized'
+        : 'optimized $optimizedRelative';
 
     return LayoutBuilder(
       builder: (context, constraints) {
@@ -46,14 +51,11 @@ class FootprintKpiRow extends StatelessWidget {
           colors: colors,
         );
         final optimizedKpi = _KpiItem(
-          value: lastOptimizedUtc == null
-              ? '—'
-              : formatRelativeTime(
-                  instantUtc: lastOptimizedUtc,
-                  nowUtc: nowUtc,
-                ),
+          value: optimizedValue,
           label: optimizedLabel,
-          semanticsLabel: optimizedLabel,
+          semanticsLabel: optimizedRelative == null
+              ? 'Last optimized: not optimized yet'
+              : optimizedLabel,
           colors: colors,
         );
 

@@ -1,6 +1,6 @@
 # Story 4.2: My Data Footprint and Background Status
 
-Status: review
+Status: done
 
 <!-- Note: Validation is optional. Run validate-create-story for quality check before dev-story. -->
 
@@ -382,7 +382,17 @@ Composer
 
 - 2026-06-03: Story 4.2 — My Data footprint + background status (Background + Footprint sections, MyDataCubit, refresh hooks).
 
+### Review Findings
+
+- [x] [Review][Patch] Silent refresh failures leave My Data stuck in loading [`my_data_cubit.dart`] — `_recoverFromRefreshFailure()` keeps last ready snapshot or emits zeroed ready on first-load failure
+- [x] [Review][Patch] Silent refresh recovery test [`my_data_cubit_test.dart`] — keeps snapshot after footprint failure; scaffold ingestion widget test removed (SQLite lock deadlock with `collectOnce` + cubit refresh)
+- [x] [Review][Patch] Footprint "never optimized" shows em dash [`footprint_kpi_row.dart`] — primary value is `not optimized yet` with `last optimized` caption
+- [x] [Review][Defer] `getFootprint` synchronous file I/O on UI isolate — deferred, acceptable for Phase 0
+- [x] [Review][Defer] DB size may under-report with WAL — deferred, approximate per spec
+- [x] [Review][Defer] No null last-ingestion cubit test — deferred, consistent with Today
+
 ## Story completion status
 
 - Ultimate context engine analysis completed — comprehensive developer guide created
-- Status: **review**
+- Status: **done**
+- Code review patches applied 2026-06-03

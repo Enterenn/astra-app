@@ -98,11 +98,30 @@ class MyDataCubit extends Cubit<MyDataState> {
         ),
       );
     } catch (_) {
-      if (isClosed || silent) {
+      if (isClosed) {
         return;
       }
-      emit(const MyDataState.loading());
+      _recoverFromRefreshFailure();
     }
+  }
+
+  void _recoverFromRefreshFailure() {
+    if (state.status == MyDataStatus.ready) {
+      // Re-emit so listeners see a stable ready snapshot after a failed refresh.
+      emit(state);
+      return;
+    }
+
+    emit(
+      MyDataState.ready(
+        sampleCount: 0,
+        fileSizeBytes: 0,
+        backgroundStatus: _isIos
+            ? BackgroundCollectionStatus.iosBackfill
+            : BackgroundCollectionStatus.healthy,
+        isIos: _isIos,
+      ),
+    );
   }
 
   BackgroundCollectionStatus _deriveBackgroundStatus({

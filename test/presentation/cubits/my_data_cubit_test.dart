@@ -2,6 +2,7 @@ import 'package:astra_app/core/database/app_database.dart';
 import 'package:astra_app/core/health/background_health_capability_snapshot.dart';
 import 'package:astra_app/core/services/background_health_capability_evaluator.dart';
 import 'package:astra_app/data/datasources/data_ingestion_source.dart';
+import 'package:astra_app/data/models/database_footprint.dart';
 import 'package:astra_app/data/models/normalized_step_bucket.dart';
 import 'package:astra_app/data/repositories/step_repository.dart';
 import 'package:astra_app/data/repositories/user_preferences_repository.dart';
@@ -204,7 +205,103 @@ void main() {
       expect(cubit.state.lastOptimizedUtc, isNull);
       cubit.close();
     });
+
+    test('refresh emits ready defaults when first load fails', () async {
+      final failingRepository = _ThrowingFootprintRepository(
+        db: db,
+        clock: clock,
+      );
+      final cubit = MyDataCubit(
+        stepRepository: failingRepository,
+        userPreferences: userPreferences,
+        activityPermissionGranted: () async => true,
+        capabilityEvaluator: _FixedCapabilityEvaluator(
+          const BackgroundHealthCapabilitySnapshot(
+            activityRecognitionGranted: true,
+            notificationGranted: true,
+            batteryOptimizationExempt: true,
+            fgsHealthDeclared: true,
+            likelyOemBatteryDeferral: false,
+          ),
+        ),
+        clock: clock,
+        databasePath: inMemoryDatabasePath,
+        isIos: false,
+      );
+
+      await cubit.refresh();
+
+      expect(cubit.state.status, MyDataStatus.ready);
+      expect(cubit.state.sampleCount, 0);
+      expect(cubit.state.backgroundStatus, BackgroundCollectionStatus.healthy);
+      cubit.close();
+    });
+
+    test('refresh keeps last ready snapshot when silent refresh fails', () async {
+      await stepRepository.upsertIngestionBucket(
+        _bucket(
+          startTimeUtc: DateTime.utc(2026, 6, 3, 10),
+          endTimeUtc: DateTime.utc(2026, 6, 3, 10, 5),
+        ),
+      );
+      final flakyRepository = _FlakyFootprintRepository(db: db, clock: clock);
+      final cubit = MyDataCubit(
+        stepRepository: flakyRepository,
+        userPreferences: userPreferences,
+        activityPermissionGranted: () async => true,
+        capabilityEvaluator: _FixedCapabilityEvaluator(
+          const BackgroundHealthCapabilitySnapshot(
+            activityRecognitionGranted: true,
+            notificationGranted: true,
+            batteryOptimizationExempt: true,
+            fgsHealthDeclared: true,
+            likelyOemBatteryDeferral: false,
+          ),
+        ),
+        clock: clock,
+        databasePath: inMemoryDatabasePath,
+        isIos: false,
+      );
+
+      await cubit.refresh();
+      expect(cubit.state.status, MyDataStatus.ready);
+      expect(cubit.state.sampleCount, 1);
+
+      flakyRepository.failOnNextFootprint();
+      await cubit.refresh(silent: true);
+
+      expect(cubit.state.status, MyDataStatus.ready);
+      expect(cubit.state.sampleCount, 1);
+      cubit.close();
+    });
   });
+}
+
+class _ThrowingFootprintRepository extends StepRepository {
+  _ThrowingFootprintRepository({required super.db, required super.clock});
+
+  @override
+  Future<DatabaseFootprint> getFootprint({required String databasePath}) async {
+    throw StateError('footprint unavailable');
+  }
+}
+
+class _FlakyFootprintRepository extends StepRepository {
+  _FlakyFootprintRepository({required super.db, required super.clock});
+
+  var _failFootprint = false;
+
+  void failOnNextFootprint() {
+    _failFootprint = true;
+  }
+
+  @override
+  Future<DatabaseFootprint> getFootprint({required String databasePath}) async {
+    if (_failFootprint) {
+      throw StateError('footprint unavailable');
+    }
+    return super.getFootprint(databasePath: databasePath);
+  }
 }
 
 NormalizedStepBucket _bucket({

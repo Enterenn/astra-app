@@ -52,6 +52,8 @@ void main() {
       );
 
       expect(find.text('not optimized yet'), findsOneWidget);
+      expect(find.text('last optimized'), findsOneWidget);
+      expect(find.text('—'), findsNothing);
     });
 
     testWidgets('exposes semantics labels for screen readers', (tester) async {
