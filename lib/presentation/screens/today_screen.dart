@@ -30,7 +30,13 @@ class TodayScreen extends StatelessWidget {
         bottom: false,
         child: BlocBuilder<TodayCubit, TodayState>(
           builder: (context, state) {
-            return Column(
+            final greeting = state.displayName == null
+                ? null
+                : 'Hello, ${state.displayName}';
+
+            return Semantics(
+              label: greeting,
+              child: Column(
               crossAxisAlignment: CrossAxisAlignment.stretch,
               children: [
                 if (state.isStale)
@@ -44,6 +50,19 @@ class TodayScreen extends StatelessWidget {
                     child: StatusBanner(
                       variant: StatusBannerVariant.staleCompact,
                       onTap: onNavigateToMyData,
+                    ),
+                  ),
+                if (greeting != null)
+                  Padding(
+                    padding: const EdgeInsets.fromLTRB(
+                      AstraSpacing.kScreenHorizontalPadding,
+                      AstraSpacing.kSpaceSm,
+                      AstraSpacing.kScreenHorizontalPadding,
+                      AstraSpacing.kSpaceSm,
+                    ),
+                    child: Text(
+                      greeting,
+                      style: AstraTypography.captionFor(colors),
                     ),
                   ),
                 Expanded(
@@ -77,6 +96,7 @@ class TodayScreen extends StatelessWidget {
                   ),
                 ),
               ],
+            ),
             );
           },
         ),

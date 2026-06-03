@@ -86,6 +86,7 @@ class TodayCubit extends Cubit<TodayState> {
     await _applyTodaySnapshot(
       steps: steps,
       goal: goal,
+      displayName: state.displayName,
       isStale: state.isStale,
       lastIngestionUtc: state.lastIngestionUtc,
     );
@@ -108,6 +109,7 @@ class TodayCubit extends Cubit<TodayState> {
 
     final results = await Future.wait<Object?>([
       userPreferences.getDailyStepGoal(),
+      userPreferences.getDisplayName(),
       stepRepository.getLastIngestionUtc(),
     ]);
     if (isClosed) {
@@ -115,7 +117,8 @@ class TodayCubit extends Cubit<TodayState> {
     }
 
     final goal = results[0]! as int;
-    final lastUtc = results[1] as DateTime?;
+    final displayName = results[1] as String?;
+    final lastUtc = results[2] as DateTime?;
     final stale = isStaleData(
       lastIngestionUtc: lastUtc,
       nowUtc: clock.nowUtc(),
@@ -125,6 +128,7 @@ class TodayCubit extends Cubit<TodayState> {
     await _applyTodaySnapshot(
       steps: state.steps,
       goal: goal,
+      displayName: displayName,
       isStale: stale,
       lastIngestionUtc: lastUtc,
     );
@@ -147,6 +151,7 @@ class TodayCubit extends Cubit<TodayState> {
     final results = await Future.wait<Object?>([
       stepRepository.getTodaySteps(),
       userPreferences.getDailyStepGoal(),
+      userPreferences.getDisplayName(),
       stepRepository.getLastIngestionUtc(),
     ]);
     if (isClosed) {
@@ -155,7 +160,8 @@ class TodayCubit extends Cubit<TodayState> {
 
     final steps = results[0]! as int;
     final goal = results[1]! as int;
-    final lastUtc = results[2] as DateTime?;
+    final displayName = results[2] as String?;
+    final lastUtc = results[3] as DateTime?;
 
     final stale = isStaleData(
       lastIngestionUtc: lastUtc,
@@ -166,6 +172,7 @@ class TodayCubit extends Cubit<TodayState> {
     await _applyTodaySnapshot(
       steps: steps,
       goal: goal,
+      displayName: displayName,
       isStale: stale,
       lastIngestionUtc: lastUtc,
     );
@@ -190,6 +197,7 @@ class TodayCubit extends Cubit<TodayState> {
     await _applyTodaySnapshot(
       steps: steps,
       goal: goal,
+      displayName: state.displayName,
       isStale: state.isStale,
       lastIngestionUtc: state.lastIngestionUtc,
     );
@@ -201,6 +209,7 @@ class TodayCubit extends Cubit<TodayState> {
   Future<void> _applyTodaySnapshot({
     required int steps,
     required int goal,
+    String? displayName,
     required bool isStale,
     DateTime? lastIngestionUtc,
   }) async {
@@ -221,6 +230,7 @@ class TodayCubit extends Cubit<TodayState> {
     final baseState = TodayState.fromData(
       steps: effectiveSteps,
       goal: goal,
+      displayName: displayName,
       isStale: isStale,
       lastIngestionUtc: lastIngestionUtc,
     );
