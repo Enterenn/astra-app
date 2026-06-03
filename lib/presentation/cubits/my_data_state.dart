@@ -21,6 +21,8 @@ class MyDataState {
     this.isIos = false,
     this.isExporting = false,
     this.exportErrorMessage,
+    this.isImporting = false,
+    this.importErrorMessage,
   });
 
   final MyDataStatus status;
@@ -33,6 +35,8 @@ class MyDataState {
   final bool isIos;
   final bool isExporting;
   final String? exportErrorMessage;
+  final bool isImporting;
+  final String? importErrorMessage;
 
   const MyDataState.loading() : this(status: MyDataStatus.loading);
 
@@ -70,6 +74,8 @@ class MyDataState {
     bool? isIos,
     bool? isExporting,
     Object? exportErrorMessage = _unset,
+    bool? isImporting,
+    Object? importErrorMessage = _unset,
   }) {
     return MyDataState(
       status: status ?? this.status,
@@ -84,6 +90,10 @@ class MyDataState {
       exportErrorMessage: exportErrorMessage == _unset
           ? this.exportErrorMessage
           : exportErrorMessage as String?,
+      isImporting: isImporting ?? this.isImporting,
+      importErrorMessage: importErrorMessage == _unset
+          ? this.importErrorMessage
+          : importErrorMessage as String?,
     );
   }
 }

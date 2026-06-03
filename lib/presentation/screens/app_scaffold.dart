@@ -85,6 +85,11 @@ class _AppScaffoldState extends State<AppScaffold> {
           clock: widget.deps.timeProvider,
           databasePath: widget.deps.databasePath,
           activityPermissionGranted: widget.deps.activityPermissionGranted,
+          postImportRefresh: () async {
+            await _todayCubit.refreshMetadata();
+            await _historyCubit.refresh(silent: true);
+            await _myDataCubit.refresh(silent: true);
+          },
         );
     widget.onTodayCubitReady?.call(_todayCubit);
     widget.onHistoryCubitReady?.call(_historyCubit);

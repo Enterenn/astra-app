@@ -5,15 +5,18 @@ import 'dart:ui' show Rect;
 import 'package:flutter/foundation.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:path/path.dart' as p;
+import 'package:file_picker/file_picker.dart';
 import 'package:path_provider/path_provider.dart';
 import 'package:share_plus/share_plus.dart';
 
 import '../../core/health/background_health_capability_snapshot.dart';
+import '../../data/csv/import_validation_exception.dart';
 import '../../core/health/stale_data_evaluator.dart';
 import '../../core/permissions/activity_permission_resolver.dart'
     show isActivityRecognitionGranted;
 import '../../core/services/background_health_capability_evaluator.dart';
 import '../../core/time/time_provider.dart';
+import '../../data/csv/timeseries_csv_codec.dart';
 import '../../data/models/database_footprint.dart';
 import '../../data/repositories/step_repository.dart';
 import '../../data/repositories/user_preferences_repository.dart';
@@ -23,6 +26,10 @@ typedef ActivityPermissionChecker = Future<bool> Function();
 typedef TempDirectoryProvider = Future<String> Function();
 typedef ShareCsvFileCallback =
     Future<void> Function(String filePath, {Rect? sharePositionOrigin});
+typedef PickCsvFileCallback = Future<String?> Function();
+typedef ConfirmImportCallback =
+    Future<bool> Function(int csvRowCount, int existingSampleCount);
+typedef PostImportRefreshCallback = Future<void> Function();
 
 class MyDataCubit extends Cubit<MyDataState> {
   MyDataCubit({
@@ -34,12 +41,18 @@ class MyDataCubit extends Cubit<MyDataState> {
     ActivityPermissionChecker? activityPermissionGranted,
     TempDirectoryProvider? tempDirectoryProvider,
     ShareCsvFileCallback? shareCsvFile,
+    PickCsvFileCallback? pickCsvFile,
+    ConfirmImportCallback? confirmImport,
+    PostImportRefreshCallback? postImportRefresh,
     bool? isIos,
   }) : _activityPermissionGranted =
            activityPermissionGranted ?? isActivityRecognitionGranted,
        _tempDirectoryProvider =
            tempDirectoryProvider ?? _defaultTempDirectoryProvider,
        _shareCsvFile = shareCsvFile ?? _defaultShareCsvFile,
+       _pickCsvFile = pickCsvFile ?? _defaultPickCsvFile,
+       _confirmImport = confirmImport,
+       _postImportRefresh = postImportRefresh,
        _isIos = isIos ?? Platform.isIOS,
        super(const MyDataState.loading());
 
@@ -51,6 +64,9 @@ class MyDataCubit extends Cubit<MyDataState> {
   final ActivityPermissionChecker _activityPermissionGranted;
   final TempDirectoryProvider _tempDirectoryProvider;
   final ShareCsvFileCallback _shareCsvFile;
+  final PickCsvFileCallback _pickCsvFile;
+  final ConfirmImportCallback? _confirmImport;
+  final PostImportRefreshCallback? _postImportRefresh;
   final bool _isIos;
 
   Future<void>? _refreshInFlight;
@@ -58,6 +74,14 @@ class MyDataCubit extends Cubit<MyDataState> {
   static Future<String> _defaultTempDirectoryProvider() async {
     final directory = await getTemporaryDirectory();
     return directory.path;
+  }
+
+  static Future<String?> _defaultPickCsvFile() async {
+    final file = await FilePicker.pickFile(
+      type: FileType.custom,
+      allowedExtensions: ['csv'],
+    );
+    return file?.path;
   }
 
   static Future<void> _defaultShareCsvFile(
@@ -73,8 +97,102 @@ class MyDataCubit extends Cubit<MyDataState> {
     );
   }
 
+  Future<void> pickAndImport({
+    ConfirmImportCallback? confirmImport,
+  }) async {
+    if (isClosed || state.isImporting || state.isExporting) {
+      return;
+    }
+
+    final path = await _pickCsvFile();
+    if (path == null || isClosed) {
+      return;
+    }
+
+    final csvRowCount = await _countCsvDataRows(path);
+    if (isClosed) {
+      return;
+    }
+
+    if (state.sampleCount > 0) {
+      final confirm = confirmImport ?? _confirmImport;
+      if (confirm == null) {
+        if (kDebugMode) {
+          debugPrint(
+            'MyDataCubit.pickAndImport: confirmImport required when DB has samples',
+          );
+        }
+        return;
+      }
+      final approved = await confirm(csvRowCount, state.sampleCount);
+      if (!approved || isClosed) {
+        return;
+      }
+    }
+
+    emit(
+      state.copyWith(
+        isImporting: true,
+        importErrorMessage: null,
+      ),
+    );
+
+    try {
+      await stepRepository.importCsv(filePath: path);
+
+      if (isClosed) {
+        return;
+      }
+
+      emit(state.copyWith(isImporting: false, importErrorMessage: null));
+      await _postImportRefresh?.call();
+      if (!isClosed) {
+        await refresh(silent: true);
+      }
+    } on ImportValidationException catch (error) {
+      if (isClosed) {
+        return;
+      }
+      emit(
+        state.copyWith(
+          isImporting: false,
+          importErrorMessage: error.message,
+        ),
+      );
+    } catch (error, stackTrace) {
+      if (kDebugMode) {
+        debugPrint('MyDataCubit.pickAndImport failed: $error');
+        debugPrintStack(stackTrace: stackTrace);
+      }
+      if (isClosed) {
+        return;
+      }
+      emit(
+        state.copyWith(
+          isImporting: false,
+          importErrorMessage: 'Import could not be completed. Try again.',
+        ),
+      );
+    }
+  }
+
+  Future<int> _countCsvDataRows(String filePath) async {
+    final lines = await File(filePath).readAsLines();
+    if (lines.isEmpty) {
+      throw ImportValidationException('CSV file is empty');
+    }
+    TimeseriesCsvCodec.parseHeaderRow(lines.first);
+    var count = 0;
+    for (var i = 1; i < lines.length; i++) {
+      if (lines[i].replaceAll('\r', '').trim().isNotEmpty) {
+        count++;
+      }
+    }
+    return count;
+  }
+
   Future<void> exportAndShare({Rect? sharePositionOrigin}) async {
-    if (isClosed || state.isExporting) {
+    if (isClosed || state.isExporting || state.isImporting) {
       return;
     }
 
@@ -220,6 +338,8 @@ class MyDataCubit extends Cubit<MyDataState> {
       ).copyWith(
         isExporting: state.isExporting,
         exportErrorMessage: state.exportErrorMessage,
+        isImporting: state.isImporting,
+        importErrorMessage: state.importErrorMessage,
       ),
     );
   }
