@@ -1,4 +1,5 @@
 import '../../core/constants/preference_keys.dart';
+import '../../core/validation/step_goal_validator.dart';
 
 enum OnboardingStatus { inProgress, completed }
 
@@ -23,15 +24,12 @@ class OnboardingState {
 
   static const int totalSteps = 3;
 
-  bool get isGoalValid {
-    final parsed = int.tryParse(goalInput.trim());
-    if (parsed == null) return false;
-    return parsed >= kMinStepGoal && parsed <= kMaxStepGoal;
-  }
+  bool get isGoalValid => validateStepGoalInput(goalInput).isValid;
 
   int get resolvedGoal {
-    if (isGoalValid) {
-      return int.parse(goalInput.trim());
+    final result = validateStepGoalInput(goalInput);
+    if (result.isValid && result.parsedGoal != null) {
+      return result.parsedGoal!;
     }
     return kDefaultStepGoal;
   }
