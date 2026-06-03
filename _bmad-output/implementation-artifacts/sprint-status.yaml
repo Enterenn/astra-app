@@ -46,7 +46,7 @@
 # NAVIGATION: _bmad-output/README.md
 
 generated: 2026-05-25
-last_updated: 2026-06-03 (story 4-4 done, 4-5 ready-for-dev)
+last_updated: 2026-06-03 (story 4-5 in-progress)
 project: astra-app
 project_key: NOKEY
 tracking_system: file-system
@@ -86,7 +86,7 @@ development_status:
   4-2-my-data-footprint-and-background-status: done
   4-3-csv-export: done
   4-4-csv-import: done
-  4-5-full-data-purge-with-export-nudge: ready-for-dev
+  4-5-full-data-purge-with-export-nudge: in-progress
   4-6-daily-goal-editor-on-my-data: backlog
   4-7-theme-selector-and-my-data-integration: backlog
   4-8-local-display-name-and-today-greeting: backlog

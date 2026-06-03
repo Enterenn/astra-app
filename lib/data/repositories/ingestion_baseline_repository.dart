@@ -9,10 +9,21 @@ class IngestionBaselineRepository {
 
   final Database _db;
 
+  static const baselineKeyPrefix = 'ingestion_baseline/';
+
   static String preferenceKey({
     required String provider,
     required String deviceId,
-  }) => 'ingestion_baseline/$provider/$deviceId';
+  }) => '$baselineKeyPrefix$provider/$deviceId';
+
+  /// Removes all ingestion baseline keys inside an existing [txn] (purge path).
+  static Future<void> clearAllBaselines(Transaction txn) async {
+    await txn.delete(
+      'user_preferences',
+      where: 'key LIKE ?',
+      whereArgs: ['$baselineKeyPrefix%'],
+    );
+  }
 
   Future<int?> getBaseline({
     required String provider,

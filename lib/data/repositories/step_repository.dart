@@ -5,6 +5,7 @@ import 'package:path/path.dart' as p;
 import 'package:sqflite/sqflite.dart';
 import 'package:uuid/uuid.dart';
 
+import '../../core/constants/preference_keys.dart';
 import '../../core/lifecycle/sample_compaction_runner.dart';
 import '../../core/time/local_day_formatter.dart';
 import '../../core/time/local_day_calculator.dart';
@@ -16,6 +17,7 @@ import '../models/database_footprint.dart';
 import '../models/import_result.dart';
 import '../models/normalized_step_bucket.dart';
 import '../models/timeseries_sample_model.dart';
+import 'ingestion_baseline_repository.dart';
 
 class StepRepository {
   StepRepository({required this.db, required this.clock, Uuid? uuid})
@@ -397,5 +399,32 @@ class StepRepository {
       insertedCount: insertedCount,
       skippedCount: skippedCount,
     );
+  }
+
+  /// Wipes all health data and derived collection state in a single transaction (FR-20, D-24).
+  ///
+  /// Preserves setup preferences: daily goal, theme, onboarding, and future non-health keys.
+  /// VACUUM / file shrink is the caller's responsibility via [DataLifecycleService].
+  Future<void> purge({
+    @visibleForTesting Future<void> Function(Transaction txn)? testHookAfterDeleteSamples,
+  }) async {
+    await db.transaction((txn) async {
+      await txn.delete('timeseries_samples');
+      if (testHookAfterDeleteSamples != null) {
+        await testHookAfterDeleteSamples(txn);
+      }
+      await IngestionBaselineRepository.clearAllBaselines(txn);
+      for (final key in [
+        kCelebrationShownDateKey,
+        kIngestionCollectLockKey,
+        kLastDatabaseOptimizedAtKey,
+      ]) {
+        await txn.delete(
+          'user_preferences',
+          where: 'key = ?',
+          whereArgs: [key],
+        );
+      }
+    });
   }
 }
