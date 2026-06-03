@@ -1,6 +1,6 @@
 # Story 4.8: Local Display Name and Today Greeting
 
-Status: review
+Status: done
 
 <!-- User-confirmed 2026-06-03: English-only copy; i18n deferred. No coach personalization on celebration/notifications. -->
 
@@ -346,5 +346,6 @@ Composer (dev-story workflow)
 
 ## Change Log
 
+- 2026-06-03: Code review fixes — clear display name on onboarding skip; My Data save error SnackBar; Profile row disabled tests.
 - 2026-06-03: Story 4.8 implemented — display name preference, 4-step onboarding, Today greeting, My Data Profile editor.
 - 2026-06-03: Story 4.8 context engine analysis completed — ready-for-dev comprehensive developer guide

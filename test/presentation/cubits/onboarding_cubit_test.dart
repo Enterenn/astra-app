@@ -84,13 +84,13 @@ void main() {
       cubit.close();
     });
 
-    test('completeOnboarding without display name leaves key unset', () async {
+    test('completeOnboarding without display name clears stored name', () async {
       final cubit = OnboardingCubit(userPreferences: repository);
       await repository.setDisplayName('Old');
 
       await cubit.completeOnboarding(goal: 8000);
 
-      expect(await repository.getDisplayName(), 'Old');
+      expect(await repository.getDisplayName(), isNull);
 
       cubit.close();
     });

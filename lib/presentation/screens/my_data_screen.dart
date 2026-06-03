@@ -248,7 +248,24 @@ class MyDataScreen extends StatelessWidget {
                                       if (result == null || !context.mounted) {
                                         return;
                                       }
-                                      await cubit.updateDisplayName(result);
+                                      final saved =
+                                          await cubit.updateDisplayName(
+                                        result,
+                                      );
+                                      if (!context.mounted) {
+                                        return;
+                                      }
+                                      if (!saved) {
+                                        ScaffoldMessenger.of(context)
+                                            .showSnackBar(
+                                          const SnackBar(
+                                            content: Text(
+                                              'Display name could not be saved. Try again.',
+                                            ),
+                                            duration: Duration(seconds: 3),
+                                          ),
+                                        );
+                                      }
                                     },
                             ),
                     ),

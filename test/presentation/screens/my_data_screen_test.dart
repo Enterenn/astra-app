@@ -223,6 +223,59 @@ void main() {
       expect(find.text('Save'), findsNothing);
     });
 
+    testWidgets('display name row does not open editor while export in flight', (
+      tester,
+    ) async {
+      final cubit = buildSeededCubit(
+        _readyState(isExporting: true, displayName: 'Alex'),
+      );
+      addTearDown(cubit.close);
+
+      await pumpScreen(tester, cubit: cubit);
+
+      final row = tester.widget<DisplayNameEditorRow>(
+        find.byType(DisplayNameEditorRow),
+      );
+      expect(row.onTap, isNull);
+
+      await tester.tap(find.byType(DisplayNameEditorRow));
+      await tester.pump();
+
+      expect(find.text('Save'), findsNothing);
+    });
+
+    testWidgets('display name row does not open editor while purge in flight', (
+      tester,
+    ) async {
+      final cubit = buildSeededCubit(
+        _readyState(isPurging: true, displayName: 'Alex'),
+      );
+      addTearDown(cubit.close);
+
+      await pumpScreen(tester, cubit: cubit);
+
+      final row = tester.widget<DisplayNameEditorRow>(
+        find.byType(DisplayNameEditorRow),
+      );
+      expect(row.onTap, isNull);
+    });
+
+    testWidgets('display name row does not open editor while import in flight', (
+      tester,
+    ) async {
+      final cubit = buildSeededCubit(
+        _readyState(isImporting: true, displayName: 'Alex'),
+      );
+      addTearDown(cubit.close);
+
+      await pumpScreen(tester, cubit: cubit);
+
+      final row = tester.widget<DisplayNameEditorRow>(
+        find.byType(DisplayNameEditorRow),
+      );
+      expect(row.onTap, isNull);
+    });
+
     testWidgets('Profile section sits between Appearance and Your data', (
       tester,
     ) async {

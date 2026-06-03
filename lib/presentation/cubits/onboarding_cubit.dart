@@ -86,9 +86,7 @@ class OnboardingCubit extends Cubit<OnboardingState> {
   Future<void> completeOnboarding({int? goal, String? displayName}) async {
     final resolvedGoal = goal ?? state.resolvedGoal;
     await userPreferences.setDailyStepGoal(resolvedGoal);
-    if (displayName != null) {
-      await userPreferences.setDisplayName(displayName);
-    }
+    await userPreferences.setDisplayName(displayName);
     await userPreferences.setOnboardingComplete(true);
     emit(state.copyWith(status: OnboardingStatus.completed));
   }
