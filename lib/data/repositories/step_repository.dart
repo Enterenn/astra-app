@@ -1,3 +1,5 @@
+import 'dart:io';
+
 import 'package:flutter/foundation.dart';
 import 'package:sqflite/sqflite.dart';
 import 'package:uuid/uuid.dart';
@@ -7,6 +9,7 @@ import '../../core/time/local_day_calculator.dart';
 import '../../core/time/time_provider.dart';
 import '../../core/time/timestamp_codec.dart';
 import '../models/chart_day_aggregate.dart';
+import '../models/database_footprint.dart';
 import '../models/normalized_step_bucket.dart';
 import '../models/timeseries_sample_model.dart';
 
@@ -175,6 +178,31 @@ class StepRepository {
         await txn.insert('timeseries_samples', row);
       }
     });
+  }
+
+  /// Read-only footprint snapshot for My Data display (FR13).
+  ///
+  /// Does not trigger VACUUM or any write operations.
+  Future<DatabaseFootprint> getFootprint({required String databasePath}) async {
+    final sampleCount = await countStepSamples();
+    final fileSizeBytes = _readDatabaseFileSize(databasePath);
+    return DatabaseFootprint(
+      sampleCount: sampleCount,
+      fileSizeBytes: fileSizeBytes,
+    );
+  }
+
+  int _readDatabaseFileSize(String databasePath) {
+    if (databasePath == inMemoryDatabasePath) {
+      return 0;
+    }
+
+    final file = File(databasePath);
+    if (!file.existsSync()) {
+      return 0;
+    }
+
+    return file.lengthSync();
   }
 
   /// Returns the total number of step samples in the database.

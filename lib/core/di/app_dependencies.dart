@@ -44,6 +44,7 @@ class AppDependencies {
     required this.backgroundHealthCapabilityEvaluator,
     required this.healthForegroundCoordinator,
     required this.dataLifecycleService,
+    required this.databasePath,
   });
 
   final UserPreferencesRepository userPreferences;
@@ -60,6 +61,7 @@ class AppDependencies {
   final BackgroundHealthCapabilityEvaluator backgroundHealthCapabilityEvaluator;
   final HealthForegroundServiceCoordinator healthForegroundCoordinator;
   final DataLifecycleService dataLifecycleService;
+  final String databasePath;
 
   static Future<bool> resolveActivityRecognitionGranted() =>
       isActivityRecognitionGranted();
@@ -153,6 +155,7 @@ class AppDependencies {
       backgroundHealthCapabilityEvaluator: capabilityEvaluator,
       healthForegroundCoordinator: healthForeground,
       dataLifecycleService: dataLifecycleService,
+      databasePath: databasePath,
     );
   }
 
@@ -253,6 +256,7 @@ class AppDependencies {
       backgroundHealthCapabilityEvaluator: capabilityEvaluator,
       healthForegroundCoordinator: healthForeground,
       dataLifecycleService: lifecycleService,
+      databasePath: databasePath ?? inMemoryDatabasePath,
     );
   }
 }

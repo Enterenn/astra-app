@@ -60,6 +60,7 @@ void main() {
         expect(deps.backgroundCollector, isA<BackgroundCollector>());
         expect(deps.liveStepMonitor, isA<LiveStepMonitor>());
         expect(deps.dataLifecycleService, isA<DataLifecycleService>());
+        expect(deps.databasePath, inMemoryDatabasePath);
         expect(deps.notificationService, isA<NotificationService>());
         expect(deps.ingestionSources, hasLength(2));
         expect(deps.ingestionSources, contains(isA<PhonePedometerSource>()));
