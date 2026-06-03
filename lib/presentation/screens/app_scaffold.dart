@@ -8,6 +8,7 @@ import '../../core/constants/astra_colors.dart';
 import '../../core/di/app_dependencies.dart';
 import '../../dev/chart_benchmark_dev_fab.dart';
 import '../cubits/history_cubit.dart';
+import '../cubits/my_data_cubit.dart';
 import '../cubits/today_cubit.dart';
 import 'history_screen.dart';
 import 'my_data_screen.dart';
@@ -21,8 +22,11 @@ class AppScaffold extends StatefulWidget {
     this.onTodayCubitDisposed,
     this.onHistoryCubitReady,
     this.onHistoryCubitDisposed,
+    this.onMyDataCubitReady,
+    this.onMyDataCubitDisposed,
     this.createTodayCubit,
     this.createHistoryCubit,
+    this.createMyDataCubit,
     super.key,
   });
 
@@ -32,8 +36,11 @@ class AppScaffold extends StatefulWidget {
   final VoidCallback? onTodayCubitDisposed;
   final ValueChanged<HistoryCubit>? onHistoryCubitReady;
   final VoidCallback? onHistoryCubitDisposed;
+  final ValueChanged<MyDataCubit>? onMyDataCubitReady;
+  final VoidCallback? onMyDataCubitDisposed;
   final TodayCubit Function(AppDependencies deps)? createTodayCubit;
   final HistoryCubit Function(AppDependencies deps)? createHistoryCubit;
+  final MyDataCubit Function(AppDependencies deps)? createMyDataCubit;
 
   @override
   State<AppScaffold> createState() => _AppScaffoldState();
@@ -43,6 +50,7 @@ class _AppScaffoldState extends State<AppScaffold> {
   int _selectedIndex = 0;
   late final TodayCubit _todayCubit;
   late final HistoryCubit _historyCubit;
+  late final MyDataCubit _myDataCubit;
 
   static const _labels = ['Today', 'History', 'My Data'];
   static const _icons = [
@@ -68,8 +76,19 @@ class _AppScaffoldState extends State<AppScaffold> {
           stepRepository: widget.deps.stepRepository,
           userPreferences: widget.deps.userPreferences,
         );
+    _myDataCubit =
+        widget.createMyDataCubit?.call(widget.deps) ??
+        MyDataCubit(
+          stepRepository: widget.deps.stepRepository,
+          userPreferences: widget.deps.userPreferences,
+          capabilityEvaluator: widget.deps.backgroundHealthCapabilityEvaluator,
+          clock: widget.deps.timeProvider,
+          databasePath: widget.deps.databasePath,
+          activityPermissionGranted: widget.deps.activityPermissionGranted,
+        );
     widget.onTodayCubitReady?.call(_todayCubit);
     widget.onHistoryCubitReady?.call(_historyCubit);
+    widget.onMyDataCubitReady?.call(_myDataCubit);
     widget.deps.backgroundCollector.registerOnIngestionComplete(
       _onIngestionComplete,
     );
@@ -88,19 +107,23 @@ class _AppScaffoldState extends State<AppScaffold> {
     widget.deps.backgroundCollector.registerOnIngestionComplete(null);
     widget.onTodayCubitDisposed?.call();
     widget.onHistoryCubitDisposed?.call();
+    widget.onMyDataCubitDisposed?.call();
     _todayCubit.close();
     _historyCubit.close();
+    _myDataCubit.close();
     super.dispose();
   }
 
   void _onIngestionComplete() {
     unawaited(_todayCubit.refreshMetadata());
     unawaited(_historyCubit.refresh(silent: true));
+    unawaited(_myDataCubit.refresh(silent: true));
   }
 
   void _onDestinationSelected(int index) {
     final returningToToday = index == 0 && _selectedIndex != 0;
     final openingHistory = index == 1 && _selectedIndex != 1;
+    final openingMyData = index == 2 && _selectedIndex != 2;
     setState(() {
       _selectedIndex = index;
     });
@@ -111,12 +134,16 @@ class _AppScaffoldState extends State<AppScaffold> {
     if (openingHistory) {
       unawaited(_historyCubit.refresh());
     }
+    if (openingMyData) {
+      unawaited(_myDataCubit.refresh());
+    }
   }
 
   void _navigateToMyData() {
     setState(() {
       _selectedIndex = 2;
     });
+    unawaited(_myDataCubit.refresh());
   }
 
   Widget _buildScreen(int index) {
@@ -129,7 +156,10 @@ class _AppScaffoldState extends State<AppScaffold> {
         value: _historyCubit,
         child: const HistoryScreen(),
       ),
-      2 => const MyDataScreen(),
+      2 => BlocProvider.value(
+        value: _myDataCubit,
+        child: MyDataScreen(clock: widget.deps.timeProvider),
+      ),
       _ => const SizedBox.shrink(),
     };
   }

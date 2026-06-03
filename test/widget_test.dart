@@ -8,6 +8,7 @@ import 'package:astra_app/data/repositories/user_preferences_repository.dart';
 import 'package:astra_app/presentation/cubits/onboarding_cubit.dart';
 import 'package:astra_app/presentation/cubits/theme_state.dart';
 import 'package:astra_app/presentation/cubits/history_cubit.dart';
+import 'package:astra_app/presentation/cubits/my_data_cubit.dart';
 import 'package:astra_app/presentation/cubits/today_cubit.dart';
 import 'package:astra_app/presentation/cubits/today_state.dart';
 import 'package:flutter/material.dart';
@@ -32,6 +33,17 @@ HistoryCubit _testHistoryCubit(AppDependencies deps) {
   return HistoryCubit(
     stepRepository: deps.stepRepository,
     userPreferences: deps.userPreferences,
+  );
+}
+
+MyDataCubit _testMyDataCubit(AppDependencies deps) {
+  return MyDataCubit(
+    stepRepository: deps.stepRepository,
+    userPreferences: deps.userPreferences,
+    capabilityEvaluator: deps.backgroundHealthCapabilityEvaluator,
+    clock: deps.timeProvider,
+    databasePath: deps.databasePath,
+    activityPermissionGranted: () async => true,
   );
 }
 
@@ -67,6 +79,7 @@ void main() {
             deps: deps,
             createTodayCubit: _testTodayCubit,
             createHistoryCubit: _testHistoryCubit,
+            createMyDataCubit: _testMyDataCubit,
             enablePeriodicPersist: false,
             enableLiveStepPipeline: false,
           ),
@@ -102,12 +115,13 @@ void main() {
 
       await tester.tap(find.byIcon(Icons.shield_outlined));
       await tester.pump();
+      await tester.runAsync(() async {
+        await Future<void>.delayed(const Duration(milliseconds: 50));
+      });
       await tester.pump(const Duration(milliseconds: 200));
 
-      expect(
-        find.text('Data footprint, export, and settings will appear here.'),
-        findsOneWidget,
-      );
+      expect(find.text('Background'), findsOneWidget);
+      expect(find.text('Footprint'), findsOneWidget);
 
       await tester.runAsync(() async {
         await tester.pumpWidget(const SizedBox.shrink());

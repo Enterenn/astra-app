@@ -162,11 +162,13 @@ void main() {
 
         await tester.tap(find.byIcon(Icons.shield_outlined));
         await tester.pump();
+        await tester.runAsync(() async {
+          await Future<void>.delayed(const Duration(milliseconds: 50));
+        });
+        await tester.pump();
 
-        expect(
-          find.text('Data footprint, export, and settings will appear here.'),
-          findsOneWidget,
-        );
+        expect(find.text('Background'), findsOneWidget);
+        expect(find.text('Footprint'), findsOneWidget);
 
         await _disposeScaffold(tester);
       },
@@ -262,11 +264,16 @@ void main() {
 
       await tester.tap(find.byType(StatusBanner));
       await tester.pump();
+      await tester.runAsync(() async {
+        await Future<void>.delayed(const Duration(milliseconds: 50));
+      });
+      await tester.pump();
 
       expect(
-        find.text('Data footprint, export, and settings will appear here.'),
+        find.text('Background'),
         findsOneWidget,
       );
+      expect(find.text('Footprint'), findsOneWidget);
 
       await _disposeScaffold(tester);
     });

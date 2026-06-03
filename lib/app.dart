@@ -10,6 +10,7 @@ import 'presentation/cubits/onboarding_cubit.dart';
 import 'presentation/cubits/theme_cubit.dart';
 import 'presentation/cubits/theme_state.dart';
 import 'presentation/cubits/history_cubit.dart';
+import 'presentation/cubits/my_data_cubit.dart';
 import 'presentation/cubits/today_cubit.dart';
 import 'presentation/onboarding/onboarding_flow.dart';
 import 'presentation/screens/app_scaffold.dart';
@@ -21,6 +22,7 @@ class AstraApp extends StatefulWidget {
     this.createOnboardingCubit,
     this.createTodayCubit,
     this.createHistoryCubit,
+    this.createMyDataCubit,
     this.enablePeriodicPersist = true,
     this.enableLiveStepPipeline = true,
   });
@@ -30,6 +32,7 @@ class AstraApp extends StatefulWidget {
   createOnboardingCubit;
   final TodayCubit Function(AppDependencies deps)? createTodayCubit;
   final HistoryCubit Function(AppDependencies deps)? createHistoryCubit;
+  final MyDataCubit Function(AppDependencies deps)? createMyDataCubit;
   final bool enablePeriodicPersist;
   final bool enableLiveStepPipeline;
 
@@ -47,6 +50,7 @@ class _AstraAppState extends State<AstraApp> with WidgetsBindingObserver {
   late bool _showMainShell;
   TodayCubit? _todayCubit;
   HistoryCubit? _historyCubit;
+  MyDataCubit? _myDataCubit;
   late final Future<int> _foregroundBackfill;
   Timer? _persistTimer;
   bool _livePipelineStarted = false;
@@ -181,6 +185,7 @@ class _AstraAppState extends State<AstraApp> with WidgetsBindingObserver {
     }
     await _todayCubit?.refreshMetadata();
     await _historyCubit?.refresh(silent: true);
+    await _myDataCubit?.refresh(silent: true);
   }
 
   Future<void> _initialTodayRefresh() async {
@@ -202,6 +207,10 @@ class _AstraAppState extends State<AstraApp> with WidgetsBindingObserver {
 
   void _onHistoryCubitReady(HistoryCubit cubit) {
     _historyCubit = cubit;
+  }
+
+  void _onMyDataCubitReady(MyDataCubit cubit) {
+    _myDataCubit = cubit;
   }
 
   /// First launch or hot-reload cubit recreate — never overwrite live total with
@@ -302,8 +311,11 @@ class _AstraAppState extends State<AstraApp> with WidgetsBindingObserver {
                     onTodayCubitDisposed: () => _todayCubit = null,
                     onHistoryCubitReady: _onHistoryCubitReady,
                     onHistoryCubitDisposed: () => _historyCubit = null,
+                    onMyDataCubitReady: _onMyDataCubitReady,
+                    onMyDataCubitDisposed: () => _myDataCubit = null,
                     createTodayCubit: widget.createTodayCubit,
                     createHistoryCubit: widget.createHistoryCubit,
+                    createMyDataCubit: widget.createMyDataCubit,
                   )
                 : OnboardingFlow(
                     deps: widget.deps,
