@@ -10,7 +10,9 @@ import '../cubits/my_data_cubit.dart';
 import '../cubits/my_data_state.dart';
 import '../utils/share_position_origin.dart';
 import '../widgets/background_status_card.dart';
+import '../widgets/confirm_dialog.dart';
 import '../widgets/data_export_button.dart';
+import '../widgets/data_import_button.dart';
 import '../widgets/footprint_kpi_row.dart';
 import '../widgets/section_card.dart';
 import '../widgets/status_banner.dart';
@@ -31,19 +33,37 @@ class MyDataScreen extends StatelessWidget {
       color: colors.bgBase,
       child: SafeArea(
         bottom: false,
-        child: BlocListener<MyDataCubit, MyDataState>(
-          listenWhen: (previous, current) =>
-              previous.isExporting &&
-              !current.isExporting &&
-              current.exportErrorMessage == null,
-          listener: (context, state) {
-            ScaffoldMessenger.of(context).showSnackBar(
-              const SnackBar(
-                content: Text('Export saved'),
-                duration: Duration(seconds: 3),
-              ),
-            );
-          },
+        child: MultiBlocListener(
+          listeners: [
+            BlocListener<MyDataCubit, MyDataState>(
+              listenWhen: (previous, current) =>
+                  previous.isExporting &&
+                  !current.isExporting &&
+                  current.exportErrorMessage == null,
+              listener: (context, state) {
+                ScaffoldMessenger.of(context).showSnackBar(
+                  const SnackBar(
+                    content: Text('Export saved'),
+                    duration: Duration(seconds: 3),
+                  ),
+                );
+              },
+            ),
+            BlocListener<MyDataCubit, MyDataState>(
+              listenWhen: (previous, current) =>
+                  previous.isImporting &&
+                  !current.isImporting &&
+                  current.importErrorMessage == null,
+              listener: (context, state) {
+                ScaffoldMessenger.of(context).showSnackBar(
+                  const SnackBar(
+                    content: Text('Import complete'),
+                    duration: Duration(seconds: 3),
+                  ),
+                );
+              },
+            ),
+          ],
           child: BlocBuilder<MyDataCubit, MyDataState>(
             builder: (context, state) {
               final nowUtc = clock.nowUtc();
@@ -72,6 +92,21 @@ class MyDataScreen extends StatelessWidget {
                         message: state.exportErrorMessage,
                         onTap: () => cubit.exportAndShare(
                           sharePositionOrigin: sharePositionOriginFor(context),
+                        ),
+                      ),
+                      const SizedBox(height: AstraSpacing.kSpaceMd),
+                    ],
+                    if (state.importErrorMessage != null) ...[
+                      StatusBanner(
+                        variant: StatusBannerVariant.error,
+                        message: state.importErrorMessage,
+                        onTap: () => cubit.pickAndImport(
+                          confirmImport: (csvRowCount, existingSampleCount) =>
+                              showImportConfirmDialog(
+                            context,
+                            csvRowCount: csvRowCount,
+                            existingSampleCount: existingSampleCount,
+                          ),
                         ),
                       ),
                       const SizedBox(height: AstraSpacing.kSpaceMd),
@@ -105,20 +140,43 @@ class MyDataScreen extends StatelessWidget {
                       headline: 'Your data',
                       child: state.status == MyDataStatus.loading
                           ? const _SectionLoadingIndicator()
-                          : Builder(
-                              builder: (buttonContext) => DataExportButton(
-                                label: 'Export CSV',
-                                semanticsLabel: 'Export data as CSV file',
-                                isLoading: state.isExporting,
-                                onPressed: state.isExporting
-                                    ? null
-                                    : () => cubit.exportAndShare(
-                                        sharePositionOrigin:
-                                            sharePositionOriginFor(
-                                          buttonContext,
+                          : Column(
+                              crossAxisAlignment: CrossAxisAlignment.stretch,
+                              children: [
+                                Builder(
+                                  builder: (buttonContext) => DataExportButton(
+                                    label: 'Export CSV',
+                                    semanticsLabel: 'Export data as CSV file',
+                                    isLoading: state.isExporting,
+                                    onPressed: state.isExporting ||
+                                            state.isImporting
+                                        ? null
+                                        : () => cubit.exportAndShare(
+                                            sharePositionOrigin:
+                                                sharePositionOriginFor(
+                                              buttonContext,
+                                            ),
+                                          ),
+                                  ),
+                                ),
+                                const SizedBox(height: AstraSpacing.kSpaceSm),
+                                DataImportButton(
+                                  isLoading: state.isImporting,
+                                  onPressed: state.isImporting ||
+                                          state.isExporting
+                                      ? null
+                                      : () => cubit.pickAndImport(
+                                          confirmImport:
+                                              (csvRowCount, existingSampleCount) =>
+                                                  showImportConfirmDialog(
+                                            context,
+                                            csvRowCount: csvRowCount,
+                                            existingSampleCount:
+                                                existingSampleCount,
+                                          ),
                                         ),
-                                      ),
-                              ),
+                                ),
+                              ],
                             ),
                     ),
                     const SizedBox(height: AstraSpacing.kSpaceMd),

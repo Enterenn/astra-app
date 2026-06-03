@@ -8,6 +8,7 @@ import 'package:astra_app/presentation/cubits/my_data_cubit.dart';
 import 'package:astra_app/presentation/cubits/my_data_state.dart';
 import 'package:astra_app/presentation/screens/my_data_screen.dart';
 import 'package:astra_app/presentation/widgets/data_export_button.dart';
+import 'package:astra_app/presentation/widgets/data_import_button.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:flutter_test/flutter_test.dart';
@@ -64,6 +65,8 @@ class _SeededMyDataCubit extends MyDataCubit {
 MyDataState _readyState({
   bool isExporting = false,
   String? exportErrorMessage,
+  bool isImporting = false,
+  String? importErrorMessage,
 }) {
   return MyDataState(
     status: MyDataStatus.ready,
@@ -73,6 +76,8 @@ MyDataState _readyState({
     isIos: false,
     isExporting: isExporting,
     exportErrorMessage: exportErrorMessage,
+    isImporting: isImporting,
+    importErrorMessage: importErrorMessage,
   );
 }
 
@@ -173,6 +178,44 @@ void main() {
       await tester.pump();
 
       expect(find.text('Export saved'), findsOneWidget);
+      final snackBar = tester.widget<SnackBar>(find.byType(SnackBar));
+      expect(snackBar.duration, const Duration(seconds: 3));
+    });
+
+    testWidgets('shows Import CSV button below export', (tester) async {
+      final cubit = buildSeededCubit(_readyState());
+      addTearDown(cubit.close);
+
+      await pumpScreen(tester, cubit: cubit);
+
+      expect(find.text('Import CSV'), findsOneWidget);
+      expect(find.byType(DataImportButton), findsOneWidget);
+    });
+
+    testWidgets('import button shows spinner while importing', (tester) async {
+      final cubit = buildSeededCubit(_readyState(isImporting: true));
+      addTearDown(cubit.close);
+
+      await pumpScreen(tester, cubit: cubit);
+
+      expect(find.byType(DataImportButton), findsOneWidget);
+      expect(find.byType(CircularProgressIndicator), findsWidgets);
+    });
+
+    testWidgets('shows Import complete snackbar for 3s after successful import', (
+      tester,
+    ) async {
+      final cubit = buildSeededCubit(_readyState());
+      addTearDown(cubit.close);
+
+      await pumpScreen(tester, cubit: cubit);
+
+      cubit.emit(_readyState(isImporting: true));
+      await tester.pump();
+      cubit.emit(_readyState(isImporting: false));
+      await tester.pump();
+
+      expect(find.text('Import complete'), findsOneWidget);
       final snackBar = tester.widget<SnackBar>(find.byType(SnackBar));
       expect(snackBar.duration, const Duration(seconds: 3));
     });
