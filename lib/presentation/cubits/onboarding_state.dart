@@ -22,7 +22,7 @@ class OnboardingState {
   final PermissionRequestStatus activityPermissionStatus;
   final PermissionRequestStatus notificationPermissionStatus;
 
-  static const int totalSteps = 3;
+  static const int totalSteps = 4;
 
   bool get isGoalValid => validateStepGoalInput(goalInput).isValid;
 

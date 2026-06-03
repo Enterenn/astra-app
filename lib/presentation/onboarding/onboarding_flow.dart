@@ -7,6 +7,7 @@ import '../../core/di/app_dependencies.dart';
 import '../../data/repositories/user_preferences_repository.dart';
 import '../cubits/onboarding_cubit.dart';
 import '../cubits/onboarding_state.dart';
+import 'onboarding_display_name_page.dart';
 import 'onboarding_goal_page.dart';
 import 'onboarding_permissions_page.dart';
 import 'onboarding_trust_page.dart';
@@ -44,8 +45,15 @@ class OnboardingFlow extends StatelessWidget {
 class _OnboardingFlowView extends StatelessWidget {
   const _OnboardingFlowView();
 
-  Future<void> _completeOnboarding(BuildContext context, int goal) async {
-    await context.read<OnboardingCubit>().completeOnboarding(goal: goal);
+  Future<void> _completeOnboarding(
+    BuildContext context, {
+    String? displayName,
+  }) async {
+    final cubit = context.read<OnboardingCubit>();
+    await cubit.completeOnboarding(
+      goal: cubit.state.resolvedGoal,
+      displayName: displayName,
+    );
   }
 
   @override
@@ -75,7 +83,11 @@ class _OnboardingFlowView extends StatelessWidget {
                 ),
                 const OnboardingPermissionsPage(),
                 OnboardingGoalPage(
-                  onComplete: (goal) => _completeOnboarding(context, goal),
+                  onContinue: context.read<OnboardingCubit>().nextStep,
+                ),
+                OnboardingDisplayNamePage(
+                  onComplete: ({displayName}) =>
+                      _completeOnboarding(context, displayName: displayName),
                 ),
               ],
             ),

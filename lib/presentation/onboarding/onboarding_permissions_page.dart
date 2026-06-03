@@ -47,7 +47,7 @@ class OnboardingPermissionsPage extends StatelessWidget {
               tooltip: 'Back',
             ),
             const Expanded(
-              child: OnboardingProgressIndicator(currentStep: 1, totalSteps: 3),
+              child: OnboardingProgressIndicator(currentStep: 1, totalSteps: 4),
             ),
             const SizedBox(width: 48),
           ],

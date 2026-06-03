@@ -53,7 +53,10 @@ void main() {
       cubit.nextStep();
       cubit.nextStep();
       cubit.nextStep();
-      expect(cubit.state.currentStep, 2);
+      expect(cubit.state.currentStep, 3);
+
+      cubit.nextStep();
+      expect(cubit.state.currentStep, 3);
 
       cubit.close();
     });
@@ -66,6 +69,28 @@ void main() {
       expect(cubit.state.status, OnboardingStatus.completed);
       expect(await repository.getDailyStepGoal(), 12000);
       expect(await repository.getOnboardingComplete(), isTrue);
+
+      cubit.close();
+    });
+
+    test('completeOnboarding persists optional display name', () async {
+      final cubit = OnboardingCubit(userPreferences: repository);
+
+      await cubit.completeOnboarding(goal: 9000, displayName: '  Alex  ');
+
+      expect(await repository.getDisplayName(), 'Alex');
+      expect(await repository.getDailyStepGoal(), 9000);
+
+      cubit.close();
+    });
+
+    test('completeOnboarding without display name leaves key unset', () async {
+      final cubit = OnboardingCubit(userPreferences: repository);
+      await repository.setDisplayName('Old');
+
+      await cubit.completeOnboarding(goal: 8000);
+
+      expect(await repository.getDisplayName(), 'Old');
 
       cubit.close();
     });

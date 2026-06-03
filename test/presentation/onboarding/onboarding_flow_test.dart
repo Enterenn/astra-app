@@ -164,6 +164,32 @@ void main() {
       expect(onCompleteCalled, isTrue);
     });
 
+    testWidgets('goal Continue advances to display name step', (tester) async {
+      await tester.pumpWidget(
+        MaterialApp(
+          theme: buildAstraLightTheme(),
+          home: OnboardingFlow(
+            deps: deps,
+            onComplete: () {},
+            createCubit: (repo) => OnboardingCubit(
+              userPreferences: repo,
+              permissionRequester: (_) async => PermissionStatus.granted,
+            ),
+          ),
+        ),
+      );
+
+      await tester.tap(find.text('Continue'));
+      await tester.pump();
+      await tester.tap(find.text('Allow activity access'));
+      await tester.pump();
+      await tester.tap(find.text('Start tracking'));
+      await tester.pump();
+
+      expect(find.text('What should we call you?'), findsOneWidget);
+      expect(find.text('Continue without name'), findsOneWidget);
+    });
+
     testWidgets('denied activity permission still advances to goal step', (
       tester,
     ) async {

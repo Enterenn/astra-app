@@ -21,7 +21,7 @@ class OnboardingTrustPage extends StatelessWidget {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
-        const OnboardingProgressIndicator(currentStep: 0, totalSteps: 3),
+        const OnboardingProgressIndicator(currentStep: 0, totalSteps: 4),
         const SizedBox(height: AstraSpacing.kSpace2xl),
         Text(
           'Your steps stay on this device.',
