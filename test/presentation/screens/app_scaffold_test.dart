@@ -162,8 +162,9 @@ void main() {
           userPreferences: deps.userPreferences,
         );
 
-        expect(find.text('steps today'), findsOneWidget);
-        expect(find.text('Phone sensor'), findsOneWidget);
+        expect(find.text("Today's activity"), findsOneWidget);
+        expect(find.text('Steps'), findsOneWidget);
+        expect(find.text('Phone sensor'), findsNothing);
 
         expect(find.text('TODAY'), findsOneWidget);
         expect(find.text('TRENDS'), findsOneWidget);
@@ -208,7 +209,7 @@ void main() {
       await tester.pump();
 
       expect(tester.takeException(), isNull);
-      expect(find.text('steps today'), findsOneWidget);
+      expect(find.text('Steps'), findsOneWidget);
 
       await _disposeScaffold(tester);
     });

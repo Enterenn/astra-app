@@ -7,10 +7,13 @@ import '../../core/constants/astra_spacing.dart';
 import '../../core/constants/astra_typography.dart';
 import '../cubits/today_cubit.dart';
 import '../cubits/today_state.dart';
+import '../widgets/activity_stats_row.dart';
 import '../widgets/goal_celebration.dart';
+import '../widgets/goal_editor_sheet.dart';
 import '../widgets/goal_ring.dart';
-import '../widgets/source_chip.dart';
+import '../widgets/section_card.dart';
 import '../widgets/status_banner.dart';
+import '../widgets/week_progress_row.dart';
 
 class TodayScreen extends StatelessWidget {
   const TodayScreen({
@@ -20,9 +23,17 @@ class TodayScreen extends StatelessWidget {
 
   final VoidCallback onNavigateToMyData;
 
+  static const _kScreenTitle = "Today's activity";
+  static const _kSetGoalLabel = 'Set goal';
+
   @override
   Widget build(BuildContext context) {
     final colors = context.astraColors;
+    final horizontalPadding = AstraSpacing.kScreenHorizontalPadding;
+    final bottomScrollPadding =
+        AstraSpacing.kBottomNavBottomOffset +
+        AstraSpacing.kBottomNavBarHeight +
+        AstraSpacing.kSpaceMd;
 
     return ColoredBox(
       color: colors.bgBase,
@@ -30,76 +41,152 @@ class TodayScreen extends StatelessWidget {
         bottom: false,
         child: BlocBuilder<TodayCubit, TodayState>(
           builder: (context, state) {
-            final greeting = state.displayName == null
-                ? null
-                : 'Hello, ${state.displayName}';
-
             return Semantics(
-              label: greeting,
-              child: Column(
-              crossAxisAlignment: CrossAxisAlignment.stretch,
-              children: [
-                if (state.isStale)
-                  Padding(
-                    padding: const EdgeInsets.fromLTRB(
-                      AstraSpacing.kScreenHorizontalPadding,
-                      AstraSpacing.kSpaceSm,
-                      AstraSpacing.kScreenHorizontalPadding,
-                      AstraSpacing.kSpaceSm,
-                    ),
-                    child: StatusBanner(
-                      variant: StatusBannerVariant.staleCompact,
-                      onTap: onNavigateToMyData,
-                    ),
-                  ),
-                if (greeting != null)
-                  Padding(
-                    padding: const EdgeInsets.fromLTRB(
-                      AstraSpacing.kScreenHorizontalPadding,
-                      AstraSpacing.kSpaceSm,
-                      AstraSpacing.kScreenHorizontalPadding,
-                      AstraSpacing.kSpaceSm,
-                    ),
-                    child: Text(
-                      greeting,
+              label: _kScreenTitle,
+              child: SingleChildScrollView(
+                padding: EdgeInsets.fromLTRB(
+                  horizontalPadding,
+                  AstraSpacing.kSpaceSm,
+                  horizontalPadding,
+                  bottomScrollPadding,
+                ),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.stretch,
+                  children: [
+                    Text(
+                      _kScreenTitle,
                       style: AstraTypography.captionFor(colors),
                     ),
-                  ),
-                Expanded(
-                  flex: 55,
-                  child: Center(
-                    child: state.showCelebration
-                        ? GoalCelebration(
-                            state: state,
-                            onComplete: () =>
-                                context.read<TodayCubit>().dismissCelebration(),
-                          )
-                        : GoalRing(state: state),
-                  ),
-                ),
-                Expanded(
-                  flex: 45,
-                  child: Column(
-                    children: [
-                      const Center(child: SourceChip()),
-                      if (state.status == TodayStatus.noPermission) ...[
-                        const SizedBox(height: AstraSpacing.kSpaceMd),
-                        TextButton(
-                          onPressed: () => openAppSettings(),
-                          child: Text(
-                            'Open settings to allow step access',
-                            style: AstraTypography.captionFor(colors),
-                          ),
-                        ),
-                      ],
+                    if (state.isStale) ...[
+                      const SizedBox(height: AstraSpacing.kSpaceSm),
+                      StatusBanner(
+                        variant: StatusBannerVariant.staleCompact,
+                        onTap: onNavigateToMyData,
+                      ),
                     ],
-                  ),
+                    const SizedBox(height: AstraSpacing.kSpaceMd),
+                    _GoalRingCard(state: state),
+                    if (state.status == TodayStatus.noPermission) ...[
+                      const SizedBox(height: AstraSpacing.kSpaceSm),
+                      TextButton(
+                        onPressed: () => openAppSettings(),
+                        child: Text(
+                          'Open settings to allow step access',
+                          style: AstraTypography.captionFor(colors),
+                        ),
+                      ),
+                    ],
+                    const SizedBox(height: AstraSpacing.kSpaceMd),
+                    _ElevatedCard(child: const ActivityStatsRow()),
+                    const SizedBox(height: AstraSpacing.kSpaceMd),
+                    SectionCard(
+                      headline: 'This week',
+                      child: state.weekDays.isEmpty
+                          ? const SizedBox(
+                              height: 72,
+                              child: Center(child: CircularProgressIndicator()),
+                            )
+                          : WeekProgressRow(days: state.weekDays),
+                    ),
+                  ],
                 ),
-              ],
-            ),
+              ),
             );
           },
         ),
+      ),
+    );
+  }
+}
+
+class _GoalRingCard extends StatelessWidget {
+  const _GoalRingCard({required this.state});
+
+  final TodayState state;
+
+  @override
+  Widget build(BuildContext context) {
+    final colors = context.astraColors;
+    final cubit = context.read<TodayCubit>();
+
+    return _ElevatedCard(
+      child: Column(
+        children: [
+          Center(
+            child: state.showCelebration
+                ? GoalCelebration(
+                    state: state,
+                    onComplete: () => cubit.dismissCelebration(),
+                  )
+                : GoalRing(state: state),
+          ),
+          const SizedBox(height: AstraSpacing.kSpaceLg),
+          Center(
+            child: Material(
+              color: colors.bgSubtle,
+              borderRadius: BorderRadius.circular(AstraSpacing.kRadiusFull),
+              child: InkWell(
+                onTap: () => _onSetGoalTapped(context),
+                borderRadius: BorderRadius.circular(AstraSpacing.kRadiusFull),
+                child: Padding(
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: AstraSpacing.kSpaceLg,
+                    vertical: AstraSpacing.kSpaceSm,
+                  ),
+                  child: Text(
+                    TodayScreen._kSetGoalLabel,
+                    style: AstraTypography.labelFor(colors),
+                  ),
+                ),
+              ),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Future<void> _onSetGoalTapped(BuildContext context) async {
+    final cubit = context.read<TodayCubit>();
+    final result = await showGoalEditorSheet(
+      context,
+      currentGoal: state.goal,
+    );
+    if (result == null || !context.mounted) {
+      return;
+    }
+    final saved = await cubit.updateDailyStepGoal(result);
+    if (!context.mounted) {
+      return;
+    }
+    if (!saved) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('Daily goal could not be saved. Try again.'),
+          duration: Duration(seconds: 3),
+        ),
+      );
+    }
+  }
+}
+
+class _ElevatedCard extends StatelessWidget {
+  const _ElevatedCard({required this.child});
+
+  final Widget child;
+
+  @override
+  Widget build(BuildContext context) {
+    final colors = context.astraColors;
+
+    return DecoratedBox(
+      decoration: BoxDecoration(
+        color: colors.bgElevated,
+        borderRadius: BorderRadius.circular(AstraSpacing.kRadiusMd),
+      ),
+      child: Padding(
+        padding: const EdgeInsets.all(AstraSpacing.kCardPadding),
+        child: child,
       ),
     );
   }

@@ -8,11 +8,13 @@ class SectionCard extends StatelessWidget {
   const SectionCard({
     required this.headline,
     required this.child,
+    this.padding = AstraSpacing.kCardPadding,
     super.key,
   });
 
   final String headline;
   final Widget child;
+  final double padding;
 
   @override
   Widget build(BuildContext context) {
@@ -24,7 +26,7 @@ class SectionCard extends StatelessWidget {
         borderRadius: BorderRadius.circular(AstraSpacing.kRadiusMd),
       ),
       child: Padding(
-        padding: const EdgeInsets.all(AstraSpacing.kSpaceMd),
+        padding: EdgeInsets.all(padding),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [

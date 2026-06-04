@@ -96,7 +96,7 @@ void main() {
       expect(find.text('PROFIL'), findsOneWidget);
 
       expect(
-        find.text('steps today'),
+        find.text('Steps'),
         findsOneWidget,
       );
 
@@ -290,7 +290,7 @@ void main() {
       expect(find.byType(AppBottomNav), findsOneWidget);
       expect(find.text('Your steps stay on this device.'), findsNothing);
       expect(
-        find.text('steps today'),
+        find.text('Steps'),
         findsOneWidget,
       );
 

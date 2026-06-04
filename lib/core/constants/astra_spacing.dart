@@ -9,6 +9,9 @@ abstract final class AstraSpacing {
   static const double kSpaceXl = 32;
   static const double kSpace2xl = 48;
 
+  /// Uniform inset on elevated section cards (all screens).
+  static const double kCardPadding = kSpaceMd;
+
   /// Minimum horizontal padding on scaffold screens.
   static const double kScreenHorizontalPadding = kSpaceMd;
 

@@ -1,10 +1,15 @@
 import 'package:astra_app/core/constants/astra_theme.dart';
 import 'package:astra_app/core/database/app_database.dart';
+import 'package:astra_app/core/time/calendar_week.dart';
 import 'package:astra_app/data/repositories/step_repository.dart';
 import 'package:astra_app/data/repositories/user_preferences_repository.dart';
 import 'package:astra_app/presentation/cubits/today_cubit.dart';
 import 'package:astra_app/presentation/cubits/today_state.dart';
+import 'package:astra_app/presentation/models/week_day_status.dart';
 import 'package:astra_app/presentation/screens/today_screen.dart';
+import 'package:astra_app/presentation/widgets/activity_stats_row.dart';
+import 'package:astra_app/presentation/widgets/section_card.dart';
+import 'package:astra_app/presentation/widgets/week_progress_row.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:flutter_test/flutter_test.dart';
@@ -32,26 +37,20 @@ void main() {
     await setUpSqfliteFfi();
   });
 
-  group('TodayScreen greeting', () {
+  group('TodayScreen layout', () {
     late Database db;
     late UserPreferencesRepository userPreferences;
     late StepRepository stepRepository;
     late FakeTimeProvider clock;
 
     setUp(() async {
-      db = await openAstraDatabase(databasePath: inMemoryDatabasePath);
-      userPreferences = UserPreferencesRepository(db);
-      stepRepository = StepRepository(
-        db: db,
-        clock: FakeTimeProvider(
-          fixedNowUtc: DateTime.utc(2026, 6, 3, 12),
-          zoneOffset: const Duration(hours: 2),
-        ),
-      );
       clock = FakeTimeProvider(
         fixedNowUtc: DateTime.utc(2026, 6, 3, 12),
         zoneOffset: const Duration(hours: 2),
       );
+      db = await openAstraDatabase(databasePath: inMemoryDatabasePath);
+      userPreferences = UserPreferencesRepository(db);
+      stepRepository = StepRepository(db: db, clock: clock);
     });
 
     tearDown(() async {
@@ -67,6 +66,21 @@ void main() {
       );
     }
 
+    List<WeekDayStatus> sampleWeekDays() {
+      final reference = DateTime.utc(2026, 6, 3);
+      return [
+        for (final day in CalendarWeek.daysContaining(reference))
+          WeekDayStatus(
+            localDay: day,
+            weekdayLabel: CalendarWeek.weekdayLabelFor(day),
+            dayNumber: day.day,
+            isToday: day == reference,
+            isFuture: day.isAfter(reference),
+            goalMet: false,
+          ),
+      ];
+    }
+
     Future<void> pumpScreen(WidgetTester tester, TodayCubit cubit) async {
       await tester.pumpWidget(
         MaterialApp(
@@ -80,28 +94,30 @@ void main() {
       await tester.pump();
     }
 
-    testWidgets('shows Hello caption when display name is set', (tester) async {
+    testWidgets('shows screen title', (tester) async {
       final cubit = buildCubit(
         TodayState.fromData(
           steps: 1200,
           goal: 8000,
-          displayName: 'Alex',
           isStale: false,
+          weekDays: sampleWeekDays(),
         ),
       );
       addTearDown(cubit.close);
 
       await pumpScreen(tester, cubit);
 
-      expect(find.text('Hello, Alex'), findsOneWidget);
+      expect(find.text("Today's activity"), findsOneWidget);
     });
 
-    testWidgets('hides greeting when display name is absent', (tester) async {
+    testWidgets('does not show greeting or source chip', (tester) async {
       final cubit = buildCubit(
         TodayState.fromData(
-          steps: 1200,
+          steps: 5420,
           goal: 8000,
+          displayName: 'Alex',
           isStale: false,
+          weekDays: sampleWeekDays(),
         ),
       );
       addTearDown(cubit.close);
@@ -109,23 +125,27 @@ void main() {
       await pumpScreen(tester, cubit);
 
       expect(find.textContaining('Hello,'), findsNothing);
+      expect(find.text('Phone sensor'), findsNothing);
     });
 
-    testWidgets('does not show step total in greeting line', (tester) async {
+    testWidgets('shows three main cards', (tester) async {
       final cubit = buildCubit(
         TodayState.fromData(
-          steps: 5420,
+          steps: 1200,
           goal: 8000,
-          displayName: 'Alex',
           isStale: false,
+          weekDays: sampleWeekDays(),
         ),
       );
       addTearDown(cubit.close);
 
       await pumpScreen(tester, cubit);
 
-      expect(find.text('Hello, Alex'), findsOneWidget);
-      expect(find.text('Hello, 5420'), findsNothing);
+      expect(find.text('Set goal'), findsOneWidget);
+      expect(find.byType(ActivityStatsRow), findsOneWidget);
+      expect(find.text('This week'), findsOneWidget);
+      expect(find.byType(WeekProgressRow), findsOneWidget);
+      expect(find.byType(SectionCard), findsOneWidget);
     });
   });
 }
