@@ -237,7 +237,7 @@ class _ReadyChart extends StatelessWidget {
                   barRods: [
                     BarChartRodData(
                       toY: points[i].totalSteps.toDouble(),
-                      color: colors.accentPrimaryMuted,
+                      color: colors.dataPositive,
                       width: 12,
                       borderRadius: const BorderRadius.vertical(
                         top: Radius.circular(4),

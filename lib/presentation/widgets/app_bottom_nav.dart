@@ -120,7 +120,7 @@ class _NavItem extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final colors = context.astraColors;
-    final inactiveColor = colors.textPrimary;
+    final inactiveColor = colors.accentSecondary;
     final activeColor = colors.accentPrimary;
     final labelStyle = AstraTypography.captionFor(colors).copyWith(
       fontSize: 10,

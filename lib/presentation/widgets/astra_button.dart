@@ -38,7 +38,7 @@ class AstraButton extends StatelessWidget {
               minimumSize: const Size.fromHeight(AstraSpacing.kMinTouchTarget),
               backgroundColor: colors.accentPrimary,
               disabledBackgroundColor: colors.accentPrimaryMuted,
-              foregroundColor: colors.textInverse,
+              foregroundColor: colors.accentSecondary,
               disabledForegroundColor: colors.textMuted,
               shape: RoundedRectangleBorder(
                 borderRadius: BorderRadius.circular(AstraSpacing.kRadiusSm),
@@ -90,7 +90,7 @@ class AstraButton extends StatelessWidget {
   }
 
   Color _labelColor(AstraColors colors) => switch (variant) {
-        AstraButtonVariant.primary => colors.textInverse,
+        AstraButtonVariant.primary => colors.accentSecondary,
         AstraButtonVariant.secondary => colors.textPrimary,
         AstraButtonVariant.ghost => colors.textSecondary,
         AstraButtonVariant.danger => colors.textInverse,
