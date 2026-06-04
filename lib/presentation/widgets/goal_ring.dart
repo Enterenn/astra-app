@@ -1,8 +1,10 @@
 import 'dart:math' as math;
 
 import 'package:flutter/material.dart';
+import 'package:phosphoricons_flutter/phosphoricons_flutter.dart';
 
 import '../../core/constants/astra_colors.dart';
+import '../../core/constants/astra_spacing.dart';
 import '../../core/constants/astra_typography.dart';
 import '../cubits/today_state.dart';
 import '../formatters/step_count_formatter.dart';
@@ -118,7 +120,7 @@ class _GoalRingState extends State<GoalRing> with SingleTickerProviderStateMixin
       size: size,
       painter: GoalRingPainter(
         progress: GoalRing.ringProgressFor(widget.state),
-        trackColor: colors.bgSubtle,
+        trackColor: colors.accentPrimaryMuted,
         progressColor: progressColor,
         strokeWidth: _kRingStrokeWidth,
         dashedTrack: status == TodayStatus.noPermission,
@@ -146,20 +148,35 @@ class _GoalRingState extends State<GoalRing> with SingleTickerProviderStateMixin
       _ => formatStepCount(widget.state.steps),
     };
 
+    final stepCountStyle = AstraTypography.displayFor(colors).copyWith(
+      fontWeight: FontWeight.w900,
+    );
+
     return FittedBox(
       fit: BoxFit.scaleDown,
       child: Column(
         mainAxisSize: MainAxisSize.min,
         children: [
-          if (centerText.isNotEmpty)
-            Text(centerText, style: AstraTypography.displayFor(colors))
-          else
-            SizedBox(height: AstraTypography.displayFor(colors).fontSize),
+          Row(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Icon(
+                PhosphorIconsFill.sneakerMove,
+                size: 20,
+                color: colors.neutralGray,
+              ),
+              const SizedBox(width: AstraSpacing.kSpaceXs),
+              Text('Steps', style: AstraTypography.captionFor(colors)),
+            ],
+          ),
           const SizedBox(height: 4),
-          Text('steps today', style: AstraTypography.captionFor(colors)),
+          if (centerText.isNotEmpty)
+            Text(centerText, style: stepCountStyle)
+          else
+            SizedBox(height: stepCountStyle.fontSize),
           const SizedBox(height: 2),
           Text(
-            'goal ${formatStepCount(widget.state.goal)}',
+            '/${formatStepCount(widget.state.goal)}',
             style: AstraTypography.captionFor(colors),
           ),
         ],

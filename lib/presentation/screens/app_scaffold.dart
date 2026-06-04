@@ -64,6 +64,9 @@ class _AppScaffoldState extends State<AppScaffold> {
           userPreferences: widget.deps.userPreferences,
           clock: widget.deps.timeProvider,
           activityPermissionGranted: widget.deps.activityPermissionGranted,
+          postGoalUpdate: () async {
+            await _historyCubit.refreshGoal();
+          },
         );
     _historyCubit =
         widget.createHistoryCubit?.call(widget.deps) ??
