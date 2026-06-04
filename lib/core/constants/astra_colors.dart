@@ -1,5 +1,8 @@
 import 'package:flutter/material.dart';
 
+import 'astra_accent_palette.dart';
+import 'astra_accent_preset.dart';
+
 /// Semantic color tokens (UX §1.2). Access via [AstraThemeContext.astraColors].
 @immutable
 class AstraColors extends ThemeExtension<AstraColors> {
@@ -8,11 +11,12 @@ class AstraColors extends ThemeExtension<AstraColors> {
     required this.bgElevated,
     required this.bgSubtle,
     required this.borderDefault,
-    required this.borderFocus,
+    required this.borderPrimary,
     required this.textPrimary,
     required this.textSecondary,
     required this.textMuted,
     required this.textInverse,
+    required this.neutralGray,
     required this.accentPrimary,
     required this.accentPrimaryMuted,
     required this.accentSecondary,
@@ -30,15 +34,16 @@ class AstraColors extends ThemeExtension<AstraColors> {
   final Color bgElevated;
   final Color bgSubtle;
   final Color borderDefault;
-  final Color borderFocus;
+  final Color borderPrimary;
 
   // Text
   final Color textPrimary;
   final Color textSecondary;
   final Color textMuted;
   final Color textInverse;
+  final Color neutralGray;
 
-  // Accent & data (shared hex; opacity set in factories)
+  // Accent & data
   final Color accentPrimary;
   final Color accentPrimaryMuted;
   final Color accentSecondary;
@@ -52,65 +57,73 @@ class AstraColors extends ThemeExtension<AstraColors> {
   final Color statusDanger;
   final Color statusInfo;
 
-  /// Shared accent/status/data colors (same hex in both themes).
-  static AstraColors _sharedTokens({
-    required Color bgBase,
-    required Color bgElevated,
-    required Color bgSubtle,
-    required Color borderDefault,
-    required Color borderFocus,
-    required Color textPrimary,
-    required Color textSecondary,
-    required Color textMuted,
-    required Color textInverse,
-  }) {
-    const accent = Color(0xFFEAD55E);
+  static const _neutralGray = Color(0xFFA0A0AA);
+  static const _statusOk = Color(0xFF7CEA89);
+  static const _statusDanger = Color(0xFFE52F2F);
+  static const _statusStale = Color(0xFFFBBF24);
+  static const _statusInfo = Color(0xFF93C5FD);
+
+  factory AstraColors.light({
+    AstraAccentPreset preset = kDefaultAccentPreset,
+  }) =>
+      _forBrightness(Brightness.light, preset);
+
+  factory AstraColors.dark({
+    AstraAccentPreset preset = kDefaultAccentPreset,
+  }) =>
+      _forBrightness(Brightness.dark, preset);
+
+  static AstraColors _forBrightness(
+    Brightness brightness,
+    AstraAccentPreset preset,
+  ) {
+    final palette = accentPaletteFor(preset);
+    final primary = palette.primary;
+    final (bgBase, bgElevated, bgSubtle, textPrimary, textSecondary, textMuted, textInverse) =
+        switch (brightness) {
+      Brightness.light => (
+          const Color(0xFFF8F9FB),
+          const Color(0xFFFFFFFF),
+          const Color(0xFFEEF0F4),
+          const Color(0xFF323337),
+          const Color(0xFF4B5563),
+          const Color(0xFF6B7280),
+          const Color(0xFFF4F5F7),
+        ),
+      Brightness.dark => (
+          const Color(0xFF101115),
+          const Color(0xFF1A1D26),
+          const Color(0xFF3E4457),
+          const Color(0xFFC8C8D7),
+          const Color(0xFF9CA3AF),
+          const Color(0xFF6B7280),
+          const Color(0xFF0F1114),
+        ),
+    };
+
     return AstraColors(
       bgBase: bgBase,
       bgElevated: bgElevated,
       bgSubtle: bgSubtle,
-      borderDefault: borderDefault,
-      borderFocus: borderFocus,
+      borderDefault: _neutralGray,
+      borderPrimary: primary,
       textPrimary: textPrimary,
       textSecondary: textSecondary,
       textMuted: textMuted,
       textInverse: textInverse,
-      accentPrimary: accent,
-      accentPrimaryMuted: accent.withValues(alpha: 0.28),
-      accentSecondary: const Color(0xFF94A3B8),
-      dataPositive: const Color(0xFFA3E635).withValues(alpha: 0.8),
-      dataNegative: const Color(0xFFFCA5A5),
-      dataGoalLine: accent.withValues(alpha: 0.35),
-      statusOk: const Color(0xFF86EFAC),
-      statusStale: const Color(0xFFFBBF24),
-      statusDanger: const Color(0xFFF87171),
-      statusInfo: const Color(0xFF93C5FD),
+      neutralGray: _neutralGray,
+      accentPrimary: primary,
+      accentPrimaryMuted: primary.withValues(alpha: 0.28),
+      accentSecondary: palette.secondary,
+      dataPositive: primary,
+      dataNegative: primary.withValues(alpha: 0.33),
+      dataGoalLine: primary.withValues(alpha: 0.35),
+      statusOk: _statusOk,
+      statusStale: _statusStale,
+      statusDanger: _statusDanger,
+      statusInfo: _statusInfo,
     );
   }
-
-  factory AstraColors.light() => _sharedTokens(
-        bgBase: const Color(0xFFF8F9FB),
-        bgElevated: const Color(0xFFFFFFFF),
-        bgSubtle: const Color(0xFFEEF0F4),
-        borderDefault: const Color(0xFFD1D5DB),
-        borderFocus: const Color(0xFF9CA3AF),
-        textPrimary: const Color(0xFF0F1114),
-        textSecondary: const Color(0xFF4B5563),
-        textMuted: const Color(0xFF6B7280),
-        textInverse: const Color(0xFFF4F5F7),
-      );
-
-  factory AstraColors.dark() => _sharedTokens(
-        bgBase: const Color(0xFF0F1114),
-        bgElevated: const Color(0xFF1A1D23),
-        bgSubtle: const Color(0xFF252830),
-        borderDefault: const Color(0xFF2E3340),
-        borderFocus: const Color(0xFF4A5568),
-        textPrimary: const Color(0xFFF4F5F7),
-        textSecondary: const Color(0xFF9CA3AF),
-        textMuted: const Color(0xFF6B7280),
-        textInverse: const Color(0xFF0F1114),
-      );
 
   @override
   AstraColors copyWith({
@@ -118,11 +131,12 @@ class AstraColors extends ThemeExtension<AstraColors> {
     Color? bgElevated,
     Color? bgSubtle,
     Color? borderDefault,
-    Color? borderFocus,
+    Color? borderPrimary,
     Color? textPrimary,
     Color? textSecondary,
     Color? textMuted,
     Color? textInverse,
+    Color? neutralGray,
     Color? accentPrimary,
     Color? accentPrimaryMuted,
     Color? accentSecondary,
@@ -139,11 +153,12 @@ class AstraColors extends ThemeExtension<AstraColors> {
       bgElevated: bgElevated ?? this.bgElevated,
       bgSubtle: bgSubtle ?? this.bgSubtle,
       borderDefault: borderDefault ?? this.borderDefault,
-      borderFocus: borderFocus ?? this.borderFocus,
+      borderPrimary: borderPrimary ?? this.borderPrimary,
       textPrimary: textPrimary ?? this.textPrimary,
       textSecondary: textSecondary ?? this.textSecondary,
       textMuted: textMuted ?? this.textMuted,
       textInverse: textInverse ?? this.textInverse,
+      neutralGray: neutralGray ?? this.neutralGray,
       accentPrimary: accentPrimary ?? this.accentPrimary,
       accentPrimaryMuted: accentPrimaryMuted ?? this.accentPrimaryMuted,
       accentSecondary: accentSecondary ?? this.accentSecondary,
@@ -168,11 +183,12 @@ class AstraColors extends ThemeExtension<AstraColors> {
       bgElevated: _lerpColor(bgElevated, other.bgElevated, t)!,
       bgSubtle: _lerpColor(bgSubtle, other.bgSubtle, t)!,
       borderDefault: _lerpColor(borderDefault, other.borderDefault, t)!,
-      borderFocus: _lerpColor(borderFocus, other.borderFocus, t)!,
+      borderPrimary: _lerpColor(borderPrimary, other.borderPrimary, t)!,
       textPrimary: _lerpColor(textPrimary, other.textPrimary, t)!,
       textSecondary: _lerpColor(textSecondary, other.textSecondary, t)!,
       textMuted: _lerpColor(textMuted, other.textMuted, t)!,
       textInverse: _lerpColor(textInverse, other.textInverse, t)!,
+      neutralGray: _lerpColor(neutralGray, other.neutralGray, t)!,
       accentPrimary: _lerpColor(accentPrimary, other.accentPrimary, t)!,
       accentPrimaryMuted:
           _lerpColor(accentPrimaryMuted, other.accentPrimaryMuted, t)!,
