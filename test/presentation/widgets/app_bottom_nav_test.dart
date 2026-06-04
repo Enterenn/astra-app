@@ -1,24 +1,28 @@
 import 'package:figma_squircle/figma_squircle.dart';
+import 'package:astra_app/core/constants/astra_accent_preset.dart';
+import 'package:astra_app/core/constants/astra_colors.dart';
 import 'package:astra_app/core/constants/astra_spacing.dart';
-import 'package:astra_app/core/constants/astra_theme.dart';
 import 'package:astra_app/presentation/widgets/app_bottom_nav.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:phosphoricons_flutter/phosphoricons_flutter.dart';
 
+import '../../helpers/astra_theme_test_helper.dart';
+
 void main() {
   testWidgets('AppBottomNav shows four uppercase labels and active squircle', (
     WidgetTester tester,
   ) async {
+    const preset = AstraAccentPreset.blue;
+    final colors = AstraColors.light(preset: preset);
+
     await tester.pumpWidget(
-      MaterialApp(
-        theme: buildAstraLightTheme(),
-        home: Scaffold(
-          bottomNavigationBar: AppBottomNav(
-            selectedIndex: 1,
-            onSelected: (_) {},
-          ),
+      wrapWithAstraTheme(
+        AppBottomNav(
+          selectedIndex: 1,
+          onSelected: (_) {},
         ),
+        preset: preset,
       ),
     );
 
@@ -51,5 +55,14 @@ void main() {
       AstraSpacing.kBottomNavSquircleSmoothing,
     );
 
+    final activeIcon = tester.widget<Icon>(
+      find.byIcon(PhosphorIconsFill.chartBar),
+    );
+    expect(activeIcon.color, colors.accentPrimary);
+
+    final inactiveIcon = tester.widget<Icon>(
+      find.byIcon(PhosphorIconsRegular.sneakerMove),
+    );
+    expect(inactiveIcon.color, colors.accentSecondary);
   });
 }

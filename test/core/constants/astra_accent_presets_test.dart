@@ -17,6 +17,11 @@ void main() {
       expect(parseAccentPreset('purple'), AstraAccentPreset.magenta);
     });
 
+    test('trims whitespace around stored preset IDs', () {
+      expect(parseAccentPreset(' blue '), AstraAccentPreset.blue);
+      expect(parseAccentPreset('\torange\n'), AstraAccentPreset.orange);
+    });
+
     test('parses all six English preset IDs', () {
       expect(parseAccentPreset('orange'), AstraAccentPreset.orange);
       expect(parseAccentPreset('red'), AstraAccentPreset.red);

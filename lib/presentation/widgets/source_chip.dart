@@ -38,7 +38,7 @@ class SourceChip extends StatelessWidget {
             Icon(
               Icons.smartphone_outlined,
               size: _kIconSize,
-              color: colors.textSecondary,
+              color: colors.neutralGray,
             ),
             const SizedBox(width: AstraSpacing.kSpaceXs),
           ],

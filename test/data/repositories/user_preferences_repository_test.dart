@@ -60,6 +60,16 @@ void main() {
       expect(rows.single['value'], 'pink');
     });
 
+    test('falls back to orange for invalid stored accent preset', () async {
+      await db.insert(
+        'user_preferences',
+        {'key': kAccentPresetKey, 'value': 'lavender'},
+        conflictAlgorithm: ConflictAlgorithm.replace,
+      );
+
+      expect(await repository.getAccentPreset(), AstraAccentPreset.orange);
+    });
+
     test('falls back to system for invalid stored theme', () async {
       await db.insert(
         'user_preferences',

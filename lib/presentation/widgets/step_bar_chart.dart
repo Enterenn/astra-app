@@ -66,7 +66,7 @@ class _EmptyState extends StatelessWidget {
         child: Text(
           StepBarChart.emptyCopy,
           style: AstraTypography.bodyFor(colors).copyWith(
-            color: colors.textSecondary,
+            color: colors.neutralGray,
           ),
           textAlign: TextAlign.center,
         ),

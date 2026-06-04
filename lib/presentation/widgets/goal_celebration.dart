@@ -264,7 +264,7 @@ class _GoalCelebrationState extends State<GoalCelebration>
         child: Text(
           'Daily goal reached',
           style: AstraTypography.captionFor(colors).copyWith(
-            color: colors.textSecondary,
+            color: colors.neutralGray,
           ),
           textAlign: TextAlign.center,
         ),

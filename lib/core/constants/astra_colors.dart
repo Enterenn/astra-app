@@ -79,14 +79,13 @@ class AstraColors extends ThemeExtension<AstraColors> {
   ) {
     final palette = accentPaletteFor(preset);
     final primary = palette.primary;
-    final (bgBase, bgElevated, bgSubtle, textPrimary, textSecondary, textMuted, textInverse) =
+    final (bgBase, bgElevated, bgSubtle, textPrimary, textMuted, textInverse) =
         switch (brightness) {
       Brightness.light => (
           const Color(0xFFF8F9FB),
           const Color(0xFFFFFFFF),
           const Color(0xFFEEF0F4),
           const Color(0xFF323337),
-          const Color(0xFF4B5563),
           const Color(0xFF6B7280),
           const Color(0xFFF4F5F7),
         ),
@@ -95,7 +94,6 @@ class AstraColors extends ThemeExtension<AstraColors> {
           const Color(0xFF1A1D26),
           const Color(0xFF3E4457),
           const Color(0xFFC8C8D7),
-          const Color(0xFF9CA3AF),
           const Color(0xFF6B7280),
           const Color(0xFF0F1114),
         ),
@@ -108,7 +106,7 @@ class AstraColors extends ThemeExtension<AstraColors> {
       borderDefault: _neutralGray,
       borderPrimary: primary,
       textPrimary: textPrimary,
-      textSecondary: textSecondary,
+      textSecondary: _neutralGray,
       textMuted: textMuted,
       textInverse: textInverse,
       neutralGray: _neutralGray,

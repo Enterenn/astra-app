@@ -1,6 +1,6 @@
 # Story 5.8: Accent Preset Theme Tokens
 
-Status: review
+Status: done
 
 <!-- Product owner locked palette 2026-06-04 (Baptiste). Replaces legacy amber `#EAD55E` accent. UI selector deferred to Story 5.11. -->
 
@@ -295,5 +295,5 @@ Composer (Cursor)
 
 ## Story completion status
 
-- **Status:** review
-- **Completion note:** Palette amended 2026-06-04 — English color names, `neutralGray` for gray text/elements/borders, `borderPrimary` on accent, chart `dataPositive`/`dataNegative` tied to preset primary.
+- **Status:** done
+- **Completion note:** Code review follow-ups: goal ring track `bgSubtle`, progress `accentPrimary` 66%/100%; `textSecondary` → `neutralGray`; tests for preset trim, invalid DB value, concurrent ThemeCubit, nav/trend colors.

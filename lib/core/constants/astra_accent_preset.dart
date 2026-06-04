@@ -13,7 +13,8 @@ const kDefaultAccentPreset = AstraAccentPreset.orange;
 
 /// Parses stored `accent_preset` values with legacy aliases.
 AstraAccentPreset parseAccentPreset(String? raw) {
-  return switch (raw) {
+  final normalized = raw?.trim();
+  return switch (normalized) {
     'orange' => AstraAccentPreset.orange,
     'red' => AstraAccentPreset.red,
     'green' => AstraAccentPreset.green,

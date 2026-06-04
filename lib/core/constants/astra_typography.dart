@@ -52,7 +52,7 @@ abstract final class AstraTypography {
     fontSize: 12,
     fontWeight: FontWeight.w400,
     height: 1.4,
-    color: colors.textSecondary,
+    color: colors.neutralGray,
   );
 
   static TextStyle dataFor(AstraColors colors) => TextStyle(

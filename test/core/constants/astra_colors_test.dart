@@ -18,6 +18,7 @@ void main() {
       expect(colors.textPrimary, const Color(0xFF323337));
       expect(colors.neutralGray, neutralGray);
       expect(colors.borderDefault, neutralGray);
+      expect(colors.textSecondary, neutralGray);
     });
 
     test('orange preset accent and derived tokens', () {

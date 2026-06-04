@@ -1,8 +1,11 @@
-import 'package:astra_app/core/constants/astra_theme.dart';
+import 'package:astra_app/core/constants/astra_accent_preset.dart';
+import 'package:astra_app/core/constants/astra_colors.dart';
 import 'package:astra_app/presentation/cubits/today_state.dart';
 import 'package:astra_app/presentation/widgets/goal_ring.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
+
+import '../../helpers/astra_theme_test_helper.dart';
 
 void main() {
   group('GoalRing', () {
@@ -10,21 +13,30 @@ void main() {
       WidgetTester tester, {
       required TodayState state,
       double width = 400,
+      AstraAccentPreset preset = AstraAccentPreset.orange,
     }) async {
       await tester.pumpWidget(
-        MaterialApp(
-          theme: buildAstraLightTheme(),
-          home: Scaffold(
-            body: Center(
-              child: SizedBox(
-                width: width,
-                child: GoalRing(state: state),
-              ),
+        wrapWithAstraTheme(
+          Center(
+            child: SizedBox(
+              width: width,
+              child: GoalRing(state: state),
             ),
           ),
+          preset: preset,
         ),
       );
       await tester.pump();
+    }
+
+    GoalRingPainter ringPainter(WidgetTester tester) {
+      final painter = tester.widget<CustomPaint>(
+        find.descendant(
+          of: find.byType(GoalRing),
+          matching: find.byType(CustomPaint),
+        ),
+      );
+      return painter.painter! as GoalRingPainter;
     }
 
     test('ringProgressFor caps overflow at 100%', () {
@@ -69,13 +81,52 @@ void main() {
 
       expect(find.text('10\u2009847'), findsOneWidget);
 
-      final painter = tester.widget<CustomPaint>(
-        find.descendant(
-          of: find.byType(GoalRing),
-          matching: find.byType(CustomPaint),
+      expect(ringPainter(tester).progress, 1);
+    });
+
+    testWidgets('progress arc uses accent primary at 66% opacity before goal met',
+        (tester) async {
+      await pumpGoalRing(
+        tester,
+        preset: AstraAccentPreset.blue,
+        state: TodayState.fromData(
+          steps: 3200,
+          goal: 8000,
+          isStale: false,
         ),
       );
-      final delegate = painter.painter! as GoalRingPainter;
+
+      final colors = AstraColors.light(preset: AstraAccentPreset.blue);
+      final delegate = ringPainter(tester);
+      expect(delegate.trackColor, colors.bgSubtle);
+      expect(
+        delegate.progressColor,
+        colors.accentPrimary.withValues(alpha: 0.66),
+      );
+    });
+
+    testWidgets('progress arc uses accent primary at 100% opacity when goal met',
+        (tester) async {
+      await pumpGoalRing(
+        tester,
+        preset: AstraAccentPreset.blue,
+        state: TodayState.fromData(
+          steps: 8000,
+          goal: 8000,
+          isStale: false,
+        ),
+      );
+
+      expect(TodayState.fromData(
+        steps: 8000,
+        goal: 8000,
+        isStale: false,
+      ).status, TodayStatus.goalMet);
+
+      final colors = AstraColors.light(preset: AstraAccentPreset.blue);
+      final delegate = ringPainter(tester);
+      expect(delegate.trackColor, colors.bgSubtle);
+      expect(delegate.progressColor, colors.accentPrimary);
       expect(delegate.progress, 1);
     });
 
@@ -89,13 +140,7 @@ void main() {
 
       expect(find.text('--'), findsOneWidget);
 
-      final painter = tester.widget<CustomPaint>(
-        find.descendant(
-          of: find.byType(GoalRing),
-          matching: find.byType(CustomPaint),
-        ),
-      );
-      final delegate = painter.painter! as GoalRingPainter;
+      final delegate = ringPainter(tester);
       expect(delegate.dashedTrack, isTrue);
       expect(delegate.progress, 0);
     });

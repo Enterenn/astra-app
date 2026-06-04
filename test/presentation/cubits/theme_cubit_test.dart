@@ -134,5 +134,24 @@ void main() {
 
       await cubit.close();
     });
+
+    test('rapid theme and accent changes end on last values in DB and state',
+        () async {
+      final cubit = ThemeCubit(userPreferences: repository);
+
+      await Future.wait([
+        cubit.setThemePreference(AstraThemePreference.light),
+        cubit.setAccentPreset(AstraAccentPreset.blue),
+        cubit.setThemePreference(AstraThemePreference.dark),
+        cubit.setAccentPreset(AstraAccentPreset.pink),
+      ]);
+
+      expect(cubit.state.preference, AstraThemePreference.dark);
+      expect(cubit.state.accentPreset, AstraAccentPreset.pink);
+      expect(await repository.getThemeMode(), AstraThemePreference.dark);
+      expect(await repository.getAccentPreset(), AstraAccentPreset.pink);
+
+      await cubit.close();
+    });
   });
 }

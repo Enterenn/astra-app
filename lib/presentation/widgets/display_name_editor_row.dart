@@ -68,7 +68,7 @@ class DisplayNameEditorRow extends StatelessWidget {
                 ),
                 Icon(
                   Icons.chevron_right,
-                  color: _isEnabled ? colors.textSecondary : colors.textMuted,
+                  color: _isEnabled ? colors.neutralGray : colors.textMuted,
                   semanticLabel: 'Edit display name',
                 ),
               ],

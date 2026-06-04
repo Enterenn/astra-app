@@ -11,6 +11,9 @@ const _kRingStrokeWidth = 9.0;
 const _kRingMinDiameter = 220.0;
 const _kRingMaxDiameter = 260.0;
 
+/// Progress arc opacity when goal not yet reached (Figma / Story 5.8).
+const _kRingProgressOpacityInProgress = 0.66;
+
 class GoalRing extends StatefulWidget {
   const GoalRing({required this.state, super.key});
 
@@ -106,12 +109,17 @@ class _GoalRingState extends State<GoalRing> with SingleTickerProviderStateMixin
 
   Widget _buildRing(Size size, AstraColors colors) {
     final status = widget.state.status;
+    final goalReached =
+        status == TodayStatus.goalMet || status == TodayStatus.overflow;
+    final progressColor = colors.accentPrimary.withValues(
+      alpha: goalReached ? 1.0 : _kRingProgressOpacityInProgress,
+    );
     final ring = CustomPaint(
       size: size,
       painter: GoalRingPainter(
         progress: GoalRing.ringProgressFor(widget.state),
-        trackColor: colors.accentPrimaryMuted,
-        progressColor: colors.accentPrimary,
+        trackColor: colors.bgSubtle,
+        progressColor: progressColor,
         strokeWidth: _kRingStrokeWidth,
         dashedTrack: status == TodayStatus.noPermission,
       ),

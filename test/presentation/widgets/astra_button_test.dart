@@ -1,20 +1,19 @@
+import 'package:astra_app/core/constants/astra_accent_preset.dart';
 import 'package:astra_app/core/constants/astra_spacing.dart';
-import 'package:astra_app/core/constants/astra_theme.dart';
 import 'package:astra_app/presentation/widgets/astra_button.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
+
+import '../../helpers/astra_theme_test_helper.dart';
 
 void main() {
   group('AstraButton', () {
     testWidgets('enforces minimum touch target height', (tester) async {
       await tester.pumpWidget(
-        MaterialApp(
-          theme: buildAstraLightTheme(),
-          home: Scaffold(
-            body: AstraButton(
-              label: 'Continue',
-              onPressed: () {},
-            ),
+        wrapWithAstraTheme(
+          AstraButton(
+            label: 'Continue',
+            onPressed: () {},
           ),
         ),
       );
@@ -25,14 +24,12 @@ void main() {
 
     testWidgets('primary variant uses accent fill styling', (tester) async {
       await tester.pumpWidget(
-        MaterialApp(
-          theme: buildAstraLightTheme(),
-          home: Scaffold(
-            body: AstraButton(
-              label: 'Continue',
-              onPressed: () {},
-            ),
+        wrapWithAstraTheme(
+          AstraButton(
+            label: 'Continue',
+            onPressed: () {},
           ),
+          preset: AstraAccentPreset.red,
         ),
       );
 
@@ -47,14 +44,11 @@ void main() {
 
     testWidgets('ghost variant renders as TextButton', (tester) async {
       await tester.pumpWidget(
-        MaterialApp(
-          theme: buildAstraLightTheme(),
-          home: Scaffold(
-            body: AstraButton(
-              label: 'Skip notifications',
-              variant: AstraButtonVariant.ghost,
-              onPressed: () {},
-            ),
+        wrapWithAstraTheme(
+          AstraButton(
+            label: 'Skip notifications',
+            variant: AstraButtonVariant.ghost,
+            onPressed: () {},
           ),
         ),
       );
@@ -65,14 +59,11 @@ void main() {
 
     testWidgets('secondary variant renders as OutlinedButton', (tester) async {
       await tester.pumpWidget(
-        MaterialApp(
-          theme: buildAstraLightTheme(),
-          home: Scaffold(
-            body: AstraButton(
-              label: 'Skip',
-              variant: AstraButtonVariant.secondary,
-              onPressed: () {},
-            ),
+        wrapWithAstraTheme(
+          AstraButton(
+            label: 'Skip',
+            variant: AstraButtonVariant.secondary,
+            onPressed: () {},
           ),
         ),
       );
