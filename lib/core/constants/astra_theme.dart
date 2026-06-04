@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 
+import 'astra_accent_preset.dart';
 import 'astra_colors.dart';
 import 'astra_typography.dart';
 
@@ -13,15 +14,17 @@ TextTheme _textTheme(AstraColors colors) => TextTheme(
   titleSmall: AstraTypography.dataFor(colors),
 );
 
-ThemeData buildAstraLightTheme() {
-  final colors = AstraColors.light();
+ThemeData buildAstraLightTheme({
+  AstraAccentPreset preset = kDefaultAccentPreset,
+}) {
+  final colors = AstraColors.light(preset: preset);
   return ThemeData(
     useMaterial3: true,
     fontFamily: AstraTypography.figtree,
     scaffoldBackgroundColor: colors.bgBase,
     colorScheme: ColorScheme.light(
       primary: colors.accentPrimary,
-      onPrimary: colors.textInverse,
+      onPrimary: colors.accentSecondary,
       surface: colors.bgElevated,
       onSurface: colors.textPrimary,
       error: colors.statusDanger,
@@ -33,15 +36,17 @@ ThemeData buildAstraLightTheme() {
   );
 }
 
-ThemeData buildAstraDarkTheme() {
-  final colors = AstraColors.dark();
+ThemeData buildAstraDarkTheme({
+  AstraAccentPreset preset = kDefaultAccentPreset,
+}) {
+  final colors = AstraColors.dark(preset: preset);
   return ThemeData(
     useMaterial3: true,
     fontFamily: AstraTypography.figtree,
     scaffoldBackgroundColor: colors.bgBase,
     colorScheme: ColorScheme.dark(
       primary: colors.accentPrimary,
-      onPrimary: colors.textInverse,
+      onPrimary: colors.accentSecondary,
       surface: colors.bgElevated,
       onSurface: colors.textPrimary,
       error: colors.statusDanger,
