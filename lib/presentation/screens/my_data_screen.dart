@@ -1,8 +1,5 @@
-import 'dart:async' show unawaited;
-
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
-import 'package:permission_handler/permission_handler.dart';
 
 import '../../core/constants/astra_colors.dart';
 import '../../core/constants/astra_spacing.dart';
@@ -10,24 +7,14 @@ import '../../core/constants/astra_typography.dart';
 import '../../core/time/time_provider.dart';
 import '../cubits/my_data_cubit.dart';
 import '../cubits/my_data_state.dart';
-import '../cubits/theme_cubit.dart';
-import '../cubits/theme_state.dart';
 import '../utils/share_position_origin.dart';
-import '../widgets/background_status_card.dart';
 import '../widgets/confirm_dialog.dart';
 import '../widgets/data_export_button.dart';
 import '../widgets/data_import_button.dart';
 import '../widgets/data_purge_button.dart';
 import '../widgets/footprint_kpi_row.dart';
-import '../utils/display_name_initials.dart';
-import '../widgets/display_name_editor_row.dart';
-import '../widgets/display_name_editor_sheet.dart';
-import '../widgets/goal_editor_row.dart';
-import '../widgets/profile_initials_badge.dart';
-import '../widgets/goal_editor_sheet.dart';
 import '../widgets/section_card.dart';
 import '../widgets/status_banner.dart';
-import '../widgets/theme_selector.dart';
 
 class MyDataScreen extends StatelessWidget {
   const MyDataScreen({
@@ -35,7 +22,11 @@ class MyDataScreen extends StatelessWidget {
     super.key,
   });
 
+  /// Retained for [AppScaffold] wiring; footprint no longer needs live time.
   final TimeProvider clock;
+  static const _kScreenTitle = 'My Data';
+  static const _kStorageIntro =
+      'Everything stays on your phone. You choose when to back up or delete.';
 
   @override
   Widget build(BuildContext context) {
@@ -87,107 +78,52 @@ class MyDataScreen extends StatelessWidget {
               },
             ),
           ],
-          child: _MyDataScreenBody(clock: clock),
+          child: const _MyDataScreenBody(),
         ),
       ),
     );
   }
 }
 
-class _MyDataScreenBody extends StatefulWidget {
-  const _MyDataScreenBody({required this.clock});
-
-  final TimeProvider clock;
-
-  @override
-  State<_MyDataScreenBody> createState() => _MyDataScreenBodyState();
-}
-
-class _MyDataScreenBodyState extends State<_MyDataScreenBody> {
-  final GlobalKey _profileSectionKey = GlobalKey();
-
-  Future<void> _openDisplayNameEditor(BuildContext context) async {
-    final cubit = context.read<MyDataCubit>();
-    final result = await showDisplayNameEditorSheet(
-      context,
-      currentName: context.read<MyDataCubit>().state.displayName,
-    );
-    if (result == null || !context.mounted) {
-      return;
-    }
-    final saved = await cubit.updateDisplayName(result);
-    if (!context.mounted) {
-      return;
-    }
-    if (!saved) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text('Display name could not be saved. Try again.'),
-          duration: Duration(seconds: 3),
-        ),
-      );
-    }
-  }
-
-  void _scrollToProfileSection() {
-    const scroll = Duration(milliseconds: 300);
-
-    void scrollIfMounted() {
-      if (!mounted) {
-        return;
-      }
-      final profileContext = _profileSectionKey.currentContext;
-      if (profileContext == null) {
-        assert(
-          false,
-          'Profile section is not mounted; cannot scroll into view.',
-        );
-        return;
-      }
-      unawaited(
-        Scrollable.ensureVisible(
-          profileContext,
-          duration: scroll,
-          curve: Curves.easeInOut,
-          alignment: 0.1,
-        ),
-      );
-    }
-
-    if (_profileSectionKey.currentContext != null) {
-      scrollIfMounted();
-      return;
-    }
-    WidgetsBinding.instance.addPostFrameCallback((_) => scrollIfMounted());
-  }
+class _MyDataScreenBody extends StatelessWidget {
+  const _MyDataScreenBody();
 
   @override
   Widget build(BuildContext context) {
+    final colors = context.astraColors;
     final state = context.watch<MyDataCubit>().state;
-    final nowUtc = widget.clock.nowUtc();
     final cubit = context.read<MyDataCubit>();
     final dataActionInFlight =
         state.isExporting || state.isImporting || state.isPurging;
-    final showProfileInitials = hasDisplayNameInitials(state.displayName);
+    final horizontalPadding = AstraSpacing.kScreenHorizontalPadding;
+    final bottomScrollPadding =
+        AstraSpacing.kBottomNavBottomOffset +
+        AstraSpacing.kBottomNavBarHeight +
+        AstraSpacing.kSpaceMd;
 
     return SingleChildScrollView(
-      padding: const EdgeInsets.symmetric(
-        horizontal: AstraSpacing.kScreenHorizontalPadding,
+      padding: EdgeInsets.fromLTRB(
+        horizontalPadding,
+        AstraSpacing.kSpaceSm,
+        horizontalPadding,
+        bottomScrollPadding,
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
-          const SizedBox(height: AstraSpacing.kSpaceMd),
-          Text('My Data', style: AstraTypography.title(context)),
-          const SizedBox(height: AstraSpacing.kSpaceMd),
+          Text(
+            MyDataScreen._kScreenTitle,
+            style: AstraTypography.captionFor(colors),
+          ),
           if (state.isStale) ...[
+            const SizedBox(height: AstraSpacing.kSpaceSm),
             StatusBanner(
               variant: StatusBannerVariant.staleFull,
               isIos: state.isIos,
             ),
-            const SizedBox(height: AstraSpacing.kSpaceMd),
           ],
           if (state.exportErrorMessage != null) ...[
+            const SizedBox(height: AstraSpacing.kSpaceMd),
             StatusBanner(
               variant: StatusBannerVariant.error,
               message: state.exportErrorMessage,
@@ -195,9 +131,9 @@ class _MyDataScreenBodyState extends State<_MyDataScreenBody> {
                 sharePositionOrigin: sharePositionOriginFor(context),
               ),
             ),
-            const SizedBox(height: AstraSpacing.kSpaceMd),
           ],
           if (state.importErrorMessage != null) ...[
+            const SizedBox(height: AstraSpacing.kSpaceMd),
             StatusBanner(
               variant: StatusBannerVariant.error,
               message: state.importErrorMessage,
@@ -210,9 +146,9 @@ class _MyDataScreenBodyState extends State<_MyDataScreenBody> {
                 ),
               ),
             ),
-            const SizedBox(height: AstraSpacing.kSpaceMd),
           ],
           if (state.purgeErrorMessage != null) ...[
+            const SizedBox(height: AstraSpacing.kSpaceMd),
             StatusBanner(
               variant: StatusBannerVariant.error,
               message: state.purgeErrorMessage,
@@ -220,124 +156,29 @@ class _MyDataScreenBodyState extends State<_MyDataScreenBody> {
                 confirmedAction: PurgeConfirmAction.deleteConfirmed,
               ),
             ),
-            const SizedBox(height: AstraSpacing.kSpaceMd),
           ],
-          Align(
-            alignment: Alignment.centerLeft,
-            child: ProfileInitialsBadge(
-              displayName: state.displayName,
-              enabled: !dataActionInFlight,
-              onTap: dataActionInFlight
-                  ? null
-                  : () {
-                      if (showProfileInitials) {
-                        _scrollToProfileSection();
-                      } else {
-                        unawaited(_openDisplayNameEditor(context));
-                      }
-                    },
-            ),
-          ),
           const SizedBox(height: AstraSpacing.kSpaceMd),
           SectionCard(
-            headline: 'Background',
+            headline: 'Storage on this device',
             child: state.status == MyDataStatus.loading
                 ? const _SectionLoadingIndicator()
-                : BackgroundStatusCard(
-                    status: state.backgroundStatus,
-                    lastIngestionUtc: state.lastIngestionUtc,
-                    nowUtc: nowUtc,
-                    capabilities: state.capabilitySnapshot,
-                    onOpenSettings: () => openAppSettings(),
+                : Column(
+                    crossAxisAlignment: CrossAxisAlignment.stretch,
+                    children: [
+                      Text(
+                        MyDataScreen._kStorageIntro,
+                        style: AstraTypography.captionFor(colors),
+                      ),
+                      const SizedBox(height: AstraSpacing.kSpaceMd),
+                      FootprintKpiRow(
+                        fileSizeBytes: state.fileSizeBytes,
+                      ),
+                    ],
                   ),
           ),
           const SizedBox(height: AstraSpacing.kSpaceMd),
           SectionCard(
-            headline: 'Footprint',
-            child: state.status == MyDataStatus.loading
-                ? const _SectionLoadingIndicator()
-                : FootprintKpiRow(
-                    sampleCount: state.sampleCount,
-                    fileSizeBytes: state.fileSizeBytes,
-                    lastOptimizedUtc: state.lastOptimizedUtc,
-                    nowUtc: nowUtc,
-                  ),
-          ),
-          const SizedBox(height: AstraSpacing.kSpaceMd),
-          SectionCard(
-            headline: 'Daily goal',
-            child: state.status == MyDataStatus.loading
-                ? const _SectionLoadingIndicator()
-                : GoalEditorRow(
-                    dailyStepGoal: state.dailyStepGoal,
-                    enabled: !dataActionInFlight,
-                    onTap: dataActionInFlight
-                        ? null
-                        : () async {
-                            final result = await showGoalEditorSheet(
-                              context,
-                              currentGoal: state.dailyStepGoal,
-                            );
-                            if (result == null || !context.mounted) {
-                              return;
-                            }
-                            final saved = await cubit.updateDailyStepGoal(
-                              result,
-                            );
-                            if (!context.mounted) {
-                              return;
-                            }
-                            if (!saved) {
-                              ScaffoldMessenger.of(context).showSnackBar(
-                                const SnackBar(
-                                  content: Text(
-                                    'Daily goal could not be saved. Try again.',
-                                  ),
-                                  duration: Duration(seconds: 3),
-                                ),
-                              );
-                            }
-                          },
-                  ),
-          ),
-          const SizedBox(height: AstraSpacing.kSpaceMd),
-          SectionCard(
-            headline: 'Appearance',
-            child: state.status == MyDataStatus.loading
-                ? const _SectionLoadingIndicator()
-                : BlocBuilder<ThemeCubit, ThemeState>(
-                    builder: (context, themeState) {
-                      return ThemeSelector(
-                        selected: themeState.preference,
-                        enabled: !dataActionInFlight,
-                        onChanged: (preference) {
-                          unawaited(
-                            context
-                                .read<ThemeCubit>()
-                                .setThemePreference(preference),
-                          );
-                        },
-                      );
-                    },
-                  ),
-          ),
-          const SizedBox(height: AstraSpacing.kSpaceMd),
-          SectionCard(
-            key: _profileSectionKey,
-            headline: 'Profile',
-            child: state.status == MyDataStatus.loading
-                ? const _SectionLoadingIndicator()
-                : DisplayNameEditorRow(
-                    displayName: state.displayName,
-                    enabled: !dataActionInFlight,
-                    onTap: dataActionInFlight
-                        ? null
-                        : () => unawaited(_openDisplayNameEditor(context)),
-                  ),
-          ),
-          const SizedBox(height: AstraSpacing.kSpaceMd),
-          SectionCard(
-            headline: 'Your data',
+            headline: 'Backup & restore',
             child: state.status == MyDataStatus.loading
                 ? const _SectionLoadingIndicator()
                 : Column(
@@ -387,7 +228,6 @@ class _MyDataScreenBodyState extends State<_MyDataScreenBody> {
                     ],
                   ),
           ),
-          const SizedBox(height: AstraSpacing.kSpaceMd),
         ],
       ),
     );
