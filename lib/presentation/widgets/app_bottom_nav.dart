@@ -69,21 +69,16 @@ class AppBottomNav extends StatelessWidget {
                   horizontal: AstraSpacing.kBottomNavHorizontalPadding,
                 ),
                 child: Row(
-                  mainAxisAlignment: MainAxisAlignment.center,
-                  mainAxisSize: MainAxisSize.max,
                   children: [
-                    for (var i = 0; i < _tabs.length; i++) ...[
-                      if (i > 0)
-                        const SizedBox(
-                          width: AstraSpacing.kBottomNavItemGap,
+                    for (var i = 0; i < _tabs.length; i++)
+                      Expanded(
+                        child: _NavItem(
+                          tab: _tabs[i],
+                          selected: selectedIndex == i,
+                          squircleFill: squircleFill,
+                          onTap: () => onSelected(i),
                         ),
-                      _NavItem(
-                        tab: _tabs[i],
-                        selected: selectedIndex == i,
-                        squircleFill: squircleFill,
-                        onTap: () => onSelected(i),
                       ),
-                    ],
                   ],
                 ),
               ),
@@ -155,6 +150,27 @@ class _NavItem extends StatelessWidget {
       ],
     );
 
+    final hitTarget = SizedBox(
+      width: AstraSpacing.kBottomNavItemSize,
+      height: AstraSpacing.kBottomNavItemSize,
+      child: content,
+    );
+
+    final squircleChild = selected
+        ? DecoratedBox(
+            decoration: ShapeDecoration(
+              color: squircleFill,
+              shape: SmoothRectangleBorder(
+                borderRadius: SmoothBorderRadius(
+                  cornerRadius: AstraSpacing.kBottomNavSquircleRadius,
+                  cornerSmoothing: AstraSpacing.kBottomNavSquircleSmoothing,
+                ),
+              ),
+            ),
+            child: hitTarget,
+          )
+        : hitTarget;
+
     return Semantics(
       button: true,
       selected: selected,
@@ -162,28 +178,11 @@ class _NavItem extends StatelessWidget {
       child: InkWell(
         onTap: onTap,
         borderRadius: BorderRadius.circular(AstraSpacing.kRadiusFull),
-        child: selected
-            ? DecoratedBox(
-                decoration: ShapeDecoration(
-                  color: squircleFill,
-                  shape: SmoothRectangleBorder(
-                    borderRadius: SmoothBorderRadius(
-                      cornerRadius: AstraSpacing.kBottomNavSquircleRadius,
-                      cornerSmoothing: AstraSpacing.kBottomNavSquircleSmoothing,
-                    ),
-                  ),
-                ),
-                child: SizedBox(
-                  width: AstraSpacing.kBottomNavItemSize,
-                  height: AstraSpacing.kBottomNavItemSize,
-                  child: content,
-                ),
-              )
-            : SizedBox(
-                width: AstraSpacing.kBottomNavItemSize,
-                height: AstraSpacing.kBottomNavItemSize,
-                child: content,
-              ),
+        child: SizedBox(
+          height: AstraSpacing.kBottomNavItemSize,
+          width: double.infinity,
+          child: Center(child: squircleChild),
+        ),
       ),
     );
   }

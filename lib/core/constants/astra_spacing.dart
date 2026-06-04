@@ -21,15 +21,9 @@ abstract final class AstraSpacing {
   static const double kRadiusLg = 16;
   static const double kRadiusFull = 999;
 
-  /// Height of the legacy Material bottom tab bar (Story 1.3).
-  static const double kBottomTabBarHeight = 56;
-
-  /// Floating pill nav bar (Story 5.7 — do not reuse kBottomTabBarHeight).
+  /// Floating pill nav bar (Story 5.7).
   static const double kBottomNavBarHeight = 72;
   static const double kBottomNavHorizontalPadding = 24;
-
-  /// Gap between adjacent tab items inside the pill.
-  static const double kBottomNavItemGap = kSpaceLg;
 
   /// Offset from bottom safe area to the floating pill (Figma).
   static const double kBottomNavBottomOffset = kSpaceXl;

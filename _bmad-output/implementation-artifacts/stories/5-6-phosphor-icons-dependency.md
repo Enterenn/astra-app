@@ -36,7 +36,7 @@ So that navigation and screens match the Figma mockups.
     - Package name, locked version, license (MIT per pub.dev), purpose (Figma-aligned iconography)
     - **Network:** No — icon font bundled in package; no runtime fetch
     - **Usage scope:** Story 5.6 = install only; tab/screen wiring starts in 5.7+
-    - **API note for 5.7:** `PhosphorIconsRegular` — `footprints`, `chartBar`, `database`, `user` (UX §1.6)
+    - **API note for 5.7:** `PhosphorIconsRegular` — `sneakerMove`, `chartBar`, `database`, `user` (UX §1.6)
     - **Deferred icon migration:** Material `Icons.*` elsewhere remain until stories 5.7–5.12 call them out
   - [x] **Stop → review brief → wait for Baptiste OK → commit**
 
@@ -99,7 +99,7 @@ So that navigation and screens match the Figma mockups.
 |--------|---------------------|
 | D-27 | `phosphor_flutter` regular weight for tabs and primary actions (consumption starts 5.7) |
 | D-10 | Four-tab Phosphor icons listed in UX — **implementation** is 5.7, not 5.6 |
-| UX §1.6 | Default **24dp**; tab set: Footprints · ChartBar · Database · User |
+| UX §1.6 | Default **24dp**; tab set: SneakerMove · ChartBar · Database · User |
 | Network policy | No runtime network; Phosphor fonts ship inside package — consistent with Phase 0 |
 | `uses-material-design: true` | **Keep** — Material widgets remain; Phosphor is additive |
 
@@ -127,13 +127,13 @@ So that navigation and screens match the Figma mockups.
 import 'package:phosphor_flutter/phosphor_flutter.dart';
 
 // Regular weight, 24dp default per UX §1.6
-PhosphorIconsRegular.footprints
+PhosphorIconsRegular.sneakerMove
 PhosphorIconsRegular.chartBar
 PhosphorIconsRegular.database
 PhosphorIconsRegular.user
 ```
 
-Use as `Icon(PhosphorIconsRegular.footprints)` or `PhosphorIcon(PhosphorIconsRegular.footprints)` per widget needs in 5.7.
+Use as `Icon(PhosphorIconsRegular.sneakerMove)` or `PhosphorIcon(PhosphorIconsRegular.sneakerMove)` per widget needs in 5.7.
 
 ### Regression guardrails
 

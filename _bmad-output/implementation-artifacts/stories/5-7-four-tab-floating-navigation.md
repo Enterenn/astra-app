@@ -1,6 +1,6 @@
 # Story 5.7: Four-Tab Floating Navigation Bar
 
-Status: review
+Status: done
 
 <!-- Epic 5 — shell navigation redesign. Mockups: Today light, Today dark, History/Trends light (Baptiste 2026-06-04). Dimensions locked by product. -->
 
@@ -25,7 +25,7 @@ so that I can reach Today, Trends, Data, and Profil quickly.
 
 2. **Given** the Phosphor dependency from Story 5.6  
    **When** tab icons render  
-   **Then** **inactive** tabs use `PhosphorIconsRegular`: `footprints`, `chartBar`, `database`, `user`  
+   **Then** **inactive** tabs use `PhosphorIconsRegular`: `sneakerMove`, `chartBar`, `database`, `user`  
    **And** the **active** tab uses the matching **`PhosphorIconsFill`** glyph for the same four icons (regular → fill on selection)  
    **And** icon size remains **24dp** (UX §1.6)
 
@@ -202,13 +202,13 @@ Sign-off target: active tab background visually matches mockup squircle (smooth 
 import 'package:phosphoricons_flutter/phosphoricons_flutter.dart';
 
 // Inactive — 24dp
-PhosphorIconsRegular.footprints
+PhosphorIconsRegular.sneakerMove
 PhosphorIconsRegular.chartBar
 PhosphorIconsRegular.database
 PhosphorIconsRegular.user
 
 // Active — same names, Fill weight
-PhosphorIconsFill.footprints
+PhosphorIconsFill.sneakerMove
 PhosphorIconsFill.chartBar
 PhosphorIconsFill.database
 PhosphorIconsFill.user
