@@ -93,7 +93,7 @@ void main() {
       expect(find.text('TODAY'), findsOneWidget);
       expect(find.text('TRENDS'), findsOneWidget);
       expect(find.text('DATA'), findsOneWidget);
-      expect(find.text('PROFIL'), findsOneWidget);
+      expect(find.text('PROFILE'), findsOneWidget);
 
       expect(
         find.text('Steps'),

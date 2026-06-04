@@ -34,7 +34,7 @@ class AppBottomNav extends StatelessWidget {
       fillIcon: PhosphorIconsFill.database,
     ),
     _NavTab(
-      label: 'PROFIL',
+      label: 'PROFILE',
       regularIcon: PhosphorIconsRegular.user,
       fillIcon: PhosphorIconsFill.user,
     ),
