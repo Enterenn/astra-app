@@ -169,7 +169,7 @@ void main() {
         expect(find.text('TODAY'), findsOneWidget);
         expect(find.text('TRENDS'), findsOneWidget);
         expect(find.text('DATA'), findsOneWidget);
-        expect(find.text('PROFIL'), findsOneWidget);
+        expect(find.text('PROFILE'), findsOneWidget);
 
         await tester.tap(find.byIcon(PhosphorIconsRegular.chartBar));
         await tester.pump();
@@ -187,6 +187,21 @@ void main() {
         await tester.pump();
 
         expect(find.text('Storage on this device'), findsOneWidget);
+
+        await tester.tap(find.byIcon(PhosphorIconsRegular.user));
+        await tester.pump();
+        await tester.runAsync(() async {
+          await Future<void>.delayed(const Duration(milliseconds: 50));
+        });
+        await tester.pump();
+
+        expect(find.text('My Profile'), findsOneWidget);
+        expect(find.text('Informations'), findsOneWidget);
+        expect(find.text('Appearance'), findsOneWidget);
+        expect(
+          find.text('Informations and appearance settings will appear here.'),
+          findsNothing,
+        );
 
         await _disposeScaffold(tester);
       },
