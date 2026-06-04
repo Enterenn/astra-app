@@ -10,8 +10,10 @@ import '../../dev/chart_benchmark_dev_fab.dart';
 import '../cubits/history_cubit.dart';
 import '../cubits/my_data_cubit.dart';
 import '../cubits/today_cubit.dart';
+import '../widgets/app_bottom_nav.dart';
 import 'history_screen.dart';
 import 'my_data_screen.dart';
+import 'profile_screen.dart';
 import 'today_screen.dart';
 
 class AppScaffold extends StatefulWidget {
@@ -51,13 +53,6 @@ class _AppScaffoldState extends State<AppScaffold> {
   late final TodayCubit _todayCubit;
   late final HistoryCubit _historyCubit;
   late final MyDataCubit _myDataCubit;
-
-  static const _labels = ['Today', 'History', 'My Data'];
-  static const _icons = [
-    Icons.circle_outlined,
-    Icons.bar_chart_outlined,
-    Icons.shield_outlined,
-  ];
 
   @override
   void initState() {
@@ -145,8 +140,8 @@ class _AppScaffoldState extends State<AppScaffold> {
 
   void _onDestinationSelected(int index) {
     final returningToToday = index == 0 && _selectedIndex != 0;
-    final openingHistory = index == 1 && _selectedIndex != 1;
-    final openingMyData = index == 2 && _selectedIndex != 2;
+    final openingTrends = index == 1 && _selectedIndex != 1;
+    final openingData = index == 2 && _selectedIndex != 2;
     setState(() {
       _selectedIndex = index;
     });
@@ -154,10 +149,10 @@ class _AppScaffoldState extends State<AppScaffold> {
       unawaited(_todayCubit.refreshMetadata());
       unawaited(_historyCubit.refreshGoal());
     }
-    if (openingHistory) {
+    if (openingTrends) {
       unawaited(_historyCubit.refresh());
     }
-    if (openingMyData) {
+    if (openingData) {
       unawaited(_myDataCubit.refresh());
     }
   }
@@ -183,6 +178,7 @@ class _AppScaffoldState extends State<AppScaffold> {
         value: _myDataCubit,
         child: MyDataScreen(clock: widget.deps.timeProvider),
       ),
+      3 => const ProfileScreen(),
       _ => const SizedBox.shrink(),
     };
   }
@@ -216,25 +212,10 @@ class _AppScaffoldState extends State<AppScaffold> {
           child: _buildScreen(_selectedIndex),
         ),
       ),
-      bottomNavigationBar: DecoratedBox(
-        decoration: BoxDecoration(
-          border: Border(top: BorderSide(color: colors.borderDefault)),
-        ),
-        child: NavigationBar(
-          selectedIndex: _selectedIndex,
-          onDestinationSelected: _onDestinationSelected,
-          destinations: [
-            for (var i = 0; i < _labels.length; i++)
-              NavigationDestination(
-                icon: Semantics(
-                  label: _labels[i],
-                  child: Icon(_icons[i]),
-                ),
-                label: _labels[i],
-                tooltip: _labels[i],
-              ),
-          ],
-        ),
+      // Floating pill colors use accentPrimary until Story 5.8 preset wiring.
+      bottomNavigationBar: AppBottomNav(
+        selectedIndex: _selectedIndex,
+        onSelected: _onDestinationSelected,
       ),
     );
   }
