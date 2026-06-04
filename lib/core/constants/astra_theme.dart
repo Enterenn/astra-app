@@ -31,6 +31,7 @@ ThemeData buildAstraLightTheme() {
     ),
     extensions: <ThemeExtension<dynamic>>[colors],
     textTheme: _textTheme(colors),
+    // Legacy M3 bar theme — shell uses AppBottomNav (Story 5.7); kept for any Material NavigationBar.
     navigationBarTheme: NavigationBarThemeData(
       height: AstraSpacing.kBottomTabBarHeight,
       backgroundColor: colors.bgElevated,
@@ -68,6 +69,7 @@ ThemeData buildAstraDarkTheme() {
     ),
     extensions: <ThemeExtension<dynamic>>[colors],
     textTheme: _textTheme(colors),
+    // Legacy M3 bar theme — shell uses AppBottomNav (Story 5.7); kept for any Material NavigationBar.
     navigationBarTheme: NavigationBarThemeData(
       height: AstraSpacing.kBottomTabBarHeight,
       backgroundColor: colors.bgElevated,
