@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 
 import '../../core/constants/astra_colors.dart';
 import '../../core/constants/astra_spacing.dart';
@@ -7,41 +8,41 @@ import '../../core/constants/preference_keys.dart';
 import 'astra_button.dart';
 import 'profile_sheet_field_decoration.dart';
 
-/// Opens a bottom sheet to edit the local display name.
+/// Opens a bottom sheet to edit height in centimeters.
 ///
-/// Returns the trimmed name, empty string to clear, or `null` if cancelled.
-Future<String?> showDisplayNameEditorSheet(
+/// Returns saved height in cm, `-1` to clear, or `null` if cancelled.
+Future<int?> showHeightEditorSheet(
   BuildContext context, {
-  String? currentName,
+  int? currentHeightCm,
 }) {
-  return showModalBottomSheet<String>(
+  return showModalBottomSheet<int>(
     context: context,
     isScrollControlled: true,
     builder: (sheetContext) =>
-        _DisplayNameEditorSheetBody(currentName: currentName),
+        _HeightEditorSheetBody(currentHeightCm: currentHeightCm),
   );
 }
 
-class _DisplayNameEditorSheetBody extends StatefulWidget {
-  const _DisplayNameEditorSheetBody({this.currentName});
+class _HeightEditorSheetBody extends StatefulWidget {
+  const _HeightEditorSheetBody({this.currentHeightCm});
 
-  final String? currentName;
+  final int? currentHeightCm;
 
   @override
-  State<_DisplayNameEditorSheetBody> createState() =>
-      _DisplayNameEditorSheetBodyState();
+  State<_HeightEditorSheetBody> createState() => _HeightEditorSheetBodyState();
 }
 
-class _DisplayNameEditorSheetBodyState extends State<_DisplayNameEditorSheetBody> {
+class _HeightEditorSheetBodyState extends State<_HeightEditorSheetBody> {
   late final TextEditingController _controller;
-  late String _input;
+  String? _errorText;
 
   @override
   void initState() {
     super.initState();
-    _input = widget.currentName ?? '';
-    _controller = TextEditingController(text: _input);
-    _controller.addListener(() => setState(() => _input = _controller.text));
+    _controller = TextEditingController(
+      text: widget.currentHeightCm?.toString() ?? '',
+    );
+    _controller.addListener(_validateInput);
   }
 
   @override
@@ -50,15 +51,41 @@ class _DisplayNameEditorSheetBodyState extends State<_DisplayNameEditorSheetBody
     super.dispose();
   }
 
-  String get _trimmed => _input.trim();
+  void _validateInput() {
+    setState(() {
+      _errorText = _validationMessage(_controller.text);
+    });
+  }
+
+  String? _validationMessage(String raw) {
+    final trimmed = raw.trim();
+    if (trimmed.isEmpty) {
+      return null;
+    }
+    final parsed = int.tryParse(trimmed);
+    if (parsed == null) {
+      return 'Enter a whole number in centimeters';
+    }
+    if (parsed < kMinHeightCm || parsed > kMaxHeightCm) {
+      return 'Height must be between $kMinHeightCm and $kMaxHeightCm cm';
+    }
+    return null;
+  }
+
+  int? get _parsedHeight {
+    final trimmed = _controller.text.trim();
+    if (trimmed.isEmpty) {
+      return null;
+    }
+    return int.tryParse(trimmed);
+  }
 
   bool get _canSave {
-    final trimmed = _trimmed;
-    final current = widget.currentName?.trim();
-    if (trimmed.isEmpty && (current == null || current.isEmpty)) {
+    if (_errorText != null) {
       return false;
     }
-    return trimmed != current;
+    final parsed = _parsedHeight;
+    return parsed != widget.currentHeightCm;
   }
 
   @override
@@ -91,25 +118,30 @@ class _DisplayNameEditorSheetBodyState extends State<_DisplayNameEditorSheetBody
                 ),
               ),
               const SizedBox(height: AstraSpacing.kSpaceMd),
-              Text('Display name', style: AstraTypography.title(context)),
+              Text('Height', style: AstraTypography.title(context)),
               const SizedBox(height: AstraSpacing.kSpaceMd),
               TextField(
                 controller: _controller,
-                maxLength: kMaxDisplayNameLength,
+                keyboardType: TextInputType.number,
+                inputFormatters: [FilteringTextInputFormatter.digitsOnly],
                 autofocus: true,
                 style: AstraTypography.bodyFor(colors).copyWith(
                   color: colors.textPrimary,
                 ),
                 decoration: profileSheetFieldDecoration(
                   colors: colors,
-                  labelText: 'First name',
+                  labelText: 'Centimeters',
+                  errorText: _errorText,
                 ),
               ),
               const SizedBox(height: AstraSpacing.kSpaceLg),
               AstraButton(
                 label: 'Save',
                 onPressed: _canSave
-                    ? () => Navigator.of(context).pop(_trimmed)
+                    ? () {
+                        final parsed = _parsedHeight;
+                        Navigator.of(context).pop(parsed ?? -1);
+                      }
                     : null,
               ),
               const SizedBox(height: AstraSpacing.kSpaceSm),
