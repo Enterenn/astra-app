@@ -1,6 +1,6 @@
 # Story 5.10: Data Screen — Sovereignty Layout
 
-Status: review
+Status: done
 
 <!-- Sprint Change Proposal 2026-06-04: Data tab owns sovereignty only; goal/theme/profile move to Today/Profil. -->
 
@@ -212,8 +212,9 @@ Composer (Cursor agent)
 
 - Title typography: chose `AstraTypography.captionFor(colors)` to mirror Today screen (Story 5.9) hierarchy, not `AstraTypography.title`.
 - `_MyDataScreenBody` simplified from `StatefulWidget` to `StatelessWidget` after removing profile scroll/edit state.
-- `MyDataCubit.refresh()` left unchanged — still loads `displayName`/`dailyStepGoal` for Story 5.11 Profil tab.
-- `AppScaffold` postGoalUpdate/postDisplayNameUpdate hooks verified unchanged in `app_scaffold.dart`.
+- `MyDataCubit.refresh()` slimmed for Data tab (footprint + stale only); goal/displayName kept on cubit for Story 5.11.
+- FGS in-process collection reuses UI `BackgroundCollector` (fixes `database_closed` during CSV import after file picker).
+- CSV export: `FilePicker.saveFile` first, share sheet fallback if save cancelled.
 
 ### Completion Notes List
 
@@ -223,14 +224,22 @@ Composer (Cursor agent)
 - ✅ Scroll shell aligned with Today; stale/error banners above cards; CSV export/import/purge unchanged
 - ✅ `MyDataCubit` / `AppScaffold` hooks unchanged for Story 5.11
 - ✅ Tests updated; full suite green
+- ✅ Post-review: export in-flight mutex, import/purge success ack, removed dead `clock` on screen
+- ✅ Import/export CSV verified on Android emulator
 
 ### File List
 
+- `lib/core/di/app_dependencies.dart`
+- `lib/presentation/cubits/my_data_cubit.dart`
+- `lib/presentation/screens/app_scaffold.dart`
 - `lib/presentation/screens/my_data_screen.dart`
 - `lib/presentation/widgets/background_status_card.dart`
 - `lib/presentation/widgets/footprint_kpi_row.dart`
 - `lib/presentation/widgets/data_import_button.dart`
 - `lib/presentation/widgets/data_purge_button.dart`
+- `test/presentation/cubits/my_data_cubit_export_test.dart`
+- `test/presentation/cubits/my_data_cubit_goal_test.dart`
+- `test/presentation/cubits/my_data_cubit_test.dart`
 - `test/presentation/screens/my_data_screen_test.dart`
 - `test/presentation/screens/app_scaffold_test.dart`
 - `test/presentation/widgets/background_status_card_test.dart`
@@ -242,10 +251,11 @@ Composer (Cursor agent)
 ### Change Log
 
 - 2026-06-04: Story 5.10 — sovereignty-only Data screen; UX copy and layout polish with Baptiste
+- 2026-06-05: CSV import DB lifecycle fix, save-to-device export, code-review cubit hardening; story done
 
 ---
 
 ## Story completion status
 
-- **Status:** review
-- **Completion note:** Ultimate context engine analysis completed — comprehensive developer guide created
+- **Status:** done
+- **Completion note:** Data tab sovereignty layout shipped; CSV import/export hardened on Android

@@ -4,7 +4,6 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 import '../../core/constants/astra_colors.dart';
 import '../../core/constants/astra_spacing.dart';
 import '../../core/constants/astra_typography.dart';
-import '../../core/time/time_provider.dart';
 import '../cubits/my_data_cubit.dart';
 import '../cubits/my_data_state.dart';
 import '../utils/share_position_origin.dart';
@@ -17,13 +16,8 @@ import '../widgets/section_card.dart';
 import '../widgets/status_banner.dart';
 
 class MyDataScreen extends StatelessWidget {
-  const MyDataScreen({
-    required this.clock,
-    super.key,
-  });
+  const MyDataScreen({super.key});
 
-  /// Retained for [AppScaffold] wiring; footprint no longer needs live time.
-  final TimeProvider clock;
   static const _kScreenTitle = 'My Data';
   static const _kStorageIntro =
       'Everything stays on your phone. You choose when to back up or delete.';
@@ -63,6 +57,7 @@ class MyDataScreen extends StatelessWidget {
                     duration: Duration(seconds: 3),
                   ),
                 );
+                context.read<MyDataCubit>().ackImportSuccess();
               },
             ),
             BlocListener<MyDataCubit, MyDataState>(
@@ -75,6 +70,7 @@ class MyDataScreen extends StatelessWidget {
                     duration: Duration(seconds: 3),
                   ),
                 );
+                context.read<MyDataCubit>().ackPurgeSuccess();
               },
             ),
           ],

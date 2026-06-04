@@ -1,3 +1,4 @@
+import 'package:astra_app/core/constants/preference_keys.dart';
 import 'package:astra_app/core/database/app_database.dart';
 import 'package:astra_app/core/health/background_health_capability_snapshot.dart';
 import 'package:astra_app/core/services/background_health_capability_evaluator.dart';
@@ -79,7 +80,7 @@ void main() {
       );
     }
 
-    test('refresh loads daily step goal from preferences', () async {
+    test('refresh keeps dailyStepGoal from cubit state not preferences', () async {
       await userPreferences.setDailyStepGoal(12000);
       final cubit = buildCubit();
       addTearDown(cubit.close);
@@ -87,7 +88,13 @@ void main() {
       await cubit.refresh();
 
       expect(cubit.state.status, MyDataStatus.ready);
+      expect(cubit.state.dailyStepGoal, kDefaultStepGoal);
+
+      expect(await cubit.updateDailyStepGoal(12000), isTrue);
+      await cubit.refresh(silent: true);
+
       expect(cubit.state.dailyStepGoal, 12000);
+      expect(await userPreferences.getDailyStepGoal(), 12000);
     });
 
     test('updateDailyStepGoal persists and updates state', () async {

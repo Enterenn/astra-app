@@ -65,6 +65,7 @@ void main() {
 
     MyDataCubit buildCubit({
       ShareCsvFileCallback? shareCsvFile,
+      SaveCsvFileCallback? saveCsvFile,
       StepRepository? repository,
     }) {
       return MyDataCubit(
@@ -75,6 +76,7 @@ void main() {
         databasePath: inMemoryDatabasePath,
         activityPermissionGranted: () async => true,
         tempDirectoryProvider: () async => tempDir.path,
+        saveCsvFile: saveCsvFile ?? ((_) async => false),
         shareCsvFile: shareCsvFile ?? (_, {sharePositionOrigin}) async {},
         isIos: false,
       );
@@ -207,6 +209,30 @@ void main() {
       await cubit.exportAndShare(sharePositionOrigin: origin);
 
       expect(capturedOrigin, origin);
+
+      await cubit.close();
+    });
+
+    test('skips share when save to device succeeds', () async {
+      var saveCalls = 0;
+      var shareCalls = 0;
+      final cubit = buildCubit(
+        saveCsvFile: (path) async {
+          saveCalls++;
+          expect(File(path).existsSync(), isTrue);
+          return true;
+        },
+        shareCsvFile: (_, {sharePositionOrigin}) async {
+          shareCalls++;
+        },
+      );
+
+      await cubit.refresh();
+      await cubit.exportAndShare();
+
+      expect(saveCalls, 1);
+      expect(shareCalls, 0);
+      expect(cubit.state.exportErrorMessage, isNull);
 
       await cubit.close();
     });

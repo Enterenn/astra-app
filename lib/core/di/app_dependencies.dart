@@ -1,5 +1,6 @@
 import 'dart:io';
 
+import 'package:flutter/foundation.dart';
 import 'package:path/path.dart' as p;
 import 'package:permission_handler/permission_handler.dart';
 import 'package:sqflite/sqflite.dart';
@@ -134,6 +135,19 @@ class AppDependencies {
     );
     final healthForeground = HealthForegroundServiceCoordinator(
       activityPermissionGranted: resolveActivityRecognitionGranted,
+      // Reuse the UI [Database] — opening/closing a second connection on the same
+      // file path (see [runFgsStepCollectionCycle]) can close the app connection
+      // while the file picker is open (import → postImportRefresh).
+      collectionRunner: ({bool skipPhoneSourceWhenUiActive = false}) async {
+        try {
+          await backgroundCollector.collectOnce(enableGoalNotification: true);
+          return true;
+        } catch (error, stackTrace) {
+          debugPrint('Health FGS in-process collection failed: $error');
+          debugPrintStack(stackTrace: stackTrace);
+          return false;
+        }
+      },
     );
     healthForeground.registerPlatformHandlers();
     final dataLifecycleService = DataLifecycleService(

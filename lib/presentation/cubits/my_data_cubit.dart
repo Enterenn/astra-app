@@ -28,6 +28,8 @@ typedef ActivityPermissionChecker = Future<bool> Function();
 typedef TempDirectoryProvider = Future<String> Function();
 typedef ShareCsvFileCallback =
     Future<void> Function(String filePath, {Rect? sharePositionOrigin});
+/// Returns true when the user saved to a chosen on-device location.
+typedef SaveCsvFileCallback = Future<bool> Function(String filePath);
 typedef PickCsvFileCallback = Future<String?> Function();
 typedef ConfirmImportCallback =
     Future<bool> Function(int csvRowCount, int existingSampleCount);
@@ -47,6 +49,7 @@ class MyDataCubit extends Cubit<MyDataState> {
     ActivityPermissionChecker? activityPermissionGranted,
     TempDirectoryProvider? tempDirectoryProvider,
     ShareCsvFileCallback? shareCsvFile,
+    SaveCsvFileCallback? saveCsvFile,
     PickCsvFileCallback? pickCsvFile,
     this._confirmImport,
     this._postImportRefresh,
@@ -59,6 +62,7 @@ class MyDataCubit extends Cubit<MyDataState> {
        _tempDirectoryProvider =
            tempDirectoryProvider ?? _defaultTempDirectoryProvider,
        _shareCsvFile = shareCsvFile ?? _defaultShareCsvFile,
+       _saveCsvFile = saveCsvFile ?? _defaultSaveCsvFile,
        _pickCsvFile = pickCsvFile ?? _defaultPickCsvFile,
        _isIos = isIos ?? Platform.isIOS,
        super(const MyDataState.loading());
@@ -71,6 +75,7 @@ class MyDataCubit extends Cubit<MyDataState> {
   final ActivityPermissionChecker _activityPermissionGranted;
   final TempDirectoryProvider _tempDirectoryProvider;
   final ShareCsvFileCallback _shareCsvFile;
+  final SaveCsvFileCallback _saveCsvFile;
   final PickCsvFileCallback _pickCsvFile;
   final ConfirmImportCallback? _confirmImport;
   final PostImportRefreshCallback? _postImportRefresh;
@@ -80,6 +85,7 @@ class MyDataCubit extends Cubit<MyDataState> {
   final bool _isIos;
 
   Future<void>? _refreshInFlight;
+  Future<void>? _exportInFlight;
   Future<void>? _importInFlight;
   Future<void>? _purgeInFlight;
 
@@ -94,6 +100,18 @@ class MyDataCubit extends Cubit<MyDataState> {
       allowedExtensions: ['csv'],
     );
     return file?.path;
+  }
+
+  static Future<bool> _defaultSaveCsvFile(String filePath) async {
+    final bytes = await File(filePath).readAsBytes();
+    final savedPath = await FilePicker.saveFile(
+      dialogTitle: 'Save CSV export',
+      fileName: p.basename(filePath),
+      bytes: bytes,
+      type: FileType.custom,
+      allowedExtensions: ['csv'],
+    );
+    return savedPath != null;
   }
 
   static Future<void> _defaultShareCsvFile(
@@ -185,7 +203,14 @@ class MyDataCubit extends Cubit<MyDataState> {
           importSuccessPending: result.totalRowsInFile > 0,
         ),
       );
-      await _postImportRefresh?.call();
+      try {
+        await _postImportRefresh?.call();
+      } catch (error, stackTrace) {
+        if (kDebugMode) {
+          debugPrint('MyDataCubit.postImportRefresh failed: $error');
+          debugPrintStack(stackTrace: stackTrace);
+        }
+      }
       if (!isClosed) {
         await refresh(silent: true);
       }
@@ -223,7 +248,21 @@ class MyDataCubit extends Cubit<MyDataState> {
         state.isPurging) {
       return;
     }
+    if (_exportInFlight != null) {
+      return _exportInFlight!;
+    }
 
+    _exportInFlight = _exportAndShareImpl(
+      sharePositionOrigin: sharePositionOrigin,
+    );
+    try {
+      await _exportInFlight!;
+    } finally {
+      _exportInFlight = null;
+    }
+  }
+
+  Future<void> _exportAndShareImpl({Rect? sharePositionOrigin}) async {
     emit(
       state.copyWith(
         isExporting: true,
@@ -236,10 +275,13 @@ class MyDataCubit extends Cubit<MyDataState> {
       final filePath = await stepRepository.exportCsv(
         outputDirectory: tempDirectory,
       );
-      await _shareCsvFile(
-        filePath,
-        sharePositionOrigin: sharePositionOrigin,
-      );
+      final savedOnDevice = await _saveCsvFile(filePath);
+      if (!savedOnDevice && !isClosed) {
+        await _shareCsvFile(
+          filePath,
+          sharePositionOrigin: sharePositionOrigin,
+        );
+      }
 
       if (isClosed) {
         return;
@@ -263,6 +305,22 @@ class MyDataCubit extends Cubit<MyDataState> {
         ),
       );
     }
+  }
+
+  /// Clears [MyDataState.importSuccessPending] after the UI shows the snackbar.
+  void ackImportSuccess() {
+    if (isClosed || !state.importSuccessPending) {
+      return;
+    }
+    emit(state.copyWith(importSuccessPending: false));
+  }
+
+  /// Clears [MyDataState.purgeSuccessPending] after the UI shows the snackbar.
+  void ackPurgeSuccess() {
+    if (isClosed || !state.purgeSuccessPending) {
+      return;
+    }
+    emit(state.copyWith(purgeSuccessPending: false));
   }
 
   Future<void> confirmAndPurge({
@@ -493,9 +551,7 @@ class MyDataCubit extends Cubit<MyDataState> {
     try {
       final results = await Future.wait<Object?>([
         stepRepository.getFootprint(databasePath: databasePath),
-        userPreferences.getLastDatabaseOptimizedAt(),
         stepRepository.getLastIngestionUtc(),
-        capabilityEvaluator.evaluate(),
         _activityPermissionGranted(),
       ]);
 
@@ -504,17 +560,8 @@ class MyDataCubit extends Cubit<MyDataState> {
       }
 
       final footprint = results[0]! as DatabaseFootprint;
-      final lastOptimizedUtc = results[1] as DateTime?;
-      final lastIngestionUtc = results[2] as DateTime?;
-      final capabilitySnapshot =
-          results[3]! as BackgroundHealthCapabilitySnapshot;
-      final activityGranted = results[4]! as bool;
-      final prefs = await Future.wait<Object?>([
-        userPreferences.getDailyStepGoal(),
-        userPreferences.getDisplayName(),
-      ]);
-      final dailyStepGoal = prefs[0]! as int;
-      final displayName = prefs[1] as String?;
+      final lastIngestionUtc = results[1] as DateTime?;
+      final activityGranted = results[2]! as bool;
       final nowUtc = clock.nowUtc();
 
       if (isClosed) {
@@ -524,16 +571,12 @@ class MyDataCubit extends Cubit<MyDataState> {
       _emitReadySnapshot(
         sampleCount: footprint.sampleCount,
         fileSizeBytes: footprint.fileSizeBytes,
-        lastOptimizedUtc: lastOptimizedUtc,
         lastIngestionUtc: lastIngestionUtc,
         backgroundStatus: _deriveBackgroundStatus(
           activityGranted: activityGranted,
           lastIngestionUtc: lastIngestionUtc,
           nowUtc: nowUtc,
         ),
-        capabilitySnapshot: capabilitySnapshot,
-        dailyStepGoal: dailyStepGoal,
-        displayName: displayName,
       );
     } catch (_) {
       if (isClosed) {
@@ -584,10 +627,10 @@ class MyDataCubit extends Cubit<MyDataState> {
       MyDataState.ready(
         sampleCount: sampleCount,
         fileSizeBytes: fileSizeBytes,
-        lastOptimizedUtc: lastOptimizedUtc,
+        lastOptimizedUtc: lastOptimizedUtc ?? state.lastOptimizedUtc,
         lastIngestionUtc: lastIngestionUtc,
         backgroundStatus: backgroundStatus,
-        capabilitySnapshot: capabilitySnapshot,
+        capabilitySnapshot: capabilitySnapshot ?? state.capabilitySnapshot,
         isIos: _isIos,
         dailyStepGoal: dailyStepGoal ?? state.dailyStepGoal,
         displayName: displayName ?? state.displayName,

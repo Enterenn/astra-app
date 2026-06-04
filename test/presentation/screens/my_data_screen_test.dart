@@ -101,65 +101,65 @@ void main() {
     await setUpSqfliteFfi();
   });
 
-  group('MyDataScreen layout', () {
-    late Database db;
-    late UserPreferencesRepository userPreferences;
-    late FakeTimeProvider clock;
-    late StepRepository stepRepository;
+  late Database db;
+  late UserPreferencesRepository userPreferences;
+  late FakeTimeProvider clock;
+  late StepRepository stepRepository;
 
-    setUp(() async {
-      db = await openAstraDatabase(databasePath: inMemoryDatabasePath);
-      userPreferences = UserPreferencesRepository(db);
-      clock = FakeTimeProvider(
-        fixedNowUtc: DateTime.utc(2026, 6, 3, 12),
-        zoneOffset: const Duration(hours: 2),
-      );
-      stepRepository = StepRepository(db: db, clock: clock);
-    });
+  setUp(() async {
+    db = await openAstraDatabase(databasePath: inMemoryDatabasePath);
+    userPreferences = UserPreferencesRepository(db);
+    clock = FakeTimeProvider(
+      fixedNowUtc: DateTime.utc(2026, 6, 3, 12),
+      zoneOffset: const Duration(hours: 2),
+    );
+    stepRepository = StepRepository(db: db, clock: clock);
+  });
 
-    tearDown(() async {
-      await db.close();
-    });
+  tearDown(() async {
+    await db.close();
+  });
 
-    MyDataCubit buildSeededCubit(MyDataState state) {
-      return _SeededMyDataCubit(
-        stepRepository: stepRepository,
-        userPreferences: userPreferences,
-        capabilityEvaluator: _FixedCapabilityEvaluator(),
-        clock: clock,
-        databasePath: inMemoryDatabasePath,
-        seededState: state,
-      );
-    }
+  MyDataCubit buildSeededCubit(MyDataState state) {
+    return _SeededMyDataCubit(
+      stepRepository: stepRepository,
+      userPreferences: userPreferences,
+      capabilityEvaluator: _FixedCapabilityEvaluator(),
+      clock: clock,
+      databasePath: inMemoryDatabasePath,
+      seededState: state,
+    );
+  }
 
-    Future<void> pumpScreen(
-      WidgetTester tester, {
-      required MyDataCubit cubit,
-      bool disableAnimations = false,
-      Size viewSize = const Size(800, 1200),
-    }) async {
-      tester.view.physicalSize = viewSize;
-      tester.view.devicePixelRatio = 1.0;
-      addTearDown(tester.view.resetPhysicalSize);
-      addTearDown(tester.view.resetDevicePixelRatio);
+  Future<void> pumpScreen(
+    WidgetTester tester, {
+    required MyDataCubit cubit,
+    bool disableAnimations = false,
+    Size viewSize = const Size(800, 1200),
+  }) async {
+    tester.view.physicalSize = viewSize;
+    tester.view.devicePixelRatio = 1.0;
+    addTearDown(tester.view.resetPhysicalSize);
+    addTearDown(tester.view.resetDevicePixelRatio);
 
-      await tester.pumpWidget(
-        MaterialApp(
-          theme: buildAstraLightTheme(),
-          home: MediaQuery(
-            data: MediaQueryData(disableAnimations: disableAnimations),
-            child: Scaffold(
-              body: BlocProvider<MyDataCubit>.value(
-                value: cubit,
-                child: MyDataScreen(clock: clock),
-              ),
+    await tester.pumpWidget(
+      MaterialApp(
+        theme: buildAstraLightTheme(),
+        home: MediaQuery(
+          data: MediaQueryData(disableAnimations: disableAnimations),
+          child: Scaffold(
+            body: BlocProvider<MyDataCubit>.value(
+              value: cubit,
+              child: const MyDataScreen(),
             ),
           ),
         ),
-      );
-      await tester.pump();
-    }
+      ),
+    );
+    await tester.pump();
+  }
 
+  group('MyDataScreen layout', () {
     testWidgets('shows My Data title and two sections only', (
       tester,
     ) async {
@@ -196,64 +196,6 @@ void main() {
   });
 
   group('MyDataScreen sovereignty flows', () {
-    late Database db;
-    late UserPreferencesRepository userPreferences;
-    late FakeTimeProvider clock;
-    late StepRepository stepRepository;
-
-    setUp(() async {
-      db = await openAstraDatabase(databasePath: inMemoryDatabasePath);
-      userPreferences = UserPreferencesRepository(db);
-      clock = FakeTimeProvider(
-        fixedNowUtc: DateTime.utc(2026, 6, 3, 12),
-        zoneOffset: const Duration(hours: 2),
-      );
-      stepRepository = StepRepository(db: db, clock: clock);
-    });
-
-    tearDown(() async {
-      await db.close();
-    });
-
-    MyDataCubit buildSeededCubit(MyDataState state) {
-      return _SeededMyDataCubit(
-        stepRepository: stepRepository,
-        userPreferences: userPreferences,
-        capabilityEvaluator: _FixedCapabilityEvaluator(),
-        clock: clock,
-        databasePath: inMemoryDatabasePath,
-        seededState: state,
-      );
-    }
-
-    Future<void> pumpScreen(
-      WidgetTester tester, {
-      required MyDataCubit cubit,
-      bool disableAnimations = false,
-      Size viewSize = const Size(800, 1200),
-    }) async {
-      tester.view.physicalSize = viewSize;
-      tester.view.devicePixelRatio = 1.0;
-      addTearDown(tester.view.resetPhysicalSize);
-      addTearDown(tester.view.resetDevicePixelRatio);
-
-      await tester.pumpWidget(
-        MaterialApp(
-          theme: buildAstraLightTheme(),
-          home: MediaQuery(
-            data: MediaQueryData(disableAnimations: disableAnimations),
-            child: Scaffold(
-              body: BlocProvider<MyDataCubit>.value(
-                value: cubit,
-                child: MyDataScreen(clock: clock),
-              ),
-            ),
-          ),
-        ),
-      );
-      await tester.pump();
-    }
-
     testWidgets('shows storage intro and Export CSV button', (tester) async {
       final cubit = buildSeededCubit(_readyState());
       addTearDown(cubit.close);
@@ -326,24 +268,26 @@ void main() {
       expect(find.byType(CircularProgressIndicator), findsWidgets);
     });
 
-    testWidgets('shows Import complete snackbar for 3s after successful import', (
-      tester,
-    ) async {
-      final cubit = buildSeededCubit(_readyState());
-      addTearDown(cubit.close);
+    testWidgets(
+      'shows Import complete snackbar and clears importSuccessPending',
+      (tester) async {
+        final cubit = buildSeededCubit(_readyState());
+        addTearDown(cubit.close);
 
-      await pumpScreen(tester, cubit: cubit);
+        await pumpScreen(tester, cubit: cubit);
 
-      cubit.emit(_readyState());
-      await tester.pump();
-      cubit.emit(_readyState(importSuccessPending: true));
-      await tester.pump();
-      await tester.pump();
+        cubit.emit(_readyState());
+        await tester.pump();
+        cubit.emit(_readyState(importSuccessPending: true));
+        await tester.pump();
+        await tester.pump();
 
-      expect(find.text('Import complete'), findsOneWidget);
-      final snackBar = tester.widget<SnackBar>(find.byType(SnackBar));
-      expect(snackBar.duration, const Duration(seconds: 3));
-    });
+        expect(find.text('Import complete'), findsOneWidget);
+        final snackBar = tester.widget<SnackBar>(find.byType(SnackBar));
+        expect(snackBar.duration, const Duration(seconds: 3));
+        expect(cubit.state.importSuccessPending, isFalse);
+      },
+    );
 
     testWidgets('shows export error banner with retry tap', (tester) async {
       final cubit = _RetryExportMyDataCubit(
@@ -415,24 +359,26 @@ void main() {
       expect(find.byType(CircularProgressIndicator), findsWidgets);
     });
 
-    testWidgets('shows All local data removed snackbar for 3s after purge', (
-      tester,
-    ) async {
-      final cubit = buildSeededCubit(_readyState());
-      addTearDown(cubit.close);
+    testWidgets(
+      'shows All local data removed snackbar and clears purgeSuccessPending',
+      (tester) async {
+        final cubit = buildSeededCubit(_readyState());
+        addTearDown(cubit.close);
 
-      await pumpScreen(tester, cubit: cubit);
+        await pumpScreen(tester, cubit: cubit);
 
-      cubit.emit(_readyState());
-      await tester.pump();
-      cubit.emit(_readyState(purgeSuccessPending: true));
-      await tester.pump();
-      await tester.pump();
+        cubit.emit(_readyState());
+        await tester.pump();
+        cubit.emit(_readyState(purgeSuccessPending: true));
+        await tester.pump();
+        await tester.pump();
 
-      expect(find.text('All local data removed'), findsOneWidget);
-      final snackBar = tester.widget<SnackBar>(find.byType(SnackBar));
-      expect(snackBar.duration, const Duration(seconds: 3));
-    });
+        expect(find.text('All local data removed'), findsOneWidget);
+        final snackBar = tester.widget<SnackBar>(find.byType(SnackBar));
+        expect(snackBar.duration, const Duration(seconds: 3));
+        expect(cubit.state.purgeSuccessPending, isFalse);
+      },
+    );
 
     testWidgets('shows purge error banner with retry tap', (tester) async {
       final cubit = _RetryPurgeMyDataCubit(
@@ -491,8 +437,8 @@ void main() {
       await tester.pump();
 
       expect(cubit.confirmedPurgeWhileExporting, isTrue);
-      expect(cubit.state.purgeSuccessPending, isTrue);
       expect(find.text('All local data removed'), findsOneWidget);
+      expect(cubit.state.purgeSuccessPending, isFalse);
     });
   });
 }

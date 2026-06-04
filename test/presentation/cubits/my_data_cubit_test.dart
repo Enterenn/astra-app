@@ -185,27 +185,6 @@ void main() {
       cubit.close();
     });
 
-    test('refresh includes lastOptimized when preference is set', () async {
-      await userPreferences.setLastDatabaseOptimizedAt(
-        DateTime.utc(2026, 6, 3, 11, 30),
-      );
-      final cubit = buildCubit();
-
-      await cubit.refresh();
-
-      expect(cubit.state.lastOptimizedUtc, DateTime.utc(2026, 6, 3, 11, 30));
-      cubit.close();
-    });
-
-    test('refresh leaves lastOptimized null when never optimized', () async {
-      final cubit = buildCubit();
-
-      await cubit.refresh();
-
-      expect(cubit.state.lastOptimizedUtc, isNull);
-      cubit.close();
-    });
-
     test('refresh emits ready defaults when first load fails', () async {
       final failingRepository = _ThrowingFootprintRepository(
         db: db,

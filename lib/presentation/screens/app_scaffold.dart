@@ -180,7 +180,7 @@ class _AppScaffoldState extends State<AppScaffold> {
       ),
       2 => BlocProvider.value(
         value: _myDataCubit,
-        child: MyDataScreen(clock: widget.deps.timeProvider),
+        child: const MyDataScreen(),
       ),
       3 => const ProfileScreen(),
       _ => const SizedBox.shrink(),

@@ -1,5 +1,5 @@
 # generated: 2026-05-25
-# last_updated: 2026-06-04 (Story 5.10 created)
+# last_updated: 2026-06-05 (Story 5.10 done)
 # NEXT: 5.7 → 5.8 → 5.9 → 5.10 → 5.11 → 5.12 → epic-6 → 5.13 (optional)
 # Ref: planning-artifacts/sprint-change-proposal-2026-06-04.md
 # project: astra-app
@@ -48,7 +48,7 @@
 # NAVIGATION: _bmad-output/README.md
 
 generated: 2026-05-25
-last_updated: 2026-06-04
+last_updated: 2026-06-05
 project: astra-app
 project_key: NOKEY
 tracking_system: file-system
@@ -99,10 +99,9 @@ development_status:
   5-5-built-in-kotlin-plugin-migration: done
   # Mandatory order (2026-06-04 — IDs match sequence):
   5-6-phosphor-icons-dependency: done               # 1
-  5-7-four-tab-floating-navigation: done            # 2 — TODAY/TRENDS/DATA/PROFIL
-  5-8-accent-preset-theme-tokens: done              # 3
+  5-7-four-tab-floating-navigation: done            # q
   5-9-today-figma-layout-no-greeting: done          # 4 — stats row visible, empty until epic-6
-  5-10-data-screen-sovereignty-layout: review # 5 — tab DATA, screen title "My Data"
+  5-10-data-screen-sovereignty-layout: done # 5 — tab DATA, screen title "My Data"
   5-11-profil-informations-and-appearance: backlog  # 6 — bi-tone circles + theme_mode
   5-12-cross-screen-visual-cohesion-audit: backlog  # 7
   5-13-goal-overflow-animation-polish: backlog      # after 5.12 (optional)
