@@ -11,8 +11,10 @@ import 'package:astra_app/presentation/cubits/history_cubit.dart';
 import 'package:astra_app/presentation/cubits/my_data_cubit.dart';
 import 'package:astra_app/presentation/cubits/today_cubit.dart';
 import 'package:astra_app/presentation/cubits/today_state.dart';
+import 'package:astra_app/presentation/widgets/app_bottom_nav.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:phosphoricons_flutter/phosphoricons_flutter.dart';
 import 'package:permission_handler/permission_handler.dart';
 import 'package:sqflite/sqflite.dart';
 import 'package:sqflite_common_ffi/sqflite_ffi.dart';
@@ -70,7 +72,7 @@ void main() {
       await db.close();
     });
 
-    testWidgets('shows NavigationBar and switches tab placeholders', (
+    testWidgets('shows AppBottomNav and switches four tabs', (
       WidgetTester tester,
     ) async {
       await tester.runAsync(() async {
@@ -87,23 +89,25 @@ void main() {
         await tester.pump();
       });
 
-      expect(find.byType(NavigationBar), findsOneWidget);
-      expect(find.text('Today'), findsWidgets);
-      expect(find.text('History'), findsWidgets);
-      expect(find.text('My Data'), findsOneWidget);
+      expect(find.byType(AppBottomNav), findsOneWidget);
+      expect(find.text('TODAY'), findsOneWidget);
+      expect(find.text('TRENDS'), findsOneWidget);
+      expect(find.text('DATA'), findsOneWidget);
+      expect(find.text('PROFIL'), findsOneWidget);
 
       expect(
         find.text('steps today'),
         findsOneWidget,
       );
 
-      await tester.tap(find.byIcon(Icons.bar_chart_outlined));
+      await tester.tap(find.byIcon(PhosphorIconsRegular.chartBar));
       await tester.pump();
       await tester.runAsync(() async {
         await Future<void>.delayed(const Duration(milliseconds: 50));
       });
       await tester.pump(const Duration(milliseconds: 200));
 
+      expect(find.text('History'), findsWidgets);
       expect(find.text('7 days'), findsOneWidget);
       expect(find.text('30 days'), findsOneWidget);
       expect(
@@ -113,7 +117,7 @@ void main() {
         findsOneWidget,
       );
 
-      await tester.tap(find.byIcon(Icons.shield_outlined));
+      await tester.tap(find.byIcon(PhosphorIconsRegular.database));
       await tester.pump();
       await tester.runAsync(() async {
         await Future<void>.delayed(const Duration(milliseconds: 50));
@@ -222,7 +226,7 @@ void main() {
         await tester.pump();
       });
 
-      expect(find.byType(NavigationBar), findsOneWidget);
+      expect(find.byType(AppBottomNav), findsOneWidget);
       expect(find.text('Your steps stay on this device.'), findsNothing);
 
       await tester.runAsync(() async {
@@ -246,7 +250,7 @@ void main() {
       });
 
       expect(find.text('Your steps stay on this device.'), findsOneWidget);
-      expect(find.byType(NavigationBar), findsNothing);
+      expect(find.byType(AppBottomNav), findsNothing);
     });
 
     testWidgets('transitions to shell after onboarding completes', (
@@ -283,7 +287,7 @@ void main() {
       });
       await tester.pump();
 
-      expect(find.byType(NavigationBar), findsOneWidget);
+      expect(find.byType(AppBottomNav), findsOneWidget);
       expect(find.text('Your steps stay on this device.'), findsNothing);
       expect(
         find.text('steps today'),

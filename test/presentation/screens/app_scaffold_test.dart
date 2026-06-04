@@ -11,9 +11,11 @@ import 'package:astra_app/presentation/cubits/today_cubit.dart';
 import 'package:astra_app/presentation/cubits/today_state.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:astra_app/presentation/screens/app_scaffold.dart';
+import 'package:astra_app/presentation/widgets/app_bottom_nav.dart';
 import 'package:astra_app/presentation/widgets/status_banner.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:phosphoricons_flutter/phosphoricons_flutter.dart';
 import 'package:sqflite/sqflite.dart';
 
 import '../../helpers/sqflite_test_helper.dart';
@@ -163,7 +165,12 @@ void main() {
         expect(find.text('steps today'), findsOneWidget);
         expect(find.text('Phone sensor'), findsOneWidget);
 
-        await tester.tap(find.byIcon(Icons.bar_chart_outlined));
+        expect(find.text('TODAY'), findsOneWidget);
+        expect(find.text('TRENDS'), findsOneWidget);
+        expect(find.text('DATA'), findsOneWidget);
+        expect(find.text('PROFIL'), findsOneWidget);
+
+        await tester.tap(find.byIcon(PhosphorIconsRegular.chartBar));
         await tester.pump();
         await _awaitHistoryRefresh(tester);
 
@@ -171,7 +178,7 @@ void main() {
         expect(find.text('7 days'), findsOneWidget);
         expect(find.text('30 days'), findsOneWidget);
 
-        await tester.tap(find.byIcon(Icons.shield_outlined));
+        await tester.tap(find.byIcon(PhosphorIconsRegular.database));
         await tester.pump();
         await tester.runAsync(() async {
           await Future<void>.delayed(const Duration(milliseconds: 50));
@@ -232,11 +239,11 @@ void main() {
       final initialCalls = (cubit! as _RefreshCountingCubit).refreshCallCount;
       expect(initialCalls, 0);
 
-      await tester.tap(find.byIcon(Icons.bar_chart_outlined));
+      await tester.tap(find.byIcon(PhosphorIconsRegular.chartBar));
       await tester.pump();
       await _awaitHistoryRefresh(tester);
 
-      await tester.tap(find.byIcon(Icons.circle_outlined));
+      await tester.tap(find.byIcon(PhosphorIconsRegular.sneakerMove));
       await tester.pump();
       await tester.pump(const Duration(milliseconds: 50));
 
@@ -292,7 +299,7 @@ void main() {
       await _disposeScaffold(tester);
     });
 
-    testWidgets('NavigationBar uses Astra navigation theme tokens', (
+    testWidgets('AppBottomNav uses floating pill tokens', (
       WidgetTester tester,
     ) async {
       final colors = AstraColors.light();
@@ -306,37 +313,29 @@ void main() {
         userPreferences: deps.userPreferences,
       );
 
-      final navContext = tester.element(find.byType(NavigationBar));
-      final navTheme = Theme.of(navContext).navigationBarTheme;
+      expect(find.byType(AppBottomNav), findsOneWidget);
+      expect(find.byType(NavigationBar), findsNothing);
 
-      expect(navTheme.height, AstraSpacing.kBottomTabBarHeight);
-      expect(navTheme.backgroundColor, colors.bgElevated);
-      expect(navTheme.indicatorColor, Colors.transparent);
-
-      final selectedIconStyle = navTheme.iconTheme!.resolve({
-        WidgetState.selected,
-      });
-      final unselectedIconStyle = navTheme.iconTheme!.resolve({});
-      expect(selectedIconStyle?.color, colors.accentPrimary);
-      expect(unselectedIconStyle?.color, colors.textMuted);
-
-      final selectedLabelStyle = navTheme.labelTextStyle!.resolve({
-        WidgetState.selected,
-      });
-      final unselectedLabelStyle = navTheme.labelTextStyle!.resolve({});
-      expect(selectedLabelStyle?.color, colors.accentPrimary);
-      expect(unselectedLabelStyle?.color, colors.textMuted);
-
-      final decoratedBox = tester.widget<DecoratedBox>(
-        find.ancestor(
-          of: find.byType(NavigationBar),
-          matching: find.byType(DecoratedBox),
-        ),
+      final pill = tester.widget<DecoratedBox>(
+        find.descendant(
+          of: find.byType(AppBottomNav),
+          matching: find.byWidgetPredicate(
+            (w) =>
+                w is DecoratedBox &&
+                w.decoration is BoxDecoration &&
+                (w.decoration as BoxDecoration).color == colors.accentPrimary,
+          ),
+        ).first,
       );
-      final decoration = decoratedBox.decoration as BoxDecoration;
-      final topBorder = decoration.border?.top;
-      expect(topBorder, isNotNull);
-      expect(topBorder!.color, colors.borderDefault);
+      final pillDecoration = pill.decoration as BoxDecoration;
+      expect(pillDecoration.color, colors.accentPrimary);
+      expect(
+        pillDecoration.borderRadius,
+        BorderRadius.circular(AstraSpacing.kRadiusFull),
+      );
+
+      final pillBox = tester.getSize(find.byWidget(pill));
+      expect(pillBox.height, AstraSpacing.kBottomNavBarHeight);
 
       await _disposeScaffold(tester);
     });
