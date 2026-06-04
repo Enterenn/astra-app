@@ -302,6 +302,7 @@ class _AstraAppState extends State<AstraApp> with WidgetsBindingObserver {
             theme: buildAstraLightTheme(preset: themeState.accentPreset),
             darkTheme: buildAstraDarkTheme(preset: themeState.accentPreset),
             themeMode: themeState.materialThemeMode,
+            themeAnimationDuration: const Duration(milliseconds: 120),
             home: _showMainShell
                 ? AppScaffold(
                     deps: widget.deps,

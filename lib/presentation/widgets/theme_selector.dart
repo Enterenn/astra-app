@@ -37,20 +37,22 @@ class ThemeSelector extends StatelessWidget {
         padding: const EdgeInsets.all(AstraSpacing.kSpaceXs),
         child: Row(
           children: [
-            for (final (preference, label, semanticsLabel) in _options)
+            for (var i = 0; i < _options.length; i++) ...[
+              if (i > 0) const SizedBox(width: AstraSpacing.kSpaceLg),
               Expanded(
                 child: _SegmentButton(
-                  label: label,
-                  semanticsLabel: semanticsLabel,
-                  selected: selected == preference,
+                  label: _options[i].$2,
+                  semanticsLabel: _options[i].$3,
+                  selected: selected == _options[i].$1,
                   enabled: enabled,
                   colors: colors,
                   disableAnimations: disableAnimations,
-                  onTap: enabled && selected != preference
-                      ? () => onChanged(preference)
+                  onTap: enabled && selected != _options[i].$1
+                      ? () => onChanged(_options[i].$1)
                       : null,
                 ),
               ),
+            ],
           ],
         ),
       ),
