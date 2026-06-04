@@ -63,8 +63,8 @@ void main() {
       );
 
       expect(find.text('3\u2009200'), findsOneWidget);
-      expect(find.text('steps today'), findsOneWidget);
-      expect(find.text('goal 8\u2009000'), findsOneWidget);
+      expect(find.text('Steps'), findsOneWidget);
+      expect(find.text('/8\u2009000'), findsOneWidget);
     });
 
     testWidgets('overflow state shows actual step count with full arc progress', (
@@ -98,7 +98,7 @@ void main() {
 
       final colors = AstraColors.light(preset: AstraAccentPreset.blue);
       final delegate = ringPainter(tester);
-      expect(delegate.trackColor, colors.bgSubtle);
+      expect(delegate.trackColor, colors.accentPrimaryMuted);
       expect(
         delegate.progressColor,
         colors.accentPrimary.withValues(alpha: 0.66),
@@ -125,7 +125,7 @@ void main() {
 
       final colors = AstraColors.light(preset: AstraAccentPreset.blue);
       final delegate = ringPainter(tester);
-      expect(delegate.trackColor, colors.bgSubtle);
+      expect(delegate.trackColor, colors.accentPrimaryMuted);
       expect(delegate.progressColor, colors.accentPrimary);
       expect(delegate.progress, 1);
     });
