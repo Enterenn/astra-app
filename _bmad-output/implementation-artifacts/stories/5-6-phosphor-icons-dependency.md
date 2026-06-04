@@ -1,6 +1,6 @@
 # Story 5.6: Phosphor Icons Dependency
 
-Status: review
+Status: done
 
 <!-- Epic 5 — dependency-only story before 5.7 nav/icon wiring. Ultimate context engine analysis completed — comprehensive developer guide created. -->
 
@@ -45,6 +45,14 @@ So that navigation and screens match the Figma mockups.
   - [x] `flutter test` — full suite green (dependency-only; no `lib/` edits expected)
   - [x] Optional sanity (not required for AC): create a **temporary** dev-only import in a scratch file or run `dart pub deps` — **do not** commit scratch code
   - [x] **Stop → review brief → wait for Baptiste OK → commit**
+
+### Review Findings (2026-06-04)
+
+- [x] [Review][Patch] `DEPENDENCIES.md` table inconsistency — merged `phosphor_flutter` into main packages table
+- [x] [Review][Patch] No compile-time API guard — added `test/dependencies/phosphoricons_flutter_test.dart`
+- [x] [Review][Patch] `phosphor_flutter` 2.1.0 fails on Dart 3.12 (`IconData` final) — swapped to `phosphoricons_flutter` ^1.0.0 (same `PhosphorIconsRegular` API)
+- [x] [Review][Defer] Single commit vs three sub-tasks — process note only; not retrofixed
+- [x] [Review][Defer] APK font size impact — verify on first `flutter build` in Story 5.7
 
 ## Dev Notes
 
@@ -165,19 +173,22 @@ Composer (Cursor)
 
 ### Completion Notes List
 
-- Added `phosphor_flutter: ^2.1.0` to `pubspec.yaml`; lockfile pins 2.1.0. No `lib/` changes (scope boundary for 5.7).
+- Added `phosphoricons_flutter: ^1.0.0` to `pubspec.yaml` (not `phosphor_flutter` — incompatible with Dart 3.12); lockfile pins 1.0.0. No `lib/` changes (scope boundary for 5.7).
 - Documented Phosphor in `docs/DEPENDENCIES.md` with network policy, 5.7 API preview, deferred Material migration.
 - AC #1 and #2 satisfied; prerequisite ready for Story 5.7 four-tab nav.
+- Post-review: DEPENDENCIES table alignment; `phosphoricons_flutter_test.dart` guards 5.7 tab icon API.
 
 ### File List
 
 - `pubspec.yaml`
 - `pubspec.lock`
 - `docs/DEPENDENCIES.md`
+- `test/dependencies/phosphoricons_flutter_test.dart`
 
 ### Change Log
 
 - 2026-06-04: Story 5.6 — add `phosphor_flutter` dependency and DEPENDENCIES documentation (install-only; no lib edits).
+- 2026-06-04: Code review fixes — DEPENDENCIES table row; `phosphoricons_flutter` swap + API smoke test; story/sprint marked done.
 
 ## Previous Story Intelligence
 
