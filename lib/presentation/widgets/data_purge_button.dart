@@ -9,11 +9,13 @@ class DataPurgeButton extends StatelessWidget {
   const DataPurgeButton({
     required this.onPressed,
     required this.isLoading,
+    this.label = 'Erase all step history',
     super.key,
   });
 
   final VoidCallback? onPressed;
   final bool isLoading;
+  final String label;
 
   bool get _isDisabled => onPressed == null || isLoading;
 
@@ -25,7 +27,7 @@ class DataPurgeButton extends StatelessWidget {
     );
 
     return Semantics(
-      label: 'Delete all local health data',
+      label: 'Erase all step history',
       button: true,
       enabled: !_isDisabled,
       child: ConstrainedBox(
@@ -49,7 +51,7 @@ class DataPurgeButton extends StatelessWidget {
                     color: labelStyle.color,
                   ),
                 )
-              : Text('Delete all local data', style: labelStyle),
+              : Text(label, style: labelStyle),
         ),
       ),
     );

@@ -26,7 +26,7 @@ class BackgroundStatusCard extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final colors = context.astraColors;
-    final lastSync = formatRelativeTime(
+    final lastUpdated = formatRelativeTime(
       instantUtc: lastIngestionUtc,
       nowUtc: nowUtc,
     );
@@ -38,15 +38,16 @@ class BackgroundStatusCard extends StatelessWidget {
       BackgroundCollectionStatus.permissionDenied => colors.textMuted,
     };
 
-    final primaryCopy = switch (status) {
-      BackgroundCollectionStatus.healthy =>
-        'Background collection active · Last sync $lastSync',
-      BackgroundCollectionStatus.stale =>
-        'Background collection delayed · Last sync $lastSync',
+    final statusCopy = switch (status) {
+      BackgroundCollectionStatus.healthy => 'Steps are updating',
+      BackgroundCollectionStatus.stale => 'Steps may be delayed',
       BackgroundCollectionStatus.iosBackfill =>
-        'Steps sync when you open the app · Last sync $lastSync',
-      BackgroundCollectionStatus.permissionDenied => 'Activity permission off',
+        'Updates when you open the app',
+      BackgroundCollectionStatus.permissionDenied => 'Step access is off',
     };
+
+    final showLastUpdated =
+        status != BackgroundCollectionStatus.permissionDenied;
 
     final showOemHint =
         status == BackgroundCollectionStatus.stale &&
@@ -75,9 +76,21 @@ class BackgroundStatusCard extends StatelessWidget {
             ),
             const SizedBox(width: AstraSpacing.kSpaceSm),
             Expanded(
-              child: Text(
-                primaryCopy,
-                style: AstraTypography.bodyFor(colors),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    statusCopy,
+                    style: AstraTypography.bodyFor(colors),
+                  ),
+                  if (showLastUpdated) ...[
+                    const SizedBox(height: AstraSpacing.kSpaceXs),
+                    Text(
+                      'Last updated $lastUpdated',
+                      style: AstraTypography.captionFor(colors),
+                    ),
+                  ],
+                ],
               ),
             ),
           ],
@@ -88,14 +101,14 @@ class BackgroundStatusCard extends StatelessWidget {
             alignment: Alignment.centerLeft,
             child: TextButton(
               onPressed: onOpenSettings,
-              child: const Text('Open settings'),
+              child: const Text('Turn on in Settings'),
             ),
           ),
         ],
         if (showOemHint) ...[
           const SizedBox(height: AstraSpacing.kSpaceSm),
           Text(
-            'Battery optimization may delay collection on ${capabilities!.manufacturer} devices.',
+            'Battery settings on ${capabilities!.manufacturer} devices can delay updates.',
             style: AstraTypography.captionFor(colors),
           ),
         ],

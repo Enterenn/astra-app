@@ -7,11 +7,13 @@ class DataImportButton extends StatelessWidget {
   const DataImportButton({
     required this.onPressed,
     required this.isLoading,
+    this.label = 'Import CSV',
     super.key,
   });
 
   final VoidCallback? onPressed;
   final bool isLoading;
+  final String label;
 
   @override
   Widget build(BuildContext context) {
@@ -20,7 +22,7 @@ class DataImportButton extends StatelessWidget {
       button: true,
       enabled: onPressed != null && !isLoading,
       child: AstraButton(
-        label: 'Import CSV',
+        label: label,
         variant: AstraButtonVariant.secondary,
         isLoading: isLoading,
         onPressed: onPressed,
