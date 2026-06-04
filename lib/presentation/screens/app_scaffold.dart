@@ -9,6 +9,7 @@ import '../../core/di/app_dependencies.dart';
 import '../../dev/chart_benchmark_dev_fab.dart';
 import '../cubits/history_cubit.dart';
 import '../cubits/my_data_cubit.dart';
+import '../cubits/profile_cubit.dart';
 import '../cubits/today_cubit.dart';
 import '../widgets/app_bottom_nav.dart';
 import 'history_screen.dart';
@@ -26,9 +27,12 @@ class AppScaffold extends StatefulWidget {
     this.onHistoryCubitDisposed,
     this.onMyDataCubitReady,
     this.onMyDataCubitDisposed,
+    this.onProfileCubitReady,
+    this.onProfileCubitDisposed,
     this.createTodayCubit,
     this.createHistoryCubit,
     this.createMyDataCubit,
+    this.createProfileCubit,
     super.key,
   });
 
@@ -40,9 +44,12 @@ class AppScaffold extends StatefulWidget {
   final VoidCallback? onHistoryCubitDisposed;
   final ValueChanged<MyDataCubit>? onMyDataCubitReady;
   final VoidCallback? onMyDataCubitDisposed;
+  final ValueChanged<ProfileCubit>? onProfileCubitReady;
+  final VoidCallback? onProfileCubitDisposed;
   final TodayCubit Function(AppDependencies deps)? createTodayCubit;
   final HistoryCubit Function(AppDependencies deps)? createHistoryCubit;
   final MyDataCubit Function(AppDependencies deps)? createMyDataCubit;
+  final ProfileCubit Function(AppDependencies deps)? createProfileCubit;
 
   @override
   State<AppScaffold> createState() => _AppScaffoldState();
@@ -53,6 +60,7 @@ class _AppScaffoldState extends State<AppScaffold> {
   late final TodayCubit _todayCubit;
   late final HistoryCubit _historyCubit;
   late final MyDataCubit _myDataCubit;
+  late final ProfileCubit _profileCubit;
 
   @override
   void initState() {
@@ -104,6 +112,12 @@ class _AppScaffoldState extends State<AppScaffold> {
             await _todayCubit.refreshMetadata();
             await _historyCubit.refreshGoal();
           },
+        );
+    _profileCubit =
+        widget.createProfileCubit?.call(widget.deps) ??
+        ProfileCubit(
+          userPreferences: widget.deps.userPreferences,
+          notificationService: widget.deps.notificationService,
           postDisplayNameUpdate: () async {
             await _todayCubit.refreshMetadata();
           },
@@ -111,6 +125,7 @@ class _AppScaffoldState extends State<AppScaffold> {
     widget.onTodayCubitReady?.call(_todayCubit);
     widget.onHistoryCubitReady?.call(_historyCubit);
     widget.onMyDataCubitReady?.call(_myDataCubit);
+    widget.onProfileCubitReady?.call(_profileCubit);
     widget.deps.backgroundCollector.registerOnIngestionComplete(
       _onIngestionComplete,
     );
@@ -130,9 +145,11 @@ class _AppScaffoldState extends State<AppScaffold> {
     widget.onTodayCubitDisposed?.call();
     widget.onHistoryCubitDisposed?.call();
     widget.onMyDataCubitDisposed?.call();
+    widget.onProfileCubitDisposed?.call();
     _todayCubit.close();
     _historyCubit.close();
     _myDataCubit.close();
+    _profileCubit.close();
     super.dispose();
   }
 
@@ -146,6 +163,7 @@ class _AppScaffoldState extends State<AppScaffold> {
     final returningToToday = index == 0 && _selectedIndex != 0;
     final openingTrends = index == 1 && _selectedIndex != 1;
     final openingData = index == 2 && _selectedIndex != 2;
+    final openingProfile = index == 3 && _selectedIndex != 3;
     setState(() {
       _selectedIndex = index;
     });
@@ -158,6 +176,9 @@ class _AppScaffoldState extends State<AppScaffold> {
     }
     if (openingData) {
       unawaited(_myDataCubit.refresh());
+    }
+    if (openingProfile) {
+      unawaited(_profileCubit.refresh());
     }
   }
 
@@ -182,7 +203,10 @@ class _AppScaffoldState extends State<AppScaffold> {
         value: _myDataCubit,
         child: const MyDataScreen(),
       ),
-      3 => const ProfileScreen(),
+      3 => BlocProvider.value(
+        value: _profileCubit,
+        child: const ProfileScreen(),
+      ),
       _ => const SizedBox.shrink(),
     };
   }
