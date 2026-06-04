@@ -124,8 +124,7 @@ void main() {
       });
       await tester.pump(const Duration(milliseconds: 200));
 
-      expect(find.text('Background'), findsOneWidget);
-      expect(find.text('Footprint'), findsOneWidget);
+      expect(find.text('Storage on this device'), findsOneWidget);
 
       await tester.runAsync(() async {
         await tester.pumpWidget(const SizedBox.shrink());

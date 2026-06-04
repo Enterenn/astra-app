@@ -6,18 +6,15 @@ import 'package:astra_app/data/repositories/step_repository.dart';
 import 'package:astra_app/data/repositories/user_preferences_repository.dart';
 import 'package:astra_app/presentation/cubits/my_data_cubit.dart';
 import 'package:astra_app/presentation/cubits/my_data_state.dart';
-import 'package:astra_app/presentation/cubits/theme_cubit.dart';
-import 'package:astra_app/presentation/cubits/theme_state.dart';
 import 'package:astra_app/presentation/screens/my_data_screen.dart';
-import 'package:astra_app/presentation/widgets/theme_selector.dart';
 import 'package:astra_app/presentation/widgets/confirm_dialog.dart';
 import 'package:astra_app/presentation/widgets/data_export_button.dart';
 import 'package:astra_app/presentation/widgets/data_import_button.dart';
 import 'package:astra_app/presentation/widgets/data_purge_button.dart';
 import 'package:astra_app/presentation/widgets/display_name_editor_row.dart';
-import 'package:astra_app/presentation/widgets/profile_initials_badge.dart';
 import 'package:astra_app/presentation/widgets/goal_editor_row.dart';
-import 'dart:ui' show Tristate;
+import 'package:astra_app/presentation/widgets/profile_initials_badge.dart';
+import 'package:astra_app/presentation/widgets/theme_selector.dart';
 
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
@@ -80,17 +77,14 @@ MyDataState _readyState({
   bool isPurging = false,
   String? purgeErrorMessage,
   bool purgeSuccessPending = false,
-  int dailyStepGoal = 8000,
-  String? displayName,
+  bool isIos = false,
 }) {
   return MyDataState(
     status: MyDataStatus.ready,
     sampleCount: 10,
     fileSizeBytes: 1024,
     backgroundStatus: BackgroundCollectionStatus.healthy,
-    isIos: false,
-    dailyStepGoal: dailyStepGoal,
-    displayName: displayName,
+    isIos: isIos,
     isExporting: isExporting,
     exportErrorMessage: exportErrorMessage,
     isImporting: isImporting,
@@ -107,7 +101,7 @@ void main() {
     await setUpSqfliteFfi();
   });
 
-  group('MyDataScreen export', () {
+  group('MyDataScreen layout', () {
     late Database db;
     late UserPreferencesRepository userPreferences;
     late FakeTimeProvider clock;
@@ -138,27 +132,12 @@ void main() {
       );
     }
 
-    ThemeCubit buildThemeCubit({
-      AstraThemePreference initial = AstraThemePreference.system,
-    }) {
-      return ThemeCubit(
-        userPreferences: userPreferences,
-        initialPreference: initial,
-      );
-    }
-
     Future<void> pumpScreen(
       WidgetTester tester, {
       required MyDataCubit cubit,
-      ThemeCubit? themeCubit,
       bool disableAnimations = false,
-      Size viewSize = const Size(800, 2000),
+      Size viewSize = const Size(800, 1200),
     }) async {
-      final theme = themeCubit ?? buildThemeCubit();
-      if (themeCubit == null) {
-        addTearDown(theme.close);
-      }
-
       tester.view.physicalSize = viewSize;
       tester.view.devicePixelRatio = 1.0;
       addTearDown(tester.view.resetPhysicalSize);
@@ -170,11 +149,8 @@ void main() {
           home: MediaQuery(
             data: MediaQueryData(disableAnimations: disableAnimations),
             child: Scaffold(
-              body: MultiBlocProvider(
-                providers: [
-                  BlocProvider<MyDataCubit>.value(value: cubit),
-                  BlocProvider<ThemeCubit>.value(value: theme),
-                ],
+              body: BlocProvider<MyDataCubit>.value(
+                value: cubit,
                 child: MyDataScreen(clock: clock),
               ),
             ),
@@ -184,119 +160,7 @@ void main() {
       await tester.pump();
     }
 
-    testWidgets('shows Daily goal section with formatted value', (tester) async {
-      final cubit = buildSeededCubit(_readyState(dailyStepGoal: 12000));
-      addTearDown(cubit.close);
-
-      await pumpScreen(tester, cubit: cubit);
-
-      expect(find.text('Daily goal'), findsOneWidget);
-      expect(find.byType(GoalEditorRow), findsOneWidget);
-      expect(find.text('12\u2009000'), findsOneWidget);
-    });
-
-    testWidgets('tapping goal row opens editor sheet', (tester) async {
-      final cubit = buildSeededCubit(_readyState(dailyStepGoal: 8000));
-      addTearDown(cubit.close);
-
-      await pumpScreen(tester, cubit: cubit);
-
-      await tester.tap(find.byType(GoalEditorRow));
-      await tester.pumpAndSettle();
-
-      expect(find.text('Daily step goal'), findsWidgets);
-      expect(find.text('Save'), findsOneWidget);
-    });
-
-    testWidgets('goal row does not open editor while export in flight', (
-      tester,
-    ) async {
-      final cubit = buildSeededCubit(_readyState(isExporting: true));
-      addTearDown(cubit.close);
-
-      await pumpScreen(tester, cubit: cubit);
-
-      final row = tester.widget<GoalEditorRow>(find.byType(GoalEditorRow));
-      expect(row.onTap, isNull);
-
-      await tester.tap(find.byType(GoalEditorRow));
-      await tester.pump();
-
-      expect(find.text('Save'), findsNothing);
-    });
-
-    testWidgets('display name row does not open editor while export in flight', (
-      tester,
-    ) async {
-      final cubit = buildSeededCubit(
-        _readyState(isExporting: true, displayName: 'Alex'),
-      );
-      addTearDown(cubit.close);
-
-      await pumpScreen(tester, cubit: cubit);
-
-      final row = tester.widget<DisplayNameEditorRow>(
-        find.byType(DisplayNameEditorRow),
-      );
-      expect(row.onTap, isNull);
-
-      await tester.tap(find.byType(DisplayNameEditorRow));
-      await tester.pump();
-
-      expect(find.text('Save'), findsNothing);
-    });
-
-    testWidgets('display name row does not open editor while purge in flight', (
-      tester,
-    ) async {
-      final cubit = buildSeededCubit(
-        _readyState(isPurging: true, displayName: 'Alex'),
-      );
-      addTearDown(cubit.close);
-
-      await pumpScreen(tester, cubit: cubit);
-
-      final row = tester.widget<DisplayNameEditorRow>(
-        find.byType(DisplayNameEditorRow),
-      );
-      expect(row.onTap, isNull);
-    });
-
-    testWidgets('display name row does not open editor while import in flight', (
-      tester,
-    ) async {
-      final cubit = buildSeededCubit(
-        _readyState(isImporting: true, displayName: 'Alex'),
-      );
-      addTearDown(cubit.close);
-
-      await pumpScreen(tester, cubit: cubit);
-
-      final row = tester.widget<DisplayNameEditorRow>(
-        find.byType(DisplayNameEditorRow),
-      );
-      expect(row.onTap, isNull);
-    });
-
-    testWidgets('profile header shows initials for display name', (
-      tester,
-    ) async {
-      final cubit = buildSeededCubit(
-        _readyState(displayName: 'Marie Dupont'),
-      );
-      addTearDown(cubit.close);
-
-      await pumpScreen(tester, cubit: cubit);
-
-      expect(find.byType(ProfileInitialsBadge), findsOneWidget);
-      expect(find.text('MD'), findsOneWidget);
-
-      final backgroundY = tester.getTopLeft(find.text('Background')).dy;
-      final badgeY = tester.getTopLeft(find.byType(ProfileInitialsBadge)).dy;
-      expect(badgeY < backgroundY, isTrue);
-    });
-
-    testWidgets('profile header shows placeholder when display name is null', (
+    testWidgets('shows My Data title and two sections only', (
       tester,
     ) async {
       final cubit = buildSeededCubit(_readyState());
@@ -304,107 +168,18 @@ void main() {
 
       await pumpScreen(tester, cubit: cubit);
 
-      expect(find.byType(ProfileInitialsBadge), findsOneWidget);
-      expect(find.byIcon(Icons.person_outline), findsOneWidget);
+      expect(find.text('My Data'), findsOneWidget);
+      expect(find.text('Storage on this device'), findsOneWidget);
+      expect(find.text('Backup & restore'), findsOneWidget);
+      expect(find.text('Step tracking'), findsNothing);
+
+      expect(find.byType(GoalEditorRow), findsNothing);
+      expect(find.byType(ThemeSelector), findsNothing);
+      expect(find.byType(DisplayNameEditorRow), findsNothing);
+      expect(find.byType(ProfileInitialsBadge), findsNothing);
     });
 
-    testWidgets('profile badge does not open editor while export in flight', (
-      tester,
-    ) async {
-      final cubit = buildSeededCubit(
-        _readyState(isExporting: true, displayName: 'Alex'),
-      );
-      addTearDown(cubit.close);
-
-      await pumpScreen(tester, cubit: cubit);
-
-      final badge = tester.widget<ProfileInitialsBadge>(
-        find.byType(ProfileInitialsBadge),
-      );
-      expect(badge.onTap, isNull);
-      expect(badge.enabled, isFalse);
-    });
-
-    testWidgets('profile badge disabled while import in flight', (
-      tester,
-    ) async {
-      final cubit = buildSeededCubit(
-        _readyState(isImporting: true, displayName: 'Alex'),
-      );
-      addTearDown(cubit.close);
-
-      await pumpScreen(tester, cubit: cubit);
-
-      final badge = tester.widget<ProfileInitialsBadge>(
-        find.byType(ProfileInitialsBadge),
-      );
-      expect(badge.onTap, isNull);
-      expect(badge.enabled, isFalse);
-    });
-
-    testWidgets('profile badge disabled while purge in flight', (
-      tester,
-    ) async {
-      final cubit = buildSeededCubit(
-        _readyState(isPurging: true, displayName: 'Alex'),
-      );
-      addTearDown(cubit.close);
-
-      await pumpScreen(tester, cubit: cubit);
-
-      final badge = tester.widget<ProfileInitialsBadge>(
-        find.byType(ProfileInitialsBadge),
-      );
-      expect(badge.onTap, isNull);
-      expect(badge.enabled, isFalse);
-    });
-
-    testWidgets('profile header shows placeholder for punctuation-only name', (
-      tester,
-    ) async {
-      final cubit = buildSeededCubit(_readyState(displayName: '!!!'));
-      addTearDown(cubit.close);
-
-      await pumpScreen(tester, cubit: cubit);
-
-      expect(find.byIcon(Icons.person_outline), findsOneWidget);
-      expect(find.text('!'), findsNothing);
-    });
-
-    testWidgets('display name row shows Not set for whitespace-only name', (
-      tester,
-    ) async {
-      final cubit = buildSeededCubit(_readyState(displayName: '   '));
-      addTearDown(cubit.close);
-
-      await pumpScreen(tester, cubit: cubit);
-
-      expect(find.text('Not set'), findsOneWidget);
-    });
-
-    testWidgets('tapping profile badge with name scrolls Profile into view', (
-      tester,
-    ) async {
-      final cubit = buildSeededCubit(_readyState(displayName: 'Marie Dupont'));
-      addTearDown(cubit.close);
-
-      await pumpScreen(
-        tester,
-        cubit: cubit,
-        viewSize: const Size(400, 480),
-      );
-
-      final scrollable = find.byType(Scrollable).first;
-      final position = tester.state<ScrollableState>(scrollable).position;
-      expect(position.maxScrollExtent, greaterThan(0));
-
-      await tester.tap(find.byType(ProfileInitialsBadge));
-      await tester.pumpAndSettle();
-
-      expect(position.pixels, greaterThan(0));
-    });
-
-    testWidgets('tapping profile badge without name opens display name sheet', (
+    testWidgets('sections appear in Storage → Backup order', (
       tester,
     ) async {
       final cubit = buildSeededCubit(_readyState());
@@ -412,216 +187,85 @@ void main() {
 
       await pumpScreen(tester, cubit: cubit);
 
-      await tester.tap(find.byType(ProfileInitialsBadge));
-      await tester.pumpAndSettle();
+      final storageY =
+          tester.getTopLeft(find.text('Storage on this device')).dy;
+      final backupY = tester.getTopLeft(find.text('Backup & restore')).dy;
 
-      expect(find.text('First name'), findsOneWidget);
-      expect(find.text('Save'), findsOneWidget);
+      expect(storageY < backupY, isTrue);
+    });
+  });
+
+  group('MyDataScreen sovereignty flows', () {
+    late Database db;
+    late UserPreferencesRepository userPreferences;
+    late FakeTimeProvider clock;
+    late StepRepository stepRepository;
+
+    setUp(() async {
+      db = await openAstraDatabase(databasePath: inMemoryDatabasePath);
+      userPreferences = UserPreferencesRepository(db);
+      clock = FakeTimeProvider(
+        fixedNowUtc: DateTime.utc(2026, 6, 3, 12),
+        zoneOffset: const Duration(hours: 2),
+      );
+      stepRepository = StepRepository(db: db, clock: clock);
     });
 
-    testWidgets('profile header initials update when display name changes', (
-      tester,
-    ) async {
-      final cubit = buildSeededCubit(
-        _readyState(displayName: 'Marie Dupont'),
-      );
-      addTearDown(cubit.close);
-
-      await pumpScreen(tester, cubit: cubit);
-
-      final badgeFinder = find.byType(ProfileInitialsBadge);
-      expect(
-        find.descendant(of: badgeFinder, matching: find.text('MD')),
-        findsOneWidget,
-      );
-
-      await tester.runAsync(() => cubit.updateDisplayName('Jean'));
-      await tester.pump();
-
-      expect(cubit.state.displayName, 'Jean');
-      expect(
-        find.descendant(of: badgeFinder, matching: find.text('MD')),
-        findsNothing,
-      );
-      expect(
-        find.descendant(of: badgeFinder, matching: find.text('J')),
-        findsOneWidget,
-      );
+    tearDown(() async {
+      await db.close();
     });
 
-    testWidgets('Profile section sits between Appearance and Your data', (
-      tester,
-    ) async {
-      final cubit = buildSeededCubit(_readyState(displayName: 'Alex'));
-      addTearDown(cubit.close);
-
-      await pumpScreen(tester, cubit: cubit);
-
-      expect(find.text('Profile'), findsOneWidget);
-      expect(find.byType(DisplayNameEditorRow), findsOneWidget);
-      expect(find.text('Alex'), findsOneWidget);
-
-      final appearanceY = tester.getTopLeft(find.text('Appearance')).dy;
-      final profileY = tester.getTopLeft(find.text('Profile')).dy;
-      final yourDataY = tester.getTopLeft(find.text('Your data')).dy;
-
-      expect(appearanceY < profileY, isTrue);
-      expect(profileY < yourDataY, isTrue);
-    });
-
-    testWidgets('Appearance section sits between Daily goal and Profile', (
-      tester,
-    ) async {
-      final cubit = buildSeededCubit(_readyState());
-      addTearDown(cubit.close);
-
-      await pumpScreen(tester, cubit: cubit);
-
-      expect(find.text('Appearance'), findsOneWidget);
-      expect(find.byType(ThemeSelector), findsOneWidget);
-
-      final dailyGoalY = tester.getTopLeft(find.text('Daily goal')).dy;
-      final appearanceY = tester.getTopLeft(find.text('Appearance')).dy;
-      final profileY = tester.getTopLeft(find.text('Profile')).dy;
-
-      expect(dailyGoalY < appearanceY, isTrue);
-      expect(appearanceY < profileY, isTrue);
-    });
-
-    testWidgets('updateDisplayName invokes postDisplayNameUpdate callback', (
-      tester,
-    ) async {
-      var refreshCalled = false;
-      final cubit = MyDataCubit(
+    MyDataCubit buildSeededCubit(MyDataState state) {
+      return _SeededMyDataCubit(
         stepRepository: stepRepository,
         userPreferences: userPreferences,
         capabilityEvaluator: _FixedCapabilityEvaluator(),
         clock: clock,
-        databasePath: ':memory:',
-        postDisplayNameUpdate: () async {
-          refreshCalled = true;
-        },
+        databasePath: inMemoryDatabasePath,
+        seededState: state,
       );
-      addTearDown(cubit.close);
-      cubit.emit(_readyState());
+    }
 
-      await tester.binding.runAsync(() async {
-        final saved = await cubit.updateDisplayName('Sam');
-        expect(saved, isTrue);
-        expect(refreshCalled, isTrue);
-        expect(cubit.state.displayName, 'Sam');
-      });
-    });
-
-    testWidgets('tapping Dark updates ThemeCubit and selector selection', (
-      tester,
-    ) async {
-      final cubit = buildSeededCubit(_readyState());
-      addTearDown(cubit.close);
-      final themeCubit = buildThemeCubit();
-      addTearDown(themeCubit.close);
-
-      tester.view.physicalSize = const Size(800, 2000);
+    Future<void> pumpScreen(
+      WidgetTester tester, {
+      required MyDataCubit cubit,
+      bool disableAnimations = false,
+      Size viewSize = const Size(800, 1200),
+    }) async {
+      tester.view.physicalSize = viewSize;
       tester.view.devicePixelRatio = 1.0;
       addTearDown(tester.view.resetPhysicalSize);
       addTearDown(tester.view.resetDevicePixelRatio);
 
-      // SQLite + stream emit must run entirely in runAsync (see widget_test.dart).
-      await tester.runAsync(() async {
-        await tester.pumpWidget(
-          MaterialApp(
-            theme: buildAstraLightTheme(),
-            home: MultiBlocProvider(
-              providers: [
-                BlocProvider<MyDataCubit>.value(value: cubit),
-                BlocProvider<ThemeCubit>.value(value: themeCubit),
-              ],
-              child: Scaffold(body: MyDataScreen(clock: clock)),
+      await tester.pumpWidget(
+        MaterialApp(
+          theme: buildAstraLightTheme(),
+          home: MediaQuery(
+            data: MediaQueryData(disableAnimations: disableAnimations),
+            child: Scaffold(
+              body: BlocProvider<MyDataCubit>.value(
+                value: cubit,
+                child: MyDataScreen(clock: clock),
+              ),
             ),
           ),
-        );
-        await tester.pump();
-
-        await tester.tap(
-          find.descendant(
-            of: find.byType(ThemeSelector),
-            matching: find.text('Dark'),
-          ),
-        );
-        await tester.pump();
-
-        await themeCubit.stream
-            .firstWhere(
-              (state) => state.preference == AstraThemePreference.dark,
-            )
-            .timeout(const Duration(seconds: 2));
-      });
-      await tester.pump();
-
-      expect(themeCubit.state.preference, AstraThemePreference.dark);
-      expect(
-        tester.getSemantics(find.text('Dark')).flagsCollection.isSelected,
-        Tristate.isTrue,
+        ),
       );
-    });
-
-    testWidgets('theme selector disabled while export in flight', (
-      tester,
-    ) async {
-      final cubit = buildSeededCubit(_readyState(isExporting: true));
-      addTearDown(cubit.close);
-      final themeCubit = buildThemeCubit();
-      addTearDown(themeCubit.close);
-
-      await pumpScreen(tester, cubit: cubit, themeCubit: themeCubit);
-
-      final selector = tester.widget<ThemeSelector>(find.byType(ThemeSelector));
-      expect(selector.enabled, isFalse);
-
-      await tester.tap(find.text('Light'));
       await tester.pump();
+    }
 
-      expect(themeCubit.state.preference, AstraThemePreference.system);
-    });
-
-    testWidgets('theme selector disabled while purge in flight', (
-      tester,
-    ) async {
-      final cubit = buildSeededCubit(_readyState(isPurging: true));
-      addTearDown(cubit.close);
-
-      await pumpScreen(tester, cubit: cubit);
-
-      final selector = tester.widget<ThemeSelector>(find.byType(ThemeSelector));
-      expect(selector.enabled, isFalse);
-    });
-
-    testWidgets('theme selector disabled while import in flight', (
-      tester,
-    ) async {
-      final cubit = buildSeededCubit(_readyState(isImporting: true));
-      addTearDown(cubit.close);
-      final themeCubit = buildThemeCubit();
-      addTearDown(themeCubit.close);
-
-      await pumpScreen(tester, cubit: cubit, themeCubit: themeCubit);
-
-      final selector = tester.widget<ThemeSelector>(find.byType(ThemeSelector));
-      expect(selector.enabled, isFalse);
-
-      await tester.tap(find.text('Light'));
-      await tester.pump();
-
-      expect(themeCubit.state.preference, AstraThemePreference.system);
-    });
-
-    testWidgets('shows Your data section with Export CSV button', (tester) async {
+    testWidgets('shows storage intro and Export CSV button', (tester) async {
       final cubit = buildSeededCubit(_readyState());
       addTearDown(cubit.close);
 
       await pumpScreen(tester, cubit: cubit);
 
-      expect(find.text('Your data'), findsOneWidget);
+      expect(
+        find.text(
+          'Everything stays on your phone. You choose when to back up or delete.',
+        ),
+        findsOneWidget,
+      );
       expect(find.text('Export CSV'), findsOneWidget);
       expect(find.byType(DataExportButton), findsOneWidget);
     });
@@ -749,7 +393,7 @@ void main() {
       expect(cubit.importAttempts, 1);
     });
 
-    testWidgets('shows Delete all local data purge button below import', (
+    testWidgets('shows Erase all step history purge button below import', (
       tester,
     ) async {
       final cubit = buildSeededCubit(_readyState());
@@ -757,7 +401,7 @@ void main() {
 
       await pumpScreen(tester, cubit: cubit);
 
-      expect(find.text('Delete all local data'), findsOneWidget);
+      expect(find.text('Erase all step history'), findsOneWidget);
       expect(find.byType(DataPurgeButton), findsOneWidget);
     });
 
@@ -830,11 +474,11 @@ void main() {
       await pumpScreen(tester, cubit: cubit, disableAnimations: true);
 
       await tester.scrollUntilVisible(
-        find.text('Delete all local data'),
+        find.text('Erase all step history'),
         120,
         scrollable: find.byType(Scrollable).first,
       );
-      await tester.tap(find.text('Delete all local data'));
+      await tester.tap(find.text('Erase all step history'));
       await tester.pump();
       expect(find.text('Export first'), findsOneWidget);
 

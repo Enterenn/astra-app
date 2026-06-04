@@ -186,8 +186,7 @@ void main() {
         });
         await tester.pump();
 
-        expect(find.text('Background'), findsOneWidget);
-        expect(find.text('Footprint'), findsOneWidget);
+        expect(find.text('Storage on this device'), findsOneWidget);
 
         await _disposeScaffold(tester);
       },
@@ -291,11 +290,8 @@ void main() {
       });
       await tester.pump();
 
-      expect(
-        find.text('Background'),
-        findsOneWidget,
-      );
-      expect(find.text('Footprint'), findsOneWidget);
+      expect(find.text('Storage on this device'), findsOneWidget);
+      expect(find.text('Backup & restore'), findsOneWidget);
 
       await _disposeScaffold(tester);
     });

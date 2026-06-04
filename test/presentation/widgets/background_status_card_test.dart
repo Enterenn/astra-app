@@ -32,35 +32,32 @@ void main() {
       );
     }
 
-    testWidgets('healthy variant shows active collection copy', (tester) async {
+    testWidgets('healthy variant shows updating copy', (tester) async {
       await pumpCard(tester, status: BackgroundCollectionStatus.healthy);
 
-      expect(
-        find.textContaining('Background collection active'),
-        findsOneWidget,
-      );
-      expect(find.textContaining('Last sync 30 minutes ago'), findsOneWidget);
+      expect(find.text('Steps are updating'), findsOneWidget);
+      expect(find.text('Last updated 30 minutes ago'), findsOneWidget);
     });
 
-    testWidgets('stale variant shows delayed copy with last sync', (tester) async {
+    testWidgets('stale variant shows delayed copy with last updated', (
+      tester,
+    ) async {
       await pumpCard(tester, status: BackgroundCollectionStatus.stale);
 
-      expect(
-        find.textContaining('Background collection delayed'),
-        findsOneWidget,
-      );
+      expect(find.text('Steps may be delayed'), findsOneWidget);
+      expect(find.text('Last updated 30 minutes ago'), findsOneWidget);
     });
 
     testWidgets('iosBackfill variant shows sync-on-open copy', (tester) async {
       await pumpCard(tester, status: BackgroundCollectionStatus.iosBackfill);
 
-      expect(
-        find.textContaining('Steps sync when you open the app'),
-        findsOneWidget,
-      );
+      expect(find.text('Updates when you open the app'), findsOneWidget);
+      expect(find.text('Last updated 30 minutes ago'), findsOneWidget);
     });
 
-    testWidgets('permissionDenied variant shows settings button', (tester) async {
+    testWidgets('permissionDenied variant shows settings button', (
+      tester,
+    ) async {
       var settingsOpened = false;
 
       await pumpCard(
@@ -69,10 +66,10 @@ void main() {
         onOpenSettings: () => settingsOpened = true,
       );
 
-      expect(find.text('Activity permission off'), findsOneWidget);
-      expect(find.text('Open settings'), findsOneWidget);
+      expect(find.text('Step access is off'), findsOneWidget);
+      expect(find.text('Turn on in Settings'), findsOneWidget);
 
-      await tester.tap(find.text('Open settings'));
+      await tester.tap(find.text('Turn on in Settings'));
       await tester.pump();
 
       expect(settingsOpened, isTrue);
@@ -95,10 +92,11 @@ void main() {
       );
 
       expect(
-        find.textContaining('Battery optimization may delay collection'),
+        find.textContaining(
+          'Battery settings on Samsung devices can delay updates.',
+        ),
         findsOneWidget,
       );
-      expect(find.textContaining('Samsung'), findsOneWidget);
     });
   });
 }
