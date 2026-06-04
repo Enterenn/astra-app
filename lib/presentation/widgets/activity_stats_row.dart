@@ -18,32 +18,52 @@ class ActivityStatsRow extends StatelessWidget {
   Widget build(BuildContext context) {
     final colors = context.astraColors;
 
-    return Row(
-      children: [
-        Expanded(
-          child: _StatColumn(
-            icon: PhosphorIcons.fire,
-            value: _kMockKcal,
-            label: 'Kcal',
-            colors: colors,
+    return IntrinsicHeight(
+      child: Row(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: [
+          Expanded(
+            child: _StatColumn(
+              icon: PhosphorIconsRegular.fire,
+              value: _kMockKcal,
+              label: 'Kcal',
+              colors: colors,
+            ),
           ),
-        ),
-        Expanded(
-          child: _StatColumn(
-            icon: PhosphorIconsRegular.mapPin,
-            value: _kMockKm,
-            label: 'Km',
-            colors: colors,
+          _StatDivider(color: colors.accentPrimary),
+          Expanded(
+            child: _StatColumn(
+              icon: PhosphorIconsRegular.mapPin,
+              value: _kMockKm,
+              label: 'Km',
+              colors: colors,
+            ),
           ),
-        ),
-        Expanded(
-          child: _StatColumn(
-            icon: PhosphorIconsRegular.clock,
-            value: _kMockDuration,
-            colors: colors,
+          _StatDivider(color: colors.accentPrimary),
+          Expanded(
+            child: _StatColumn(
+              icon: PhosphorIconsRegular.clock,
+              value: _kMockDuration,
+              colors: colors,
+            ),
           ),
-        ),
-      ],
+        ],
+      ),
+    );
+  }
+}
+
+class _StatDivider extends StatelessWidget {
+  const _StatDivider({required this.color});
+
+  final Color color;
+
+  @override
+  Widget build(BuildContext context) {
+    return VerticalDivider(
+      width: 1,
+      thickness: 1,
+      color: color,
     );
   }
 }

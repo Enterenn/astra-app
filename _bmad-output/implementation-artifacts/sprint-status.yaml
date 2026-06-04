@@ -98,14 +98,14 @@ development_status:
   epic-5: in-progress
   5-5-built-in-kotlin-plugin-migration: done
   # Mandatory order (2026-06-04 — IDs match sequence):
-  5-6-phosphor-icons-dependency: done           # 1
-  5-7-four-tab-floating-navigation: done       # 2 — TODAY/TRENDS/DATA/PROFIL
-  5-8-accent-preset-theme-tokens: done       # 3
-  5-9-today-figma-layout-no-greeting: review      # 4 — stats row visible, empty until epic-6
-  5-10-data-screen-sovereignty-layout: backlog     # 5 — tab DATA, screen title "My Data"
-  5-11-profil-informations-and-appearance: backlog # 6 — bi-tone circles + theme_mode
-  5-12-cross-screen-visual-cohesion-audit: backlog # 7
-  5-13-goal-overflow-animation-polish: backlog     # after 5.12 (optional)
+  5-6-phosphor-icons-dependency: done               # 1
+  5-7-four-tab-floating-navigation: done            # 2 — TODAY/TRENDS/DATA/PROFIL
+  5-8-accent-preset-theme-tokens: done              # 3
+  5-9-today-figma-layout-no-greeting: done          # 4 — stats row visible, empty until epic-6
+  5-10-data-screen-sovereignty-layout: backlog      # 5 — tab DATA, screen title "My Data"
+  5-11-profil-informations-and-appearance: backlog  # 6 — bi-tone circles + theme_mode
+  5-12-cross-screen-visual-cohesion-audit: backlog  # 7
+  5-13-goal-overflow-animation-polish: backlog      # after 5.12 (optional)
   epic-5-retrospective: optional
 
   epic-6: backlog

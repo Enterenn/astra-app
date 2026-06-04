@@ -66,6 +66,7 @@ class _AppScaffoldState extends State<AppScaffold> {
           activityPermissionGranted: widget.deps.activityPermissionGranted,
           postGoalUpdate: () async {
             await _historyCubit.refreshGoal();
+            await _myDataCubit.refresh(silent: true);
           },
         );
     _historyCubit =

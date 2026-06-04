@@ -18,7 +18,8 @@ void main() {
     await tester.pump();
   }
 
-  testWidgets('shows mock values without dividers in light theme', (tester) async {
+  testWidgets('shows mock values with accent primary dividers in light theme',
+      (tester) async {
     await pumpRow(tester, theme: buildAstraLightTheme());
 
     expect(find.text('420'), findsOneWidget);
@@ -28,8 +29,8 @@ void main() {
     expect(find.text('00:37:20'), findsOneWidget);
     expect(find.text('HH:MM:SS'), findsNothing);
     expect(find.text('—'), findsNothing);
-    expect(find.byType(VerticalDivider), findsNothing);
-    expect(find.byIcon(PhosphorIcons.fire), findsOneWidget);
+    expect(find.byType(VerticalDivider), findsNWidgets(2));
+    expect(find.byIcon(PhosphorIconsRegular.fire), findsOneWidget);
     expect(find.byIcon(PhosphorIconsRegular.mapPin), findsOneWidget);
     expect(find.byIcon(PhosphorIconsRegular.clock), findsOneWidget);
   });

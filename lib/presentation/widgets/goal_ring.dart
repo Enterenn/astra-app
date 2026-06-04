@@ -120,7 +120,7 @@ class _GoalRingState extends State<GoalRing> with SingleTickerProviderStateMixin
       size: size,
       painter: GoalRingPainter(
         progress: GoalRing.ringProgressFor(widget.state),
-        trackColor: colors.accentPrimaryMuted,
+        trackColor: colors.bgSubtle,
         progressColor: progressColor,
         strokeWidth: _kRingStrokeWidth,
         dashedTrack: status == TodayStatus.noPermission,

@@ -600,6 +600,138 @@ void main() {
       expect(cubit.state.status, TodayStatus.empty);
       cubit.close();
     });
+
+    group('week strip', () {
+      test('refresh loads seven calendar week days', () async {
+        final cubit = buildCubit();
+
+        await cubit.refresh();
+
+        expect(cubit.state.weekDays, hasLength(7));
+        expect(cubit.state.weekDays.first.weekdayLabel, 'MON');
+        expect(cubit.state.weekDays.last.weekdayLabel, 'SUN');
+        final today = cubit.state.weekDays.singleWhere((day) => day.isToday);
+        expect(today.dayNumber, 2);
+        expect(today.weekdayLabel, 'TUE');
+        cubit.close();
+      });
+
+      test('marks past day goalMet when steps meet daily goal', () async {
+        await userPreferences.setDailyStepGoal(5000);
+        await stepRepository.upsertIngestionBucket(
+          _bucket(
+            startTimeUtc: DateTime.utc(2026, 6, 1, 10),
+            value: 6000,
+            zoneOffset: '+02:00',
+          ),
+        );
+        final cubit = buildCubit();
+
+        await cubit.refresh();
+
+        final monday = cubit.state.weekDays.singleWhere(
+          (day) => day.weekdayLabel == 'MON',
+        );
+        expect(monday.goalMet, isTrue);
+        expect(monday.isFuture, isFalse);
+        cubit.close();
+      });
+
+      test('noPermission still loads week strip', () async {
+        final cubit = buildCubit(
+          activityPermissionGranted: () async => false,
+        );
+
+        await cubit.refresh();
+
+        expect(cubit.state.status, TodayStatus.noPermission);
+        expect(cubit.state.weekDays, hasLength(7));
+        cubit.close();
+      });
+    });
+
+    group('updateDailyStepGoal', () {
+      test('persists goal and refreshes state', () async {
+        final cubit = buildCubit();
+
+        await cubit.refresh();
+        expect(await cubit.updateDailyStepGoal(15000), isTrue);
+
+        expect(cubit.state.goal, 15000);
+        expect(await userPreferences.getDailyStepGoal(), 15000);
+        cubit.close();
+      });
+
+      test('invokes postGoalUpdate on successful update', () async {
+        var callbackCalled = false;
+        final cubit = TodayCubit(
+          stepRepository: stepRepository,
+          userPreferences: userPreferences,
+          clock: clock,
+          activityPermissionGranted: () async => true,
+          postGoalUpdate: () async {
+            callbackCalled = true;
+          },
+        );
+
+        await cubit.refresh();
+        expect(await cubit.updateDailyStepGoal(9000), isTrue);
+
+        expect(callbackCalled, isTrue);
+        cubit.close();
+      });
+
+      test('rejects invalid goal', () async {
+        await userPreferences.setDailyStepGoal(8000);
+        final cubit = buildCubit();
+
+        await cubit.refresh();
+        expect(await cubit.updateDailyStepGoal(999), isFalse);
+
+        expect(cubit.state.goal, 8000);
+        expect(await userPreferences.getDailyStepGoal(), 8000);
+        cubit.close();
+      });
+
+      test('no-op when goal unchanged', () async {
+        var callbackCalled = false;
+        await userPreferences.setDailyStepGoal(8000);
+        final cubit = TodayCubit(
+          stepRepository: stepRepository,
+          userPreferences: userPreferences,
+          clock: clock,
+          activityPermissionGranted: () async => true,
+          postGoalUpdate: () async {
+            callbackCalled = true;
+          },
+        );
+
+        await cubit.refresh();
+        expect(await cubit.updateDailyStepGoal(8000), isFalse);
+
+        expect(callbackCalled, isFalse);
+        cubit.close();
+      });
+
+      test('returns false when postGoalUpdate throws', () async {
+        final cubit = TodayCubit(
+          stepRepository: stepRepository,
+          userPreferences: userPreferences,
+          clock: clock,
+          activityPermissionGranted: () async => true,
+          postGoalUpdate: () async {
+            throw StateError('refresh failed');
+          },
+        );
+
+        await cubit.refresh();
+        expect(await cubit.updateDailyStepGoal(12000), isFalse);
+
+        expect(cubit.state.goal, 8000);
+        expect(await userPreferences.getDailyStepGoal(), 12000);
+        cubit.close();
+      });
+    });
   });
 }
 

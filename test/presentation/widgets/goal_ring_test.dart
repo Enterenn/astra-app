@@ -98,7 +98,7 @@ void main() {
 
       final colors = AstraColors.light(preset: AstraAccentPreset.blue);
       final delegate = ringPainter(tester);
-      expect(delegate.trackColor, colors.accentPrimaryMuted);
+      expect(delegate.trackColor, colors.bgSubtle);
       expect(
         delegate.progressColor,
         colors.accentPrimary.withValues(alpha: 0.66),
@@ -125,7 +125,7 @@ void main() {
 
       final colors = AstraColors.light(preset: AstraAccentPreset.blue);
       final delegate = ringPainter(tester);
-      expect(delegate.trackColor, colors.accentPrimaryMuted);
+      expect(delegate.trackColor, colors.bgSubtle);
       expect(delegate.progressColor, colors.accentPrimary);
       expect(delegate.progress, 1);
     });
