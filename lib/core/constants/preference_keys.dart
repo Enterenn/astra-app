@@ -8,8 +8,15 @@ const kCelebrationShownDateKey = 'celebration_shown_date';
 const kIngestionCollectLockKey = 'ingestion_collect_lock';
 const kLastDatabaseOptimizedAtKey = 'last_database_optimized_at';
 const kDisplayNameKey = 'display_name';
+const kHeightCmKey = 'height_cm';
+const kWeightKgKey = 'weight_kg';
+const kGoalNotificationsEnabledKey = 'goal_notifications_enabled';
 
 const kDefaultStepGoal = 8000;
+const kMinHeightCm = 100;
+const kMaxHeightCm = 250;
+const kMinWeightKg = 30.0;
+const kMaxWeightKg = 300.0;
 const kMaxDisplayNameLength = 32;
 const kMinStepGoal = 1000;
 const kMaxStepGoal = 100000;

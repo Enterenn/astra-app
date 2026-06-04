@@ -69,6 +69,65 @@ class UserPreferencesRepository {
     return trimmed.isEmpty ? null : trimmed;
   }
 
+  Future<int?> getHeightCm() async {
+    final value = await _readValue(kHeightCmKey);
+    if (value == null) {
+      return null;
+    }
+    return int.tryParse(value);
+  }
+
+  Future<void> setHeightCm(int? heightCm) async {
+    if (heightCm == null) {
+      await _deleteValue(kHeightCmKey);
+      return;
+    }
+    if (heightCm < kMinHeightCm || heightCm > kMaxHeightCm) {
+      throw ArgumentError.value(
+        heightCm,
+        'heightCm',
+        'must be between $kMinHeightCm and $kMaxHeightCm',
+      );
+    }
+    await _writeValue(kHeightCmKey, heightCm.toString());
+  }
+
+  Future<double?> getWeightKg() async {
+    final value = await _readValue(kWeightKgKey);
+    if (value == null) {
+      return null;
+    }
+    return double.tryParse(value);
+  }
+
+  Future<void> setWeightKg(double? weightKg) async {
+    if (weightKg == null) {
+      await _deleteValue(kWeightKgKey);
+      return;
+    }
+    if (weightKg < kMinWeightKg || weightKg > kMaxWeightKg) {
+      throw ArgumentError.value(
+        weightKg,
+        'weightKg',
+        'must be between $kMinWeightKg and $kMaxWeightKg',
+      );
+    }
+    final rounded = (weightKg * 10).round() / 10;
+    await _writeValue(kWeightKgKey, rounded.toString());
+  }
+
+  Future<bool> getGoalNotificationsEnabled() async {
+    final value = await _readValue(kGoalNotificationsEnabledKey);
+    return value == 'true';
+  }
+
+  Future<void> setGoalNotificationsEnabled(bool enabled) async {
+    await _writeValue(
+      kGoalNotificationsEnabledKey,
+      enabled ? 'true' : 'false',
+    );
+  }
+
   Future<void> setDisplayName(String? name) async {
     if (name == null) {
       await _deleteValue(kDisplayNameKey);

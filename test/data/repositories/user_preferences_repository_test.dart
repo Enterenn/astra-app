@@ -165,5 +165,52 @@ void main() {
       );
       expect(await repository.getDisplayName(), isNull);
     });
+
+    test('goal notifications default to false when absent', () async {
+      expect(await repository.getGoalNotificationsEnabled(), isFalse);
+    });
+
+    test('round-trips goal notifications flag', () async {
+      await repository.setGoalNotificationsEnabled(true);
+      expect(await repository.getGoalNotificationsEnabled(), isTrue);
+      await repository.setGoalNotificationsEnabled(false);
+      expect(await repository.getGoalNotificationsEnabled(), isFalse);
+    });
+
+    test('round-trips height in cm', () async {
+      await repository.setHeightCm(175);
+      expect(await repository.getHeightCm(), 175);
+      await repository.setHeightCm(null);
+      expect(await repository.getHeightCm(), isNull);
+    });
+
+    test('rejects height outside allowed range', () async {
+      expect(
+        () => repository.setHeightCm(99),
+        throwsA(isA<ArgumentError>()),
+      );
+      expect(
+        () => repository.setHeightCm(251),
+        throwsA(isA<ArgumentError>()),
+      );
+    });
+
+    test('round-trips weight in kg with one decimal', () async {
+      await repository.setWeightKg(72.5);
+      expect(await repository.getWeightKg(), 72.5);
+      await repository.setWeightKg(null);
+      expect(await repository.getWeightKg(), isNull);
+    });
+
+    test('rejects weight outside allowed range', () async {
+      expect(
+        () => repository.setWeightKg(29.9),
+        throwsA(isA<ArgumentError>()),
+      );
+      expect(
+        () => repository.setWeightKg(300.1),
+        throwsA(isA<ArgumentError>()),
+      );
+    });
   });
 }

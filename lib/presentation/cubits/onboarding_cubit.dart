@@ -87,6 +87,9 @@ class OnboardingCubit extends Cubit<OnboardingState> {
     final resolvedGoal = goal ?? state.resolvedGoal;
     await userPreferences.setDailyStepGoal(resolvedGoal);
     await userPreferences.setDisplayName(displayName);
+    await userPreferences.setGoalNotificationsEnabled(
+      state.notificationOptIn,
+    );
     await userPreferences.setOnboardingComplete(true);
     emit(state.copyWith(status: OnboardingStatus.completed));
   }

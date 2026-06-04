@@ -73,6 +73,27 @@ void main() {
       cubit.close();
     });
 
+    test('completeOnboarding persists notification opt-in preference', () async {
+      final cubit = OnboardingCubit(userPreferences: repository);
+      cubit.setNotificationOptIn(true);
+
+      await cubit.completeOnboarding(goal: 8000);
+
+      expect(await repository.getGoalNotificationsEnabled(), isTrue);
+
+      cubit.close();
+    });
+
+    test('completeOnboarding persists notification opt-out', () async {
+      final cubit = OnboardingCubit(userPreferences: repository);
+
+      await cubit.completeOnboarding(goal: 8000);
+
+      expect(await repository.getGoalNotificationsEnabled(), isFalse);
+
+      cubit.close();
+    });
+
     test('completeOnboarding persists optional display name', () async {
       final cubit = OnboardingCubit(userPreferences: repository);
 

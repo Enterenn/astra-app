@@ -75,6 +75,9 @@ void main() {
         kAccentPresetKey: 'magenta',
         kOnboardingCompleteKey: 'true',
         kDisplayNameKey: 'Baptiste',
+        kHeightCmKey: '180',
+        kWeightKgKey: '72.5',
+        kGoalNotificationsEnabledKey: 'true',
       }.entries) {
         await db.insert(
           'user_preferences',
@@ -105,6 +108,9 @@ void main() {
       expect(prefs[kAccentPresetKey], 'magenta');
       expect(prefs[kOnboardingCompleteKey], 'true');
       expect(prefs[kDisplayNameKey], 'Baptiste');
+      expect(prefs[kHeightCmKey], '180');
+      expect(prefs[kWeightKgKey], '72.5');
+      expect(prefs[kGoalNotificationsEnabledKey], 'true');
       expect(
         prefs.keys.where((k) => k.startsWith('ingestion_baseline/')),
         isEmpty,
