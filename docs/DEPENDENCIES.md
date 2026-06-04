@@ -99,18 +99,7 @@ See `pubspec.yaml` and `pubspec.lock`. Package-level audit table → Epic 5 Stor
 | Package | Purpose | Network |
 |---------|---------|---------|
 | `file_picker` ^12.0.0-beta.5 | My Data CSV import — local file selection only (Story 4.4). Beta required for `win32` ^6 compat with `share_plus` ^13.1 | No data upload; OS file picker UI only |
-
-### Phosphor Icons (Story 5.6)
-
-| Package | Locked version | License | Purpose |
-|---------|----------------|---------|---------|
-| `phosphor_flutter` | 2.1.0 | [MIT](https://pub.dev/packages/phosphor_flutter/license) | Figma-aligned iconography (Epic 5); regular weight default per UX §1.6 |
-
-- **Network:** No — icon fonts ship inside the package; no runtime fetch.
-- **Usage scope (5.6):** Install only; tab and screen wiring starts in Story 5.7+.
-- **API preview (5.7):** `PhosphorIconsRegular` — `footprints`, `chartBar`, `database`, `user` (four-tab nav per UX §1.6).
-- **Deferred migration:** Material `Icons.*` elsewhere remain until Stories 5.7–5.12 replace them per screen.
-- **`uses-material-design: true`:** Unchanged — Phosphor is additive; Material widgets stay.
+| `phosphoricons_flutter` ^1.0.0 (locked 1.0.0, [MIT](https://pub.dev/packages/phosphoricons_flutter/license)) | Figma-aligned Phosphor iconography (Epic 5, Story 5.6). **Not** `phosphor_flutter` 2.1.0 — that package extends final `IconData` and fails on Dart 3.12 / Flutter 3.44. Import `package:phosphoricons_flutter/phosphoricons_flutter.dart`; tab API: `PhosphorIconsRegular` — `footprints`, `chartBar`, `database`, `user`. Install-only until 5.7 | No — icon fonts bundled in package; no runtime fetch |
 
 ### Android Built-in Kotlin / KGP (Story 5.5)
 
