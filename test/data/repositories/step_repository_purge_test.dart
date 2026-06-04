@@ -72,6 +72,7 @@ void main() {
       for (final entry in {
         kDailyStepGoalKey: '9500',
         kThemeModeKey: 'dark',
+        kAccentPresetKey: 'magenta',
         kOnboardingCompleteKey: 'true',
         kDisplayNameKey: 'Baptiste',
       }.entries) {
@@ -101,6 +102,7 @@ void main() {
       expect(prefs.containsKey(kDailyStepGoalKey), isTrue);
       expect(prefs[kDailyStepGoalKey], '9500');
       expect(prefs[kThemeModeKey], 'dark');
+      expect(prefs[kAccentPresetKey], 'magenta');
       expect(prefs[kOnboardingCompleteKey], 'true');
       expect(prefs[kDisplayNameKey], 'Baptiste');
       expect(

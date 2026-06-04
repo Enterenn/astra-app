@@ -1,3 +1,4 @@
+import 'package:astra_app/core/constants/astra_accent_preset.dart';
 import 'package:astra_app/core/constants/preference_keys.dart';
 import 'package:astra_app/core/database/app_database.dart';
 import 'package:astra_app/data/repositories/user_preferences_repository.dart';
@@ -41,6 +42,22 @@ void main() {
     test('round-trips theme mode', () async {
       await repository.setThemeMode(AstraThemePreference.dark);
       expect(await repository.getThemeMode(), AstraThemePreference.dark);
+    });
+
+    test('defaults accent preset to orange when absent', () async {
+      expect(await repository.getAccentPreset(), AstraAccentPreset.orange);
+    });
+
+    test('round-trips accent preset using English storage IDs', () async {
+      await repository.setAccentPreset(AstraAccentPreset.pink);
+      expect(await repository.getAccentPreset(), AstraAccentPreset.pink);
+
+      final rows = await db.query(
+        'user_preferences',
+        where: 'key = ?',
+        whereArgs: [kAccentPresetKey],
+      );
+      expect(rows.single['value'], 'pink');
     });
 
     test('falls back to system for invalid stored theme', () async {

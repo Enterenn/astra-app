@@ -1,3 +1,4 @@
+import 'package:astra_app/core/constants/astra_accent_preset.dart';
 import 'package:astra_app/core/database/app_database.dart';
 import 'package:astra_app/data/repositories/user_preferences_repository.dart';
 import 'package:astra_app/presentation/cubits/theme_cubit.dart';
@@ -27,11 +28,12 @@ void main() {
       await db.close();
     });
 
-    test('defaults to system preference and ThemeMode', () {
+    test('defaults to system preference and orange accent', () {
       final cubit = ThemeCubit(userPreferences: repository);
 
       expect(cubit.state.preference, AstraThemePreference.system);
       expect(cubit.state.materialThemeMode, ThemeMode.system);
+      expect(cubit.state.accentPreset, AstraAccentPreset.orange);
 
       cubit.close();
     });
@@ -71,6 +73,49 @@ void main() {
 
       expect(cubit.state.preference, AstraThemePreference.dark);
       expect(await repository.getThemeMode(), AstraThemePreference.light);
+
+      await cubit.close();
+    });
+
+    test('setAccentPreset persists and emits preset', () async {
+      final cubit = ThemeCubit(userPreferences: repository);
+
+      await cubit.setAccentPreset(AstraAccentPreset.magenta);
+
+      expect(cubit.state.accentPreset, AstraAccentPreset.magenta);
+      expect(await repository.getAccentPreset(), AstraAccentPreset.magenta);
+
+      await cubit.close();
+    });
+
+    test('getAccentPreset maps legacy cyan and purple storage values', () async {
+      final txn = db;
+      await txn.insert(
+        'user_preferences',
+        {'key': 'accent_preset', 'value': 'cyan'},
+        conflictAlgorithm: ConflictAlgorithm.replace,
+      );
+      expect(await repository.getAccentPreset(), AstraAccentPreset.blue);
+
+      await txn.insert(
+        'user_preferences',
+        {'key': 'accent_preset', 'value': 'purple'},
+        conflictAlgorithm: ConflictAlgorithm.replace,
+      );
+      expect(await repository.getAccentPreset(), AstraAccentPreset.magenta);
+    });
+
+    test('setAccentPreset no-ops when preset unchanged', () async {
+      final cubit = ThemeCubit(
+        userPreferences: repository,
+        initialAccentPreset: AstraAccentPreset.green,
+      );
+      await repository.setAccentPreset(AstraAccentPreset.blue);
+
+      await cubit.setAccentPreset(AstraAccentPreset.green);
+
+      expect(cubit.state.accentPreset, AstraAccentPreset.green);
+      expect(await repository.getAccentPreset(), AstraAccentPreset.blue);
 
       await cubit.close();
     });

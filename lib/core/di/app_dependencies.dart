@@ -12,6 +12,7 @@ import '../../data/datasources/step_normalizer.dart';
 import '../../data/repositories/ingestion_baseline_repository.dart';
 import '../../data/repositories/step_repository.dart';
 import '../../data/repositories/user_preferences_repository.dart';
+import '../../core/constants/astra_accent_preset.dart';
 import '../../presentation/cubits/theme_state.dart';
 import '../database/app_database.dart';
 import '../permissions/activity_permission_resolver.dart';
@@ -32,6 +33,7 @@ class AppDependencies {
   AppDependencies({
     required this.userPreferences,
     required this.initialTheme,
+    required this.initialAccentPreset,
     required this.initialOnboardingComplete,
     required this.timeProvider,
     required this.ingestionSources,
@@ -49,6 +51,7 @@ class AppDependencies {
 
   final UserPreferencesRepository userPreferences;
   final AstraThemePreference initialTheme;
+  final AstraAccentPreset initialAccentPreset;
   final bool initialOnboardingComplete;
   final TimeProvider timeProvider;
   final List<DataIngestionSource> ingestionSources;
@@ -99,6 +102,7 @@ class AppDependencies {
     final db = await openAstraDatabase(databasePath: databasePath);
     final userPreferences = UserPreferencesRepository(db);
     final initialTheme = await userPreferences.getThemeMode();
+    final initialAccentPreset = await userPreferences.getAccentPreset();
     final initialOnboardingComplete = await userPreferences
         .getOnboardingComplete();
     final timeProvider = const SystemTimeProvider();
@@ -143,6 +147,7 @@ class AppDependencies {
     return AppDependencies(
       userPreferences: userPreferences,
       initialTheme: initialTheme,
+      initialAccentPreset: initialAccentPreset,
       initialOnboardingComplete: initialOnboardingComplete,
       timeProvider: timeProvider,
       ingestionSources: ingestionSources,
@@ -178,6 +183,7 @@ class AppDependencies {
     bool Function()? isAndroidPlatform,
   }) async {
     final initialTheme = await userPreferences.getThemeMode();
+    final initialAccentPreset = await userPreferences.getAccentPreset();
     final onboardingComplete =
         initialOnboardingComplete ??
         await userPreferences.getOnboardingComplete();
@@ -244,6 +250,7 @@ class AppDependencies {
     return AppDependencies(
       userPreferences: userPreferences,
       initialTheme: initialTheme,
+      initialAccentPreset: initialAccentPreset,
       initialOnboardingComplete: onboardingComplete,
       timeProvider: clock,
       ingestionSources: sources,

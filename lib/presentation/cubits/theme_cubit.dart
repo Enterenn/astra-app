@@ -1,5 +1,6 @@
 import 'package:flutter_bloc/flutter_bloc.dart';
 
+import '../../core/constants/astra_accent_preset.dart';
 import '../../data/repositories/user_preferences_repository.dart';
 import 'theme_state.dart';
 
@@ -7,7 +8,13 @@ class ThemeCubit extends Cubit<ThemeState> {
   ThemeCubit({
     required this.userPreferences,
     AstraThemePreference initialPreference = AstraThemePreference.system,
-  }) : super(ThemeState(preference: initialPreference));
+    AstraAccentPreset initialAccentPreset = kDefaultAccentPreset,
+  }) : super(
+         ThemeState(
+           preference: initialPreference,
+           accentPreset: initialAccentPreset,
+         ),
+       );
 
   final UserPreferencesRepository userPreferences;
 
@@ -20,7 +27,7 @@ class ThemeCubit extends Cubit<ThemeState> {
 
     final waitFor = _setInFlight;
     late final Future<void> operation;
-    operation = _persistAndEmit(preference, waitFor);
+    operation = _persistThemeAndEmit(preference, waitFor);
     _setInFlight = operation;
     try {
       await operation;
@@ -31,7 +38,25 @@ class ThemeCubit extends Cubit<ThemeState> {
     }
   }
 
-  Future<void> _persistAndEmit(
+  Future<void> setAccentPreset(AstraAccentPreset preset) async {
+    if (state.accentPreset == preset) {
+      return;
+    }
+
+    final waitFor = _setInFlight;
+    late final Future<void> operation;
+    operation = _persistAccentAndEmit(preset, waitFor);
+    _setInFlight = operation;
+    try {
+      await operation;
+    } finally {
+      if (_setInFlight == operation) {
+        _setInFlight = null;
+      }
+    }
+  }
+
+  Future<void> _persistThemeAndEmit(
     AstraThemePreference preference,
     Future<void>? waitFor,
   ) async {
@@ -45,6 +70,23 @@ class ThemeCubit extends Cubit<ThemeState> {
     if (isClosed || state.preference == preference) {
       return;
     }
-    emit(ThemeState(preference: preference));
+    emit(ThemeState(preference: preference, accentPreset: state.accentPreset));
+  }
+
+  Future<void> _persistAccentAndEmit(
+    AstraAccentPreset preset,
+    Future<void>? waitFor,
+  ) async {
+    if (waitFor != null) {
+      await waitFor;
+    }
+    if (isClosed || state.accentPreset == preset) {
+      return;
+    }
+    await userPreferences.setAccentPreset(preset);
+    if (isClosed || state.accentPreset == preset) {
+      return;
+    }
+    emit(ThemeState(preference: state.preference, accentPreset: preset));
   }
 }

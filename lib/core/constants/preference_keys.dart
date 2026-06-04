@@ -1,6 +1,8 @@
 /// SQLite `user_preferences.key` values and defaults.
 const kDailyStepGoalKey = 'daily_step_goal';
 const kThemeModeKey = 'theme_mode';
+const kAccentPresetKey = 'accent_preset';
+const kDefaultAccentPresetStorage = 'orange';
 const kOnboardingCompleteKey = 'onboarding_complete';
 const kCelebrationShownDateKey = 'celebration_shown_date';
 const kIngestionCollectLockKey = 'ingestion_collect_lock';

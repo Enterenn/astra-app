@@ -293,13 +293,14 @@ class _AstraAppState extends State<AstraApp> with WidgetsBindingObserver {
       create: (_) => ThemeCubit(
         userPreferences: widget.deps.userPreferences,
         initialPreference: widget.deps.initialTheme,
+        initialAccentPreset: widget.deps.initialAccentPreset,
       ),
       child: BlocBuilder<ThemeCubit, ThemeState>(
         builder: (context, themeState) {
           return MaterialApp(
             title: 'ASTRA',
-            theme: buildAstraLightTheme(),
-            darkTheme: buildAstraDarkTheme(),
+            theme: buildAstraLightTheme(preset: themeState.accentPreset),
+            darkTheme: buildAstraDarkTheme(preset: themeState.accentPreset),
             themeMode: themeState.materialThemeMode,
             home: _showMainShell
                 ? AppScaffold(

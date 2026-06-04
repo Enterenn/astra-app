@@ -1,5 +1,6 @@
 import 'package:sqflite/sqflite.dart';
 
+import '../../core/constants/astra_accent_preset.dart';
 import '../../core/constants/preference_keys.dart';
 import '../../core/time/timestamp_codec.dart';
 import '../../presentation/cubits/theme_state.dart';
@@ -38,6 +39,15 @@ class UserPreferencesRepository {
       AstraThemePreference.system => 'system',
     };
     await _writeValue(kThemeModeKey, encoded);
+  }
+
+  Future<AstraAccentPreset> getAccentPreset() async {
+    final value = await _readValue(kAccentPresetKey);
+    return parseAccentPreset(value);
+  }
+
+  Future<void> setAccentPreset(AstraAccentPreset preset) async {
+    await _writeValue(kAccentPresetKey, accentPresetToStorage(preset));
   }
 
   Future<bool> getOnboardingComplete() async {
