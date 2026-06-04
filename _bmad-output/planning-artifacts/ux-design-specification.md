@@ -3,6 +3,7 @@ stepsCompleted: [1, 2, 3, 4, 5]
 workflowMode: fast-pass
 status: complete
 completed: 2026-05-25
+amended: 2026-06-04
 fastPassBlocksCompleted:
   - visual-foundation
   - components-and-states
@@ -24,8 +25,10 @@ fastPassBlocks:
 
 **Author:** Baptiste
 **Date:** 2026-05-22
-**Scope:** Phase 0 Sandbox — Flutter Hub App (Today / History / My Data + onboarding)
+**Scope:** Phase 0 Sandbox — Flutter Hub App (Today / Trends / Data / Profil + onboarding)
 **Mode:** Fast pass (PRD-heavy inputs; skips full BMad 14-step discovery)
+
+**Amendment (2026-06-04, approved):** Four-tab floating pill nav (Phosphor icons); Figma layouts for Today, Data, Profil, Trends; six accent presets with **bi-tone circles** on Profil → Appearance; Data tab label **DATA**, screen title **My Data**; Profil section **Informations**; Today stats row visible but empty until Epic 7. Ref: `sprint-change-proposal-2026-06-04.md` + workspace `assets/` mockups.
 
 ---
 
@@ -35,7 +38,7 @@ fastPassBlocks:
 
 **One-line:** *Quiet instrument panel — not a coach, not a clinic.*
 
-ASTRA Phase 0 reads as a **precision tool for personal data**, not a fitness game. Visual hierarchy favors **legibility of numbers and proof** (footprint, last sync, export) over decoration. **System theme is the default** — the app follows OS light/dark until the user overrides on My Data. Both light and dark palettes are first-class in Phase 0.
+ASTRA Phase 0 reads as a **precision tool for personal data**, not a fitness game. Visual hierarchy favors **legibility of numbers and proof** (footprint, last sync, export) over decoration. **System theme is the default** — the app follows OS light/dark until the user overrides on **Profil → Appearance**. Six **accent presets** (orange default) apply across light and dark. Both effective themes are first-class in Phase 0.
 
 | Attribute | Direction |
 |-----------|-----------|
@@ -255,9 +258,10 @@ Both families are **sourced from [Google Fonts](https://fonts.google.com/)** but
 
 ### 1.6 Iconography
 
-- **Style:** Outlined, 24dp default, 1.5px stroke — Material Symbols Outlined or Phosphor `regular`.
-- **Tab icons:** Today = circle/ring outline; History = chart-bar; My Data = shield or database (sovereignty cue).
-- **Actions:** Export = upload/share; Import = download; Purge = trash (danger color only in confirm dialog).
+- **Library (locked 2026-06-04):** **Phosphor** `regular` via `phosphor_flutter` — 24dp default.
+- **Tab icons:** Today = `Footprints` (or sneaker metaphor); Trends = `ChartBar`; Data = `Database`; Profil = `User`.
+- **Today stats row:** `Flame` (kcal), `MapPin` (distance), `Clock` (duration).
+- **Actions:** Export / Import / Purge per Data screen mockups.
 
 ---
 
@@ -270,7 +274,9 @@ Both families are **sourced from [Google Fonts](https://fonts.google.com/)** but
 | D-3 | Ring style | **Locked** | Stroke ring + center count; fill caps 100%; overflow via number |
 | D-4 | Chart bars | **Locked** | Bar charts; accent-muted fill + dashed goal line |
 | D-5 | Surfaces | **Locked** | Charcoal `#0F1114` dark base; light base `#F8F9FB` |
-| D-15 | Theme default | **Locked** | System default; user override System / Light / Dark on My Data (FR-31) |
+| D-15 | Theme default | **Locked** | System default; user override System / Light / Dark on Profil (FR-31) |
+| D-16 | Accent presets | **Locked** | Six presets; bi-tone circle selector on Profil (FR-32) |
+| D-17 | Navigation | **Locked** | Four-tab floating pill bar; short labels TODAY / TRENDS / DATA / PROFIL |
 
 ---
 
@@ -285,13 +291,14 @@ Persistent frame for all post-onboarding surfaces.
 | Element | Spec |
 |---------|------|
 | Background | `color.bg.base` |
-| Bottom tab bar | 3 tabs: Today · History · My Data |
-| Tab bar surface | `color.bg.elevated` + top border `color.border.default` |
-| Active tab | Icon + label `color.accent.primary` |
-| Inactive tab | `color.text.muted` |
+| Bottom tab bar | **4 tabs:** TODAY · TRENDS · DATA · PROFIL |
+| Tab bar style | **Floating pill** — full-width margin, heavy radius, fill `color.accent.primary` (preset-driven) |
+| Active tab | White rounded-square squircle behind icon + label; icon/label use accent on white (per mockup) |
+| Inactive tab | Icon + label on accent bar (dark or accent-tinted per theme) |
+| Icons | Phosphor regular (§1.6) |
 | Safe area | Respect bottom inset (Android gesture nav) |
 
-**States:** default only. No drawer, no hamburger, no settings tab (goal edit lives on My Data per A-9).
+**States:** default only. No drawer. **Set goal** on Today (not Profil).
 
 ---
 
@@ -323,10 +330,10 @@ Inline card for informational / warning states. Padding `space.md`, radius `radi
 
 | Surface | Variant | Copy example |
 |---------|---------|--------------|
-| **Today** | `stale-compact` | "Steps may be delayed — see My Data" (padding `space.sm`, single line, height ~40dp) |
-| **My Data** | `stale-full` | "No new steps in 12+ hours. Background collection may be delayed on this device." |
+| **Today** | `stale-compact` | "Steps may be delayed — see Data" (padding `space.sm`, single line, height ~40dp) |
+| **Data** | `stale-full` | "No new steps in 12+ hours. Background collection may be delayed on this device." |
 
-Both visible when stale threshold exceeded (A-4, FR-5). Today compact avoids duplicating full explanation; My Data owns diagnostic detail.
+Both visible when stale threshold exceeded (A-4, FR-5). Today compact avoids duplicating full explanation; Data tab owns diagnostic detail.
 
 ---
 
@@ -340,13 +347,25 @@ Small pill under Today hero: `"Phone sensor"` / future `"ASTRA ring"`.
 
 #### `ThemeSelector`
 
-Segmented control for appearance preference on My Data (FR-31).
+Segmented control on **Profil → Appearance** (FR-31). Pill container on `color.bg.subtle`; active segment elevated + **accent underline**.
 
 | Option | Behavior |
 |--------|----------|
 | **System** | Follow OS light/dark; default on first launch; updates when OS theme changes |
 | **Light** | Force light palette |
 | **Dark** | Force dark palette |
+
+#### `AccentPresetSelector`
+
+Row of **six circular bi-tone chips** below `ThemeSelector` (FR-32).
+
+| Element | Spec |
+|---------|------|
+| Shape | Circle ~40–48dp touch target |
+| Bi-tone | Diagonal split TL→BR: **bottom-left** = effective surface base (white/near-white in light UI, dark charcoal in dark UI); **top-right** = preset accent color |
+| Presets | Orange (default), red, green, cyan, purple, pink |
+| Selected | Border/ring on active chip (per Profil mockups) |
+| Live update | Chips re-render when theme mode or OS theme changes; app chrome updates immediately on selection |
 
 - Label row: "Appearance" (Figtree `type.headline`) above control
 - Segmented pill on `color.bg.subtle`, selected segment `color.bg.elevated` + accent underline
@@ -372,14 +391,19 @@ Modal for destructive or irreversible actions.
 
 **FR refs:** FR-14, FR-15 · **UJ:** UJ-2
 
-#### Layout (top → bottom)
+#### Layout (top → bottom) — Figma 2026-06-04
 
-1. Optional `StatusBanner` **compact stale** (see §2.2 — single line, no dismiss)
-2. `GoalRing` (hero, vertically centered in upper 55%)
-3. `SourceChip` below ring
-4. Bottom tab bar
+1. Screen title **Today's activity** (muted, top-left)
+2. Optional `StatusBanner` **compact stale**
+3. Card: **Donut** (`GoalRing`) — center: steps icon, count, `/goal`
+4. **Set goal** pill button below donut
+5. Card: **Activity stats row** — three columns (kcal · km · duration) with Phosphor icons; values `—` until Epic 7
+6. Card: **This week** — seven vertical day pills (goal-met green dot / missed red / today accent fill / future muted)
+7. Floating tab bar
 
-#### `GoalRing`
+**Removed:** `Hello, {name}` greeting (2026-06-04). **Optional/deferred:** `SourceChip` — omit unless cohesion audit requests.
+
+#### `GoalRing` / Donut
 
 | Prop | Value |
 |------|-------|
@@ -444,13 +468,14 @@ Single line Figtree `type.caption` `color.text.secondary`: **"Daily goal reached
 
 ---
 
-### 2.4 History Surface
+### 2.4 Trends Surface
 
-**FR refs:** FR-16, FR-17 · **UJ:** UJ-3
+**FR refs:** FR-16, FR-17 · **UJ:** UJ-3  
+**Tab label:** TRENDS (short). **Screen title:** "History" or "Trends" — TBD in Story 5.3; chart behavior unchanged from pre-redesign.
 
 #### Layout
 
-1. Screen title "History" (Darker Grotesque `type.title`) — optional if tab label suffices
+1. Screen title (Darker Grotesque `type.title`) — optional if tab label suffices
 2. `PeriodToggle` — segmented control: **7 days** | **30 days**
 3. `TrendChip` — e.g. "↑ 12% vs last week" — informational, small, not hero
 4. `StepBarChart` — flex remaining height, min 200dp
@@ -485,18 +510,18 @@ Single line Figtree `type.caption` `color.text.secondary`: **"Daily goal reached
 
 ---
 
-### 2.5 My Data Surface
+### 2.5 Data Surface
 
-**FR refs:** FR-5, FR-13, FR-19–21, FR-23, FR-30–31 · **UJ:** UJ-1, UJ-4  
-**Primary differentiator** — most structured screen.
+**FR refs:** FR-5, FR-13, FR-19–21, FR-30 · **UJ:** UJ-1, UJ-4  
+**Tab label:** DATA · **Screen title:** **My Data** (once at top — not shortened in body).
 
-#### Layout (scrollable)
+#### Layout (scrollable) — three cards only
 
-1. **Background status** — `SectionCard` + `StatusBanner` variant
+1. **Background** — `SectionCard` + status line + last sync
 2. **Footprint** — `SectionCard` with KPI row
-3. **Daily goal** — inline edit (A-9 locked)
-4. **Appearance** — `ThemeSelector` (System / Light / Dark)
-5. **Data actions** — Export · Import · Purge
+3. **Your data** — Export CSV · Import CSV · Delete all local data (danger text)
+
+**Removed from this screen (→ Profil / Today):** daily goal editor, appearance, display name, profile badge.
 
 *No README / external doc footer in Phase 0 (D-7).*
 
@@ -520,15 +545,6 @@ Three columns or stacked pairs on narrow screens.
 | **ios_backfill** | Dot `color.status.info` | Info banner: steps update on app open (FR-4) |
 | **permission_denied** | Dot muted | "Activity permission off" + link to settings |
 
-#### `GoalEditor`
-
-- Row: "Daily step goal" + current value `8 000`
-- Tap → bottom sheet with **free numeric text field** (keyboard: number pad)
-- Validation: integer only, min `1 000`, max `100 000` `[ASSUMPTION: sane bounds]`, show inline error if invalid
-- Save → primary button; disabled until valid; no nag if unchanged
-- Set-once philosophy: no recurring prompts (FR-23)
-- Same field pattern on **Onboarding step 3** (default prefilled 8000)
-
 #### Data action buttons
 
 | Action | Style | Flow |
@@ -546,11 +562,29 @@ Three columns or stacked pairs on narrow screens.
 
 #### Post-purge state
 
-Footprint KPIs → `0` / `0 KB`. Today ring → empty state. History → empty state. Banner: "All local data removed. Export anytime before deleting."
+Footprint KPIs → `0` / `0 KB`. Today ring → empty state. Trends → empty state. Banner: "All local data removed. Export anytime before deleting."
 
 ---
 
-### 2.6 Onboarding Flow
+### 2.6 Profil Surface
+
+**FR refs:** FR-9, FR-31, FR-32 · **UJ:** UJ-4b
+
+#### Layout (scrollable)
+
+1. Screen title **My Profile**
+2. **Informations** — `SectionCard` (section title **Informations**, not "Profile")
+   - Rows: Display name, Age, Height, Weight — label (caption) + value + chevron → edit sheet
+3. **Notifications** — toggle "Receive Goal notifications"
+4. **Appearance** — `ThemeSelector` + `AccentPresetSelector` (§2.2)
+
+#### `Set goal` (on Today, not Profil)
+
+- Pill below donut opens same numeric sheet as former `GoalEditorSheet` (1 000–100 000 integer)
+
+---
+
+### 2.7 Onboarding Flow
 
 **FR refs:** FR-22–24 · **UJ:** UJ-1  
 Full-screen modal stack (not tabs). No back on step 1; progress dots optional (3 steps).
@@ -559,7 +593,7 @@ Full-screen modal stack (not tabs). No back on step 1; progress dots optional (3
 |------|--------|---------|-------------|
 | **1 Trust** | `OnboardingTrust` | Headline: "Your steps stay on this device." Body: local-only, no account, no cloud. Illustration: minimal device + lock optional | Continue |
 | **2 Permissions** | `OnboardingPermissions` | Explain activity recognition first. Button triggers OS dialog. Notification = separate optional toggle with "Notify when daily goal reached" | Allow activity · Skip notifications |
-| **3 Goal** | `OnboardingGoal` | Free numeric field, default 8000 (A-3). Copy: set once, change later in My Data | Start tracking |
+| **3 Goal** | `OnboardingGoal` | Free numeric field, default 8000 (A-3). Copy: set once, change later via **Set goal** on Today | Start tracking |
 
 **Rules:**
 - Trust copy **before** permission request (FR-22)
@@ -569,44 +603,48 @@ Full-screen modal stack (not tabs). No back on step 1; progress dots optional (3
 
 ---
 
-### 2.7 Component Inventory (Flutter-oriented)
+### 2.8 Component Inventory (Flutter-oriented)
 
 | Widget | Surface | Priority |
 |--------|---------|----------|
 | `GoalRing` | Today | P0 |
 | `AppBottomNav` | Shell | P0 |
-| `StepBarChart` | History | P0 |
-| `PeriodToggle` | History | P0 |
-| `FootprintKpiRow` | My Data | P0 |
-| `BackgroundStatusCard` | My Data | P0 |
-| `GoalEditorSheet` | My Data | P0 |
-| `ThemeSelector` | My Data | P0 |
-| `DataActionRow` | My Data | P0 |
+| `WeekProgressRow` | Today | P0 |
+| `ActivityStatsRow` | Today | P0 (placeholders) |
+| `StepBarChart` | Trends | P0 |
+| `PeriodToggle` | Trends | P0 |
+| `FootprintKpiRow` | Data | P0 |
+| `BackgroundStatusCard` | Data | P0 |
+| `GoalEditorSheet` | Today (Set goal) | P0 |
+| `ThemeSelector` | Profil | P0 |
+| `AccentPresetSelector` | Profil | P0 |
+| `ProfileInfoRow` | Profil | P0 |
+| `DataActionRow` | Data | P0 |
 | `StatusBanner` | Shared | P0 |
 | `ConfirmDialog` | Shared | P0 |
 | `OnboardingPage` ×3 | Onboarding | P0 |
 | `GoalCelebration` | Today | P0 (FR-15) |
-| `TrendChip` | History | P1 |
-| `SourceChip` | Today | P1 |
+| `TrendChip` | Trends | P1 |
+| `SourceChip` | Today | P1 (optional) |
 
 ---
 
-### 2.8 State Matrix (cross-surface)
+### 2.9 State Matrix (cross-surface)
 
-| Event | Today | History | My Data |
-|-------|-------|---------|---------|
-| First launch | empty → onboarding | empty | footprint 0 |
-| Permission granted | progress | — | status ok |
-| Background sync | count updates | bars grow | last sync updates |
-| Goal reached | **`GoalCelebration`** once (§2.3.1) | — | — |
-| Stale >12h | **compact** stale banner | — | **full** stale banner |
-| Export | — | — | success snackbar |
-| Import | ring refreshes | chart refreshes | footprint updates |
-| Purge | empty | empty | zeros + confirm was shown |
-| Theme change | tokens update | tokens update | selector reflects choice |
-| Airplane 24h | works offline | works offline | export works (SM-3) |
+| Event | Today | Trends | Data | Profil |
+|-------|-------|--------|------|--------|
+| First launch | empty → onboarding | empty | footprint 0 | defaults |
+| Permission granted | progress | — | status ok | — |
+| Background sync | count updates | bars grow | last sync updates | — |
+| Goal reached | **`GoalCelebration`** once (§2.3.1) | — | — | — |
+| Stale >12h | **compact** stale banner | — | **full** stale banner | — |
+| Export | — | — | success snackbar | — |
+| Import | ring refreshes | chart refreshes | footprint updates | — |
+| Purge | empty | empty | zeros + confirm was shown | prefs kept |
+| Theme / accent change | tokens update | tokens update | tokens update | selectors reflect |
+| Airplane 24h | works offline | works offline | export works (SM-3) | works offline |
 
-### 2.9 Decisions Log (Bloc 2)
+### 2.10 Decisions Log (Bloc 2)
 
 | # | Decision | Status | Resolution |
 |---|----------|--------|------------|

@@ -2,7 +2,7 @@
 title: ASTRA — Local-First Wearable & Mobile Ecosystem
 status: final
 created: 2026-05-22
-updated: 2026-05-25
+updated: 2026-06-04
 peer_review: 2026-05-22 (Gemini + ChatGPT, 2 rounds)
 ---
 
@@ -22,6 +22,8 @@ This PRD defines product capabilities and requirements for **ASTRA** — a local
 - Peer review — Gemini + ChatGPT (2026-05-22, 2 rounds); §1.1–1.5, §4.3.1, FR-11/18/30, §6.3
 
 **Current execution focus:** Phase 0 Sandbox — learn Flutter and local data persistence while shipping a beta-ready, open-source step-tracking Hub App. Future wearable, BLE, encryption, and sync capabilities are context only unless explicitly marked as Phase 0.
+
+**Amendment (2026-06-04, approved):** Four-tab shell (Today · Trends · Data · Profil), Figma layouts, six accent presets with bi-tone selector on Profil → Appearance, Phosphor icons. Data sovereignty on **Data** tab (screen title **My Data**); profile prefs on **Profil**. Today: no greeting; Set goal on Today; stats row visible but empty until Epic 7 (FR-33). Full delta: `planning-artifacts/sprint-change-proposal-2026-06-04.md`.
 
 ---
 
@@ -49,7 +51,7 @@ These principles govern trade-offs when scope, architecture, or copy is ambiguou
 6. **Transparency over AI interpretation** — Show footprint, export, purge, background status; no opaque scores.
 7. **Background autonomy over active interaction** — Value must accrue when the app is closed (Android reference platform).
 8. **User ownership over ecosystem lock-in** — Export and re-import must keep users sovereign across reinstalls and devices (see §1.4).
-9. **Protect My Data** — The **My Data** surface is the primary product differentiator; footprint, export, import, purge, and background honesty are first-class features, not settings afterthoughts.
+9. **Protect My Data** — The **Data** tab (screen title **My Data**) is the primary sovereignty surface; footprint, export, import, purge, and background honesty are first-class features, not settings afterthoughts. Personal prefs and appearance live on **Profil**.
 
 ---
 
@@ -143,19 +145,23 @@ This clause prevents the PRD from becoming a prison while protecting non-negotia
 
 **UJ-1. Alex verifies privacy on first launch.**
 
-Alex installs the APK from a beta link. No account, no email. Onboarding shows a trust screen explaining local-only storage, requests activity recognition (and optional notification permission), and asks for a daily step goal (set-once philosophy). Alex enables airplane mode, walks 500 steps, and sees the Today ring update after background collection. **Climax:** data appears without network. **Resolution:** Alex trusts the app enough to keep it installed. **Edge case:** if background delivery is delayed (iOS), a stale-data indicator on My Data explains why.
+Alex installs the APK from a beta link. No account, no email. Onboarding shows a trust screen explaining local-only storage, requests activity recognition (and optional notification permission), and asks for a daily step goal (set-once philosophy). Alex enables airplane mode, walks 500 steps, and sees the Today ring update after background collection. **Climax:** data appears without network. **Resolution:** Alex trusts the app enough to keep it installed. **Edge case:** if background delivery is delayed (iOS), a stale-data indicator on the Data tab explains why.
 
 **UJ-2. Alex checks progress mid-day.**
 
-Alex opens the Hub App to the **Today** surface. A goal ring shows current steps vs daily target; a subtle pulse animation celebrates goal completion once per day. Step source is labeled (phone sensor). Alex closes the app; **BackgroundCollector** continues writing **Time Buckets** without further interaction. Realizes FR-4, FR-14, FR-15.
+Alex opens the Hub App to the **Today** surface. A donut shows current steps vs daily target; **Set goal** sits below the ring; a **This week** row shows goal-met days. Kcal / distance / walking-time slots are visible but empty until derived metrics ship (FR-33). No personal greeting on Today. A subtle pulse animation celebrates goal completion once per day. Alex closes the app; **BackgroundCollector** continues writing **Time Buckets** without further interaction. Realizes FR-4, FR-14, FR-15.
 
-**UJ-3. Alex reviews weekly history.**
+**UJ-3. Alex reviews weekly trends.**
 
-From **History**, Alex toggles 7-day and 30-day bar views with a goal reference line and weekly trend. Charts render in under 100 ms even with 90+ days of injected test data (KPI-01). Realizes FR-16, FR-17.
+From **Trends** (same chart experience as former History), Alex toggles 7-day and 30-day bar views with a goal reference line and weekly trend. Charts render in under 100 ms even with 90+ days of injected test data (KPI-01). Realizes FR-16, FR-17.
 
-**UJ-4. Alex exports, re-imports, and purges on My Data.**
+**UJ-4. Alex exports, re-imports, and purges on Data.**
 
-On **My Data**, Alex sees storage footprint (sample count, approximate size), **last database optimization** timestamp, background collection status, and actions to export CSV (Open Wearables–aligned columns), **import a previously exported ASTRA CSV**, or purge all health data. After purge, counters show zero events / zero KB while setup preferences remain. Export-before-purge is encouraged. Realizes FR-5, FR-13, FR-19, FR-20, FR-21, FR-30.
+On the **Data** tab (screen title **My Data**), Alex sees storage footprint (sample count, approximate size), **last database optimization** timestamp, background collection status, and actions to export CSV (Open Wearables–aligned columns), **import a previously exported ASTRA CSV**, or purge all health data. After purge, counters show zero events / zero KB while setup and profile preferences remain. Export-before-purge is encouraged. Realizes FR-5, FR-13, FR-19, FR-20, FR-21, FR-30.
+
+**UJ-4b. Alex updates profile and appearance.**
+
+On **Profil**, Alex edits display name, age, height, and weight; toggles goal notifications; chooses System / Light / Dark and an accent color preset (six bi-tone circles). Realizes FR-9 (extended), FR-31, FR-32.
 
 **UJ-5. Builder-as-User validates the ADP-ready architecture (Phase 0).**
 
@@ -176,7 +182,8 @@ The **Builder-as-User** runs dev tools to inject 90 days of simulated **Timeseri
 - **DataIngestionSource** — Interface abstracting data origin (phone pedometer today; ADP Wearable tomorrow).
 - **DataLifecycleService** — Background routine applying tiered downsampling and database maintenance (VACUUM) to bound storage growth.
 - **Resolution** — Granularity tier of stored samples (e.g., `5min`, `1hour`, `1d`). Matches Open Wearables resolution concept.
-- **My Data** — Hub App surface dedicated to data sovereignty: footprint, export, purge, background status.
+- **Data** (tab label) / **My Data** (screen title) — Hub sovereignty surface: footprint, export, purge, background status.
+- **Profil** — Local profile and appearance: informations, notifications, theme mode, accent preset.
 - **Open Wearables (OW)** — External MIT-licensed self-hosted health aggregation platform. ASTRA uses OW **vocabulary only** (schema naming, resolution concept, CSV column semantics). No OW server dependency; no implied direct OW API compatibility in V1.
 - **General Wellness Product** — Regulatory category: lifestyle/activity tracking without clinical diagnosis or treatment claims.
 - **Phase 0 Sandbox** — Current R&D phase: phone-only Hub App, no SQLCipher, no BLE, no official brand assets in repo.
@@ -284,12 +291,15 @@ Step samples are aggregated into **Time Buckets** of 5 minutes by default before
 
 #### FR-9: User preferences
 
-A `user_preferences` table stores at minimum `daily_step_goal` (integer) and `theme_mode` (`system` | `light` | `dark`).
+A `user_preferences` table stores at minimum `daily_step_goal` (integer), `theme_mode` (`system` | `light` | `dark`), and `accent_preset` (`orange` | `red` | `green` | `cyan` | `purple` | `pink`, default `orange`).
+
+Optional local-only profile fields: `display_name` (trimmed string), `age` (integer years), `height_cm` (integer), `weight_kg` (number). Optional `goal_notifications_enabled` (boolean).
 
 **Consequences (testable):**
-- Goal and theme preference persist across app restarts.
+- Goal, theme, accent, and profile fields persist across app restarts.
 - Default goal applied if user skips setup `[ASSUMPTION: 8000 steps]`.
 - Default `theme_mode` is `system` on first launch — app follows OS light/dark setting until user overrides.
+- `display_name` is **not** shown as a Today greeting in Phase 0 redesign (Profil only).
 
 #### FR-10: Versioned schema migrations
 
@@ -383,18 +393,25 @@ Database maintenance runs weekly when the platform permits it. Android uses a sc
 
 ### 4.5 Today Surface
 
-**Description:** Primary dashboard with goal ring, current step count, and once-per-day celebration animation on goal completion. Respects active theme (system/light/dark). Modern minimal shell. Realizes UJ-2.
+**Description:** Primary dashboard — donut progress, **Set goal** control, weekly goal-status row, reserved activity stats row, once-per-day celebration. No personal greeting. Respects active theme and accent preset. Realizes UJ-2.
 
 **Functional Requirements:**
 
-#### FR-14: Goal ring dashboard
+#### FR-14: Today activity dashboard
 
-**Today** displays a circular progress ring comparing current day steps to **daily_step_goal**.
+**Today** displays:
+
+- Screen title **Today's activity** (or i18n equivalent).
+- Circular **donut** comparing current day steps to **daily_step_goal** (center count + goal sublabel).
+- **Set goal** control below the donut (same bounds as FR-23: integer 1,000–100,000).
+- **This week** row: seven day pills with goal-met / missed / today / future states.
+- **Activity stats row:** kcal, distance, walking time — **visible** with placeholder values (`—`) until FR-33.
 
 **Consequences (testable):**
-- Ring fills proportionally; reaches 100% at or above goal.
+- Donut fills proportionally; reaches 100% at or above goal.
 - Daily step total computed per §1.3 / NFR-9 (UTC storage + stored `zone_offset`).
-- Step source label visible (phone vs future wearable).
+- **No** `Hello, {display_name}` greeting on Today.
+- Set goal persists `daily_step_goal` via `UserPreferencesRepository`.
 
 #### FR-15: Goal celebration
 
@@ -406,15 +423,15 @@ On first goal completion each calendar day, a subtle pulse/celebration animation
 
 ---
 
-### 4.6 History Surface
+### 4.6 Trends Surface
 
-**Description:** Bar charts for 7-day and 30-day views with goal reference line and weekly trend indicator. Must meet KPI-01 render performance. Realizes UJ-3.
+**Description:** Bar charts for 7-day and 30-day views with goal reference line and weekly trend indicator. Bottom tab label **Trends** (short); same chart behavior as pre-redesign History. Must meet KPI-01 render performance. Realizes UJ-3.
 
 **Functional Requirements:**
 
-#### FR-16: History charts
+#### FR-16: Trends charts
 
-**History** renders bar charts for 7-day and 30-day step totals with a goal reference line.
+**Trends** renders bar charts for 7-day and 30-day step totals with a goal reference line.
 
 **Consequences (testable):**
 - Chart query + render completes in < 100 ms with 90 days of continuous injected data (KPI-01).
@@ -422,16 +439,16 @@ On first goal completion each calendar day, a subtle pulse/celebration animation
 
 #### FR-17: Weekly trend indicator
 
-**History** shows a simple weekly trend (e.g., up/down vs prior week) derived from stored samples.
+**Trends** shows a simple weekly trend (e.g., up/down vs prior week) derived from stored samples.
 
 **Consequences (testable):**
 - Trend calculation uses only local SQLite data; no network call.
 
 ---
 
-### 4.7 My Data & Sovereignty
+### 4.7 Data & Sovereignty
 
-**Description:** The sovereignty surface — export, **import**, purge, footprint, background status, appearance (theme), dependency transparency. Primary product differentiator per §1.1. Realizes UJ-1, UJ-4.
+**Description:** The sovereignty surface on the **Data** tab — export, **import**, purge, footprint, background status. Screen title **My Data**. Primary product differentiator per §1.1. Realizes UJ-1, UJ-4. (Appearance and profile prefs moved to §4.7b Profil.)
 
 **Functional Requirements:**
 
@@ -462,7 +479,7 @@ User can export **Timeseries Samples** to CSV with OW-aligned column headers. Ex
 
 #### FR-20: Full local purge
 
-User can delete **all** local **Timeseries Samples** and derived collection state from **My Data** (§1.4 — full health-data purge only in Phase 0). Purge preserves non-health setup preferences such as `daily_step_goal`, `theme_mode`, onboarding completion, and permission choices.
+User can delete **all** local **Timeseries Samples** and derived collection state from the **Data** tab (§1.4 — full health-data purge only in Phase 0). Purge preserves non-health setup preferences such as `daily_step_goal`, `theme_mode`, `accent_preset`, profile fields (`display_name`, `age`, `height_cm`, `weight_kg`), `goal_notifications_enabled`, onboarding completion, and permission choices.
 
 **Consequences (testable):**
 - Post-purge: sample count = 0, footprint ≈ 0 KB.
@@ -486,15 +503,38 @@ User can import a previously exported ASTRA CSV (same schema as FR-19) to repopu
 - Idempotent import strategy documented: preserve `id`, skip duplicate `id`, and skip duplicate bucket identity if a malformed CSV reuses an existing bucket with a new id.
 - Round-trip test: export → purge → import restores chart-visible history.
 
-#### FR-31: Theme selection
+#### FR-31: Theme mode selection
 
-User can choose **System**, **Light**, or **Dark** appearance from **My Data**. Selection applies immediately app-wide (Today, History, My Data, onboarding if shown).
+User can choose **System**, **Light**, or **Dark** appearance from **Profil → Appearance**. Selection applies immediately app-wide (Today, Trends, Data, Profil, onboarding if shown).
 
 **Consequences (testable):**
 - Preference stored in `user_preferences.theme_mode` and restored on cold start without incorrect theme flash.
 - Default is `system` until user changes — app follows OS light/dark setting when `system` is selected.
 - When OS theme changes and `theme_mode` is `system`, app updates without restart.
-- Both light and dark token sets meet NFR-5 contrast baseline on all three surfaces.
+- Both light and dark token sets meet NFR-5 contrast baseline on all four tab surfaces.
+
+---
+
+### 4.7b Profil Surface
+
+**Description:** Local profile and appearance — no account. Realizes UJ-4b.
+
+#### FR-32: Accent color preset
+
+User selects one of six accent presets from **Profil → Appearance** via **bi-tone circular chips** (diagonal split: effective surface base + accent color). Selection applies immediately to ring, navigation, charts, and CTAs. Persisted in `user_preferences.accent_preset`. Default: `orange`.
+
+**Consequences (testable):**
+- Chips re-render when `theme_mode` or OS theme changes under System.
+- Selected chip shows visible border/ring per UX mockups.
+- Six presets: orange, red, green, cyan, purple, pink — each with light and dark token mappings.
+
+#### FR-33: Derived activity metrics (Epic 7 — deferred)
+
+**Today** activity stats row displays computed **kcal burned**, **distance traveled**, and **walking duration** from steps and profile biometrics (formulas TBD). Until implemented, row remains visible with placeholder values.
+
+**Consequences (testable):**
+- Values update with live step overlay where applicable once Epic 7 ships.
+- Uses local data only; no network.
 
 ---
 
@@ -514,7 +554,7 @@ First launch presents local-only privacy explanation before requesting permissio
 
 #### FR-23: Goal setup
 
-Onboarding collects **daily_step_goal** with set-once philosophy (editable later in settings `[ASSUMPTION: settings on My Data or dedicated minimal prefs]`).
+Onboarding collects **daily_step_goal** with set-once philosophy (editable later via **Set goal** on Today).
 
 **Consequences (testable):**
 - Skipping goal setup applies default from FR-9.
@@ -582,7 +622,7 @@ Project maintains a documented beta checklist covering accuracy, background, not
 
 **Consequences (testable):**
 - Checklist exists in repo; items trace to FRs above.
-- Visual cohesion items reference system-default theme, light/dark override, and three-surface shell (Today / History / My Data).
+- Visual cohesion items reference system-default theme, light/dark override, accent presets, and four-tab shell (Today / Trends / Data / Profil).
 - Includes: release-build airplane mode, CSV export→purge→import round-trip (FR-30), step-counter reset unit test (FR-2).
 
 ---
@@ -611,9 +651,11 @@ Project maintains a documented beta checklist covering accuracy, background, not
 - Flutter Hub App (**Android = reference platform**; iOS secondary / backfill model)
 - **PhonePedometerSource** + **BackgroundCollector** + **timeseries_samples** SQLite
 - **DataLifecycleService** (downsampling + VACUUM)
-- Three surfaces: **Today**, **History**, **My Data**
+- Four tab surfaces: **Today**, **Trends**, **Data**, **Profil** (+ onboarding)
 - Trust onboarding, goal setup, optional local notification
-- CSV **export + import**, purge, storage footprint + last optimization, background status, theme selection (system/light/dark)
+- CSV **export + import**, purge, storage footprint + last optimization, background status (Data tab)
+- Theme mode + six accent presets (Profil); Phosphor icons; floating four-tab navigation
+- Today stats row placeholders until FR-33 (Epic 7)
 - **AdpBleSource** stub; **DataIngestionSource** abstraction
 - Dev inject tools (90-day benchmark)
 - Apache 2.0 public repo, OW vocabulary docs, README pitch, beta checklist
@@ -655,9 +697,9 @@ Project maintains a documented beta checklist covering accuracy, background, not
 
 **Primary**
 
-- **SM-1: Chart render performance (KPI-01)** — History chart query + render < 100 ms with 90 days of continuous injected step data. Validates FR-16, FR-28.
+- **SM-1: Chart render performance (KPI-01)** — Trends chart query + render < 100 ms with 90 days of continuous injected step data. Validates FR-16, FR-28.
 - **SM-2: Background persistence** — Primary: same-day passive accumulation per FR-4 (Android beta). Long-run stress: step count increases over 24 h without opening app. Validates FR-4.
-- **SM-3: Airplane mode proof** — Full core flow (view Today, History, export) works after 24 h offline. Validates FR-18, UJ-1.
+- **SM-3: Airplane mode proof** — Full core flow (view Today, Trends, export from Data) works after 24 h offline. Validates FR-18, UJ-1.
 - **SM-4: Phase 0 learning outcome** — Builder can independently implement a new **DataIngestionSource** and SQLite migration without AI scaffolding `[ASSUMPTION: self-assessed at Phase 0 exit]`. Validates FR-1, FR-10.
 
 **Secondary**
@@ -670,7 +712,7 @@ Project maintains a documented beta checklist covering accuracy, background, not
 **Counter-metrics (do not optimize)**
 
 - **SM-C1: Daily opens** — Do not optimize engagement loops; background collection is the success signal, not DAU.
-- **SM-C2: Feature count** — Do not add screens beyond the three-surface MVP; polish over breadth.
+- **SM-C2: Feature count** — Do not add screens beyond the four-tab MVP (+ onboarding); polish over breadth.
 - **SM-C3: Cloud convenience** — Do not reintroduce sync "for usability" in Phase 0; sovereignty is the product.
 
 ---
@@ -720,20 +762,21 @@ Project maintains a documented beta checklist covering accuracy, background, not
 
 ## 10. Information Architecture
 
-| Surface | Purpose | Key elements |
-|---------|---------|--------------|
-| **Today** | Current-day dashboard | Goal ring, step count, source label, celebration |
-| **History** | Temporal trends | 7d/30d charts, goal line, weekly trend |
-| **My Data** | Sovereignty (primary differentiator) | Footprint, last optimized, background status, appearance (theme), export/import CSV, purge |
-| **Onboarding** | First-run (modal/flow) | Trust, permissions, goal, notification opt-in |
+| Surface | Tab label | Screen title (if any) | Key elements |
+|---------|-----------|----------------------|--------------|
+| **Today** | TODAY | Today's activity | Donut, Set goal, week pills, stats row (placeholders until FR-33), celebration |
+| **Trends** | TRENDS | History or Trends (TBD polish) | 7d/30d charts, goal line, weekly trend |
+| **Data** | DATA | **My Data** | Background, footprint, export/import CSV, purge |
+| **Profil** | PROFIL | My Profile | Informations, notifications, Appearance (theme mode + accent bi-tone circles) |
+| **Onboarding** | — | — | Trust, permissions, goal, notification opt-in (modal stack) |
 
-`[ASSUMPTION: bottom navigation or tab bar with three tabs; onboarding overlays first launch only]`
+**Navigation:** floating pill bottom bar, four tabs, Phosphor icons. Onboarding overlays first launch only.
 
 ---
 
 ## 11. Aesthetic & Tone
 
-- **Visual:** Modern minimal; **system theme default** (follows OS light/dark); user override to light or dark on My Data; design-token-lite dual palette.
+- **Visual:** Modern minimal; **system theme default**; user override on Profil; six accent presets; design-token-lite dual palette per preset.
 - **Tone:** Calm, transparent, non-judgmental. No streak shaming, no "you failed today."
 - **Anti-references:** Gamified fitness apps with leaderboards; clinical hospital UI; cluttered wearable companion apps with subscription upsells.
 
@@ -790,7 +833,7 @@ Hardware, firmware, and ADP detail: `addendum.md`.
 | 2 | Health Connect vs pedometer-only in Phase 0? | **Resolved → Phase 1** | — | Health Connect path in §6.2 out-of-scope table |
 | 3 | iOS TestFlight in Phase 0 or Android-only? | **Deferred** | Baptiste | Sprint 1 background pipeline validated on Android |
 | 4 | Default daily step goal — 8000 or locale-based? | **Assumed 8000** (A-3) | Baptiste | Onboarding UX design |
-| 5 | Settings tab vs goal edit on My Data? | **Assumed My Data** (A-9) | Baptiste | Sprint 2 UI polish |
+| 5 | Settings tab vs goal edit location? | **Resolved → Today Set goal** (2026-06-04) | Baptiste | — |
 | 6 | Legal review of CNIL local-only position | **Deferred** | Baptiste | Pre–commercial EU launch (not Phase 0 blocker) |
 
 ---
@@ -801,11 +844,11 @@ Hardware, firmware, and ADP detail: `addendum.md`.
 - **A-2:** Android is the **reference platform** for Phase 0 and Phase 1; iOS is secondary (FR-2, FR-4, §12).
 - **A-3:** Default daily step goal = 8000 (FR-9).
 - **A-4:** Stale-data threshold = **12 hours** on Android and **4 hours** on iOS (FR-5) — Android avoids overnight false positives; iOS explains best-effort backfill sooner.
-- **A-5:** Bottom tab navigation for three surfaces (§10).
+- **A-5:** Bottom tab navigation for four surfaces (§10) — TODAY, TRENDS, DATA, PROFIL.
 - **A-6:** WCAG 2.1 AA aspirational, not blocking Phase 0 beta (NFR-5).
 - **A-7:** Phase 0 stakes = internal/beta-ready OSS, not commercial launch (FR-26).
 - **A-8:** Self-assessed Flutter learning outcome at Phase 0 exit (SM-4).
-- **A-9:** Goal edit lives on My Data or minimal settings (FR-23).
+- **A-9:** Goal edit lives on **Today** via Set goal (FR-14, FR-23); amended 2026-06-04.
 - **A-10:** Schema uses `timeseries_samples` with 5-minute buckets (overrides external PRD `health_events` / 1-minute buckets).
 - **A-11:** V2+ sync via ASTRA hub (self-hosted + managed), not OW server export (brainstorming amendement).
 - **A-12:** SQLCipher deferred to Phase 1 (domain research).
@@ -814,4 +857,5 @@ Hardware, firmware, and ADP detail: `addendum.md`.
 - **A-15:** Storage targets: 1 year < 50 MB, 5 years < 200 MB with lifecycle (§1.2, NFR-7, NFR-8).
 - **A-16:** No automatic re-bucketing of historical samples when device timezone changes in Phase 0 (§1.3).
 - **A-17:** Downsampling is destructive/irreversible after compaction (FR-11).
-- **A-18:** Default `theme_mode` = `system`; user may override to light or dark on My Data (FR-31).
+- **A-18:** Default `theme_mode` = `system`; user may override on Profil (FR-31). Default `accent_preset` = `orange` (FR-32).
+- **A-19:** Today activity stats (kcal / km / duration) ship in Epic 7 (FR-33); visible placeholders until then (2026-06-04).

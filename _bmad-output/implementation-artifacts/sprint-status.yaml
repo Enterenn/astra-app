@@ -1,7 +1,7 @@
 # generated: 2026-05-25
-# last_updated: 2026-06-03 (field feedback triage; hotfix deferred post-6.3)
-# NEXT: epic-5 → 6.3 beta checklist → consolidated debug/hotfix (2.7 notif, 2.x steps, 4.5 purge)
-# PAUSE (obsolete): epic-4+ until epic-2 correction — superseded by Baptiste 2026-06-03 sequencing
+# last_updated: 2026-06-04 (Sprint Change Proposal approved — Figma 4-tab shell)
+# NEXT: 5.9 → 5.2 → 5.1 → 5.6 → 5.7 → 5.8 → 5.3 → epic-7 → 5.4 (optional)
+# Ref: planning-artifacts/sprint-change-proposal-2026-06-04.md
 # project: astra-app
 # project_key: NOKEY
 # tracking_system: file-system
@@ -41,13 +41,14 @@
 #   epic-2: Passive Step Tracking & Today Dashboard
 #   epic-3: History & Trends
 #   epic-4: Data Sovereignty & Lifecycle (My Data)
-#   epic-5: Design Polish & Visual Cohesion
+#   epic-5: Design Polish & Visual Cohesion (Figma shell)
 #   epic-6: OSS Credibility & Beta Readiness
+#   epic-7: Derived Activity Metrics
 #
 # NAVIGATION: _bmad-output/README.md
 
 generated: 2026-05-25
-last_updated: 2026-06-03 (story 5-5 done)
+last_updated: 2026-06-04
 project: astra-app
 project_key: NOKEY
 tracking_system: file-system
@@ -95,12 +96,21 @@ development_status:
   epic-4-retrospective: optional
 
   epic-5: in-progress
-  5-5-built-in-kotlin-plugin-migration: done  # priority — run before 5.1–5.4
-  5-1-accent-color-and-contrast-token-revision: backlog
-  5-2-navigation-bar-and-spacing-polish: backlog
-  5-3-cross-screen-visual-cohesion-audit: backlog
-  5-4-goal-overflow-animation-polish: backlog
+  5-5-built-in-kotlin-plugin-migration: done
+  # Mandatory order (2026-06-04):
+  5-9-phosphor-icons-dependency: backlog          # 1
+  5-2-four-tab-floating-navigation: backlog      # 2 — tab labels TODAY/TRENDS/DATA/PROFIL
+  5-1-accent-preset-theme-tokens: backlog        # 3
+  5-6-today-figma-layout-no-greeting: backlog    # 4 — stats row visible, empty until epic-7
+  5-7-data-screen-sovereignty-layout: backlog    # 5 — tab DATA, screen title "My Data"
+  5-8-profil-informations-and-appearance: backlog  # 6 — bi-tone preset circles + theme_mode
+  5-3-cross-screen-visual-cohesion-audit: backlog  # 7
+  5-4-goal-overflow-animation-polish: backlog    # after 5.3 (deferred from numbered pass)
   epic-5-retrospective: optional
+
+  epic-7: backlog
+  7-1-derived-activity-metrics: backlog          # 8 — after epic-5.3
+  epic-7-retrospective: optional
 
   epic-6: backlog
   6-1-open-source-license-and-documentation-bundle: backlog

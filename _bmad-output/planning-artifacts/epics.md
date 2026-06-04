@@ -22,6 +22,8 @@ This document provides the complete epic and story breakdown for astra-app, deco
 
 **Scope amendment (user-confirmed, 2026-06-02):** **Epic 5** is now the **design polish pass** (colors, spacing, visual cohesion). Former Epic 5 (OSS Credibility & Beta Readiness) moves to **Epic 6**. Functional theme selector remains Epic 4 Story 4.7; contrast/visual verification moves to Epic 5.
 
+**Scope amendment (user-confirmed, 2026-06-04 — Sprint Change Proposal approved):** Four-tab shell (Today · Trends · Data · Profil), Figma layouts, six accent presets with bi-tone selector on Profil → Appearance, Phosphor icons. **Execution order locked** — see Epic 5. Today greeting removed. Data tab short label; screen title **My Data**. Profil section **Informations**. Today stats row (kcal / km / time) visible but empty until **Epic 7**. Source: `planning-artifacts/sprint-change-proposal-2026-06-04.md`.
+
 ## Development Workflow (all stories)
 
 Every sub-task follows **review before commit**. See [`docs/project-context.md`](../../docs/project-context.md).
@@ -249,8 +251,12 @@ The user controls their health data — footprint, CSV export/import, purge, bac
 **FRs covered:** FR5, FR9, FR11, FR12, FR13, FR19, FR20, FR21, FR23, FR30, FR31
 
 ### Epic 5: Design Polish & Visual Cohesion
-After functional epics ship, the app receives a dedicated visual pass — accent/contrast tokens, navigation spacing, and cross-screen cohesion verified on device before beta. Includes early Android build-hygiene (Built-in Kotlin / plugin KGP migration) so Gradle debt does not accumulate while UI polish runs.
+After functional epics ship, the app receives a dedicated visual pass — four-tab Figma shell, accent preset tokens, screen layouts, and on-device cohesion before beta. Includes early Android build-hygiene (Built-in Kotlin / plugin KGP migration).
 **NFRs covered:** NFR5 (WCAG AA aspirational contrast in both themes)
+
+### Epic 7: Derived Activity Metrics
+Populate Today’s kcal / distance / walking-time row from steps and profile biometrics (formulas TBD). **Runs after Epic 5** cohesion pass.
+**FRs covered:** FR-33 (see Sprint Change Proposal 2026-06-04)
 
 ### Epic 6: OSS Credibility & Beta Readiness
 The repo is beta-ready and open-source credible — documentation, privacy audit, release hardening, and acceptance checklist.
@@ -1003,7 +1009,22 @@ So that I have a recognizable entry point for preferences even without an accoun
 
 After Epics 1–4 deliver functional surfaces, a dedicated pass revisits tokens, spacing, on-device visual quality, and Android build plugin hygiene before OSS beta hardening.
 
-**Execution order (user-confirmed 2026-06-02):** Story **5.5** (Built-in Kotlin / KGP — build hygiene) **first**, then **5.1–5.4** (visual polish). Do not accumulate Gradle debt before the UI pass.
+**Execution order (user-confirmed 2026-06-02):** Story **5.5** (Built-in Kotlin / KGP) **first**.
+
+**Execution order (user-confirmed 2026-06-04 — mandatory sequence):**
+
+| Step | Story | Focus |
+|------|-------|--------|
+| 1 | **5.9** | `phosphor_flutter` install |
+| 2 | **5.2** | Four-tab floating navbar (TODAY · TRENDS · DATA · PROFIL) |
+| 3 | **5.1** | Six accent preset theme tokens (+ contrast) |
+| 4 | **5.6** | Today Figma layout; **no** `Hello, {name}`; stats row **visible, empty** until Epic 7 |
+| 5 | **5.7** | Data screen (Background · Footprint · Your data); tab **DATA**; screen title **My Data** |
+| 6 | **5.8** | Profil screen; section **Informations**; Appearance → tokens + bi-tone preset circles |
+| 7 | **5.3** | Cross-screen cohesion audit |
+| — | **5.4** | Goal overflow polish — backlog after 5.3 (not in numbered pass) |
+
+Then **Epic 7** (derived metrics). Trends tab reuses Epic 3 chart screen (label **Trends**, same content).
 
 ### Story 5.5: Built-in Kotlin Plugin Migration (KGP)
 
@@ -1042,61 +1063,177 @@ So that `flutter build` stays compatible with Flutter Built-in Kotlin and we do 
 
 ---
 
-### Story 5.1: Accent Color & Contrast Token Revision
+### Story 5.9: Phosphor Icons Dependency
 
-As a **user**,
-I want accent colors readable in both light and dark themes,
-So that the interface stays calm and legible on my phone in any appearance mode.
+As a **builder**,
+I want Phosphor icons available app-wide,
+So that navigation and screens match the Figma mockups.
 
 **Acceptance Criteria:**
 
-**Given** device testing on light theme (user feedback 2026-06-02)
-**When** accent `#EAD55E` is used on light elevated surfaces (ring stroke, active tab, CTA fill)
-**Then** revised tokens improve visibility without breaking dark-mode-first calm tone (UX §1.2, D-1)
-**And** changes are centralized in `AstraColors` / `astra_theme.dart` — no ad-hoc hex in widgets (V-2)
+**Given** locked `pubspec.yaml`
+**When** `phosphor_flutter` is added at a compatible version
+**Then** `flutter pub get` succeeds and `docs/DEPENDENCIES.md` is updated (health pipeline unchanged)
 
-**Given** primary buttons on amber fill
-**When** rendered in light and dark themes
-**Then** label uses `color.text.inverse` with contrast meeting UX §4.1 baseline (D-13, NFR5)
+**Given** the package is installed
+**When** `flutter analyze` runs
+**Then** no new analyzer errors
 
-**Given** goal ring, chart bars, and status colors
-**When** viewed on light `bg.base` and dark `bg.base`
-**Then** accent-muted tracks and data semantics remain distinguishable (UX-DR21)
-
-**Given** a local calendar day where daily steps meet or exceed `daily_step_goal` (field feedback 2026-06-03)
-**When** user views Today goal ring and History bar chart for that day
-**Then** progress arc / bar fill uses a distinct **goal-met** semantic (e.g. `color.status.ok` green) instead of default amber accent — ring track may stay muted; overflow days still readable
-**And** days below goal keep existing amber/data styling (no false-positive green)
-
-**Given** token changes
-**When** `flutter analyze` and existing widget tests run
-**Then** no regressions; update UX spec token table if hex values change
+**Prerequisite for:** Story 5.2 (tab icons).
 
 ---
 
-### Story 5.2: Navigation Bar & Spacing Polish
+### Story 5.2: Four-Tab Floating Navigation Bar
 
 As a **user**,
-I want comfortable spacing in the bottom navigation and consistent screen padding,
-So that labels and icons are not cramped against screen edges.
+I want four clearly labeled tabs in a floating pill navigation bar,
+So that I can reach Today, Trends, Data, and Profil quickly.
 
 **Acceptance Criteria:**
 
-**Given** `AppScaffold` bottom `NavigationBar` (user feedback 2026-06-02)
-**When** viewed on a physical device
-**Then** icon and label vertical padding meet minimum touch comfort — not flush to bar top/bottom (UX-DR3, V-4)
+**Given** onboarding complete
+**When** main app loads
+**Then** `AppScaffold` shows **four** destinations: **TODAY · TRENDS · DATA · PROFIL** (short tab labels per Figma)
+**And** floating pill `NavigationBar` styling matches mockups (orange bar, white squircle on active tab)
+**And** Phosphor icons: Footprints (Today), ChartBar (Trends), Database (Data), User (Profil)
 
-**Given** all three tabs (Today, History, My Data)
-**When** compared side by side
-**Then** bar height, indicator, and inactive/active states are visually consistent (V-4)
+**Given** fourth tab **DATA**
+**When** selected
+**Then** `DataScreen` (sovereignty layout — Story 5.7) is shown
 
-**Given** screen body layouts from Epics 1–4
-**When** spacing audit runs against `astra_spacing.dart` 4px grid
-**Then** horizontal padding ≥16dp; interactive targets ≥48dp where applicable (UX-DR3)
+**Given** fourth tab **PROFIL**
+**When** selected
+**Then** `ProfileScreen` placeholder or implementation (Story 5.8) is shown
+
+**Given** tab **TRENDS**
+**When** selected
+**Then** existing History chart screen is shown (Epic 3 — same content; tab label **Trends** only in this story)
 
 **Given** reduce-motion enabled
-**When** navigation transitions run
-**Then** existing instant-swap behavior preserved (UX-DR18)
+**When** switching tabs
+**Then** cross-fade or instant swap preserved (UX-DR18)
+
+**Depends on:** Story 5.9.
+
+---
+
+### Story 5.1: Accent Preset Theme Tokens
+
+As a **user**,
+I want six accent color presets that work in light and dark themes,
+So that Appearance on Profil can theme the whole app consistently.
+
+**Acceptance Criteria:**
+
+**Given** `AstraColors` / `astra_theme.dart`
+**When** tokens are defined for presets `orange | red | green | cyan | purple | pink`
+**Then** each preset provides light + dark semantic mappings (accent primary, accent-muted, nav, ring, chart emphasis) per Figma theming matrix
+**And** default preset is **orange** (continuity with `#EAD55E` family where applicable)
+**And** no ad-hoc hex in widgets (V-2)
+
+**Given** `user_preferences.accent_preset`
+**When** read at startup
+**Then** `ThemeCubit` (or equivalent) applies the stored preset app-wide
+
+**Given** primary buttons on accent fill
+**When** rendered in light and dark
+**Then** label contrast meets UX §4.1 baseline (NFR5)
+
+**Given** goal-met days (field feedback 2026-06-03)
+**When** Today ring or Trends bar reflects goal met
+**Then** optional `color.status.ok` semantic remains available alongside preset accents
+
+**Given** token work complete
+**When** `flutter analyze` and tests run
+**Then** no regressions; UX spec token table updated if hex values change
+
+**Depends on:** Story 5.2 (shell to validate nav accent). **Prerequisite for:** Stories 5.6, 5.7, 5.8.
+
+---
+
+### Story 5.6: Today Screen — Figma Layout (No Greeting)
+
+As a **user**,
+I want Today’s activity at a glance with goal, week progress, and reserved stats,
+So that the home screen matches the redesigned layout.
+
+**Acceptance Criteria:**
+
+**Given** Today tab selected
+**When** screen renders
+**Then** layout matches Figma: title **Today's activity**, donut + center steps/goal, **Set goal** pill below donut
+**And** **no** `Hello, {name}` or display-name greeting (Story 4.8 greeting retired)
+**And** **This week** row: seven day pills with goal-met / missed / today / future states
+
+**Given** stats row (kcal, distance, walking time)
+**When** Epic 7 is not complete
+**Then** three columns are **visible** with icons and labels but values show empty placeholder (`—` or equivalent) — not hidden
+
+**Given** Set goal tapped
+**When** editor opens
+**Then** same validation as Story 4.6 / onboarding (1,000–100,000 integer)
+
+**Given** stale threshold exceeded
+**When** Today visible
+**Then** compact stale banner may link user to Data tab (UX-DR8)
+
+**Depends on:** Stories 5.1, 5.2.
+
+---
+
+### Story 5.7: Data Screen — Sovereignty Layout
+
+As a **user**,
+I want data sovereignty controls grouped on the Data tab,
+So that background health, footprint, and CSV actions are easy to find.
+
+**Acceptance Criteria:**
+
+**Given** **DATA** tab selected
+**When** screen renders
+**Then** screen **title** reads **My Data** (once at top — not shortened to "Data" in body)
+**And** only three sections exist: **Background**, **Footprint**, **Your data** (export / import / delete per Stories 4.2–4.5)
+
+**Given** Data screen
+**When** inspected
+**Then** goal editor, theme selector, display-name row, and profile badge from old My Data are **absent** (moved to Today / Profil)
+
+**Given** export, import, purge flows
+**When** exercised
+**Then** behavior unchanged from Epic 4 (FR-19–21, FR-30)
+
+**Depends on:** Stories 5.1, 5.2.
+
+---
+
+### Story 5.8: Profil Screen — Informations & Appearance
+
+As a **user**,
+I want profile and appearance settings on the Profil tab,
+So that personal info and theming are separate from raw data controls.
+
+**Acceptance Criteria:**
+
+**Given** **PROFIL** tab selected
+**When** screen renders
+**Then** screen title **My Profile** (or consistent copy key) and section **Informations** (not "Profile" as section title — user-confirmed 2026-06-04)
+**And** Informations rows: display name, age, height, weight — label + value + chevron; edits persist locally
+
+**Given** Notifications card
+**When** toggle changes
+**Then** `goal_notifications_enabled` (or equivalent) persists and respects FR-24/25 permission state
+
+**Given** Appearance card
+**When** user interacts
+**Then** (1) **System / Light / Dark** segmented control persists `theme_mode` (migrate Story 4.7)
+**And** (2) row of **six bi-tone circles** per Sprint Change Proposal FR-32 — base half reflects effective light/dark, top-right half = preset color; selection wired to **Story 5.1** tokens
+**And** changing preset or mode updates app chrome without restart
+
+**Given** purge all health data on Data tab
+**When** completed
+**Then** Informations + appearance prefs survive per FR-20 amended list
+
+**Depends on:** Story 5.1 (tokens). **Completes:** migration of 4.7, 4.8 (name only on Profil), 4.9 affordances as applicable.
 
 ---
 
@@ -1112,24 +1249,31 @@ So that the app feels cohesive before OSS beta release.
 **When** executed on release or profile build on physical device
 **Then** each item passes or has documented exception with fix plan (UX-DR21)
 
-**Given** Today, History, My Data, and onboarding
-**When** reviewed in system, light, and dark effective themes
+**Given** Today, Trends, Data, Profil, and onboarding
+**When** reviewed in system, light, dark, and each **accent preset**
 **Then** typography uses bundled Figtree + Darker Grotesque only (V-3); no layout jumps on Today sync (V-5)
 
+**Given** Today (Story 5.6)
+**When** user opens Today
+**Then** **no** `Hello, {name}` greeting is shown; ring remains sole step-count hero
+
+**Given** Data tab (Story 5.7)
+**When** screen title is read
+**Then** body title is **My Data**; tab label remains short **DATA**
+
+**Given** Profil (Story 5.8)
+**When** Informations section is read
+**Then** section title is **Informations** (not "Profile")
+
 **Given** screenshot / README GIF readiness (SM-7 prep)
-**When** Today and My Data are framed
+**When** Today and Data are framed
 **Then** hero layouts are presentation-ready (V-13)
 
-**Given** findings from Epics 1–4 device testing
+**Given** findings from Epics 1–5 device testing
 **When** logged in story completion notes
 **Then** residual polish items are either fixed in this story or explicitly deferred with rationale
 
-**Given** Today greeting with stored `display_name` (Story 4.8 shipped as caption — field feedback 2026-06-03)
-**When** user opens Today
-**Then** **Hello, {name}** reads as an engaging hero line — `type.title` or `type.headline`, **semibold/bold**, `text.primary` (not `type.caption` / `text.secondary`)
-**And** ring remains the sole step-count hero; greeting does not duplicate step totals
-
-**Given** My Data background status copy (field feedback 2026-06-03)
+**Given** Data background status copy (field feedback 2026-06-03)
 **When** user reads "Last sync {relative time}" on device
 **Then** checklist documents expected semantics: **last successful ingestion** timestamp (WM/FGS/collect), **not** the 60s foreground persist timer — optional UX copy tweak if confusion persists after doc pass
 
@@ -1159,6 +1303,31 @@ So that continued walking feels acknowledged without gamified pressure.
 **Given** token and motion patterns are defined
 **When** implemented
 **Then** changes live in `GoalRing` / dedicated overflow widget and `AstraColors` — no ad-hoc hex in screens (V-2)
+
+---
+
+## Epic 7: Derived Activity Metrics
+
+The user sees real kcal, distance, and walking-time values on Today’s stats row.
+
+### Story 7.1: Derived Activity Metrics (Spec + Implementation)
+
+As a **user**,
+I want kcal, distance, and walking duration derived from my steps and profile,
+So that Today’s stats row shows meaningful numbers instead of placeholders.
+
+**Acceptance Criteria:**
+
+**Given** Stories 5.6 and 5.8 are done
+**When** Epic 7 is scheduled
+**Then** formulas and inputs (height, weight, age, step count, optional pace assumptions) are documented and reviewed with Baptiste before implementation
+
+**Given** profile biometrics and today step total exist
+**When** Today stats row renders
+**Then** kcal, km, and duration fields show computed values (replacing `—` placeholders)
+**And** values update with live step overlay where applicable
+
+**Status:** backlog — **do not start** until Epic 5 Story 5.3 passes.
 
 ---
 

@@ -15,6 +15,7 @@ lastStep: 8
 status: complete
 completedAt: 2026-05-22
 amended: 2026-05-22 — adversarial review pass (naming, write path, SQL local_day, idempotency, DI, iOS, lifecycle, notifications)
+amended: 2026-06-04 — four-tab shell, Profil/Data split, accent presets, Phosphor (sprint-change-proposal-2026-06-04)
 ---
 
 # Architecture Decision Document
@@ -27,9 +28,9 @@ _This document builds collaboratively through step-by-step discovery. Sections a
 
 **Functional Requirements:**
 
-ASTRA Phase 0 defines 31 FRs across a layered mobile architecture. The core data pipeline is: `DataIngestionSource` implementations (phone pedometer today, ADP BLE stub tomorrow) → `StepNormalizer` → `BackgroundCollector` (single ingestion writer) → SQLite `timeseries_samples` → UI queries and `DataLifecycleService` maintenance. This abstraction (FR-1–3, FR-7–8) is the primary extensibility mechanism for Phase 1+ without refactoring persistence.
+ASTRA Phase 0 defines **33 FRs** across a layered mobile architecture (FR-32 accent preset, FR-33 derived metrics). The core data pipeline is: `DataIngestionSource` implementations (phone pedometer today, ADP BLE stub tomorrow) → `StepNormalizer` → `BackgroundCollector` (single ingestion writer) → SQLite `timeseries_samples` → UI queries and `DataLifecycleService` maintenance. This abstraction (FR-1–3, FR-7–8) is the primary extensibility mechanism for Phase 1+ without refactoring persistence.
 
-Three user-facing surfaces (Today, History, My Data) plus onboarding map directly to architectural modules. My Data is architecturally first-class — footprint, background status, CSV export/import, and purge (FR-5, FR-13, FR-18–21, FR-30) are sovereignty features, not settings afterthoughts. Background collection (FR-4–6) and local notifications (FR-25) require platform-native services decoupled from UI lifecycle.
+Four tab destinations (Today, Trends, Data, Profil) plus onboarding map to presentation modules. **Data** (screen title My Data) is architecturally first-class for sovereignty — footprint, background status, CSV export/import, purge (FR-5, FR-13, FR-18–21, FR-30). **Profil** holds local profile fields, notification toggle, `theme_mode`, and `accent_preset` (FR-9, FR-31, FR-32). Trends reuses the History chart module (FR-16–17). Background collection (FR-4–6) and local notifications (FR-25) require platform-native services decoupled from UI lifecycle.
 
 Dev/OSS FRs (FR-26–29) impose architectural observability: 90-day inject benchmark, lifecycle simulator, dependency audit, and beta checklist traceability.
 
@@ -125,7 +126,7 @@ lib/
 └── presentation/
     ├── cubits/
     ├── onboarding/       # Trust-first flow (FR-22)
-    ├── screens/          # Today, History, My Data
+    ├── screens/          # Today, History (Trends), Data, Profil
     └── widgets/          # GoalRing, chart wrappers
 ```
 
@@ -210,7 +211,9 @@ flutter create . \
 | # | Decision | Choice | Version |
 |---|----------|--------|---------|
 | D-09 | State management | **Cubit** (`flutter_bloc`) — lighter than full BLoC | ^9.1.1 |
-| D-10 | Navigation | Bottom tab shell (Today / History / My Data) + onboarding modal stack | UX §2.1 |
+| D-10 | Navigation | Four-tab floating pill shell (Today / Trends / Data / Profil) + onboarding modal stack; Phosphor tab icons | UX §2.1 |
+| D-27 | Iconography | `phosphor_flutter` (regular weight) for tabs and primary actions | UX §1.6 |
+| D-28 | Accent presets | Six `accent_preset` values; `AstraColors` maps preset × light/dark | FR-32 |
 | D-11 | Charts | `fl_chart` bar charts with pre-aggregated daily data | ^1.2.0 |
 | D-12 | Notifications | `flutter_local_notifications` — local only, no FCM | ^21.0.0 |
 | D-13 | Permissions | `permission_handler` for activity recognition; manifest for FGS | ^12.0.1 |
@@ -441,23 +444,26 @@ Evaluation uses cumulative daily steps from `timeseries_samples` aggregated by `
 
 ### Frontend Architecture
 
-**State management:** `flutter_bloc` Cubits only — `TodayCubit`, `HistoryCubit`, `MyDataCubit`, `OnboardingCubit`. **No reactive stream architecture Phase 0** — no Riverpod, no app-wide `Stream`/`BehaviorSubject` state graphs. Exceptions: (1) platform sensor streams (`pedometer`) owned by `LiveStepMonitor` in UI isolate — sole subscriber, fan-out via `MonitorDrainSource` to `BackgroundCollector`; (2) **approved derogation (2026-06-02):** `LiveStepMonitor.watchTodaySteps()` → `TodayCubit.attachLiveMonitor()` for real-time Today step display (throttled ~1s), not app-wide reactive state.
+**State management:** `flutter_bloc` Cubits — `TodayCubit`, `HistoryCubit` (Trends tab), `MyDataCubit` or `DataCubit` (Data tab), `ProfileCubit` (Profil tab), `OnboardingCubit`, `ThemeCubit`. **No reactive stream architecture Phase 0** except approved sensor/live-step paths (see Story 2.9).
 
 **Cubit refresh triggers:**
 
 | Cubit | Refresh when |
 |-------|--------------|
-| `TodayCubit` | **Truth model:** persisted SQLite daily sum is source of truth; live monitor is real-time overlay when process alive — display never decreases within same local day (Story 2.9). **Live steps:** `LiveStepMonitor.watchTodaySteps()` (throttled ~500ms). **Cold start:** foreground backfill → reconcile from DB → attach live monitor → `syncSteps()` (not DB-only refresh overwriting live). **Resume:** persist + reconcile + `syncSteps()`. **Metadata:** app resume → `refreshMetadata()`; `onIngestionComplete` → `refreshMetadata()` only; `AstraApp` 60s periodic persist (all tabs); returning to Today tab → `refreshMetadata()`; post import/purge |
-| `HistoryCubit` | Tab selected; app resume; post import/purge/lifecycle |
-| `MyDataCubit` | Tab selected; app resume; post import/purge/export |
+| `TodayCubit` | Truth model + live overlay (Story 2.9); post import/purge |
+| `HistoryCubit` | Trends tab selected; app resume; post import/purge/lifecycle |
+| `MyDataCubit` / `DataCubit` | Data tab selected; app resume; post import/purge/export |
+| `ProfileCubit` | Profil tab selected; preference writes |
 
-**Navigation:** `AppScaffold` + `NavigationBar` (3 tabs). **No GoRouter Phase 0** — intentional solo-founder optimization: less friction, no deep-link noise, no rebuild complexity for 3 tabs.
+**Navigation:** `AppScaffold` + floating pill `NavigationBar` (**4 tabs**: TODAY, TRENDS, DATA, PROFIL). **No GoRouter Phase 0**.
 
-**Components:** UX spec widgets in `presentation/widgets/`. Design tokens in `core/constants/`.
+**Components:** UX spec widgets in `presentation/widgets/` (`AccentPresetSelector`, etc.). Design tokens in `core/constants/` — preset-aware `AstraColors`.
 
-**Performance (NFR-1 / KPI-01):** Chart binds pre-aggregated `ChartDayAggregate` only; no animation on 7d/30d toggle. **Benchmark acceptance:** on mid-range Android reference device, 90-day injected dataset, History 7d↔30d toggle **p95 < 100ms** (measured in `lib/dev/` benchmark harness, FR-28). **Fonts bundled locally** in `assets/fonts/`.
+**Performance (NFR-1 / KPI-01):** Chart binds pre-aggregated `ChartDayAggregate` only; Trends 7d↔30d toggle **p95 < 100ms** (FR-28).
 
-**Theming:** `ThemeData.light()` + `ThemeData.dark()` + `AstraColors` extension. **System theme default** (`ThemeMode.system`); user override system/light/dark on My Data (FR-31). `ThemeCubit` drives `MaterialApp.themeMode`.
+**Theming:** `ThemeData.light()` + `ThemeData.dark()` + `AstraColors` per `theme_mode` and `accent_preset`. **System default**; override on **Profil** (FR-31, FR-32). `ThemeCubit` drives `MaterialApp.themeMode` and accent token set.
+
+**`user_preferences` keys (Phase 0 post-redesign):** `daily_step_goal`, `theme_mode`, `accent_preset`, `display_name`, `age`, `height_cm`, `weight_kg`, `goal_notifications_enabled`, plus existing flags (`onboarding_complete`, `celebration_shown_date`, etc.).
 
 ### Infrastructure & Deployment
 
@@ -509,6 +515,7 @@ dependencies:
   flutter_local_notifications: ^21.0.0
   share_plus: ^13.1.0
   path_provider: ^2.1.5
+  phosphor_flutter: ^2.1.0  # Story 5.9 — verify latest compatible on pub get
 
 dev_dependencies:
   flutter_test:
@@ -533,10 +540,10 @@ lib/
 │   ├── models/           # timeseries_sample_model, chart_day_aggregate, import_result
 │   └── repositories/     # step_repository, user_preferences_repository
 ├── presentation/
-│   ├── cubits/           # today_cubit.dart, history_cubit.dart, my_data_cubit.dart, onboarding_cubit.dart, theme_cubit.dart
+│   ├── cubits/           # today, history, my_data (or data), profile, onboarding, theme
 │   ├── onboarding/       # trust, permissions, goal pages
-│   ├── screens/          # app_scaffold.dart, today_screen.dart, history_screen.dart, my_data_screen.dart
-│   └── widgets/          # goal_ring.dart, step_bar_chart.dart
+│   ├── screens/          # app_scaffold, today, history (trends), data_screen, profile_screen
+│   └── widgets/          # goal_ring, step_bar_chart, accent_preset_selector, week_progress_row, ...
 └── dev/                  # data_inject_service, lifecycle_simulator, chart_benchmark (kDebugMode)
 ```
 
@@ -860,7 +867,7 @@ astra-app/                              # Git repo root = Flutter app root (D-18
 
 ### Requirements Coverage Validation ✅
 
-**Functional Requirements Coverage:** All 31 FRs mapped to specific files (see Requirements to Structure Mapping). FR-28 dev inject in `lib/dev/`. FR-29 beta checklist in `docs/BETA_CHECKLIST.md`. FR-31 theme in `theme_cubit.dart` + My Data.
+**Functional Requirements Coverage:** All 33 FRs mapped to specific files (see Requirements to Structure Mapping). FR-28 dev inject in `lib/dev/`. FR-29 beta checklist in `docs/BETA_CHECKLIST.md`. FR-31/FR-32 theme + accent in `theme_cubit.dart` + `profile_screen.dart`. FR-33 derived metrics → Epic 7.
 
 **Non-Functional Requirements Coverage:**
 
