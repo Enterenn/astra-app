@@ -1,18 +1,25 @@
 import 'dart:async';
 import 'dart:io';
 
+import 'package:flutter/foundation.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import '../../core/health/stale_data_evaluator.dart';
 import '../../core/permissions/activity_permission_resolver.dart'
     show isActivityRecognitionGranted;
 import '../../core/services/live_step_monitor.dart';
+import '../../core/time/calendar_week.dart';
+import '../../core/time/local_day_calculator.dart';
 import '../../core/time/local_day_formatter.dart';
 import '../../core/time/time_provider.dart';
+import '../../core/time/timestamp_codec.dart';
+import '../../core/validation/step_goal_validator.dart';
 import '../../data/repositories/step_repository.dart';
 import '../../data/repositories/user_preferences_repository.dart';
+import '../models/week_day_status.dart';
 import 'today_state.dart';
 
 typedef ActivityPermissionChecker = Future<bool> Function();
+typedef PostGoalUpdateCallback = Future<void> Function();
 
 class TodayCubit extends Cubit<TodayState> {
   TodayCubit({
@@ -21,6 +28,7 @@ class TodayCubit extends Cubit<TodayState> {
     required this.clock,
     ActivityPermissionChecker? activityPermissionGranted,
     bool? isIos,
+    this.postGoalUpdate,
   }) : _activityPermissionGranted =
            activityPermissionGranted ?? isActivityRecognitionGranted,
        _isIos = isIos ?? Platform.isIOS,
@@ -31,6 +39,7 @@ class TodayCubit extends Cubit<TodayState> {
   final TimeProvider clock;
   final ActivityPermissionChecker _activityPermissionGranted;
   final bool _isIos;
+  final PostGoalUpdateCallback? postGoalUpdate;
 
   Future<void>? _refreshInFlight;
   StreamSubscription<int>? _liveStepsSubscription;
@@ -42,6 +51,53 @@ class TodayCubit extends Cubit<TodayState> {
     _liveStepsSubscription = monitor.watchTodaySteps().listen((steps) {
       unawaited(_applyLiveSteps(steps));
     });
+  }
+
+  /// Persists a new daily step goal and refreshes ring + week strip.
+  Future<bool> updateDailyStepGoal(int goal) async {
+    if (isClosed) {
+      return false;
+    }
+
+    final validation = validateStepGoalInput(goal.toString());
+    if (!validation.isValid || validation.parsedGoal == null) {
+      return false;
+    }
+    final parsed = validation.parsedGoal!;
+    if (parsed == state.goal) {
+      return false;
+    }
+
+    try {
+      await userPreferences.setDailyStepGoal(parsed);
+    } catch (error, stackTrace) {
+      if (kDebugMode) {
+        debugPrint('TodayCubit.updateDailyStepGoal persist failed: $error');
+        debugPrintStack(stackTrace: stackTrace);
+      }
+      return false;
+    }
+
+    if (isClosed) {
+      return false;
+    }
+
+    try {
+      await postGoalUpdate?.call();
+    } catch (error, stackTrace) {
+      if (kDebugMode) {
+        debugPrint('TodayCubit.updateDailyStepGoal refresh failed: $error');
+        debugPrintStack(stackTrace: stackTrace);
+      }
+      return false;
+    }
+
+    if (isClosed) {
+      return false;
+    }
+
+    await refresh(silent: true);
+    return true;
   }
 
   /// Refreshes dashboard data from repositories (read-only).
@@ -102,8 +158,19 @@ class TodayCubit extends Cubit<TodayState> {
     if (isClosed) {
       return;
     }
+    final goalForWeek = state.status == TodayStatus.loading
+        ? await userPreferences.getDailyStepGoal()
+        : state.goal;
+    if (isClosed) {
+      return;
+    }
+
     if (!granted) {
-      emit(const TodayState.noPermission());
+      final weekDays = await _loadWeekDays(goal: goalForWeek);
+      if (isClosed) {
+        return;
+      }
+      emit(TodayState(status: TodayStatus.noPermission, weekDays: weekDays));
       return;
     }
 
@@ -125,12 +192,18 @@ class TodayCubit extends Cubit<TodayState> {
       isIos: _isIos,
     );
 
+    final weekDays = await _loadWeekDays(goal: goal);
+    if (isClosed) {
+      return;
+    }
+
     await _applyTodaySnapshot(
       steps: state.steps,
       goal: goal,
       displayName: displayName,
       isStale: stale,
       lastIngestionUtc: lastUtc,
+      weekDays: weekDays,
     );
   }
 
@@ -144,7 +217,15 @@ class TodayCubit extends Cubit<TodayState> {
       return;
     }
     if (!granted) {
-      emit(const TodayState.noPermission());
+      final goal = await userPreferences.getDailyStepGoal();
+      if (isClosed) {
+        return;
+      }
+      final weekDays = await _loadWeekDays(goal: goal);
+      if (isClosed) {
+        return;
+      }
+      emit(TodayState(status: TodayStatus.noPermission, weekDays: weekDays));
       return;
     }
 
@@ -169,12 +250,18 @@ class TodayCubit extends Cubit<TodayState> {
       isIos: _isIos,
     );
 
+    final weekDays = await _loadWeekDays(goal: goal);
+    if (isClosed) {
+      return;
+    }
+
     await _applyTodaySnapshot(
       steps: steps,
       goal: goal,
       displayName: displayName,
       isStale: stale,
       lastIngestionUtc: lastUtc,
+      weekDays: weekDays,
     );
   }
 
@@ -200,7 +287,36 @@ class TodayCubit extends Cubit<TodayState> {
       displayName: state.displayName,
       isStale: state.isStale,
       lastIngestionUtc: state.lastIngestionUtc,
+      weekDays: state.weekDays,
     );
+  }
+
+  Future<List<WeekDayStatus>> _loadWeekDays({required int goal}) async {
+    final timeSnapshot = clock.snapshot();
+    final zoneOffset = TimestampCodec.formatZoneOffset(timeSnapshot.zoneOffset);
+    final referenceToday = LocalDayCalculator.localDay(
+      utc: timeSnapshot.nowUtc,
+      zoneOffset: zoneOffset,
+    );
+    final weekDayKeys = CalendarWeek.daysContaining(referenceToday);
+
+    final aggregates = await stepRepository.getChartDailyAggregates(days: 30);
+    final stepsByDay = {
+      for (final aggregate in aggregates)
+        aggregate.localDay: aggregate.totalSteps,
+    };
+
+    return [
+      for (final day in weekDayKeys)
+        WeekDayStatus(
+          localDay: day,
+          weekdayLabel: CalendarWeek.weekdayLabelFor(day),
+          dayNumber: day.day,
+          isToday: day == referenceToday,
+          isFuture: day.isAfter(referenceToday),
+          goalMet: goal > 0 && (stepsByDay[day] ?? 0) >= goal,
+        ),
+    ];
   }
 
   /// Applies step count with monotonic same-day merge: display never drops within
@@ -212,6 +328,7 @@ class TodayCubit extends Cubit<TodayState> {
     String? displayName,
     required bool isStale,
     DateTime? lastIngestionUtc,
+    List<WeekDayStatus>? weekDays,
   }) async {
     if (isClosed) {
       return;
@@ -233,6 +350,7 @@ class TodayCubit extends Cubit<TodayState> {
       displayName: displayName,
       isStale: isStale,
       lastIngestionUtc: lastIngestionUtc,
+      weekDays: weekDays ?? state.weekDays,
     );
     await _maybeTriggerCelebration(
       steps: effectiveSteps,

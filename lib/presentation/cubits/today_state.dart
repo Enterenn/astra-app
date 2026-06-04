@@ -1,4 +1,5 @@
 import '../../core/constants/preference_keys.dart';
+import '../models/week_day_status.dart';
 
 enum TodayStatus {
   loading,
@@ -18,6 +19,7 @@ class TodayState {
     this.isStale = false,
     this.lastIngestionUtc,
     this.showCelebration = false,
+    this.weekDays = const [],
   });
 
   final TodayStatus status;
@@ -27,6 +29,7 @@ class TodayState {
   final bool isStale;
   final DateTime? lastIngestionUtc;
   final bool showCelebration;
+  final List<WeekDayStatus> weekDays;
 
   const TodayState.loading() : this(status: TodayStatus.loading);
 
@@ -39,6 +42,7 @@ class TodayState {
     required bool isStale,
     DateTime? lastIngestionUtc,
     bool showCelebration = false,
+    List<WeekDayStatus> weekDays = const [],
   }) {
     return TodayState(
       status: _resolveStatus(steps: steps, goal: goal),
@@ -48,6 +52,7 @@ class TodayState {
       isStale: isStale,
       lastIngestionUtc: lastIngestionUtc,
       showCelebration: showCelebration,
+      weekDays: weekDays,
     );
   }
 
@@ -59,6 +64,7 @@ class TodayState {
     bool? isStale,
     DateTime? lastIngestionUtc,
     bool? showCelebration,
+    List<WeekDayStatus>? weekDays,
   }) {
     return TodayState(
       status: status ?? this.status,
@@ -70,6 +76,7 @@ class TodayState {
       isStale: isStale ?? this.isStale,
       lastIngestionUtc: lastIngestionUtc ?? this.lastIngestionUtc,
       showCelebration: showCelebration ?? this.showCelebration,
+      weekDays: weekDays ?? this.weekDays,
     );
   }
 
