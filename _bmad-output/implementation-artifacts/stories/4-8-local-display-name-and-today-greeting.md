@@ -346,7 +346,7 @@ Composer (dev-story workflow)
 
 ## Field feedback (2026-06-03)
 
-Greeting **Hello, {name}** visible but too small for intended UX — shipped per AC #3 as caption/secondary. **Engaging title-scale typography → Story 5.3** (see epics.md AC).
+Greeting **Hello, {name}** visible but too small for intended UX — shipped per AC #3 as caption/secondary. **Engaging title-scale typography → Story 5.12** (see epics.md AC).
 
 ## Change Log
 

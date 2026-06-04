@@ -20,9 +20,11 @@ This document provides the complete epic and story breakdown for astra-app, deco
 
 **Scope amendment (user-confirmed, 2026-05-25):** System / light / dark theme with user choice on My Data. **System is first-launch default** (follows OS). PRD FR-31 and UX spec §1.1–1.2 aligned.
 
-**Scope amendment (user-confirmed, 2026-06-02):** **Epic 5** is now the **design polish pass** (colors, spacing, visual cohesion). Former Epic 5 (OSS Credibility & Beta Readiness) moves to **Epic 6**. Functional theme selector remains Epic 4 Story 4.7; contrast/visual verification moves to Epic 5.
+**Scope amendment (user-confirmed, 2026-06-02):** **Epic 5** is now the **design polish pass** (colors, spacing, visual cohesion). Former Epic 5 (OSS Credibility & Beta Readiness) moves to **Epic 7**. Functional theme selector remains Epic 4 Story 4.7; contrast/visual verification moves to Epic 5.
 
-**Scope amendment (user-confirmed, 2026-06-04 — Sprint Change Proposal approved):** Four-tab shell (Today · Trends · Data · Profil), Figma layouts, six accent presets with bi-tone selector on Profil → Appearance, Phosphor icons. **Execution order locked** — see Epic 5. Today greeting removed. Data tab short label; screen title **My Data**. Profil section **Informations**. Today stats row (kcal / km / time) visible but empty until **Epic 7**. Source: `planning-artifacts/sprint-change-proposal-2026-06-04.md`.
+**Scope amendment (user-confirmed, 2026-06-04 — Sprint Change Proposal approved):** Four-tab shell (Today · Trends · Data · Profil), Figma layouts, six accent presets with bi-tone selector on Profil → Appearance, Phosphor icons. **Execution order locked** — see Epic 5. Today greeting removed. Data tab short label; screen title **My Data**. Profil section **Informations**. Today stats row (kcal / km / time) visible but empty until **Epic 6**. Source: `planning-artifacts/sprint-change-proposal-2026-06-04.md`.
+
+**Scope amendment (user-confirmed, 2026-06-04 — Epic 6 metrics):** Profil stores `height_cm` + `weight_kg` only (no age, no sex/gender). Derived metrics: distance from stride (height × 0.414 or 0.76 m default); walking time from active buckets; kcal = MET 3.5 × weight (70 kg default) × duration. See FR-33.
 
 ## Development Workflow (all stories)
 
@@ -217,7 +219,7 @@ FR14: Epic 2 — Today goal ring dashboard
 FR15: Epic 2 — Once-per-day goal celebration animation
 FR16: Epic 3 — History bar charts (7d/30d)
 FR17: Epic 3 — Weekly trend indicator
-FR18: Epic 6 — No network dependency + release manifest verification
+FR18: Epic 7 — No network dependency + release manifest verification
 FR19: Epic 4 — CSV export with OW-aligned columns
 FR20: Epic 4 — Full local health-data purge
 FR21: Epic 4 — Export-before-purge prompt
@@ -225,10 +227,10 @@ FR22: Epic 1 — Trust-first onboarding
 FR23: Epic 1 — Goal setup onboarding (+ editable on My Data in Epic 4)
 FR24: Epic 1 — Notification opt-in during onboarding
 FR25: Epic 2 — Daily goal local notification
-FR26: Epic 6 — Apache 2.0 open source
-FR27: Epic 6 — Project documentation bundle
+FR26: Epic 7 — Apache 2.0 open source
+FR27: Epic 7 — Project documentation bundle
 FR28: Epic 3 — Dev data inject & lifecycle simulator
-FR29: Epic 6 — Beta acceptance checklist
+FR29: Epic 7 — Beta acceptance checklist
 FR30: Epic 4 — CSV import with idempotent reconciliation
 FR31: Epic 4 — Theme selection (System / Light / Dark)
 
@@ -254,11 +256,11 @@ The user controls their health data — footprint, CSV export/import, purge, bac
 After functional epics ship, the app receives a dedicated visual pass — four-tab Figma shell, accent preset tokens, screen layouts, and on-device cohesion before beta. Includes early Android build-hygiene (Built-in Kotlin / plugin KGP migration).
 **NFRs covered:** NFR5 (WCAG AA aspirational contrast in both themes)
 
-### Epic 7: Derived Activity Metrics
+### Epic 6: Derived Activity Metrics
 Populate Today’s kcal / distance / walking-time row from steps and profile biometrics (formulas TBD). **Runs after Epic 5** cohesion pass.
 **FRs covered:** FR-33 (see Sprint Change Proposal 2026-06-04)
 
-### Epic 6: OSS Credibility & Beta Readiness
+### Epic 7: OSS Credibility & Beta Readiness
 The repo is beta-ready and open-source credible — documentation, privacy audit, release hardening, and acceptance checklist.
 **FRs covered:** FR18, FR26, FR27, FR29
 
@@ -1011,20 +1013,798 @@ After Epics 1–4 deliver functional surfaces, a dedicated pass revisits tokens,
 
 **Execution order (user-confirmed 2026-06-02):** Story **5.5** (Built-in Kotlin / KGP) **first**.
 
-**Execution order (user-confirmed 2026-06-04 — mandatory sequence):**
+**Execution order (user-confirmed 2026-06-04 — story IDs match sequence):**
 
 | Step | Story | Focus |
 |------|-------|--------|
-| 1 | **5.9** | `phosphor_flutter` install |
-| 2 | **5.2** | Four-tab floating navbar (TODAY · TRENDS · DATA · PROFIL) |
-| 3 | **5.1** | Six accent preset theme tokens (+ contrast) |
-| 4 | **5.6** | Today Figma layout; **no** `Hello, {name}`; stats row **visible, empty** until Epic 7 |
-| 5 | **5.7** | Data screen (Background · Footprint · Your data); tab **DATA**; screen title **My Data** |
-| 6 | **5.8** | Profil screen; section **Informations**; Appearance → tokens + bi-tone preset circles |
-| 7 | **5.3** | Cross-screen cohesion audit |
-| — | **5.4** | Goal overflow polish — backlog after 5.3 (not in numbered pass) |
+| 0 | **5.5** | Built-in Kotlin / KGP *(done)* |
+| 1 | **5.6** | `phosphor_flutter` install |
+| 2 | **5.7** | Four-tab floating navbar (TODAY · TRENDS · DATA · PROFIL) |
+| 3 | **5.8** | Six accent preset theme tokens (+ contrast) |
+| 4 | **5.9** | Today Figma layout; **no** `Hello, {name}`; stats row **visible, empty** until Epic 6 |
+| 5 | **5.10** | Data screen (Background · Footprint · Your data); tab **DATA**; screen title **My Data** |
+| 6 | **5.11** | Profil screen; section **Informations**; Appearance → tokens + bi-tone preset circles |
+| 7 | **5.12** | Cross-screen cohesion audit |
+| — | **5.13** | Goal overflow polish — backlog after 5.12 (optional) |
 
-Then **Epic 7** (derived metrics). Trends tab reuses Epic 3 chart screen (label **Trends**, same content).
+**Renumbering (2026-06-04):** IDs aligned to execution order. Legacy map: old 5.9→5.6, 5.2→5.7, 5.1→5.8, 5.6→5.9, 5.7→5.10, 5.8→5.11, 5.3→5.12, 5.4→5.13. Epic map: old 7→6 (metrics), old 6→7 (OSS); stories 7.1→6.1, 6.x→7.x.
+
+Then **Epic 6** (derived metrics). Then **Epic 7** (OSS beta). Trends tab reuses Epic 3 chart screen (label **Trends**, same content).
+
+## Epic 6: Derived Activity Metrics
+Populate Today’s kcal / distance / walking-time row from steps and profile biometrics (formulas TBD). **Runs after Epic 5** cohesion pass.
+**FRs covered:** FR-33 (see Sprint Change Proposal 2026-06-04)
+
+## Epic 7: OSS Credibility & Beta Readiness
+The repo is beta-ready and open-source credible — documentation, privacy audit, release hardening, and acceptance checklist.
+**FRs covered:** FR18, FR26, FR27, FR29
+
+---
+
+## Epic 1: Trust Onboarding & App Shell
+
+The user installs the app, understands the local-first privacy promise, sets a daily step goal and permissions, and lands on a themed three-tab shell — no account required.
+
+### Story 1.1: Flutter Project Initialization
+
+As a **builder**,
+I want the Flutter project scaffold initialized from the repo root with locked dependencies,
+So that I have a clean, runnable mobile app foundation aligned with ASTRA architecture.
+
+**Acceptance Criteria:**
+
+**Given** the `astra-app` repo root contains planning docs but no Flutter scaffold yet
+**When** `flutter create . --org com.astraapp --project-name astra_app --platforms=android,ios --android-language=kotlin --empty` is run and locked `pubspec.yaml` dependencies are applied
+**Then** the app builds and launches on Android/iOS with package name `astra_app` and bundle ID `com.astraapp`
+**And** `LICENSE` (Apache 2.0) exists in repo root per FR26
+
+**Given** the project is initialized
+**When** a developer runs `flutter analyze`
+**Then** no analyzer errors are introduced by the scaffold setup
+
+---
+
+### Story 1.2: Design Tokens and Theme System
+
+As a **user**,
+I want the app to respect my OS light/dark setting by default with consistent ASTRA visual tokens,
+So that the interface feels polished in either appearance from first launch.
+
+**Acceptance Criteria:**
+
+**Given** Figtree and Darker Grotesque fonts are bundled in `assets/fonts/` (no network fetch)
+**When** the app launches for the first time
+**Then** `ThemeMode.system` is active and `AstraColors` semantic tokens apply for both light and dark palettes (UX-DR1, UX-DR2, UX-DR3)
+**And** `theme_mode` defaults to `system` in memory before preferences DB exists (FR9, FR31 infrastructure)
+
+**Given** the OS switches between light and dark while `theme_mode` is `system`
+**When** the app is in foreground
+**Then** the UI updates to match the OS theme without restart
+
+**Given** spacing and radius tokens are defined
+**When** any scaffold screen renders
+**Then** horizontal padding uses the 4px grid minimum 16dp and touch targets meet 48dp where interactive (UX-DR3)
+
+---
+
+### Story 1.3: App Scaffold and Bottom Navigation
+
+As a **user**,
+I want a three-tab navigation shell (Today, History, My Data),
+So that I can move between the main surfaces of the Hub App intuitively.
+
+**Acceptance Criteria:**
+
+**Given** onboarding is complete (or skipped in dev builds)
+**When** the main app loads
+**Then** `AppScaffold` displays a bottom `NavigationBar` with Today · History · My Data tabs (UX-DR4)
+**And** the active tab uses amber accent; inactive tabs use muted color
+
+**Given** the user taps a tab
+**When** navigation occurs
+**Then** content cross-fades in ~200ms (UX-DR18) or swaps instantly if reduce-motion is enabled
+**And** placeholder screens exist for each tab until feature epics implement them
+
+**Given** the app shell is displayed
+**When** inspected on Android gesture navigation devices
+**Then** bottom safe area inset is respected (56dp + inset)
+
+---
+
+### Story 1.4: User Preferences Persistence
+
+As a **user**,
+I want my daily step goal and theme preference saved locally,
+So that my choices persist across app restarts.
+
+**Acceptance Criteria:**
+
+**Given** migration v1 runs on fresh install
+**When** the database is created
+**Then** only `user_preferences` table exists (key/value) — no `timeseries_samples` yet (database incremental principle)
+**And** defaults are `daily_step_goal=8000` and `theme_mode=system` (FR9)
+
+**Given** `UserPreferencesRepository` is wired via `AppDependencies`
+**When** a preference is written and the app restarts
+**Then** the stored value is read back correctly
+
+**Given** a preference update occurs
+**When** saved
+**Then** only `UserPreferencesRepository` writes to `user_preferences` — no direct SQL from UI/Cubits
+
+---
+
+### Story 1.5: Trust-First Onboarding Flow
+
+As a **privacy pragmatist (Alex)**,
+I want a trust-first onboarding that explains local-only storage before any permission prompt,
+So that I feel confident granting activity access without creating an account.
+
+**Acceptance Criteria:**
+
+**Given** first launch with no onboarding completion flag
+**When** the app opens
+**Then** a full-screen onboarding stack appears (not tabs): Trust → Permissions → Goal (FR22, UX-DR16)
+**And** no account, email, or authentication screen exists
+
+**Given** the Trust step is displayed
+**When** the user taps Continue
+**Then** permission requests have not yet been shown (trust copy before permissions)
+
+**Given** the Permissions step
+**When** the user taps "Allow activity access"
+**Then** the OS activity recognition dialog is triggered via `permission_handler`
+**And** optional notification opt-in is offered separately with skip path (FR24)
+
+**Given** the Goal step with default 8000 pre-filled
+**When** the user taps "Start tracking" or skips
+**Then** `daily_step_goal` is saved (8000 if skipped) and onboarding completion flag is set (FR23)
+**And** the user lands on the Today tab (UX D-10)
+
+**Given** onboarding controls
+**When** rendered
+**Then** `AstraButton` variants (primary/secondary/ghost) meet 48dp min height (UX-DR17)
+
+---
+
+## Epic 2: Passive Step Tracking & Today Dashboard
+
+The user's steps accumulate passively (Android FGS + WorkManager; iOS foreground backfill); they see today's progress via the goal ring, celebration, and optional goal notification without constantly opening the app. Real-time step display while the app is open is a UX bonus layered on persisted SQLite totals — see Stories 2.8–2.10 for the corrected passive contract.
+
+### Story 2.1: SQLite Schema for Timeseries Samples
+
+As a **builder**,
+I want the `timeseries_samples` table created with OW-aligned schema and indexes,
+So that step buckets can be persisted correctly for charts and export later.
+
+**Acceptance Criteria:**
+
+**Given** Story 1.4 migration v1 exists
+**When** migration v2 runs
+**Then** `timeseries_samples` table matches PRD §4.3.1 columns including `zone_offset` (FR7)
+**And** indexes `idx_timeseries_query` and UNIQUE `idx_bucket_identity` are created
+
+**Given** the database connection opens in any isolate
+**When** initialized
+**Then** `PRAGMA journal_mode=WAL` and `PRAGMA foreign_keys=ON` execute explicitly
+
+**Given** step samples will use 5-minute buckets
+**When** schema constraints are inspected
+**Then** `value >= 0` and integer check for `type=steps` are enforced (FR8)
+
+**Given** fresh install and upgrade from v1
+**When** migrations run in test
+**Then** both paths succeed without data loss (FR10)
+
+---
+
+### Story 2.2: Data Ingestion Abstraction and Step Normalizer
+
+As a **builder**,
+I want a pluggable ingestion pipeline with step normalization,
+So that phone (and future ADP) sources can feed buckets without duplicating delta logic.
+
+**Acceptance Criteria:**
+
+**Given** `DataIngestionSource` interface exists
+**When** `PhonePedometerSource` and no-op `AdpBleSource` stub are registered in `AppDependencies`
+**Then** both implement the interface and stub returns no data (FR1, FR3)
+
+**Given** cumulative pedometer readings including a simulated counter reset
+**When** `StepNormalizer` processes the stream
+**Then** correct non-negative bucket increments are produced without corrupted totals (FR2)
+**And** unit test covers at least one reset/reboot scenario
+
+**Given** normalized bucket output
+**When** persisted later by BackgroundCollector
+**Then** samples include `type=steps`, `unit=count`, `provider=internal_phone`, `device_id=smartphone`
+
+---
+
+### Story 2.3: Step Repository and Time Semantics
+
+As a **user**,
+I want today's step total computed correctly across timezone boundaries,
+So that my daily goal reflects my local calendar day even when traveling.
+
+**Acceptance Criteria:**
+
+**Given** `TimeProvider` is injected (no raw `DateTime.now()` in repository/normalizer)
+**When** samples are written and read
+**Then** timestamps are ISO 8601 UTC with immutable per-row `zone_offset` (NFR9)
+
+**Given** samples with different stored `zone_offset` values
+**When** `getTodaySteps()` is called
+**Then** `LocalDayCalculator` groups by each row's stored offset — not device current timezone
+**And** `local_day` is never computed via SQL `date(start_time, zone_offset)`
+
+**Given** ingestion bucket upsert
+**When** `BackgroundCollector` calls `StepRepository.upsertIngestionBucket()`
+**Then** upsert uses bucket identity UNIQUE constraint — only ingestion path may call this method
+
+---
+
+### Story 2.4: Background Collector and Android WorkManager
+
+As a **user**,
+I want steps to accumulate while the app is closed on Android,
+So that I get value without opening the app constantly.
+
+**Acceptance Criteria:**
+
+**Given** a physical Android device (reference platform)
+**When** WorkManager callback runs with `@pragma('vm:entry-point')` and `WidgetsFlutterBinding.ensureInitialized()`
+**Then** a test bucket is written and readable by UI after resume (WorkManager spike)
+
+**Given** activity permission granted and app backgrounded or removed from recents (not force-stopped from Settings)
+**When** user walks ≥500 steps over ≥30 minutes without opening the app on Android beta
+**Then** step count increases within 15 minutes (one WorkManager cycle) OR on next app open (FR4 primary)
+
+**Given** user did not open the app since prior evening
+**When** first open of the local day after walking
+**Then** Today shows today's steps > 0 when phone sensor recorded steps (FR4 secondary — daily goal morning check)
+
+**Given** app was force-stopped from system Settings
+**When** user reopens after walking
+**Then** foreground backfill eventually reflects steps — documented platform limit, not Story 2.4 failure
+
+**Given** Android 14+ manifest
+**When** inspected
+**Then** `FOREGROUND_SERVICE_HEALTH` is declared correctly — not `dataSync` misuse (FR6)
+
+**Given** WorkManager isolate and UI isolate
+**When** both access SQLite
+**Then** each opens its own connection via isolate-safe factory with WAL
+
+**Given** iOS build
+**When** background collection runs
+**Then** backfill-on-foreground model is implemented — no false promise of Android-parity 5-min cadence (FR4)
+
+---
+
+### Story 2.5: Today Dashboard with Goal Ring
+
+As a **user**,
+I want to see today's steps versus my daily goal in a clear ring dashboard,
+So that I can check progress at a glance.
+
+**Acceptance Criteria:**
+
+**Given** step samples exist for today
+**When** the Today tab is opened
+**Then** `GoalRing` shows proportional arc, center count (Darker Grotesque), "steps today" and "goal N" labels (FR14, UX-DR5)
+**And** `SourceChip` displays "Phone sensor" (UX-DR7)
+
+**Given** steps exceed the daily goal
+**When** the ring renders
+**Then** arc caps at 100% and center count shows actual total (overflow via number, not second lap)
+
+**Given** no permission or no samples yet
+**When** Today loads
+**Then** empty/loading/no-permission states render per UX spec (dashed track, `--`, skeleton)
+
+**Given** stale threshold exceeded (12h Android / 4h iOS)
+**When** Today is visible
+**Then** compact `StatusBanner` stale line appears linking user to My Data (UX-DR8 compact)
+
+---
+
+### Story 2.6: Goal Celebration Animation
+
+As a **user**,
+I want a calm once-per-day celebration when I reach my step goal,
+So that I feel acknowledged without gamified pressure.
+
+**Acceptance Criteria:**
+
+**Given** today's steps first cross `daily_step_goal` for the local calendar day
+**When** the user views Today (or deferred from background crossing)
+**Then** `GoalCelebration` plays once: ring pulse, glow, shimmer per UX §2.3.1 (FR15, UX-DR6)
+**And** `celebration_shown_date` preference prevents repeat until next local day
+
+**Given** reduce-motion OS setting enabled
+**When** celebration triggers
+**Then** static full ring + micro-copy fade only (no scale/glow animation)
+
+**Given** goal already met earlier today
+**When** user reopens Today
+**Then** no celebration replay and no coach language toast
+
+---
+
+### Story 2.7: Daily Goal Local Notification
+
+As a **user**,
+I want at most one local notification when my daily step goal is reached,
+So that I can celebrate offline without notification spam.
+
+**Acceptance Criteria:**
+
+**Given** notification permission granted during onboarding
+**When** `BackgroundCollector` detects cumulative daily steps ≥ goal from SQLite aggregation
+**Then** at most one local notification fires per local calendar day (FR25)
+**And** evaluation uses `LocalDayCalculator` daily sum — not a single bucket
+
+**Given** notification permission denied
+**When** goal is reached
+**Then** no notification is attempted and app functions normally
+
+**Given** goal notification fired
+**When** user opens app later
+**Then** no duplicate notification on subsequent opens the same day
+
+---
+
+### Story 2.8: Android FGS Health Passive Pipeline
+
+As a **user**,
+I want steps to accumulate while the app is closed on Android without keeping it open,
+So that my daily goal progresses passively.
+
+**Acceptance Criteria:**
+
+**Given** Android 14+ with activity permission granted
+**When** app is backgrounded or removed from recents (not force-stopped)
+**Then** a foreground service with type `health` runs `BackgroundCollector` on a periodic cadence while OS permits (FR6, architecture D-04)
+
+**Given** FGS is active
+**When** user walks ≥500 steps over ≥30 min without opening the app
+**Then** buckets are written to SQLite and Today reflects increase on next open or within one collection cycle (FR4 primary)
+
+**Given** app returns to foreground
+**When** FGS and `LiveStepMonitor` would both read the pedometer
+**Then** single-writer rule holds — FGS pauses or delegates; `LiveStepMonitor` remains sole stream owner in UI isolate when process alive
+
+**Given** user force-stops from Settings
+**When** app reopens
+**Then** foreground backfill recovers steps — documented limit, not Story failure
+
+**Given** release manifest
+**When** inspected
+**Then** `FOREGROUND_SERVICE_HEALTH` declared; persistent notification copy is honest (not disguised as unrelated sync)
+
+---
+
+### Story 2.9: Today Display Truth Model & Live Overlay
+
+As a **user**,
+I want Today to show my real progress without confusing backward jumps,
+So that I trust the ring whether the app was open or closed.
+
+**Acceptance Criteria:**
+
+**Given** documented display contract
+**When** reviewed in architecture / story notes
+**Then** persisted SQLite daily sum = **source of truth**; `LiveStepMonitor` = **real-time overlay bonus** when process alive; UI never shows a lower step count within the same local day except at day rollover
+
+**Given** cold start with permission granted
+**When** Today loads
+**Then** sequence is: foreground backfill → reconcile from DB → attach live monitor → sync live total (no stale DB-only refresh overwriting live)
+
+**Given** app resume (process alive)
+**When** user returns from background
+**Then** live stream recovers and steps update within 5s without force-stop (field test B)
+
+**Given** uncommitted lifecycle hardening work
+**When** Story 2.9 is implemented
+**Then** keep: monotonic merge, `syncSteps`, cold-start ordering, `_persistOnPause` best-effort
+**And** revert: threshold persist (`onPersistRequested` / +5 steps debounce) — caused regression 1273→1254
+
+**Given** unit and widget tests
+**When** `flutter test` runs
+**Then** monotonic display, cold-start order, and resume sync are covered
+
+---
+
+### Story 2.10: WorkManager Orchestration & OEM Deferral Hardening
+
+As a **builder**,
+I want WorkManager and background health checks to be reliable on reference Android devices,
+So that passive collection survives OEM battery policies.
+
+**Acceptance Criteria:**
+
+**Given** `BackgroundHealthCapabilityEvaluator` (new, per architecture D-23)
+**When** instantiated from `AppDependencies`
+**Then** it reports: activity permission, notification permission, battery optimization exemption status, FGS declaration presence — no scattered permission logic in screens
+
+**Given** WorkManager periodic task registered
+**When** FGS is unavailable (permission revoked, OS killed service)
+**Then** WM still runs reconciliation as fallback orchestrator (architecture: WM ≠ realtime guarantee)
+
+**Given** Samsung/Xiaomi/Huawei-style battery deferral detected
+**When** evaluator runs
+**Then** capability flag is exposed for future My Data UI (Epic 4.2) — **no user-facing copy in this story**
+
+**Given** physical Android device
+**When** WM callback executes with `@pragma('vm:entry-point')`
+**Then** isolate-safe DB write succeeds; foreground backfill remains mandatory fallback if isolate init fails
+
+---
+
+## Epic 3: History & Trends
+
+The user reviews 7-day and 30-day step trends with fast charts and a simple weekly comparison indicator.
+
+### Story 3.1: Dev Data Inject and Lifecycle Simulator
+
+As a **builder**,
+I want to inject 90 days of synthetic step data and simulate lifecycle aging,
+So that I can benchmark charts and validate storage behavior without walking for months.
+
+**Acceptance Criteria:**
+
+**Given** `lib/dev/` tools gated by `kDebugMode`
+**When** inject command runs
+**Then** 90 days of valid `timeseries_samples` rows are written inside a transaction (FR28)
+**And** canonical sample shape and UUID ids are respected
+
+**Given** injected data spans multiple resolution tiers after lifecycle simulation
+**When** downsampling simulator runs
+**Then** row counts drop predictably per FR11 tiers (dev-only preview of Epic 4 service)
+
+**Given** inject + simulate completes
+**When** documented in dev README or script comment
+**Then** steps are reproducible for CI/manual benchmark (FR28)
+
+---
+
+### Story 3.2: History Chart Data Aggregation
+
+As a **user**,
+I want history queries to return pre-aggregated daily totals,
+So that charts load instantly even with months of data.
+
+**Acceptance Criteria:**
+
+**Given** 90 days of injected step samples
+**When** `StepRepository.getChartDailyAggregates(days: 7)` and `(days: 30)` are called
+**Then** `List<ChartDayAggregate>` returns at most ~7 or ~31 items (NFR1, architecture D-21)
+**And** UI/widgets perform zero business aggregation
+
+**Given** samples with mixed `zone_offset` (travel scenario test)
+**When** daily totals are computed
+**Then** grouping uses each row's stored offset via `LocalDayCalculator`
+
+**Given** repository read methods
+**When** called from `HistoryCubit`
+**Then** no direct SQL from presentation layer
+
+---
+
+### Story 3.3: History Screen with Bar Chart and Trend
+
+As a **user**,
+I want to toggle 7-day and 30-day bar charts with a weekly trend indicator,
+So that I can understand my movement patterns over time.
+
+**Acceptance Criteria:**
+
+**Given** the History tab is selected
+**When** data exists
+**Then** `PeriodToggle` switches 7d/30d views and `StepBarChart` renders accent-muted bars with dashed goal line (FR16, UX-DR9)
+**And** chart rebind on toggle has no loading animation (KPI-01 UX)
+
+**Given** sufficient history exists
+**When** the screen loads
+**Then** `TrendChip` shows informational weekly comparison vs prior week — no coach copy (FR17, UX-DR10)
+
+**Given** no history yet
+**When** History opens
+**Then** empty state copy displays: "No history yet. Walk a bit — data stays on this device."
+
+**Given** chart semantics
+**When** inspected with screen reader
+**Then** baseline Semantics labels apply per UX §4.3 (UX-DR19 partial)
+
+---
+
+### Story 3.4: Chart Performance Benchmark (KPI-01)
+
+As a **builder**,
+I want a reproducible benchmark proving chart render <100ms on 90-day data,
+So that History meets NFR1 before beta.
+
+**Acceptance Criteria:**
+
+**Given** 90 days of injected data loaded
+**When** benchmark harness toggles 7d↔30d on mid-range Android reference device
+**Then** query + render p95 completes in <100ms (FR16, FR28, NFR1, SM-1)
+
+**Given** benchmark script in `lib/dev/`
+**When** run manually or documented for CI
+**Then** output logs p50/p95 timings for regression tracking
+
+**Given** KPI-01 pass
+**When** recorded
+**Then** result is traceable in beta checklist prep (FR29 precursor)
+
+---
+
+## Epic 4: Data Sovereignty & Lifecycle (My Data)
+
+The user controls their health data — footprint, CSV export/import, purge, background status, goal editing, theme preference, and optional local display name (no account). Primary product differentiator.
+
+### Story 4.1: Data Lifecycle Service (Downsampling and Maintenance)
+
+As a **user**,
+I want old step data compressed automatically,
+So that storage stays bounded without manual cleanup.
+
+**Acceptance Criteria:**
+
+**Given** samples older than 30/365 day thresholds
+**When** `DataLifecycleService` runs inside repository-owned transactions
+**Then** downsampling applies FR11 tiers destructively and updates `resolution` field (FR11)
+**And** finer rows are deleted after compaction — irreversible
+
+**Given** maintenance is due
+**When** Android weekly job or iOS foreground/resume opportunistic run executes
+**Then** `PRAGMA optimize` and `VACUUM` run off UI thread (FR12)
+**And** Phase 0 does not require reliable iOS background VACUUM for acceptance
+
+**Given** 90-day inject test with repeated lifecycle cycles
+**When** complete
+**Then** DB file size does not grow unbounded (FR12, NFR7)
+
+---
+
+### Story 4.2: My Data Footprint and Background Status
+
+As a **user**,
+I want to see storage footprint and honest background collection status,
+So that I can trust the app is working and understand storage use.
+
+**Acceptance Criteria:**
+
+**Given** samples exist in SQLite
+**When** My Data footprint section loads
+**Then** sample count, approximate DB size, and "last optimized" relative time display (FR13, UX-DR11)
+**And** values update after lifecycle, import, export, purge operations
+
+**Given** background collection state
+**When** My Data renders
+**Then** `BackgroundStatusCard` shows healthy/stale/ios_backfill/permission_denied variants (FR5, UX-DR12)
+**And** full stale banner appears here; Today shows compact stale line (UX-DR8)
+
+**Given** stale thresholds
+**When** last sample exceeds 12h (Android) or 4h (iOS)
+**Then** stale copy explains platform constraints without blaming user
+
+---
+
+### Story 4.3: CSV Export
+
+As a **user**,
+I want to export my step history to CSV,
+So that I own a portable copy of my data.
+
+**Acceptance Criteria:**
+
+**Given** samples in `timeseries_samples`
+**When** user taps Export CSV on My Data
+**Then** OW-aligned CSV including `id` column is written to cache/temp file first (FR19, UX-DR14)
+**And** `share_plus` opens OS share sheet on the local file path
+
+**Given** export completes
+**When** on device without network
+**Then** export succeeds (SM-3 / NFR3)
+
+**Given** export button state
+**When** in progress
+**Then** spinner shows and duplicate tap is disabled; success snackbar shows for 3s
+
+---
+
+### Story 4.4: CSV Import
+
+As a **user**,
+I want to import a previously exported ASTRA CSV,
+So that I can restore data after reinstall or device change.
+
+**Acceptance Criteria:**
+
+**Given** a valid ASTRA export CSV
+**When** user selects file via picker
+**Then** rows import inside a single transaction with `INSERT OR IGNORE` on UUID `id` (FR30, D-16)
+**And** duplicate bucket identity increments skip count — not silent corruption
+
+**Given** malformed headers or rows
+**When** import validates
+**Then** entire transaction aborts with user-visible `StatusBanner` error (FR30)
+
+**Given** existing data in DB
+**When** import starts
+**Then** `ConfirmDialog` asks to replace with row count preview (UX-DR15)
+
+**Given** successful import
+**When** complete
+**Then** Today and History cubits refresh and footprint updates
+
+---
+
+### Story 4.5: Full Data Purge with Export Nudge
+
+As a **user**,
+I want to delete all local health data with a safety prompt,
+So that I can wipe my history while keeping my preferences.
+
+**Acceptance Criteria:**
+
+**Given** user taps "Delete all local data"
+**When** `ConfirmDialog` appears
+**Then** copy mentions export option with Export first / Delete anyway / Cancel (FR21, UX-DR15)
+**And** Export first triggers export flow without closing dialog
+
+**Given** user confirms delete
+**When** purge executes in transaction
+**Then** all `timeseries_samples` and derived collection state are removed (FR20)
+**And** `daily_step_goal`, `theme_mode`, `display_name` (if set), onboarding flag, permission choices persist (D-11)
+
+**Given** purge completes
+**When** user views Today/History/My Data
+**Then** empty states show 0 samples / ~0 KB; goal row unchanged; Today greeting unchanged if display name was set; no re-onboarding
+
+---
+
+### Story 4.6: Daily Goal Editor on My Data
+
+As a **user**,
+I want to change my daily step goal from My Data,
+So that I can adjust my target without repeating onboarding.
+
+**Acceptance Criteria:**
+
+**Given** My Data goal row
+**When** user taps it
+**Then** `GoalEditorSheet` opens with numeric field and 1,000–100,000 validation (FR23, UX-DR13)
+
+**Given** invalid input
+**When** displayed
+**Then** Save is disabled with inline helper/error text
+
+**Given** valid save
+**When** sheet closes
+**Then** Today ring recalculates percentage against new goal immediately
+
+---
+
+### Story 4.7: Theme Selector and My Data Integration
+
+As a **user**,
+I want to choose System, Light, or Dark appearance from My Data,
+So that the app looks the way I prefer regardless of OS settings.
+
+**Acceptance Criteria:**
+
+**Given** My Data Appearance section
+**When** user selects System, Light, or Dark via `ThemeSelector` segmented control (UX-DR22)
+**Then** `theme_mode` persists and applies immediately app-wide (FR31)
+**And** cold start restores preference without theme flash
+
+**Given** `theme_mode` is `system`
+**When** OS theme changes
+**Then** app UI updates without restart
+
+**Given** complete My Data screen
+**When** scrolled
+**Then** section order is: Background → Footprint → Goal → Appearance → Data actions (UX-DR11)
+**And** copy/tone follows UX §4.6 guardrails (UX-DR20)
+
+**Given** theme selector is functional
+**When** Epic 5 design polish runs
+**Then** contrast and visual cohesion are verified per UX §4.1 and V-1–V-13 (NFR5, UX-DR21) — not blocking Story 4.7 delivery
+
+---
+
+### Story 4.8: Local Display Name and Today Greeting
+
+As a **user**,
+I want to optionally tell the app my first name and see a calm greeting on Today,
+So that the app feels personal without creating an account or sending data anywhere.
+
+**Acceptance Criteria:**
+
+**Given** first launch onboarding
+**When** user completes trust, permissions, and goal steps
+**Then** an optional display-name step asks what to call them (English copy only in Phase 0)
+**And** user can skip without blocking completion
+**And** trimmed non-empty input persists to `user_preferences.display_name` via `UserPreferencesRepository`
+
+**Given** no display name stored
+**When** Today loads
+**Then** no greeting line is shown (ring layout unchanged)
+
+**Given** a display name is stored
+**When** Today loads
+**Then** a single caption line above the goal ring shows **"Hello, {name}"** (Figtree `type.caption`, `text.secondary`)
+**And** step count is **not** duplicated under the greeting (ring remains sole step total)
+
+**Given** My Data is available (this story may ship before full My Data sections)
+**When** user edits display name from My Data
+**Then** value persists immediately and Today greeting updates on next refresh without restart
+
+**Given** full health-data purge (Story 4.5)
+**When** purge completes
+**Then** `display_name` is retained like `daily_step_goal` and `theme_mode`
+
+**Given** copy and tone
+**When** greeting is shown
+**Then** voice stays calm and factual per UX §4.6 — no coach language, exclamation marks, or streak messaging
+
+**Out of scope for 4.8:** i18n / `flutter_localizations` (deferred); personalized celebration or notifications; step count subtitle under greeting; profile initials avatar → Story 4.9.
+
+---
+
+### Story 4.9: Profile Initials on My Data (Settings Entry)
+
+As a **user**,
+I want a simple profile affordance on My Data using my initials,
+So that I have a recognizable entry point for preferences even without an account.
+
+**Acceptance Criteria:**
+
+**Given** a display name is stored
+**When** My Data profile header renders
+**Then** a circular initials badge shows one or two letters derived from the trimmed name (uppercase)
+**And** tap opens or scrolls to profile/preferences rows (display name, goal, appearance) per integrated My Data layout
+
+**Given** no display name
+**When** My Data profile header renders
+**Then** a neutral placeholder glyph is shown (no fake initials)
+**And** tap still reaches display-name edit affordance
+
+**Given** display name changes
+**When** save completes
+**Then** initials update immediately without app restart
+
+**Out of scope for 4.9:** photo upload, account linking, cloud avatar, i18n.
+
+---
+
+## Epic 5: Design Polish & Visual Cohesion
+
+After Epics 1–4 deliver functional surfaces, a dedicated pass revisits tokens, spacing, on-device visual quality, and Android build plugin hygiene before OSS beta hardening.
+
+**Execution order (user-confirmed 2026-06-02):** Story **5.5** (Built-in Kotlin / KGP) **first**.
+
+**Execution order (user-confirmed 2026-06-04 — story IDs match sequence):**
+
+| Step | Story | Focus |
+|------|-------|--------|
+| 0 | **5.5** | Built-in Kotlin / KGP *(done)* |
+| 1 | **5.6** | `phosphor_flutter` install |
+| 2 | **5.7** | Four-tab floating navbar (TODAY · TRENDS · DATA · PROFIL) |
+| 3 | **5.8** | Six accent preset theme tokens (+ contrast) |
+| 4 | **5.9** | Today Figma layout; **no** `Hello, {name}`; stats row **visible, empty** until Epic 6 |
+| 5 | **5.10** | Data screen (Background · Footprint · Your data); tab **DATA**; screen title **My Data** |
+| 6 | **5.11** | Profil screen; section **Informations**; Appearance → tokens + bi-tone preset circles |
+| 7 | **5.12** | Cross-screen cohesion audit |
+| — | **5.13** | Goal overflow polish — backlog after 5.12 (optional) |
+
+**Renumbering (2026-06-04):** IDs aligned to execution order. Legacy map: old 5.9→5.6, 5.2→5.7, 5.1→5.8, 5.6→5.9, 5.7→5.10, 5.8→5.11, 5.3→5.12, 5.4→5.13. Epic map: old 7→6 (metrics), old 6→7 (OSS); stories 7.1→6.1, 6.x→7.x.
+
+Then **Epic 6** (derived metrics). Then **Epic 7** (OSS beta). Trends tab reuses Epic 3 chart screen (label **Trends**, same content).
 
 ### Story 5.5: Built-in Kotlin Plugin Migration (KGP)
 
@@ -1059,11 +1839,11 @@ So that `flutter build` stays compatible with Flutter Built-in Kotlin and we do 
 **Then** both succeed without KGP incompatibility warnings
 **And** existing Android tests (`test/android/`, manifest tests) still pass
 
-**Implementation note:** Story 6.2 retains release-manifest and privacy audit scope; KGP resolution is **pulled forward** to Epic 5 per user decision (2026-06-02) — do not defer to beta hardening.
+**Implementation note:** Story 7.2 retains release-manifest and privacy audit scope; KGP resolution is **pulled forward** to Epic 5 per user decision (2026-06-02) — do not defer to beta hardening.
 
 ---
 
-### Story 5.9: Phosphor Icons Dependency
+### Story 5.6: Phosphor Icons Dependency
 
 As a **builder**,
 I want Phosphor icons available app-wide,
@@ -1079,11 +1859,11 @@ So that navigation and screens match the Figma mockups.
 **When** `flutter analyze` runs
 **Then** no new analyzer errors
 
-**Prerequisite for:** Story 5.2 (tab icons).
+**Prerequisite for:** Story 5.7 (tab icons).
 
 ---
 
-### Story 5.2: Four-Tab Floating Navigation Bar
+### Story 5.7: Four-Tab Floating Navigation Bar
 
 As a **user**,
 I want four clearly labeled tabs in a floating pill navigation bar,
@@ -1099,11 +1879,11 @@ So that I can reach Today, Trends, Data, and Profil quickly.
 
 **Given** fourth tab **DATA**
 **When** selected
-**Then** `DataScreen` (sovereignty layout — Story 5.7) is shown
+**Then** `DataScreen` (sovereignty layout — Story 5.10) is shown
 
 **Given** fourth tab **PROFIL**
 **When** selected
-**Then** `ProfileScreen` placeholder or implementation (Story 5.8) is shown
+**Then** `ProfileScreen` placeholder or implementation (Story 5.11) is shown
 
 **Given** tab **TRENDS**
 **When** selected
@@ -1113,11 +1893,11 @@ So that I can reach Today, Trends, Data, and Profil quickly.
 **When** switching tabs
 **Then** cross-fade or instant swap preserved (UX-DR18)
 
-**Depends on:** Story 5.9.
+**Depends on:** Story 5.6.
 
 ---
 
-### Story 5.1: Accent Preset Theme Tokens
+### Story 5.8: Accent Preset Theme Tokens
 
 As a **user**,
 I want six accent color presets that work in light and dark themes,
@@ -1147,11 +1927,11 @@ So that Appearance on Profil can theme the whole app consistently.
 **When** `flutter analyze` and tests run
 **Then** no regressions; UX spec token table updated if hex values change
 
-**Depends on:** Story 5.2 (shell to validate nav accent). **Prerequisite for:** Stories 5.6, 5.7, 5.8.
+**Depends on:** Story 5.7 (shell to validate nav accent). **Prerequisite for:** Stories 5.9, 5.10, 5.11.
 
 ---
 
-### Story 5.6: Today Screen — Figma Layout (No Greeting)
+### Story 5.9: Today Screen — Figma Layout (No Greeting)
 
 As a **user**,
 I want Today’s activity at a glance with goal, week progress, and reserved stats,
@@ -1166,7 +1946,7 @@ So that the home screen matches the redesigned layout.
 **And** **This week** row: seven day pills with goal-met / missed / today / future states
 
 **Given** stats row (kcal, distance, walking time)
-**When** Epic 7 is not complete
+**When** Epic 6 is not complete
 **Then** three columns are **visible** with icons and labels but values show empty placeholder (`—` or equivalent) — not hidden
 
 **Given** Set goal tapped
@@ -1177,11 +1957,11 @@ So that the home screen matches the redesigned layout.
 **When** Today visible
 **Then** compact stale banner may link user to Data tab (UX-DR8)
 
-**Depends on:** Stories 5.1, 5.2.
+**Depends on:** Stories 5.8, 5.7.
 
 ---
 
-### Story 5.7: Data Screen — Sovereignty Layout
+### Story 5.10: Data Screen — Sovereignty Layout
 
 As a **user**,
 I want data sovereignty controls grouped on the Data tab,
@@ -1202,11 +1982,11 @@ So that background health, footprint, and CSV actions are easy to find.
 **When** exercised
 **Then** behavior unchanged from Epic 4 (FR-19–21, FR-30)
 
-**Depends on:** Stories 5.1, 5.2.
+**Depends on:** Stories 5.8, 5.7.
 
 ---
 
-### Story 5.8: Profil Screen — Informations & Appearance
+### Story 5.11: Profil Screen — Informations & Appearance
 
 As a **user**,
 I want profile and appearance settings on the Profil tab,
@@ -1217,7 +1997,12 @@ So that personal info and theming are separate from raw data controls.
 **Given** **PROFIL** tab selected
 **When** screen renders
 **Then** screen title **My Profile** (or consistent copy key) and section **Informations** (not "Profile" as section title — user-confirmed 2026-06-04)
-**And** Informations rows: display name, age, height, weight — label + value + chevron; edits persist locally
+**And** Informations rows: **display name**, **height** (cm), **weight** (kg) — label + value + chevron; edits persist locally
+**And** **no** age or sex/gender fields (2026-06-04)
+
+**Given** migration runs (e.g. v3 or next `user_preferences` migration)
+**When** Profil fields are stored
+**Then** keys `height_cm` and `weight_kg` persist via `UserPreferencesRepository` (nullable; validated ranges e.g. height 100–250 cm, weight 30–300 kg)
 
 **Given** Notifications card
 **When** toggle changes
@@ -1226,18 +2011,18 @@ So that personal info and theming are separate from raw data controls.
 **Given** Appearance card
 **When** user interacts
 **Then** (1) **System / Light / Dark** segmented control persists `theme_mode` (migrate Story 4.7)
-**And** (2) row of **six bi-tone circles** per Sprint Change Proposal FR-32 — base half reflects effective light/dark, top-right half = preset color; selection wired to **Story 5.1** tokens
+**And** (2) row of **six bi-tone circles** per Sprint Change Proposal FR-32 — base half reflects effective light/dark, top-right half = preset color; selection wired to **Story 5.8** tokens
 **And** changing preset or mode updates app chrome without restart
 
 **Given** purge all health data on Data tab
 **When** completed
 **Then** Informations + appearance prefs survive per FR-20 amended list
 
-**Depends on:** Story 5.1 (tokens). **Completes:** migration of 4.7, 4.8 (name only on Profil), 4.9 affordances as applicable.
+**Depends on:** Story 5.8 (tokens). **Completes:** migration of 4.7, 4.8 (name only on Profil), 4.9 affordances as applicable.
 
 ---
 
-### Story 5.3: Cross-Screen Visual Cohesion Audit
+### Story 5.12: Cross-Screen Visual Cohesion Audit
 
 As a **builder**,
 I want every surface verified against the UX visual checklist on device,
@@ -1253,15 +2038,15 @@ So that the app feels cohesive before OSS beta release.
 **When** reviewed in system, light, dark, and each **accent preset**
 **Then** typography uses bundled Figtree + Darker Grotesque only (V-3); no layout jumps on Today sync (V-5)
 
-**Given** Today (Story 5.6)
+**Given** Today (Story 5.9)
 **When** user opens Today
 **Then** **no** `Hello, {name}` greeting is shown; ring remains sole step-count hero
 
-**Given** Data tab (Story 5.7)
+**Given** Data tab (Story 5.10)
 **When** screen title is read
 **Then** body title is **My Data**; tab label remains short **DATA**
 
-**Given** Profil (Story 5.8)
+**Given** Profil (Story 5.11)
 **When** Informations section is read
 **Then** section title is **Informations** (not "Profile")
 
@@ -1279,7 +2064,7 @@ So that the app feels cohesive before OSS beta release.
 
 ---
 
-### Story 5.4: Goal Overflow Animation Polish
+### Story 5.13: Goal Overflow Animation Polish
 
 As a **user**,
 I want a calm, satisfying visual when my steps exceed the daily goal,
@@ -1306,36 +2091,48 @@ So that continued walking feels acknowledged without gamified pressure.
 
 ---
 
-## Epic 7: Derived Activity Metrics
+## Epic 6: Derived Activity Metrics
 
-The user sees real kcal, distance, and walking-time values on Today’s stats row.
+The user sees estimated kcal, distance, and walking-time on Today’s stats row (General Wellness estimates — FR-33).
 
-### Story 7.1: Derived Activity Metrics (Spec + Implementation)
+### Story 6.1: Derived Activity Metrics
 
 As a **user**,
-I want kcal, distance, and walking duration derived from my steps and profile,
+I want distance, calories, and walking time estimated from my steps and optional height/weight,
 So that Today’s stats row shows meaningful numbers instead of placeholders.
 
 **Acceptance Criteria:**
 
-**Given** Stories 5.6 and 5.8 are done
-**When** Epic 7 is scheduled
-**Then** formulas and inputs (height, weight, age, step count, optional pace assumptions) are documented and reviewed with Baptiste before implementation
+**Given** Story **5.11** shipped (`height_cm`, `weight_kg` in `user_preferences`)
+**When** `DerivedActivityMetrics.compute()` runs
+**Then** **distance_km** = `displaySteps × stride_m / 1000` where `stride_m = (height_cm/100)×0.414` if height set, else **0.76**
+**And** **walking_duration** = sum of bucket durations for today's local day where `type=steps` and `value > 0`
+**And** **kcal** = `3.5 × (weight_kg ?? 70) × (walking_seconds / 3600)` (MET moderate walking)
 
-**Given** profile biometrics and today step total exist
-**When** Today stats row renders
-**Then** kcal, km, and duration fields show computed values (replacing `—` placeholders)
-**And** values update with live step overlay where applicable
+**Given** `TodayCubit` displays stats
+**When** live step overlay increases `displaySteps` above SQLite-only total
+**Then** **distance** and displayed step count stay consistent (scale distance with live steps)
+**And** **kcal** and **duration** reflect latest persisted buckets (acceptable lag until ingest)
 
-**Status:** backlog — **do not start** until Epic 5 Story 5.3 passes.
+**Given** no height/weight in preferences
+**When** metrics compute
+**Then** defaults **0.76 m** stride and **70 kg** apply without error
+
+**Given** unit tests in `test/core/metrics/derived_activity_metrics_test.dart`
+**When** run
+**Then** cover defaults, custom profile, zero buckets, single active bucket, and live-step scaling rule
+
+**Depends on:** Stories 5.9, 5.11, 5.12 (cohesion sign-off). **Do not start** until 5.12 passes.
+
+**Implementation notes:** `lib/core/metrics/derived_activity_metrics.dart`; `StepRepository.getTodayActiveBuckets()` (or equivalent); wire `TodayCubit` / `TodayState`. No age/gender fields.
 
 ---
 
-## Epic 6: OSS Credibility & Beta Readiness
+## Epic 7: OSS Credibility & Beta Readiness
 
 The repo is beta-ready and open-source credible — documentation, privacy audit, release hardening, and acceptance checklist.
 
-### Story 6.1: Open Source License and Documentation Bundle
+### Story 7.1: Open Source License and Documentation Bundle
 
 As a **contributor**,
 I want clear OSS licensing and technical documentation,
@@ -1358,7 +2155,7 @@ So that I can understand, audit, and extend the project confidently.
 
 ---
 
-### Story 6.2: Release Manifest Hardening and Privacy Audit
+### Story 7.2: Release Manifest Hardening and Privacy Audit
 
 As a **privacy pragmatist**,
 I want the release build provably free of network access in the health pipeline,
@@ -1393,7 +2190,7 @@ So that I can verify "proof over promises" on a sideload APK.
 
 ---
 
-### Story 6.3: Beta Acceptance Checklist
+### Story 7.3: Beta Acceptance Checklist
 
 As a **builder**,
 I want a comprehensive beta checklist tracing to FRs and visual polish items,

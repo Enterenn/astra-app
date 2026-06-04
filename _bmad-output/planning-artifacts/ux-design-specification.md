@@ -28,7 +28,9 @@ fastPassBlocks:
 **Scope:** Phase 0 Sandbox — Flutter Hub App (Today / Trends / Data / Profil + onboarding)
 **Mode:** Fast pass (PRD-heavy inputs; skips full BMad 14-step discovery)
 
-**Amendment (2026-06-04, approved):** Four-tab floating pill nav (Phosphor icons); Figma layouts for Today, Data, Profil, Trends; six accent presets with **bi-tone circles** on Profil → Appearance; Data tab label **DATA**, screen title **My Data**; Profil section **Informations**; Today stats row visible but empty until Epic 7. Ref: `sprint-change-proposal-2026-06-04.md` + workspace `assets/` mockups.
+**Amendment (2026-06-04, approved):** Four-tab floating pill nav (Phosphor icons); Figma layouts for Today, Data, Profil, Trends; six accent presets with **bi-tone circles** on Profil → Appearance; Data tab label **DATA**, screen title **My Data**; Profil section **Informations**; Today stats row visible but empty until Epic 6. Ref: `sprint-change-proposal-2026-06-04.md` + workspace `assets/` mockups.
+
+**Amendment (2026-06-04 — Epic 6):** Informations = display name, height, weight only (no age, no gender). Stats formulas: FR-33 (MET × weight × walking time; stride from height).
 
 ---
 
@@ -397,7 +399,7 @@ Modal for destructive or irreversible actions.
 2. Optional `StatusBanner` **compact stale**
 3. Card: **Donut** (`GoalRing`) — center: steps icon, count, `/goal`
 4. **Set goal** pill button below donut
-5. Card: **Activity stats row** — three columns (kcal · km · duration) with Phosphor icons; values `—` until Epic 7
+5. Card: **Activity stats row** — three columns (kcal · km · duration) with Phosphor icons; values `—` until Epic 6; then estimates per FR-33 (not clinical claims)
 6. Card: **This week** — seven vertical day pills (goal-met green dot / missed red / today accent fill / future muted)
 7. Floating tab bar
 
@@ -471,7 +473,7 @@ Single line Figtree `type.caption` `color.text.secondary`: **"Daily goal reached
 ### 2.4 Trends Surface
 
 **FR refs:** FR-16, FR-17 · **UJ:** UJ-3  
-**Tab label:** TRENDS (short). **Screen title:** "History" or "Trends" — TBD in Story 5.3; chart behavior unchanged from pre-redesign.
+**Tab label:** TRENDS (short). **Screen title:** "History" or "Trends" — TBD in Story 5.12; chart behavior unchanged from pre-redesign.
 
 #### Layout
 
@@ -574,7 +576,8 @@ Footprint KPIs → `0` / `0 KB`. Today ring → empty state. Trends → empty st
 
 1. Screen title **My Profile**
 2. **Informations** — `SectionCard` (section title **Informations**, not "Profile")
-   - Rows: Display name, Age, Height, Weight — label (caption) + value + chevron → edit sheet
+   - Rows: **Display name**, **Height** (cm), **Weight** (kg) — label (caption) + value + chevron → edit sheet
+   - **No** Age or sex/gender row (2026-06-04 — not used for FR-33 estimates)
 3. **Notifications** — toggle "Receive Goal notifications"
 4. **Appearance** — `ThemeSelector` + `AccentPresetSelector` (§2.2)
 

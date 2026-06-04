@@ -163,7 +163,7 @@ The PRD is **mature and implementation-ready** for Phase 0: globally numbered FR
 | FR5, FR11–FR13, FR19–FR21, FR23, FR30–FR31 | Epic 4 |
 | FR9, FR22–FR24 | Epic 1 |
 | FR16–FR17, FR28 | Epic 3 |
-| FR18, FR26–FR27, FR29 | Epic 6 |
+| FR18, FR26–FR27, FR29 | Epic 7 |
 
 **Total FRs in epics map: 31 / 31**
 
@@ -270,12 +270,12 @@ No **technical-milestone-only** epics. Epic 1 Story 1.1 is builder-scaffold fram
 
 #### 🟠 Major Issues
 
-1. **NFR explicit mapping:** FR Coverage Map lists FRs only; NFR1–NFR4, NFR6–NFR9 are in Requirements Inventory but not in the epic map table — coverage is implicit via stories (e.g. 3.4 for NFR-1). Recommend adding an **NFR Coverage Map** row for auditability before Epic 6.
+1. **NFR explicit mapping:** FR Coverage Map lists FRs only; NFR1–NFR4, NFR6–NFR9 are in Requirements Inventory but not in the epic map table — coverage is implicit via stories (e.g. 3.4 for NFR-1). Recommend adding an **NFR Coverage Map** row for auditability before Epic 7.
 
 #### 🟡 Minor Concerns
 
 1. **FR-23 split** across Epic 1 (onboarding) and Epic 4 (My Data editor) — intentional; ensure Story 4.6 AC references FR-23 edit path.
-2. **FR-26 LICENSE** appears in Story 1.1 AC and Epic 6 — duplicate traceability is fine; Epic 6 remains source of truth for OSS gate.
+2. **FR-26 LICENSE** appears in Story 1.1 AC and Epic 7 — duplicate traceability is fine; Epic 7 remains source of truth for OSS gate.
 3. **Epic 5 Story 5.4** (overflow animation) added post-UX-spec — sync UX before implementation.
 
 ---
@@ -286,7 +286,7 @@ No **technical-milestone-only** epics. Epic 1 Story 1.1 is builder-scaffold fram
 
 **READY** — Planning artifacts for Phase 0 are complete, aligned, and fully traceable. Epics 1–3 are **implemented**; Epics 4–6 are ready to execute from a requirements perspective.
 
-This assessment validates **artifact readiness**, not runtime beta readiness (Epic 6 checklist still pending).
+This assessment validates **artifact readiness**, not runtime beta readiness (Epic 7 checklist still pending).
 
 ### Critical Issues Requiring Immediate Action
 
@@ -296,7 +296,7 @@ This assessment validates **artifact readiness**, not runtime beta readiness (Ep
 
 1. **Resume Epic 4** per `sprint-status.yaml` (pause lifted after Epic 2 correction — now complete): start with Story 4.1 Data Lifecycle Service.
 2. **Refresh UX spec** §5.2 and component inventory for Epic 5 reorder + Story 5.4 before design polish sprint.
-3. **Add NFR Coverage Map** to `epics.md` (one table, 9 rows) before Epic 6 beta hardening.
+3. **Add NFR Coverage Map** to `epics.md` (one table, 9 rows) before Epic 7 beta hardening.
 4. **Optional:** Include `sprint-change-proposal-2026-06-02.md` in future readiness runs when validating post–correct-course state.
 
 ### Issue Count Summary

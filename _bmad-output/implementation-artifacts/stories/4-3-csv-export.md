@@ -77,7 +77,7 @@ So that I own a portable copy of my data.
   - [x] **Stop → review brief → wait for Baptiste OK → commit**
 
 - [x] **Sub-task E — Documentation touch (optional, small)** (FR27 precursor)
-  - [x] If timeboxed in same story: add minimal `docs/OPEN_WEARABLES_ALIGNMENT.md` stub listing CSV column mapping (can be 10 lines). Otherwise defer to Epic 6 — **do not block story completion**
+  - [x] If timeboxed in same story: add minimal `docs/OPEN_WEARABLES_ALIGNMENT.md` stub listing CSV column mapping (can be 10 lines). Otherwise defer to Epic 7 — **do not block story completion**
   - [x] **Stop → review brief → wait for Baptiste OK → commit**
 
 ## Dev Notes
@@ -98,7 +98,7 @@ So that I own a portable copy of my data.
 - Export → purge → import **round-trip** integration test → **Story 4.4** (FR-30); export unit tests suffice here
 - Goal / Appearance sections → **Stories 4.6–4.7**
 - Post-export Today/History cubit refresh — **not required** (export does not mutate DB); optional silent Today refresh **not** needed
-- `docs/SERIES_TYPES.md` full bundle → Epic 6 / FR-27
+- `docs/SERIES_TYPES.md` full bundle → Epic 7 / FR-27
 
 Epic 4 sovereignty flows start here: first **portable data exit** path for users.
 

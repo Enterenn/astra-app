@@ -116,7 +116,7 @@ So that I can celebrate offline without notification spam.
 - Re-request notification permission from My Data → not Phase 0
 - Scheduled/reminder notifications, streak nudges, coach copy → never
 - iOS BGAppRefresh goal notification parity → best-effort via foreground backfill + WM N/A on iOS; document honest limitation
-- Epic 6 `flutter_local_notifications` FCM audit → **Story 6.2** (confirm local-only)
+- Epic 7 `flutter_local_notifications` FCM audit → **Story 7.2** (confirm local-only)
 
 Do not over-implement. This story is **one-shot goal notification + dedup** — not a general notification framework.
 
@@ -343,7 +343,7 @@ Composer (Cursor)
 - No manifest/DEPENDENCIES changes (POST_NOTIFICATIONS already present; no extra receivers required).
 - Code review fixes: atomic `tryClaimCelebrationShownDate`, notify-before-callback ordering, goal eval without upserts, cold-start backfill coordination, init timeout.
 
-### Field feedback (2026-06-03) — regression candidate (fix deferred post–Story 6.3)
+### Field feedback (2026-06-03) — regression candidate (fix deferred post–Story 7.3)
 
 **Report:** Background step collection works (steps counted while app closed), but **no local notification** when daily goal is reached. Baptiste: app **must** request notification permission (onboarding); **confirm OS grant** on checklist run — not verified in walk repro notes.
 
@@ -356,7 +356,7 @@ Composer (Cursor)
 - `NotificationService` init in background isolate (timeout → silent no-op per spec-notification-startup-init).
 - Android notification channel / POST_NOTIFICATIONS / OEM battery restrictions.
 
-**Re-open 2.7 or add hotfix story** if device repro confirms permission granted and FR25 still fails. Track in `deferred-work.md` and Story 6.3 beta checklist.
+**Re-open 2.7 or add hotfix story** if device repro confirms permission granted and FR25 still fails. Track in `deferred-work.md` and Story 7.3 beta checklist.
 
 ### File List
 

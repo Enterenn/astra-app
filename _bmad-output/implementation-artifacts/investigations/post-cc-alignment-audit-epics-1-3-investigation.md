@@ -52,7 +52,7 @@ Legend: ✅ aligned | ⚠️ gap (see classification)
 | UX-DR18  | 1-3          | `app_scaffold.dart` cross-fade                   | ✅      | —           | |
 | UX-DR22  | — (Epic 4.7) | `theme_cubit.dart` tokens only; no selector UI | ⚠️      | **CC**      | ThemeSelector deferred Epic 4; tokens + system default in Epic 1 |
 | NFR-2    | 1-1          | —                                                | ⚠️      | **missing** | No release artifact size measurement in repo |
-| NFR-3    | 1-1          | offline by design                                | ✅      | —           | FR-18 manifest test is Epic 6 |
+| NFR-3    | 1-1          | offline by design                                | ✅      | —           | FR-18 manifest test is Epic 7 |
 | NFR-5    | 1-2          | tokens + reduce-motion in widgets                | ⚠️      | **CC**      | WCAG AA verification deferred Epic 5 / beta checklist |
 | NFR-6    | 1-5          | English UI                                       | ✅      | —           | |
 | My Data tab | 1-3       | `my_data_screen.dart` placeholder                | ⚠️      | **CC**      | Epic 4 scope; not a drift |

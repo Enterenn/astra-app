@@ -87,7 +87,7 @@ So that I trust the ring whether the app was open or closed.
 **Out of scope:**
 - Android FGS implementation → **Story 2.8 (done)**
 - `BackgroundHealthCapabilityEvaluator` / WM OEM UI → **Story 2.10**
-- Beyond-goal ring animation polish → **Story 5.4**
+- Beyond-goal ring animation polish → **Story 5.13**
 - My Data stale banner copy changes → **Epic 4.2**
 - Health Connect / iOS BGAppRefresh changes
 - Changing 60s periodic persist interval (Ask First per specs)

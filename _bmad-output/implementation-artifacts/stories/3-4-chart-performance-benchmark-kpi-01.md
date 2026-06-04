@@ -43,7 +43,7 @@ So that History meets NFR1 before beta.
   - [x] Update `lib/dev/README.md`:
     - New section **KPI-01 chart benchmark** with exact commands, expected row counts, reference device note, how to read p50/p95 output.
     - Document **two benchmark profiles:** (A) post-inject 25 920 rows — primary KPI-01 dataset per PRD; (B) post-lifecycle 10 080 rows — optional regression profile (architecture compaction scenario).
-  - [x] Add `_bmad-output/implementation-artifacts/kpi-01-regression-log.md` (or `docs/KPI-01.md` if team prefers docs/) with table: date, device model, Android version, profile, p50, p95, pass/fail, git SHA — **FR-29 precursor** (do not create full `docs/BETA_CHECKLIST.md` — Epic 6.3).
+  - [x] Add `_bmad-output/implementation-artifacts/kpi-01-regression-log.md` (or `docs/KPI-01.md` if team prefers docs/) with table: date, device model, Android version, profile, p50, p95, pass/fail, git SHA — **FR-29 precursor** (do not create full `docs/BETA_CHECKLIST.md` — Epic 7.3).
   - [x] **Stop → review brief → wait for Baptiste OK → commit** (`118fe24`)
 
 - [x] **Sub-task C — Automated smoke test** (AC: #2)
@@ -77,7 +77,7 @@ So that History meets NFR1 before beta.
 
 **Out of scope — do not implement:**
 - Changes to `HistoryScreen` / `PeriodToggle` / `TrendChip` UX unless benchmark proves render bottleneck and minimal fix needed.
-- Full `docs/BETA_CHECKLIST.md` (Story 6.3 / FR-29).
+- Full `docs/BETA_CHECKLIST.md` (Story 7.3 / FR-29).
 - `integration_test/` driver app unless Baptiste explicitly requests (widget test pump is sufficient for render half).
 - My Data import/purge refresh (Epic 4).
 - Replacing `fl_chart` or adding chart animations.
@@ -218,7 +218,7 @@ Add regression log table with columns:
 
 | Date | Device | Android | Profile | Rows | p50 (ms) | p95 (ms) | Pass | Git SHA | Notes |
 
-Reference UX checklist item **V-7** ("History perf — Chart bind <100ms with 90d inject") in log header so Epic 6.3 can copy row into `BETA_CHECKLIST.md` later.
+Reference UX checklist item **V-7** ("History perf — Chart bind <100ms with 90d inject") in log header so Epic 7.3 can copy row into `BETA_CHECKLIST.md` later.
 
 ### Anti-patterns
 

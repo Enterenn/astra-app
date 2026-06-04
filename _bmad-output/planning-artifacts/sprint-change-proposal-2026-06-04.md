@@ -7,8 +7,9 @@
 **Status:** **Approved** (2026-06-04 — Baptiste)  
 **Amendment (2026-06-04):** Profil → Appearance adds **bi-tone accent circles** (see §4.2 / FR-32).
 
-**Implementation order (locked):** 5.9 → 5.2 → 5.1 → 5.6 → 5.7 → 5.8 → 5.3 → Epic 7 → (5.4 optional after).  
-**Copy locks:** tab **TRENDS** / **DATA** / **PROFIL**; Data screen title **My Data**; Profil section **Informations**; Today stats row visible, empty until Epic 7.
+**Implementation order (locked):** 5.6 → 5.7 → 5.8 → 5.9 → 5.10 → 5.11 → 5.12 → Epic 6 → (5.13 optional after).  
+**Renumbering (2026-06-04):** Story IDs aligned to that sequence (5.5 done unchanged). Legacy map in `epics.md`.  
+**Copy locks:** tab **TRENDS** / **DATA** / **PROFIL**; Data screen title **My Data**; Profil section **Informations**; Today stats row visible, empty until Epic 6.
 
 ---
 
@@ -71,15 +72,15 @@ Before starting design-polish epics, Baptiste produced high-fidelity Figma mocku
 |----------|-------------------|
 | **PRD** | §10 three surfaces → four tabs; FR-14 Today layout; FR-31 location (Profile); FR-9 drop Today greeting; add FR-32 (accent preset), FR-33 placeholder (derived metrics epic) |
 | **UX spec** | §2.1 shell (4 tabs, floating nav, Phosphor); §2.3 Today; rename §2.4 Trends; §2.5 Data; new §2.6 Profile; ThemeSelector + **AccentPresetSelector**; attach mockup refs |
-| **epics.md** | Epic list, UX-DR4/11/22, stories 5.x, new Epic 7; scope amendments |
-| **architecture.md** | Navigation (4 destinations); `user_preferences` keys: `age`, `height_cm`, `weight_kg`, `accent_preset`, `goal_notifications_enabled`; Phosphor in dependencies |
-| **sprint-status.yaml** | Add 5.6–5.11, epic-7 backlog (after approval) |
+| **epics.md** | Epic list, UX-DR4/11/22, stories 5.x, new Epic 6; scope amendments |
+| **architecture.md** | Navigation (4 destinations); `user_preferences` keys: `height_cm`, `weight_kg`, `accent_preset`, `goal_notifications_enabled`; `DerivedActivityMetrics`; Phosphor in dependencies |
+| **sprint-status.yaml** | Add 5.6–5.11, epic-6 backlog (after approval) |
 
 ### Technical impact (code)
 
 - `AppScaffold`: 4th tab, floating `NavigationBar` styling, Phosphor icons
 - New `ProfileScreen`; slim `DataScreen` (rename from `MyDataScreen`)
-- `TodayScreen`: remove greeting; add stats row (placeholder until Epic 7), week pills, Set goal CTA
+- `TodayScreen`: remove greeting; add stats row (placeholder until Epic 6), week pills, Set goal CTA
 - `ThemeCubit` / `UserPreferencesRepository`: `theme_mode` + `accent_preset` + profile fields + notification toggle
 - `AccentPresetSelector` widget on `ProfileScreen` (bi-tone circles, FR-32)
 - `pubspec.yaml`: `phosphor_flutter` (or agreed package)
@@ -97,8 +98,8 @@ Before starting design-polish epics, Baptiste produced high-fidelity Figma mocku
 |-----------|------------|
 | Effort | **Medium–high** (nav shell + 3 screen layouts + theme presets + dependency) |
 | Risk | **Medium** (regression on export/purge/theme persistence) |
-| Timeline | Epic 5 extends before 6.3 beta checklist; Epic 7 non-blocking for shell redesign |
-| MVP | **Preserved** — same capabilities, new IA; metrics row can show placeholders until Epic 7 |
+| Timeline | Epic 5 extends before 6.3 beta checklist; Epic 6 non-blocking for shell redesign |
+| MVP | **Preserved** — same capabilities, new IA; metrics row can show placeholders until Epic 6 |
 
 **Not viable:** Rollback of Epics 1–4.  
 **Not required:** PRD MVP scope reduction.
@@ -134,7 +135,7 @@ Today displays:
 - Screen title "Today's activity" (or i18n key)
 - Donut step progress (current / goal) with steps icon in center
 - "Set goal" control below donut (opens goal editor; same validation 1,000–100,000)
-- Row: kcal, distance, walking time — PLACEHOLDER or "—" until Epic 7 (derived metrics)
+- Row: kcal, distance, walking time — PLACEHOLDER or "—" until Epic 6 (derived metrics)
 - Row: "This week" — 7 day pills with goal-met (green) / missed (red) / today (accent) / future (muted)
 - NO Hello {name} greeting in Phase 0 redesign
 - Source chip: retain or relocate per 5.3 audit (mockups omit — defer to cohesion story)
@@ -158,7 +159,7 @@ Optional display_name for Today greeting
 
 NEW:
 display_name stored for Profil → Informations only (no Today greeting)
-ADD (Profil): age (int), height_cm (int), weight_kg (num) — local-only, optional
+ADD (Profil): height_cm (int), weight_kg (num) — local-only, optional. **No** age or sex/gender (2026-06-04).
 ADD: accent_preset enum (orange|red|green|cyan|purple|pink), default orange
 ADD: goal_notifications_enabled bool (Profil toggle)
 ```
@@ -180,9 +181,7 @@ Persisted in `user_preferences.accent_preset`. Default: **orange** (aligned with
 
 **Independent controls:** `theme_mode` (System/Light/Dark) and `accent_preset` (six colors) are separate preferences; both live in Appearance.
 
-**NEW FR-33 (Epic 7 — deferred): Derived activity metrics**
-
-Compute and display kcal burned, distance traveled, and walking duration on Today from steps + profile biometrics. Formulas and data sources TBD.
+**FR-33 (Epic 6 — locked 2026-06-04):** Distance = steps × stride (height×0.414 or 0.76 m default); walking time = sum active bucket durations; kcal = MET 3.5 × weight (70 kg default) × walking hours. No age/gender.
 
 ---
 
@@ -232,7 +231,7 @@ NEW: Data Sovereignty & Lifecycle — primary UI on Data tab; profile prefs on P
 **5.6 (NEW) Today screen — Figma layout**
 
 - Donut + Set goal + week strip
-- Stats row UI present; values placeholder until Epic 7
+- Stats row UI present; values placeholder until Epic 6
 - Remove `Hello, {name}`
 - Stale compact banner behavior preserved (link to Data)
 
@@ -243,7 +242,7 @@ NEW: Data Sovereignty & Lifecycle — primary UI on Data tab; profile prefs on P
 
 **5.8 (NEW) Profile screen**
 
-- Informations: display name, age, height, weight (editable rows + chevron)
+- Informations: display name, height, weight (editable rows + chevron)
 - Notifications: goal notifications toggle (maps FR-24/FR-25 permission UX)
 - Appearance card (stacked):
   - `ThemeModeSelector` — System / Light / Dark (migrate Story 4.7)
@@ -268,32 +267,39 @@ NEW: Data Sovereignty & Lifecycle — primary UI on Data tab; profile prefs on P
 - Remove Today greeting widget and tests asserting Hello copy
 - `display_name` edit only from Profile
 
-#### Epic 7 (NEW backlog): Derived Activity Metrics
+#### Epic 6 (NEW backlog): Derived Activity Metrics
 
 **Goal:** Populate Today stats row (kcal, km, duration) from steps + user biometrics.
 
 **Status:** backlog — spec workshop required before stories.
 
-**Dependencies:** Profile height/weight (5.8); step repository today total.
+**Dependencies:** Profile height/weight (5.11); step repository today total.
 
 ---
 
 ### 4.4 sprint-status.yaml (after approval)
 
 ```yaml
-  # Epic 5 additions
-  5-6-today-figma-layout: backlog
-  5-7-data-screen-restructure: backlog
-  5-8-profile-screen: backlog
-  5-9-phosphor-icons: backlog
-  5-10-accent-color-presets: backlog
-  5-11-remove-today-greeting: backlog
+  # Epic 5 backlog (IDs match execution order — see sprint-status.yaml)
+  5-6-phosphor-icons-dependency: backlog
+  5-7-four-tab-floating-navigation: backlog
+  5-8-accent-preset-theme-tokens: backlog
+  5-9-today-figma-layout-no-greeting: backlog
+  5-10-data-screen-sovereignty-layout: backlog
+  5-11-profil-informations-and-appearance: backlog
+  5-12-cross-screen-visual-cohesion-audit: backlog
+  5-13-goal-overflow-animation-polish: backlog  # optional after 5.12
+
+  epic-6: backlog
+  6-1-derived-activity-metrics: backlog
 
   epic-7: backlog
-  7-1-derived-activity-metrics-spec: backlog  # placeholder until formulas agreed
+  7-1-open-source-license-and-documentation-bundle: backlog
+  7-2-release-manifest-hardening-and-privacy-audit: backlog
+  7-3-beta-acceptance-checklist: backlog
 ```
 
-**Approved implementation order:** **5.9 → 5.2 → 5.1 → 5.6 → 5.7 → 5.8 → 5.3 → Epic 7 → 5.4** (optional). Stories 5.10/5.11 merged into 5.1/5.6/5.8.
+**Approved implementation order:** **5.6 → 5.7 → 5.8 → 5.9 → 5.10 → 5.11 → 5.12 → Epic 6 → 5.13** (optional). Former 5.10/5.11 scope merged into 5.8/5.9/5.11 (accent / Today / Profil).
 
 ---
 
@@ -323,7 +329,7 @@ NEW: Data Sovereignty & Lifecycle — primary UI on Data tab; profile prefs on P
 
 **Artifacts updated:** `epics.md`, `sprint-status.yaml`, `prd.md`, `architecture.md`, `ux-design-specification.md`.
 
-**Handoff:** Developer agent — start **Story 5.9** (`phosphor_flutter`).
+**Handoff:** Developer agent — start **Story 5.6** (`phosphor_flutter`).
 
 ---
 

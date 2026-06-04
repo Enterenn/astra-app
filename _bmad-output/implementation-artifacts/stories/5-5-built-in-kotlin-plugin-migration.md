@@ -100,7 +100,7 @@ So that `flutter build` stays compatible with Flutter Built-in Kotlin and we do 
   - [x] `flutter test test/android/android_manifest_test.dart`
   - [x] `flutter build apk --debug` and `flutter build apk --release` — **zero KGP warnings**
   - [x] Update `docs/DEPENDENCIES.md` § Android Built-in Kotlin / KGP (new subsection)
-  - [x] Update `_bmad-output/implementation-artifacts/deferred-work.md` — mark KGP item resolved or document remaining upstream blockers (was Epic 6 Story 6.2; now Epic 5.5)
+  - [x] Update `_bmad-output/implementation-artifacts/deferred-work.md` — mark KGP item resolved or document remaining upstream blockers (was Epic 7 Story 7.2; now Epic 5.5)
   - [x] **Stop → review brief → wait for Baptiste OK → commit**
 
 ## Dev Notes
@@ -118,7 +118,7 @@ So that `flutter build` stays compatible with Flutter Built-in Kotlin and we do 
 **Out of scope — defer:**
 - Visual polish (Stories 5.1–5.4)
 - iOS / SwiftPM changes
-- Release manifest INTERNET audit (Story 6.2)
+- Release manifest INTERNET audit (Story 7.2)
 - Functional changes to step pipeline, WorkManager, share, or notifications
 - Upgrading Flutter SDK beyond current stable (3.44.0) unless required for plugin fix
 
@@ -131,10 +131,10 @@ Epic 4 complete ✅
 5.5 KGP / Built-in Kotlin   ← THIS STORY (first in Epic 5)
         │
         v
-5.1 Accent tokens → 5.2 Nav → 5.3 Cohesion → 5.4 Animation
+5.6 Phosphor → 5.7 Nav → 5.8 Accent → 5.9 Today → 5.10 Data → 5.11 Profil → 5.12 Cohesion → 5.13 Animation (optional)
         │
         v
-Epic 6 beta hardening (6.2 verifies release build still KGP-clean — no re-migration)
+Epic 7 beta hardening (6.2 verifies release build still KGP-clean — no re-migration)
 ```
 
 ### Architecture contracts
@@ -144,7 +144,7 @@ Epic 6 beta hardening (6.2 verifies release build still KGP-clean — no re-migr
 | Story 1.1 discovery | KGP warnings for `pedometer`, `share_plus`, `workmanager_android`; workaround flags in `gradle.properties` |
 | Epics §5.5 | Zero KGP warnings; upgrade path; upstream issues if blocked; no silent deferral |
 | Epics §6.2 | KGP verification **not** re-done at beta — must be clean after 5.5 |
-| Architecture gap note | Built-in Kotlin migration pulled forward from Epic 6.2 to Epic 5.5 (user 2026-06-02) |
+| Architecture gap note | Built-in Kotlin migration pulled forward from Epic 7.2 to Epic 5.5 (user 2026-06-02) |
 | D-18 / project-context | One commit per sub-task; review brief before each commit; update DEPENDENCIES.md |
 
 ### Current code state (READ BEFORE EDITING)
@@ -211,7 +211,7 @@ Use Flutter's template from [migration guide § Report incompatible KGP](https:/
 ### References
 
 - [Source: _bmad-output/planning-artifacts/epics.md § Story 5.5]
-- [Source: _bmad-output/planning-artifacts/epics.md § Story 6.2 — KGP verified in 5.5]
+- [Source: _bmad-output/planning-artifacts/epics.md § Story 7.2 — KGP verified in 5.5]
 - [Source: _bmad-output/planning-artifacts/architecture.md — gap note line ~903]
 - [Source: _bmad-output/implementation-artifacts/stories/1-1-flutter-project-initialization.md — KGP deferral]
 - [Source: _bmad-output/implementation-artifacts/deferred-work.md — legacy KGP item]

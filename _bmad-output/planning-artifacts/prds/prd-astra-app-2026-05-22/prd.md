@@ -23,7 +23,7 @@ This PRD defines product capabilities and requirements for **ASTRA** — a local
 
 **Current execution focus:** Phase 0 Sandbox — learn Flutter and local data persistence while shipping a beta-ready, open-source step-tracking Hub App. Future wearable, BLE, encryption, and sync capabilities are context only unless explicitly marked as Phase 0.
 
-**Amendment (2026-06-04, approved):** Four-tab shell (Today · Trends · Data · Profil), Figma layouts, six accent presets with bi-tone selector on Profil → Appearance, Phosphor icons. Data sovereignty on **Data** tab (screen title **My Data**); profile prefs on **Profil**. Today: no greeting; Set goal on Today; stats row visible but empty until Epic 7 (FR-33). Full delta: `planning-artifacts/sprint-change-proposal-2026-06-04.md`.
+**Amendment (2026-06-04, approved):** Four-tab shell (Today · Trends · Data · Profil), Figma layouts, six accent presets with bi-tone selector on Profil → Appearance, Phosphor icons. Data sovereignty on **Data** tab (screen title **My Data**); profile prefs on **Profil**. Today: no greeting; Set goal on Today; stats row visible but empty until Epic 6 (FR-33). Full delta: `planning-artifacts/sprint-change-proposal-2026-06-04.md`.
 
 ---
 
@@ -161,7 +161,7 @@ On the **Data** tab (screen title **My Data**), Alex sees storage footprint (sam
 
 **UJ-4b. Alex updates profile and appearance.**
 
-On **Profil**, Alex edits display name, age, height, and weight; toggles goal notifications; chooses System / Light / Dark and an accent color preset (six bi-tone circles). Realizes FR-9 (extended), FR-31, FR-32.
+On **Profil**, Alex edits display name, height, and weight; toggles goal notifications; chooses System / Light / Dark and an accent color preset (six bi-tone circles). Realizes FR-9 (extended), FR-31, FR-32.
 
 **UJ-5. Builder-as-User validates the ADP-ready architecture (Phase 0).**
 
@@ -293,7 +293,9 @@ Step samples are aggregated into **Time Buckets** of 5 minutes by default before
 
 A `user_preferences` table stores at minimum `daily_step_goal` (integer), `theme_mode` (`system` | `light` | `dark`), and `accent_preset` (`orange` | `red` | `green` | `cyan` | `purple` | `pink`, default `orange`).
 
-Optional local-only profile fields: `display_name` (trimmed string), `age` (integer years), `height_cm` (integer), `weight_kg` (number). Optional `goal_notifications_enabled` (boolean).
+Optional local-only profile fields: `display_name` (trimmed string), `height_cm` (integer centimeters), `weight_kg` (number, kilograms). Optional `goal_notifications_enabled` (boolean). **No** `age` or sex/gender fields in Phase 0 (not required for derived metrics; inclusivity).
+
+**Derived-metrics defaults** (when height/weight unset): stride **0.76 m**; weight **70 kg** for calorie estimate.
 
 **Consequences (testable):**
 - Goal, theme, accent, and profile fields persist across app restarts.
@@ -479,7 +481,7 @@ User can export **Timeseries Samples** to CSV with OW-aligned column headers. Ex
 
 #### FR-20: Full local purge
 
-User can delete **all** local **Timeseries Samples** and derived collection state from the **Data** tab (§1.4 — full health-data purge only in Phase 0). Purge preserves non-health setup preferences such as `daily_step_goal`, `theme_mode`, `accent_preset`, profile fields (`display_name`, `age`, `height_cm`, `weight_kg`), `goal_notifications_enabled`, onboarding completion, and permission choices.
+User can delete **all** local **Timeseries Samples** and derived collection state from the **Data** tab (§1.4 — full health-data purge only in Phase 0). Purge preserves non-health setup preferences such as `daily_step_goal`, `theme_mode`, `accent_preset`, profile fields (`display_name`, `height_cm`, `weight_kg`), `goal_notifications_enabled`, onboarding completion, and permission choices.
 
 **Consequences (testable):**
 - Post-purge: sample count = 0, footprint ≈ 0 KB.
@@ -528,13 +530,28 @@ User selects one of six accent presets from **Profil → Appearance** via **bi-t
 - Selected chip shows visible border/ring per UX mockups.
 - Six presets: orange, red, green, cyan, purple, pink — each with light and dark token mappings.
 
-#### FR-33: Derived activity metrics (Epic 7 — deferred)
+#### FR-33: Derived activity metrics (Epic 6)
 
-**Today** activity stats row displays computed **kcal burned**, **distance traveled**, and **walking duration** from steps and profile biometrics (formulas TBD). Until implemented, row remains visible with placeholder values.
+**Today** activity stats row displays **distance (km)**, **calories (kcal)**, and **walking duration** computed locally from today's step data, today's active time buckets, and optional profile height/weight. Until Epic 6 ships, row remains visible with placeholder values (`—`).
+
+**Formulas (locked 2026-06-04):**
+
+| Metric | Formula | Inputs |
+|--------|---------|--------|
+| **Distance** | `todaySteps × stride_m / 1000` (km) | `stride_m = (height_cm / 100) × 0.414` if `height_cm` set; else **0.76 m** default |
+| **Walking time** | Sum of `(end_time − start_time)` for today's `timeseries_samples` where `type = steps` and `value > 0` | SQLite buckets only (typically 5-minute windows) |
+| **Calories** | `MET × weight_kg × (walking_seconds / 3600)` with **MET = 3.5** (moderate walking, ACSM-style) | `weight_kg` from profile or **70 kg** default |
+
+**Live display (Today):**
+- **Distance** uses the same step count as the donut (SQLite daily sum scaled by live overlay when `LiveStepMonitor` is active).
+- **Walking time** and **calories** derive from persisted buckets — may lag slightly until the next ingestion cycle (documented, not a defect).
+
+**Out of scope Phase 0:** sex/gender field; age field; incline/speed/ACSM speed-grade equation; clinical calorie claims.
 
 **Consequences (testable):**
-- Values update with live step overlay where applicable once Epic 7 ships.
+- Unit tests cover defaults (no height/weight), custom height/weight, empty buckets, and one active bucket.
 - Uses local data only; no network.
+- Copy remains General Wellness (estimates, not medical authority).
 
 ---
 
@@ -655,7 +672,7 @@ Project maintains a documented beta checklist covering accuracy, background, not
 - Trust onboarding, goal setup, optional local notification
 - CSV **export + import**, purge, storage footprint + last optimization, background status (Data tab)
 - Theme mode + six accent presets (Profil); Phosphor icons; floating four-tab navigation
-- Today stats row placeholders until FR-33 (Epic 7)
+- Today stats row placeholders until FR-33 (Epic 6)
 - **AdpBleSource** stub; **DataIngestionSource** abstraction
 - Dev inject tools (90-day benchmark)
 - Apache 2.0 public repo, OW vocabulary docs, README pitch, beta checklist
@@ -767,7 +784,7 @@ Project maintains a documented beta checklist covering accuracy, background, not
 | **Today** | TODAY | Today's activity | Donut, Set goal, week pills, stats row (placeholders until FR-33), celebration |
 | **Trends** | TRENDS | History or Trends (TBD polish) | 7d/30d charts, goal line, weekly trend |
 | **Data** | DATA | **My Data** | Background, footprint, export/import CSV, purge |
-| **Profil** | PROFIL | My Profile | Informations, notifications, Appearance (theme mode + accent bi-tone circles) |
+| **Profil** | PROFIL | My Profile | Informations (name, height, weight), notifications, Appearance (theme mode + accent bi-tone circles) |
 | **Onboarding** | — | — | Trust, permissions, goal, notification opt-in (modal stack) |
 
 **Navigation:** floating pill bottom bar, four tabs, Phosphor icons. Onboarding overlays first launch only.
@@ -858,4 +875,5 @@ Hardware, firmware, and ADP detail: `addendum.md`.
 - **A-16:** No automatic re-bucketing of historical samples when device timezone changes in Phase 0 (§1.3).
 - **A-17:** Downsampling is destructive/irreversible after compaction (FR-11).
 - **A-18:** Default `theme_mode` = `system`; user may override on Profil (FR-31). Default `accent_preset` = `orange` (FR-32).
-- **A-19:** Today activity stats (kcal / km / duration) ship in Epic 7 (FR-33); visible placeholders until then (2026-06-04).
+- **A-19:** Today activity stats (kcal / km / duration) ship in Epic 6 (FR-33); visible placeholders until then (2026-06-04).
+- **A-20:** Derived metrics use height/weight only — no age or sex/gender; defaults stride 0.76 m, weight 70 kg; calories via MET 3.5 × weight × walking duration (2026-06-04).

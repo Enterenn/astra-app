@@ -1,6 +1,6 @@
 # KPI-01 Regression Log (FR-29 precursor)
 
-Tracks History chart **query + render** benchmark results for UX checklist item **V-7** ("History perf — Chart bind <100ms with 90d inject"). Epic 6.3 will copy rows into `docs/BETA_CHECKLIST.md`.
+Tracks History chart **query + render** benchmark results for UX checklist item **V-7** ("History perf — Chart bind <100ms with 90d inject"). Epic 7.3 will copy rows into `docs/BETA_CHECKLIST.md`.
 
 **Threshold:** total p95 < **100 ms** on mid-range Android reference device (debug build).
 

@@ -463,7 +463,9 @@ Evaluation uses cumulative daily steps from `timeseries_samples` aggregated by `
 
 **Theming:** `ThemeData.light()` + `ThemeData.dark()` + `AstraColors` per `theme_mode` and `accent_preset`. **System default**; override on **Profil** (FR-31, FR-32). `ThemeCubit` drives `MaterialApp.themeMode` and accent token set.
 
-**`user_preferences` keys (Phase 0 post-redesign):** `daily_step_goal`, `theme_mode`, `accent_preset`, `display_name`, `age`, `height_cm`, `weight_kg`, `goal_notifications_enabled`, plus existing flags (`onboarding_complete`, `celebration_shown_date`, etc.).
+**`user_preferences` keys (Phase 0 post-redesign):** `daily_step_goal`, `theme_mode`, `accent_preset`, `display_name`, `height_cm`, `weight_kg`, `goal_notifications_enabled`, plus existing flags (`onboarding_complete`, `celebration_shown_date`, etc.). **No** `age` or sex/gender keys.
+
+**Derived activity metrics (FR-33, Epic 6):** Pure Dart `DerivedActivityMetrics` in `lib/core/metrics/` — inputs: `displaySteps` (Today truth model), today's active step buckets from `StepRepository`, optional `height_cm` / `weight_kg`. Defaults: stride **0.76 m**, weight **70 kg**. Calories: **MET 3.5 × weight × walking_hours** (ACSM-style, moderate walking). Distance: steps × `(height_cm/100)×0.414` or default stride. Walking time: sum of active bucket durations. Sex/gender not used (height captures practical stride variance).
 
 ### Infrastructure & Deployment
 
@@ -515,7 +517,7 @@ dependencies:
   flutter_local_notifications: ^21.0.0
   share_plus: ^13.1.0
   path_provider: ^2.1.5
-  phosphor_flutter: ^2.1.0  # Story 5.9 — verify latest compatible on pub get
+  phosphor_flutter: ^2.1.0  # Story 5.6 — verify latest compatible on pub get
 
 dev_dependencies:
   flutter_test:
@@ -867,7 +869,7 @@ astra-app/                              # Git repo root = Flutter app root (D-18
 
 ### Requirements Coverage Validation ✅
 
-**Functional Requirements Coverage:** All 33 FRs mapped to specific files (see Requirements to Structure Mapping). FR-28 dev inject in `lib/dev/`. FR-29 beta checklist in `docs/BETA_CHECKLIST.md`. FR-31/FR-32 theme + accent in `theme_cubit.dart` + `profile_screen.dart`. FR-33 derived metrics → Epic 7.
+**Functional Requirements Coverage:** All 33 FRs mapped to specific files (see Requirements to Structure Mapping). FR-28 dev inject in `lib/dev/`. FR-29 beta checklist in `docs/BETA_CHECKLIST.md`. FR-31/FR-32 theme + accent in `theme_cubit.dart` + `profile_screen.dart`. FR-33 derived metrics → Epic 6.
 
 **Non-Functional Requirements Coverage:**
 
@@ -907,7 +909,7 @@ astra-app/                              # Git repo root = Flutter app root (D-18
 - WorkManager + sqflite isolate behavior on target OEM devices — Sprint 0 spike
 - iOS BGAppRefresh reliability — Sprint 1 validation
 - CI/CD pipeline deferred post-beta
-- **Android Built-in Kotlin / KGP migration (Epic 6 Story 6.2):** Flutter 3.44 + AGP 9.x temporarily allow plugins that apply Kotlin Gradle Plugin (KGP) via `android.builtInKotlin=false` in `gradle.properties`. Story 1.1 build surfaced warnings for `pedometer`, `share_plus`, `workmanager_android`. Before beta release, verify plugin changelogs, upgrade where Built-in Kotlin is supported, remove legacy flags, and confirm `flutter build apk --release` is clean. Ref: [migrate-to-built-in-kotlin](https://docs.flutter.dev/release/breaking-changes/migrate-to-built-in-kotlin/for-app-developers).
+- **Android Built-in Kotlin / KGP migration (Epic 7 Story 7.2):** Flutter 3.44 + AGP 9.x temporarily allow plugins that apply Kotlin Gradle Plugin (KGP) via `android.builtInKotlin=false` in `gradle.properties`. Story 1.1 build surfaced warnings for `pedometer`, `share_plus`, `workmanager_android`. Before beta release, verify plugin changelogs, upgrade where Built-in Kotlin is supported, remove legacy flags, and confirm `flutter build apk --release` is clean. Ref: [migrate-to-built-in-kotlin](https://docs.flutter.dev/release/breaking-changes/migrate-to-built-in-kotlin/for-app-developers).
 
 **Critical:** None — pending spike validations are normal pre-beta gates, not architecture gaps.
 

@@ -379,10 +379,10 @@ When `display_name` lands in `user_preferences`, purge allowlist must include th
 - 2026-06-03: Story 4.5 implementation complete — purge repository, confirm dialog, cubit orchestration, My Data UI, 417 tests pass
 - 2026-06-03: Code review fixes — export-first delete path, refresh ordering, test stability; story done
 
-## Field feedback (2026-06-03) — regression candidate (fix deferred post–Story 6.3)
+## Field feedback (2026-06-03) — regression candidate (fix deferred post–Story 7.3)
 
 **Report:** Tapping **Delete all local data** → confirm → snackbar/error banner: **"Purge could not be completed. Try again."** (maps to `MyDataCubit` catch with `purged == false` — failure inside `stepRepository.purge()`, not post-refresh). **2/2 attempts failed** (not flaky-once).
 
 **Investigate:** transaction error, DB lock from concurrent collect/FGS, partial migration state, dev inject data edge case. Capture `debugPrint` stack from debug build on repro.
 
-**Re-open 4.5 or add 4.x hotfix** in post–6.3 debug pass. Story 6.3 checklist: purge must pass on release build after typical usage session.
+**Re-open 4.5 or add 4.x hotfix** in post–6.3 debug pass. Story 7.3 checklist: purge must pass on release build after typical usage session.
