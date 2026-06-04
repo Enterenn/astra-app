@@ -99,7 +99,8 @@ See `pubspec.yaml` and `pubspec.lock`. Package-level audit table → Epic 5 Stor
 | Package | Purpose | Network |
 |---------|---------|---------|
 | `file_picker` ^12.0.0-beta.5 | My Data CSV import — local file selection only (Story 4.4). Beta required for `win32` ^6 compat with `share_plus` ^13.1 | No data upload; OS file picker UI only |
-| `phosphoricons_flutter` ^1.0.0 (locked 1.0.0, [MIT](https://pub.dev/packages/phosphoricons_flutter/license)) | Figma-aligned Phosphor iconography (Epic 5, Story 5.6). **Not** `phosphor_flutter` 2.1.0 — that package extends final `IconData` and fails on Dart 3.12 / Flutter 3.44. Import `package:phosphoricons_flutter/phosphoricons_flutter.dart`; tab API: `PhosphorIconsRegular` — `footprints`, `chartBar`, `database`, `user`. Install-only until 5.7 | No — icon fonts bundled in package; no runtime fetch |
+| `phosphoricons_flutter` ^1.0.0 (locked 1.0.0, [MIT](https://pub.dev/packages/phosphoricons_flutter/license)) | Figma-aligned Phosphor iconography (Epic 5, Story 5.6). **Not** `phosphor_flutter` 2.1.0 — that package extends final `IconData` and fails on Dart 3.12 / Flutter 3.44. Import `package:phosphoricons_flutter/phosphoricons_flutter.dart`; tab API: `PhosphorIconsRegular` / `PhosphorIconsFill` — `sneakerMove`, `chartBar`, `database`, `user` (Story 5.7 nav) | No — icon fonts bundled in package; no runtime fetch |
+| `figma_squircle` ^0.6.3 (locked 0.6.3, [MIT](https://pub.dev/packages/figma_squircle/license)) | Figma corner smoothing on active nav squircle (Story 5.7): `SmoothRectangleBorder` + `cornerRadius` 16 + `cornerSmoothing` 1.0 | No |
 
 ### Android Built-in Kotlin / KGP (Story 5.5)
 
