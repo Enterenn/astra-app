@@ -217,18 +217,15 @@ class ProfileCubit extends Cubit<ProfileState> {
       return false;
     }
 
-    if (enabled) {
-      final granted = await notificationService.hasNotificationPermission();
-      if (!granted) {
-        try {
-          await _requestPermission(Permission.notification);
-        } catch (error, stackTrace) {
-          if (kDebugMode) {
-            debugPrint(
-              'ProfileCubit notification permission request failed: $error',
-            );
-            debugPrintStack(stackTrace: stackTrace);
-          }
+    if (enabled && !await notificationService.hasNotificationPermission()) {
+      try {
+        await _requestPermission(Permission.notification);
+      } catch (error, stackTrace) {
+        if (kDebugMode) {
+          debugPrint(
+            'ProfileCubit notification permission request failed: $error',
+          );
+          debugPrintStack(stackTrace: stackTrace);
         }
       }
     }

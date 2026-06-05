@@ -15,7 +15,9 @@ so that background health, footprint, and CSV actions are easy to find.
 1. **Given** the **DATA** tab is selected  
    **When** the screen renders in light or dark theme with any accent preset (Story 5.8)  
    **Then** the screen **title** reads **My Data** once at the top (body copy — not shortened to "Data")  
-   **And** only three `SectionCard` sections exist, in order: **Background** → **Footprint** → **Your data**  
+   **And** exactly two `SectionCard` sections exist, in order: **Storage on this device** → **Backup & restore**  
+   **And** the **Storage** card shows intro copy (*Everything stays on your phone…*) plus file-size footprint only (`FootprintKpiRow` — no sample count)  
+   **And** the **Backup & restore** card hosts Export CSV, Import CSV, and Erase all step history actions  
    **And** content scrolls above the floating nav without clipping (bottom padding ≥ `kBottomNavBottomOffset` + `kBottomNavBarHeight` + `kSpaceMd`, same pattern as Story 5.9)
 
 2. **Given** the Data screen after this story  
@@ -25,20 +27,23 @@ so that background health, footprint, and CSV actions are easy to find.
    - **Daily goal** / `GoalEditorRow`  
    - **Appearance** / `ThemeSelector`  
    - **Profile** / `DisplayNameEditorRow`  
+   - **Background** / `BackgroundStatusCard` (removed — UX pivot 2026-06-04)  
+   - Stale full `StatusBanner` on Data tab (stale UX lives on **Today** compact banner only)  
    **And** goal editing remains on **Today → Set goal** (Story 5.9); theme/display name migrate to **Profil** in Story 5.11
 
 3. **Given** stale threshold exceeded (12h Android / 4h iOS)  
    **When** Data tab renders  
-   **Then** full `StatusBanner` stale variant appears above cards (unchanged Epic 4.2 / UX-DR8)  
+   **Then** no stale banner appears on Data (by design — post UX review)  
    **And** Today compact stale banner still links to Data tab (no regression)
 
 4. **Given** export, import, or purge flows  
-   **When** exercised from **Your data**  
+   **When** exercised from **Backup & restore**  
    **Then** behavior is unchanged from Epic 4 Stories 4.3–4.5 (FR-19–21, FR-30):  
-   - Export → cache file → share sheet → "Export saved" snackbar  
+   - Export → temp file → save-to-device (if chosen) or share sheet fallback → "Export saved" snackbar  
    - Import → picker → validate → confirm if existing data → "Import complete" snackbar  
    - Purge → export nudge dialog → footprint zeros; prefs survive per FR-20  
-   **And** in-flight mutual exclusion on data actions preserved (`isExporting` / `isImporting` / `isPurging`)
+   **And** in-flight mutual exclusion on data actions preserved (`isExporting` / `isImporting` / `isPurging`)  
+   **And** purge export-first path falls back to share when save-to-device fails
 
 5. **Given** error states (export/import/purge)  
    **When** Data tab renders  
@@ -46,7 +51,7 @@ so that background health, footprint, and CSV actions are easy to find.
 
 6. **Given** implementation complete  
    **When** `flutter analyze` and `flutter test` run  
-   **Then** no regressions; `my_data_screen_test.dart` updated to assert three-section layout and absence of removed widgets; sovereignty flow tests still pass
+   **Then** no regressions; `my_data_screen_test.dart` updated to assert two-section layout and absence of removed widgets; sovereignty flow tests still pass
 
 **Depends on:** Stories 5.8 (done), 5.7 (done), 5.9 (done — Set goal on Today).  
 **Prerequisite for:** Story 5.11 (Profil absorbs removed sections).  
@@ -62,11 +67,11 @@ so that background health, footprint, and CSV actions are easy to find.
   - [x] Remove unused imports (`goal_editor_*`, `display_name_*`, `profile_initials_badge`, `theme_selector`, `theme_cubit`)
   - [x] **Stop → review brief → Baptiste OK → commit**
 
-- [x] **B — Figma shell alignment** (AC: #1, #3, #5)
+- [x] **B — Figma shell alignment** (AC: #1, #5)
   - [x] Match Today scroll shell from Story 5.9: `SingleChildScrollView` + horizontal padding + bottom nav clearance
-  - [x] Title row **My Data** at top (mirror Today title placement; use `AstraTypography.captionFor` if matching Today mockup hierarchy, or `AstraTypography.title` per UX §1.3 — pick one and document in Dev Agent Record)
-  - [x] Keep stale/error banners between title and first card (current order preserved)
-  - [x] Verify three `SectionCard` gaps use `kSpaceMd`
+  - [x] Title row **My Data** at top (`AstraTypography.captionFor` — mirror Today)
+  - [x] Error banners between title and first card; no stale banner on Data
+  - [x] Two `SectionCard` gaps use `kSpaceMd`
   - [x] **Stop → review brief → Baptiste OK → commit**
 
 - [x] **C — Cubit / scaffold hygiene (minimal)** (AC: #4)
@@ -77,10 +82,9 @@ so that background health, footprint, and CSV actions are easy to find.
 
 - [x] **D — Tests** (AC: #6)
   - [x] Update `test/presentation/screens/my_data_screen_test.dart`:
-    - Assert finds **Background**, **Footprint**, **Your data** section headlines
+    - Assert finds **Storage on this device**, **Backup & restore** section headlines
     - Assert finds **no** `GoalEditorRow`, `ThemeSelector`, `DisplayNameEditorRow`, `ProfileInitialsBadge`
-    - Remove or rewrite tests for removed sections (goal row, appearance order, profile badge scroll, display-name row)
-    - Keep export/import/purge/stale/error tests intact
+    - Keep export/import/purge/error tests intact
   - [x] Smoke: `app_scaffold_test.dart` Data tab still renders `MyDataScreen`
   - [x] Full `flutter test` + `flutter analyze`
   - [x] **Stop → review brief → Baptiste OK → commit**
@@ -233,7 +237,6 @@ Composer (Cursor agent)
 - `lib/presentation/cubits/my_data_cubit.dart`
 - `lib/presentation/screens/app_scaffold.dart`
 - `lib/presentation/screens/my_data_screen.dart`
-- `lib/presentation/widgets/background_status_card.dart`
 - `lib/presentation/widgets/footprint_kpi_row.dart`
 - `lib/presentation/widgets/data_import_button.dart`
 - `lib/presentation/widgets/data_purge_button.dart`
@@ -242,7 +245,6 @@ Composer (Cursor agent)
 - `test/presentation/cubits/my_data_cubit_test.dart`
 - `test/presentation/screens/my_data_screen_test.dart`
 - `test/presentation/screens/app_scaffold_test.dart`
-- `test/presentation/widgets/background_status_card_test.dart`
 - `test/presentation/widgets/footprint_kpi_row_test.dart`
 - `test/widget_test.dart`
 - `_bmad-output/implementation-artifacts/sprint-status.yaml`

@@ -1,7 +1,7 @@
 /// Immutable capability snapshot for passive health background collection (D-23).
 ///
-/// Consumed by Epic 4.2 [BackgroundStatusCard] — this story exposes flags only;
-/// no user-facing copy or settings flows here.
+/// Flags for passive health background collection (D-23). No user-facing UI in
+/// the current four-tab shell — consumed by collectors and cubit state only.
 class BackgroundHealthCapabilitySnapshot {
   const BackgroundHealthCapabilitySnapshot({
     required this.activityRecognitionGranted,

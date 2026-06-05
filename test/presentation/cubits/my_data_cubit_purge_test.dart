@@ -83,6 +83,7 @@ void main() {
     MyDataCubit buildCubit({
       PostPurgeRefreshCallback? postPurgeRefresh,
       ShareCsvFileCallback? shareCsvFile,
+      SaveCsvFileCallback? saveCsvFile,
     }) {
       return MyDataCubit(
         stepRepository: stepRepository,
@@ -93,6 +94,7 @@ void main() {
         isIos: false,
         postPurgeRefresh: postPurgeRefresh,
         shareCsvFile: shareCsvFile ?? (_, {sharePositionOrigin}) async {},
+        saveCsvFile: saveCsvFile ?? ((_) async => false),
         tempDirectoryProvider: () async => tempDir.path,
       );
     }
@@ -207,6 +209,7 @@ void main() {
         databasePath: inMemoryDatabasePath,
         isIos: false,
         shareCsvFile: (_, {sharePositionOrigin}) async {},
+        saveCsvFile: (_) async => false,
         tempDirectoryProvider: () async => '',
       );
       addTearDown(cubit.close);

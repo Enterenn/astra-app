@@ -129,6 +129,22 @@ void main() {
       await cubit.close();
     });
 
+    test('re-requests OS permission each time notifications are enabled', () async {
+      final cubit = buildCubit();
+      await cubit.refresh();
+
+      expect(await cubit.setGoalNotificationsEnabled(true), isTrue);
+      expect(permissionRequestCount, 1);
+
+      expect(await cubit.setGoalNotificationsEnabled(false), isTrue);
+      expect(permissionRequestCount, 1);
+
+      expect(await cubit.setGoalNotificationsEnabled(true), isTrue);
+      expect(permissionRequestCount, 2);
+
+      await cubit.close();
+    });
+
     test('disabling goal notifications does not request permission', () async {
       await userPreferences.setGoalNotificationsEnabled(true);
       final cubit = buildCubit();

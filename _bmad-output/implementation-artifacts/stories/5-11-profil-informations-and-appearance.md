@@ -1,6 +1,6 @@
 # Story 5.11: Profile Screen — Informations & Appearance
 
-Status: review
+Status: done
 
 <!-- Sprint Change Proposal 2026-06-04 + Baptiste mockups 2026-06-05. Nav label corrected: PROFIL → PROFILE. -->
 
@@ -343,5 +343,5 @@ Composer (dev-story workflow)
 
 ## Story completion status
 
-- **Status:** review
-- **Completion note:** Ultimate context engine analysis completed — comprehensive developer guide created (mockups attached, nav PROFILE correction included)
+- **Status:** done
+- **Completion note:** Profile tab shipped; code-review fixes (Data AC alignment, export fallback, notification re-prompt, dead BackgroundStatusCard removed).

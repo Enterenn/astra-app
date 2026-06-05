@@ -111,13 +111,6 @@ class _MyDataScreenBody extends StatelessWidget {
             MyDataScreen._kScreenTitle,
             style: AstraTypography.captionFor(colors),
           ),
-          if (state.isStale) ...[
-            const SizedBox(height: AstraSpacing.kSpaceSm),
-            StatusBanner(
-              variant: StatusBannerVariant.staleFull,
-              isIos: state.isIos,
-            ),
-          ],
           if (state.exportErrorMessage != null) ...[
             const SizedBox(height: AstraSpacing.kSpaceMd),
             StatusBanner(
