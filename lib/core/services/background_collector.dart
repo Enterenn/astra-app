@@ -52,6 +52,7 @@ class BackgroundCollector {
   Future<int> collectOnce({
     int maxReadingsPerSource = 50,
     bool enableGoalNotification = false,
+    Duration? sourceTimeout,
   }) async {
     if (_collectInFlight) {
       return 0;
@@ -66,6 +67,7 @@ class BackgroundCollector {
         return await _collectOnce(
           maxReadingsPerSource: maxReadingsPerSource,
           enableGoalNotification: enableGoalNotification,
+          sourceTimeout: sourceTimeout ?? this.sourceTimeout,
         );
       } finally {
         await lock.release();
@@ -78,6 +80,7 @@ class BackgroundCollector {
   Future<int> _collectOnce({
     required int maxReadingsPerSource,
     required bool enableGoalNotification,
+    required Duration sourceTimeout,
   }) async {
     var upsertedCount = 0;
 

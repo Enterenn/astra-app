@@ -76,7 +76,7 @@ void main() {
     });
   });
 
-  testWidgets('pause stops live monitor before starting FGS', (tester) async {
+  testWidgets('pause keeps live monitor running while FGS starts', (tester) async {
     final fgsCalls = <String>[];
 
     await tester.runAsync(() async {
@@ -134,7 +134,7 @@ void main() {
       await tester.pump();
       await Future<void>.delayed(const Duration(milliseconds: 100));
 
-      expect(monitor.isRunning, isFalse);
+      expect(monitor.isRunning, isTrue);
       expect(fgsCalls, contains('start'));
     });
   });

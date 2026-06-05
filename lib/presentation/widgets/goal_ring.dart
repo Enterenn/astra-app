@@ -6,6 +6,7 @@ import 'package:phosphoricons_flutter/phosphoricons_flutter.dart';
 import 'package:sqflite/sqflite.dart';
 
 import '../../core/constants/astra_colors.dart';
+import '../../core/debug/live_pipeline_log.dart';
 import '../../core/constants/astra_spacing.dart';
 import '../../core/constants/astra_typography.dart';
 import '../../data/repositories/user_preferences_repository.dart';
@@ -29,6 +30,10 @@ const _kMicroTickMs = 150;
 const _kLiveCoalesceMs = 100;
 const _kLiveArcTweenMs = 200;
 const _kOverflowAmbientCycleMs = 3200;
+
+/// Delay before unlock catch-up so the count-up is visible after the OS wake
+/// animation (Baptiste field test 2026-06-05).
+const kForegroundCatchUpDelay = Duration(seconds: 1);
 
 /// In-session step increases at or below this delta use micro-tick; above uses
 /// easeInOut count-up (e.g. post-sync catch-up). Tune with Baptiste if needed.
@@ -63,6 +68,7 @@ class GoalRing extends StatefulWidget {
     this.showRing = true,
     this.freezeMotion = false,
     this.debugLastDisplayedSteps,
+    this.onForegroundCatchUpHandled,
     super.key,
   });
 
@@ -77,6 +83,7 @@ class GoalRing extends StatefulWidget {
   final String? localDayIso;
   final bool showRing;
   final bool freezeMotion;
+  final VoidCallback? onForegroundCatchUpHandled;
 
   @visibleForTesting
   static double ringProgressFor(TodayState state) {
@@ -110,7 +117,40 @@ class _GoalRingState extends State<GoalRing> with TickerProviderStateMixin {
   bool _coldStartHandled = false;
   int? _lastPersistedSteps;
   Timer? _liveCoalesceTimer;
+  Timer? _foregroundCatchUpTimer;
+  bool _foregroundCatchUpScheduled = false;
+  bool _pendingForegroundCatchUpClear = false;
   int? _pendingLiveSteps;
+
+  void _releaseCountUpController() {
+    final controller = _countUpController;
+    _countUpController = null;
+    controller?.dispose();
+  }
+
+  void _releaseMicroTickController() {
+    final controller = _microTickController;
+    _microTickController = null;
+    controller?.dispose();
+  }
+
+  void _releaseLiveArcController() {
+    final controller = _liveArcController;
+    _liveArcController = null;
+    controller?.dispose();
+  }
+
+  void _releasePulseController() {
+    final controller = _pulseController;
+    _pulseController = null;
+    controller?.dispose();
+  }
+
+  void _releaseOverflowController() {
+    final controller = _overflowController;
+    _overflowController = null;
+    controller?.dispose();
+  }
 
   @override
   void initState() {
@@ -293,10 +333,54 @@ class _GoalRingState extends State<GoalRing> with TickerProviderStateMixin {
       return;
     }
 
+    livePipelineLog(
+      'ring',
+      'step target changed',
+      details: {
+        'displayed': _displayedSteps,
+        'target': target,
+        'stateSteps': widget.state.steps,
+        'catchUp': widget.state.foregroundCatchUp,
+        'status': widget.state.status.name,
+      },
+      minInterval: const Duration(milliseconds: 400),
+    );
+
     if (target > _displayedSteps) {
       final delta = target - _displayedSteps;
       if (_countUpController?.isAnimating == true) {
         _pendingLiveSteps = target;
+        return;
+      }
+      if (widget.state.foregroundCatchUp) {
+        if (_foregroundCatchUpScheduled || _foregroundCatchUpTimer != null) {
+          return;
+        }
+        final catchUpTarget =
+            widget.state.catchUpTargetSteps ?? _targetSteps;
+        if (catchUpTarget <= _displayedSteps) {
+          widget.onForegroundCatchUpHandled?.call();
+          return;
+        }
+        _foregroundCatchUpScheduled = true;
+        _foregroundCatchUpTimer = Timer(kForegroundCatchUpDelay, () {
+          _foregroundCatchUpTimer = null;
+          _foregroundCatchUpScheduled = false;
+          if (!mounted) {
+            return;
+          }
+          final catchUpTarget = _targetSteps;
+          if (catchUpTarget <= _displayedSteps) {
+            widget.onForegroundCatchUpHandled?.call();
+            return;
+          }
+          _pendingForegroundCatchUpClear = true;
+          _runCountUp(
+            from: _displayedSteps,
+            to: catchUpTarget,
+            coldStart: true,
+          );
+        });
         return;
       }
       if (useMicroTickForLiveDelta(delta)) {
@@ -307,6 +391,10 @@ class _GoalRingState extends State<GoalRing> with TickerProviderStateMixin {
       return;
     }
 
+    // Monotonic within the local day — SQLite can lag behind prefs on cold start.
+    if (target < _displayedSteps) {
+      return;
+    }
     _setDisplayedInstant(target);
   }
 
@@ -334,8 +422,8 @@ class _GoalRingState extends State<GoalRing> with TickerProviderStateMixin {
     required int to,
     required bool coldStart,
   }) {
-    _countUpController?.dispose();
-    _microTickController?.dispose();
+    _releaseCountUpController();
+    _releaseMicroTickController();
     _microTickPreviousSteps = null;
 
     final delta = to - from;
@@ -358,18 +446,22 @@ class _GoalRingState extends State<GoalRing> with TickerProviderStateMixin {
     final toRatio = goal > 0 ? (to / goal).clamp(0.0, 1.0) : 0.0;
 
     _countUpController!.addStatusListener((status) {
-      if (status == AnimationStatus.completed) {
-        _displayedSteps = to;
-        _animatedProgress = toRatio;
-        _lastDisplayedSteps = to;
-        unawaited(_persistLastDisplayedSteps(to));
-        _countUpController?.dispose();
-        _countUpController = null;
-        final pending = _pendingLiveSteps;
-        if (pending != null && pending != to) {
-          _pendingLiveSteps = null;
-          _scheduleLiveUpdate(pending);
-        }
+      if (status != AnimationStatus.completed || !mounted) {
+        return;
+      }
+      _displayedSteps = to;
+      _animatedProgress = toRatio;
+      _lastDisplayedSteps = to;
+      unawaited(_persistLastDisplayedSteps(to));
+      _releaseCountUpController();
+      if (_pendingForegroundCatchUpClear) {
+        _pendingForegroundCatchUpClear = false;
+        widget.onForegroundCatchUpHandled?.call();
+      }
+      final pending = _pendingLiveSteps;
+      if (pending != null && pending != to) {
+        _pendingLiveSteps = null;
+        _scheduleLiveUpdate(pending);
       }
     });
 
@@ -386,7 +478,11 @@ class _GoalRingState extends State<GoalRing> with TickerProviderStateMixin {
   double _countUpToRatio = 0;
 
   void _onCountUpTick() {
-    final t = Curves.easeInOut.transform(_countUpController!.value);
+    final controller = _countUpController;
+    if (controller == null) {
+      return;
+    }
+    final t = Curves.easeInOut.transform(controller.value);
     setState(() {
       _displayedSteps = (_countUpFrom + (_countUpTo - _countUpFrom) * t).round();
       _animatedProgress =
@@ -395,15 +491,13 @@ class _GoalRingState extends State<GoalRing> with TickerProviderStateMixin {
   }
 
   void _runMicroTick({required int from, required int to}) {
-    _countUpController?.dispose();
-    _countUpController = null;
-
-    _microTickController?.dispose();
+    _releaseCountUpController();
+    _releaseMicroTickController();
     _microTickPreviousSteps = from;
     _displayedSteps = to;
     _lastDisplayedSteps = to;
 
-    _liveArcController?.dispose();
+    _releaseLiveArcController();
     final goal = widget.state.goal;
     final fromRatio = goal > 0 ? (from / goal).clamp(0.0, 1.0) : 0.0;
     final toRatio = goal > 0 ? (to / goal).clamp(0.0, 1.0) : 0.0;
@@ -436,13 +530,10 @@ class _GoalRingState extends State<GoalRing> with TickerProviderStateMixin {
   }
 
   void _setDisplayedInstant(int steps) {
-    _countUpController?.dispose();
-    _countUpController = null;
-    _microTickController?.dispose();
-    _microTickController = null;
+    _releaseCountUpController();
+    _releaseMicroTickController();
     _microTickPreviousSteps = null;
-    _liveArcController?.dispose();
-    _liveArcController = null;
+    _releaseLiveArcController();
 
     setState(() {
       _displayedSteps = steps;
@@ -454,6 +545,10 @@ class _GoalRingState extends State<GoalRing> with TickerProviderStateMixin {
 
   void _resetDisplayed({required bool instant}) {
     _liveCoalesceTimer?.cancel();
+    _foregroundCatchUpTimer?.cancel();
+    _foregroundCatchUpTimer = null;
+    _foregroundCatchUpScheduled = false;
+    _pendingForegroundCatchUpClear = false;
     _pendingLiveSteps = null;
     if (instant) {
       _setDisplayedInstant(0);
@@ -491,15 +586,13 @@ class _GoalRingState extends State<GoalRing> with TickerProviderStateMixin {
         duration: const Duration(milliseconds: 1200),
       )..repeat(reverse: true);
     } else {
-      _pulseController?.dispose();
-      _pulseController = null;
+      _releasePulseController();
     }
   }
 
   void _syncOverflowAnimation() {
     if (widget.freezeMotion) {
-      _overflowController?.dispose();
-      _overflowController = null;
+      _releaseOverflowController();
       return;
     }
     final shouldAnimate = widget.state.status == TodayStatus.overflow;
@@ -511,8 +604,7 @@ class _GoalRingState extends State<GoalRing> with TickerProviderStateMixin {
         duration: const Duration(milliseconds: _kOverflowAmbientCycleMs),
       )..repeat();
     } else {
-      _overflowController?.dispose();
-      _overflowController = null;
+      _releaseOverflowController();
     }
   }
 
@@ -521,7 +613,10 @@ class _GoalRingState extends State<GoalRing> with TickerProviderStateMixin {
       TodayStatus.loading => 0,
       TodayStatus.noPermission => 0,
       TodayStatus.empty => 0,
-      _ => widget.state.steps,
+      _ => widget.state.foregroundCatchUp &&
+              widget.state.catchUpTargetSteps != null
+          ? widget.state.catchUpTargetSteps!
+          : widget.state.steps,
     };
   }
 
@@ -560,11 +655,12 @@ class _GoalRingState extends State<GoalRing> with TickerProviderStateMixin {
   @override
   void dispose() {
     _liveCoalesceTimer?.cancel();
-    _pulseController?.dispose();
-    _countUpController?.dispose();
-    _microTickController?.dispose();
-    _liveArcController?.dispose();
-    _overflowController?.dispose();
+    _foregroundCatchUpTimer?.cancel();
+    _releasePulseController();
+    _releaseCountUpController();
+    _releaseMicroTickController();
+    _releaseLiveArcController();
+    _releaseOverflowController();
     super.dispose();
   }
 

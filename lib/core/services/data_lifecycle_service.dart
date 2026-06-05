@@ -1,6 +1,9 @@
 import 'dart:io' show Platform;
+import 'dart:isolate';
+import 'dart:ui';
 
 import 'package:flutter/foundation.dart';
+import 'package:flutter/services.dart';
 import 'package:sqflite/sqflite.dart';
 
 import '../../data/repositories/step_repository.dart';
@@ -166,8 +169,7 @@ class DataLifecycleService {
         (Platform.isAndroid || Platform.isIOS);
 
     if (useIsolateOffload) {
-      return compute(
-        _runFileMaintenanceIsolate,
+      return _runFileMaintenanceInBackgroundIsolate(
         _FileMaintenanceRequest(
           databasePath: _databasePath,
           force: force,
@@ -185,6 +187,24 @@ class DataLifecycleService {
       optimizeAndVacuum: _optimizeAndVacuum,
     );
   }
+}
+
+/// Runs file maintenance in a short-lived isolate with plugin messenger init.
+///
+/// [compute] does not register platform channels; sqflite needs
+/// [BackgroundIsolateBinaryMessenger.ensureInitialized] on mobile.
+Future<LifecycleRunResult> _runFileMaintenanceInBackgroundIsolate(
+  _FileMaintenanceRequest request,
+) async {
+  final token = RootIsolateToken.instance;
+  if (token == null) {
+    return _runFileMaintenanceIsolate(request);
+  }
+
+  return Isolate.run(() async {
+    BackgroundIsolateBinaryMessenger.ensureInitialized(token);
+    return _runFileMaintenanceIsolate(request);
+  });
 }
 
 /// Runs `PRAGMA optimize` then `VACUUM` on the caller's open [db] connection.

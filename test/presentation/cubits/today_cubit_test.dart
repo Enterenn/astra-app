@@ -539,6 +539,47 @@ void main() {
       cubit.close();
     });
 
+    test('syncSteps foregroundCatchUp defers steps until clearForegroundCatchUp', () async {
+      final cubit = buildCubit();
+      await cubit.refresh();
+      final stepsBeforeCatchUp = cubit.state.steps;
+      await cubit.syncSteps(1200, foregroundCatchUp: true);
+      expect(cubit.state.steps, stepsBeforeCatchUp);
+      expect(cubit.state.catchUpTargetSteps, 1200);
+      expect(cubit.state.foregroundCatchUp, isTrue);
+      cubit.clearForegroundCatchUp();
+      expect(cubit.state.foregroundCatchUp, isFalse);
+      expect(cubit.state.catchUpTargetSteps, isNull);
+      expect(cubit.state.steps, 1200);
+      cubit.close();
+    });
+
+    test('refresh ignores stale-high lastDisplayed prefs in favor of SQLite', () async {
+      final localDay = formatLocalDayIso(clock.snapshot());
+      await stepRepository.upsertIngestionBucket(
+        NormalizedStepBucket(
+          startTimeUtc: DateTime.utc(2026, 6, 2, 6),
+          endTimeUtc: DateTime.utc(2026, 6, 2, 6, 5),
+          value: 4292,
+          provider: kInternalPhoneProvider,
+          deviceId: kSmartphoneDeviceId,
+          zoneOffset: '+02:00',
+        ),
+      );
+      await userPreferences.setLastDisplayedSteps(
+        localDayIso: localDay,
+        steps: 4374,
+      );
+
+      final cubit = buildCubit();
+      await cubit.refresh();
+
+      expect(cubit.state.steps, 4292);
+      await cubit.syncSteps(4292, clampStaleDisplay: true);
+      expect(await userPreferences.getLastDisplayedSteps(localDay), 4292);
+      cubit.close();
+    });
+
     test('syncSteps monotonic merge keeps distance aligned with display steps', () async {
       final cubit = buildCubit();
       await cubit.refresh();

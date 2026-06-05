@@ -61,6 +61,7 @@ class _AppScaffoldState extends State<AppScaffold> {
   late final HistoryCubit _historyCubit;
   late final MyDataCubit _myDataCubit;
   late final ProfileCubit _profileCubit;
+  late final List<Widget> _tabScreens;
 
   @override
   void initState() {
@@ -127,6 +128,24 @@ class _AppScaffoldState extends State<AppScaffold> {
     widget.onHistoryCubitReady?.call(_historyCubit);
     widget.onMyDataCubitReady?.call(_myDataCubit);
     widget.onProfileCubitReady?.call(_profileCubit);
+    _tabScreens = [
+      BlocProvider.value(
+        value: _todayCubit,
+        child: const TodayScreen(),
+      ),
+      BlocProvider.value(
+        value: _historyCubit,
+        child: const HistoryScreen(),
+      ),
+      BlocProvider.value(
+        value: _myDataCubit,
+        child: const MyDataScreen(),
+      ),
+      BlocProvider.value(
+        value: _profileCubit,
+        child: const ProfileScreen(),
+      ),
+    ];
     widget.deps.backgroundCollector.registerOnIngestionComplete(
       _onIngestionComplete,
     );
@@ -183,28 +202,6 @@ class _AppScaffoldState extends State<AppScaffold> {
     }
   }
 
-  Widget _buildScreen(int index) {
-    return switch (index) {
-      0 => BlocProvider.value(
-        value: _todayCubit,
-        child: const TodayScreen(),
-      ),
-      1 => BlocProvider.value(
-        value: _historyCubit,
-        child: const HistoryScreen(),
-      ),
-      2 => BlocProvider.value(
-        value: _myDataCubit,
-        child: const MyDataScreen(),
-      ),
-      3 => BlocProvider.value(
-        value: _profileCubit,
-        child: const ProfileScreen(),
-      ),
-      _ => const SizedBox.shrink(),
-    };
-  }
-
   @override
   Widget build(BuildContext context) {
     final colors = context.astraColors;
@@ -214,25 +211,9 @@ class _AppScaffoldState extends State<AppScaffold> {
       floatingActionButton: kDebugMode && _selectedIndex == 1
           ? ChartBenchmarkDevFab(deps: widget.deps)
           : null,
-      body: AnimatedSwitcher(
-        duration: MediaQuery.disableAnimationsOf(context)
-            ? Duration.zero
-            : const Duration(milliseconds: 200),
-        switchInCurve: Curves.easeInOut,
-        switchOutCurve: Curves.easeInOut,
-        layoutBuilder: (currentChild, previousChildren) {
-          return Stack(
-            alignment: Alignment.topCenter,
-            children: [
-              ...previousChildren,
-              ?currentChild,
-            ],
-          );
-        },
-        child: KeyedSubtree(
-          key: ValueKey<int>(_selectedIndex),
-          child: _buildScreen(_selectedIndex),
-        ),
+      body: IndexedStack(
+        index: _selectedIndex,
+        children: _tabScreens,
       ),
       // Floating pill colors use accentPrimary until Story 5.8 preset wiring.
       bottomNavigationBar: AppBottomNav(

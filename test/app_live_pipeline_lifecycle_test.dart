@@ -14,6 +14,7 @@ import 'package:astra_app/data/repositories/user_preferences_repository.dart';
 import 'package:astra_app/presentation/cubits/history_cubit.dart';
 import 'package:astra_app/presentation/cubits/today_cubit.dart';
 import 'package:astra_app/presentation/cubits/today_state.dart';
+import 'package:astra_app/presentation/widgets/goal_ring.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:sqflite/sqflite.dart';
@@ -21,6 +22,21 @@ import 'package:sqflite/sqflite.dart';
 import 'core/time/fake_time_provider.dart';
 import 'helpers/recording_health_fgs.dart';
 import 'helpers/sqflite_test_helper.dart';
+
+class _TestPhoneStreams {
+  _TestPhoneStreams()
+    : events = StreamController<PhoneStepEvent>.broadcast();
+
+  final StreamController<PhoneStepEvent> events;
+  final List<PhoneStepEvent> replayOnSubscribe = [];
+
+  PhoneStepEventStreamFactory get factory => () async* {
+    for (final event in replayOnSubscribe) {
+      yield event;
+    }
+    yield* events.stream;
+  };
+}
 
 TodayCubit _testTodayCubit(AppDependencies deps) {
   return TodayCubit(
@@ -36,6 +52,12 @@ HistoryCubit _testHistoryCubit(AppDependencies deps) {
     stepRepository: deps.stepRepository,
     userPreferences: deps.userPreferences,
   );
+}
+
+void _finishResumeCatchUp(TodayCubit cubit) {
+  if (cubit.state.foregroundCatchUp) {
+    cubit.clearForegroundCatchUp();
+  }
 }
 
 Future<int> _waitForStableTodaySteps(
@@ -79,9 +101,10 @@ void main() {
   group('AstraApp live pipeline lifecycle', () {
     late Database db;
     late AppDependencies deps;
-    late StreamController<PhoneStepEvent> events;
+    late _TestPhoneStreams phoneStreams;
     late LiveStepMonitor monitor;
     setUp(() async {
+      GoalRing.disableStepPersistence = true;
       db = await openAstraDatabase(databasePath: inMemoryDatabasePath);
       final userPreferences = UserPreferencesRepository(db);
       await userPreferences.setOnboardingComplete(true);
@@ -89,12 +112,12 @@ void main() {
         fixedNowUtc: DateTime.utc(2026, 6, 2, 8),
         zoneOffset: const Duration(hours: 2),
       );
-      events = StreamController<PhoneStepEvent>.broadcast();
+      phoneStreams = _TestPhoneStreams();
       monitor = LiveStepMonitor(
         stepRepository: StepRepository(db: db, clock: clock),
         baselineRepository: IngestionBaselineRepository(db),
         clock: clock,
-        stepEventStreamFactory: () => events.stream,
+        stepEventStreamFactory: phoneStreams.factory,
         emitThrottle: Duration.zero,
       );
       deps = await AppDependencies.test(
@@ -103,12 +126,192 @@ void main() {
         timeProvider: clock,
         liveStepMonitor: monitor,
         healthForegroundCoordinator: RecordingHealthFgs(calls: []),
+        ingestionSources: [
+          MonitorDrainSource(
+            monitor,
+            phoneFallback: PhonePedometerSource(
+              stepEventStreamFactory: phoneStreams.factory,
+            ),
+          ),
+        ],
       );
     });
 
     tearDown(() async {
-      await events.close();
+      GoalRing.disableStepPersistence = false;
+      await phoneStreams.events.close();
       await db.close();
+    });
+
+    testWidgets('resume ingests pocket-walk buffer while monitor stays alive', (
+      tester,
+    ) async {
+      TodayCubit? todayCubit;
+
+      await tester.runAsync(() async {
+        await tester.pumpWidget(
+          AstraApp(
+            deps: deps,
+            createTodayCubit: (dependencies) {
+              todayCubit = _testTodayCubit(dependencies);
+              return todayCubit!;
+            },
+            createHistoryCubit: _testHistoryCubit,
+            enablePeriodicPersist: false,
+            enableLiveStepPipeline: true,
+          ),
+        );
+        await tester.pump();
+        await _waitForLivePipeline(monitor, todayCubit!);
+
+        phoneStreams.events.add(
+          PhoneStepEvent(steps: 100, timeStamp: DateTime.utc(2026, 6, 2, 8)),
+        );
+        phoneStreams.events.add(
+          PhoneStepEvent(steps: 150, timeStamp: DateTime.utc(2026, 6, 2, 8, 1)),
+        );
+        for (var attempt = 0; attempt < 100; attempt++) {
+          await Future<void>.delayed(const Duration(milliseconds: 20));
+          if (todayCubit!.state.steps >= 50) {
+            break;
+          }
+        }
+        expect(todayCubit!.state.steps, 50);
+
+        tester.binding.handleAppLifecycleStateChanged(
+          AppLifecycleState.paused,
+        );
+        for (var attempt = 0; attempt < 150; attempt++) {
+          await Future<void>.delayed(const Duration(milliseconds: 20));
+          if (await deps.stepRepository.getTodaySteps() >= 50) {
+            break;
+          }
+        }
+        expect(monitor.isRunning, isTrue);
+
+        phoneStreams.events.add(
+          PhoneStepEvent(steps: 250, timeStamp: DateTime.utc(2026, 6, 2, 8, 4)),
+        );
+        phoneStreams.events.add(
+          PhoneStepEvent(steps: 300, timeStamp: DateTime.utc(2026, 6, 2, 8, 5)),
+        );
+        for (var attempt = 0; attempt < 100; attempt++) {
+          await Future<void>.delayed(const Duration(milliseconds: 20));
+          if (monitor.currentTodaySteps > 50) {
+            break;
+          }
+        }
+
+        tester.binding.handleAppLifecycleStateChanged(
+          AppLifecycleState.resumed,
+        );
+        for (var attempt = 0; attempt < 150; attempt++) {
+          await Future<void>.delayed(const Duration(milliseconds: 20));
+          await tester.pump(const Duration(milliseconds: 20));
+          if (todayCubit!.state.foregroundCatchUp &&
+              (todayCubit!.state.catchUpTargetSteps ?? 0) > 50) {
+            break;
+          }
+        }
+        _finishResumeCatchUp(todayCubit!);
+
+        expect(todayCubit!.state.steps, greaterThan(50));
+        expect(monitor.isRunning, isTrue);
+      });
+      await _unmountAstraApp(tester);
+    });
+
+    testWidgets('resume catch-up then continues live increments', (tester) async {
+      TodayCubit? todayCubit;
+
+      await tester.runAsync(() async {
+        await tester.pumpWidget(
+          AstraApp(
+            deps: deps,
+            createTodayCubit: (dependencies) {
+              todayCubit = _testTodayCubit(dependencies);
+              return todayCubit!;
+            },
+            createHistoryCubit: _testHistoryCubit,
+            enablePeriodicPersist: false,
+            enableLiveStepPipeline: true,
+          ),
+        );
+        await tester.pump();
+        await _waitForLivePipeline(monitor, todayCubit!);
+
+        phoneStreams.events.add(
+          PhoneStepEvent(steps: 100, timeStamp: DateTime.utc(2026, 6, 2, 8)),
+        );
+        phoneStreams.events.add(
+          PhoneStepEvent(steps: 150, timeStamp: DateTime.utc(2026, 6, 2, 8, 1)),
+        );
+        for (var attempt = 0; attempt < 100; attempt++) {
+          await Future<void>.delayed(const Duration(milliseconds: 20));
+          if (todayCubit!.state.steps >= 50) {
+            break;
+          }
+        }
+        final stepsBeforePause = todayCubit!.state.steps;
+        expect(stepsBeforePause, 50);
+
+        tester.binding.handleAppLifecycleStateChanged(
+          AppLifecycleState.paused,
+        );
+        for (var attempt = 0; attempt < 150; attempt++) {
+          await Future<void>.delayed(const Duration(milliseconds: 20));
+          if (await deps.stepRepository.getTodaySteps() >= 50) {
+            break;
+          }
+        }
+
+        phoneStreams.events.add(
+          PhoneStepEvent(steps: 250, timeStamp: DateTime.utc(2026, 6, 2, 8, 4)),
+        );
+        phoneStreams.events.add(
+          PhoneStepEvent(steps: 300, timeStamp: DateTime.utc(2026, 6, 2, 8, 5)),
+        );
+
+        tester.binding.handleAppLifecycleStateChanged(
+          AppLifecycleState.resumed,
+        );
+        for (var attempt = 0; attempt < 300; attempt++) {
+          await Future<void>.delayed(const Duration(milliseconds: 20));
+          await tester.pump(const Duration(milliseconds: 20));
+          if (todayCubit!.state.steps > stepsBeforePause) {
+            break;
+          }
+          if (todayCubit!.state.foregroundCatchUp &&
+              (todayCubit!.state.catchUpTargetSteps ?? 0) >
+                  stepsBeforePause) {
+            break;
+          }
+        }
+        if (todayCubit!.state.foregroundCatchUp) {
+          _finishResumeCatchUp(todayCubit!);
+        }
+        final stepsAfterCatchUp = todayCubit!.state.steps;
+        expect(stepsAfterCatchUp, greaterThan(stepsBeforePause));
+
+        phoneStreams.events.add(
+          PhoneStepEvent(steps: 400, timeStamp: DateTime.utc(2026, 6, 2, 8, 7)),
+        );
+        phoneStreams.events.add(
+          PhoneStepEvent(steps: 480, timeStamp: DateTime.utc(2026, 6, 2, 8, 8)),
+        );
+
+        var stepsAfterLive = stepsAfterCatchUp;
+        for (var attempt = 0; attempt < 100; attempt++) {
+          await Future<void>.delayed(const Duration(milliseconds: 20));
+          stepsAfterLive = todayCubit!.state.steps;
+          if (stepsAfterLive > stepsAfterCatchUp) {
+            break;
+          }
+        }
+        expect(stepsAfterLive, greaterThan(stepsAfterCatchUp));
+        expect(monitor.isRunning, isTrue);
+      });
+      await _unmountAstraApp(tester);
     });
 
     testWidgets('resume syncs live steps after background walk', (tester) async {
@@ -131,10 +334,10 @@ void main() {
 
         await _waitForLivePipeline(monitor, todayCubit!);
 
-        events.add(
+        phoneStreams.events.add(
           PhoneStepEvent(steps: 100, timeStamp: DateTime.utc(2026, 6, 2, 8)),
         );
-        events.add(
+        phoneStreams.events.add(
           PhoneStepEvent(steps: 150, timeStamp: DateTime.utc(2026, 6, 2, 8, 1)),
         );
 
@@ -171,11 +374,12 @@ void main() {
           }
         }
         expect(todayCubit!.state.steps, 50);
+        _finishResumeCatchUp(todayCubit!);
 
-        events.add(
+        phoneStreams.events.add(
           PhoneStepEvent(steps: 300, timeStamp: DateTime.utc(2026, 6, 2, 8, 7)),
         );
-        events.add(
+        phoneStreams.events.add(
           PhoneStepEvent(steps: 380, timeStamp: DateTime.utc(2026, 6, 2, 8, 8)),
         );
 
@@ -214,10 +418,10 @@ void main() {
 
         await _waitForLivePipeline(monitor, todayCubit!);
 
-        events.add(
+        phoneStreams.events.add(
           PhoneStepEvent(steps: 500, timeStamp: DateTime.utc(2026, 6, 2, 8)),
         );
-        events.add(
+        phoneStreams.events.add(
           PhoneStepEvent(steps: 600, timeStamp: DateTime.utc(2026, 6, 2, 8, 1)),
         );
         await Future<void>.delayed(const Duration(milliseconds: 50));
@@ -251,10 +455,10 @@ void main() {
         await tester.pump();
         await _waitForLivePipeline(monitor, todayCubit!);
 
-        events.add(
+        phoneStreams.events.add(
           PhoneStepEvent(steps: 100, timeStamp: DateTime.utc(2026, 6, 2, 8)),
         );
-        events.add(
+        phoneStreams.events.add(
           PhoneStepEvent(steps: 200, timeStamp: DateTime.utc(2026, 6, 2, 8, 1)),
         );
         for (var attempt = 0; attempt < 100; attempt++) {
@@ -279,11 +483,10 @@ void main() {
       await _unmountAstraApp(tester);
     });
 
-    testWidgets('rapid pause resume keeps live updates after background stop', (
+    testWidgets('rapid pause resume keeps live subscription alive', (
       tester,
     ) async {
       TodayCubit? todayCubit;
-      final stopGate = Completer<void>();
 
       await tester.runAsync(() async {
         await tester.pumpWidget(
@@ -296,17 +499,16 @@ void main() {
             createHistoryCubit: _testHistoryCubit,
             enablePeriodicPersist: false,
             enableLiveStepPipeline: true,
-            testBeforeMonitorStop: () => stopGate.future,
           ),
         );
         await tester.pump();
 
         await _waitForLivePipeline(monitor, todayCubit!);
 
-        events.add(
+        phoneStreams.events.add(
           PhoneStepEvent(steps: 100, timeStamp: DateTime.utc(2026, 6, 2, 8)),
         );
-        events.add(
+        phoneStreams.events.add(
           PhoneStepEvent(steps: 150, timeStamp: DateTime.utc(2026, 6, 2, 8, 1)),
         );
 
@@ -325,7 +527,6 @@ void main() {
           AppLifecycleState.resumed,
         );
 
-        stopGate.complete();
         for (var attempt = 0; attempt < 150; attempt++) {
           await Future<void>.delayed(const Duration(milliseconds: 20));
           await tester.pump(const Duration(milliseconds: 20));
@@ -334,11 +535,12 @@ void main() {
           }
         }
         expect(monitor.isRunning, isTrue);
+        _finishResumeCatchUp(todayCubit!);
 
-        events.add(
+        phoneStreams.events.add(
           PhoneStepEvent(steps: 300, timeStamp: DateTime.utc(2026, 6, 2, 8, 7)),
         );
-        events.add(
+        phoneStreams.events.add(
           PhoneStepEvent(steps: 380, timeStamp: DateTime.utc(2026, 6, 2, 8, 8)),
         );
 
@@ -355,7 +557,7 @@ void main() {
       await _unmountAstraApp(tester);
     });
 
-    testWidgets('resume restarts monitor even when already running', (
+    testWidgets('resume phone catch-up when pocket buffer was empty', (
       tester,
     ) async {
       TodayCubit? todayCubit;
@@ -371,68 +573,65 @@ void main() {
             createHistoryCubit: _testHistoryCubit,
             enablePeriodicPersist: false,
             enableLiveStepPipeline: true,
+            minPauseForPhoneCatchUp: Duration.zero,
           ),
         );
         await tester.pump();
 
         await _waitForLivePipeline(monitor, todayCubit!);
 
-        events.add(
+        phoneStreams.events.add(
           PhoneStepEvent(steps: 100, timeStamp: DateTime.utc(2026, 6, 2, 8)),
         );
-        events.add(
-          PhoneStepEvent(steps: 200, timeStamp: DateTime.utc(2026, 6, 2, 8, 1)),
+        phoneStreams.events.add(
+          PhoneStepEvent(steps: 150, timeStamp: DateTime.utc(2026, 6, 2, 8, 1)),
         );
         for (var attempt = 0; attempt < 100; attempt++) {
           await Future<void>.delayed(const Duration(milliseconds: 20));
-          if (todayCubit!.state.steps >= 100) {
+          if (todayCubit!.state.steps >= 50) {
             break;
           }
         }
-        expect(todayCubit!.state.steps, 100);
+        expect(todayCubit!.state.steps, 50);
 
         tester.binding.handleAppLifecycleStateChanged(
           AppLifecycleState.paused,
         );
         for (var attempt = 0; attempt < 150; attempt++) {
           await Future<void>.delayed(const Duration(milliseconds: 20));
-          if (!monitor.isRunning) {
+          if (await deps.stepRepository.getTodaySteps() >= 50) {
             break;
           }
         }
-        expect(monitor.isRunning, isFalse);
-
-        await monitor.start();
         expect(monitor.isRunning, isTrue);
+
+        phoneStreams.replayOnSubscribe
+          ..clear()
+          ..add(
+            PhoneStepEvent(
+              steps: 300,
+              timeStamp: DateTime.utc(2026, 6, 2, 8, 5),
+            ),
+          );
 
         tester.binding.handleAppLifecycleStateChanged(
           AppLifecycleState.resumed,
         );
-        for (var attempt = 0; attempt < 150; attempt++) {
+        for (var attempt = 0; attempt < 300; attempt++) {
           await Future<void>.delayed(const Duration(milliseconds: 20));
           await tester.pump(const Duration(milliseconds: 20));
-          if (monitor.isRunning) {
+          if (todayCubit!.state.steps > 50) {
+            break;
+          }
+          if (todayCubit!.state.foregroundCatchUp &&
+              (todayCubit!.state.catchUpTargetSteps ?? 0) > 50) {
             break;
           }
         }
+        _finishResumeCatchUp(todayCubit!);
+
+        expect(todayCubit!.state.steps, greaterThan(50));
         expect(monitor.isRunning, isTrue);
-
-        events.add(
-          PhoneStepEvent(steps: 400, timeStamp: DateTime.utc(2026, 6, 2, 8, 7)),
-        );
-        events.add(
-          PhoneStepEvent(steps: 500, timeStamp: DateTime.utc(2026, 6, 2, 8, 8)),
-        );
-
-        var stepsAfterResume = todayCubit!.state.steps;
-        for (var attempt = 0; attempt < 100; attempt++) {
-          await Future<void>.delayed(const Duration(milliseconds: 20));
-          stepsAfterResume = todayCubit!.state.steps;
-          if (stepsAfterResume > 100) {
-            break;
-          }
-        }
-        expect(stepsAfterResume, greaterThan(100));
       });
       await _unmountAstraApp(tester);
     });
@@ -463,10 +662,10 @@ void main() {
         await tester.pump();
         await _waitForLivePipeline(monitor, firstCubit!);
 
-        events.add(
+        phoneStreams.events.add(
           PhoneStepEvent(steps: 100, timeStamp: DateTime.utc(2026, 6, 2, 8)),
         );
-        events.add(
+        phoneStreams.events.add(
           PhoneStepEvent(steps: 250, timeStamp: DateTime.utc(2026, 6, 2, 8, 1)),
         );
 
@@ -506,7 +705,7 @@ void main() {
   group('cold start with SQLite baseline', () {
     late Database db;
     late AppDependencies deps;
-    late StreamController<PhoneStepEvent> events;
+    late _TestPhoneStreams phoneStreams;
     late LiveStepMonitor monitor;
 
     setUp(() async {
@@ -517,12 +716,12 @@ void main() {
         fixedNowUtc: DateTime.utc(2026, 6, 2, 8),
         zoneOffset: const Duration(hours: 2),
       );
-      events = StreamController<PhoneStepEvent>.broadcast();
+      phoneStreams = _TestPhoneStreams();
       monitor = LiveStepMonitor(
         stepRepository: StepRepository(db: db, clock: clock),
         baselineRepository: IngestionBaselineRepository(db),
         clock: clock,
-        stepEventStreamFactory: () => events.stream,
+        stepEventStreamFactory: phoneStreams.factory,
         emitThrottle: Duration.zero,
       );
       deps = await AppDependencies.test(
@@ -531,7 +730,14 @@ void main() {
         timeProvider: clock,
         liveStepMonitor: monitor,
         healthForegroundCoordinator: RecordingHealthFgs(calls: []),
-        ingestionSources: [MonitorDrainSource(monitor)],
+        ingestionSources: [
+          MonitorDrainSource(
+            monitor,
+            phoneFallback: PhonePedometerSource(
+              stepEventStreamFactory: phoneStreams.factory,
+            ),
+          ),
+        ],
       );
       await deps.stepRepository.upsertIngestionBucket(
         NormalizedStepBucket(
@@ -546,7 +752,7 @@ void main() {
     });
 
     tearDown(() async {
-      await events.close();
+      await phoneStreams.events.close();
       await db.close();
     });
 
@@ -575,10 +781,10 @@ void main() {
           // AstraApp bind: refresh(silent) → attach → syncSteps (no manual refresh).
           expect(todayCubit!.state.steps, greaterThanOrEqualTo(800));
 
-          events.add(
+          phoneStreams.events.add(
             PhoneStepEvent(steps: 1000, timeStamp: DateTime.utc(2026, 6, 2, 8)),
           );
-          events.add(
+          phoneStreams.events.add(
             PhoneStepEvent(
               steps: 1250,
               timeStamp: DateTime.utc(2026, 6, 2, 8, 1),

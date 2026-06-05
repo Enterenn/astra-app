@@ -42,6 +42,8 @@ class TodayState {
     this.activityMetrics = ActivityMetricsSnapshot.zero,
     this.heightCm,
     this.weightKg,
+    this.foregroundCatchUp = false,
+    this.catchUpTargetSteps,
   });
 
   final TodayStatus status;
@@ -55,6 +57,13 @@ class TodayState {
   final ActivityMetricsSnapshot activityMetrics;
   final int? heightCm;
   final double? weightKg;
+
+  /// When true, [GoalRing] plays a full count-up after returning from background.
+  final bool foregroundCatchUp;
+
+  /// Resume target while [foregroundCatchUp] is true — [steps] stays at the
+  /// last in-session value until the catch-up animation completes.
+  final int? catchUpTargetSteps;
 
   const TodayState.loading() : this(status: TodayStatus.loading);
 
@@ -71,6 +80,8 @@ class TodayState {
     ActivityMetricsSnapshot activityMetrics = ActivityMetricsSnapshot.zero,
     int? heightCm,
     double? weightKg,
+    bool foregroundCatchUp = false,
+    int? catchUpTargetSteps,
   }) {
     return TodayState(
       status: _resolveStatus(steps: steps, goal: goal),
@@ -84,6 +95,8 @@ class TodayState {
       activityMetrics: activityMetrics,
       heightCm: heightCm,
       weightKg: weightKg,
+      foregroundCatchUp: foregroundCatchUp,
+      catchUpTargetSteps: catchUpTargetSteps,
     );
   }
 
@@ -99,6 +112,8 @@ class TodayState {
     ActivityMetricsSnapshot? activityMetrics,
     Object? heightCm = _unset,
     Object? weightKg = _unset,
+    bool? foregroundCatchUp,
+    Object? catchUpTargetSteps = _unset,
   }) {
     return TodayState(
       status: status ?? this.status,
@@ -114,6 +129,10 @@ class TodayState {
       activityMetrics: activityMetrics ?? this.activityMetrics,
       heightCm: heightCm == _unset ? this.heightCm : heightCm as int?,
       weightKg: weightKg == _unset ? this.weightKg : weightKg as double?,
+      foregroundCatchUp: foregroundCatchUp ?? this.foregroundCatchUp,
+      catchUpTargetSteps: catchUpTargetSteps == _unset
+          ? this.catchUpTargetSteps
+          : catchUpTargetSteps as int?,
     );
   }
 

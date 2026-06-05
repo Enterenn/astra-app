@@ -5,8 +5,10 @@ import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 
 import 'core/constants/astra_theme.dart';
+import 'core/debug/live_pipeline_log.dart';
 import 'core/di/app_dependencies.dart';
 import 'core/services/live_step_monitor.dart';
+import 'data/models/step_reading.dart';
 import 'data/repositories/user_preferences_repository.dart';
 import 'presentation/cubits/onboarding_cubit.dart';
 import 'presentation/cubits/theme_cubit.dart';
@@ -28,7 +30,7 @@ class AstraApp extends StatefulWidget {
     this.enablePeriodicPersist = true,
     this.enableLiveStepPipeline = true,
     this.maxPersistStaleness = kMaxPersistStaleness,
-    this.testBeforeMonitorStop,
+    this.minPauseForPhoneCatchUp = const Duration(seconds: 10),
   });
 
   final AppDependencies deps;
@@ -43,10 +45,9 @@ class AstraApp extends StatefulWidget {
   /// Override in tests to avoid multi-minute [Timer.periodic] waits.
   final Duration maxPersistStaleness;
 
-  /// Test hook: awaited in [_AstraAppState._onAppBackgrounded] before
-  /// [LiveStepMonitor.stop] to simulate slow pause transitions.
+  /// Resume phone catch-up runs only after at least this long in background.
   @visibleForTesting
-  final Future<void> Function()? testBeforeMonitorStop;
+  final Duration minPauseForPhoneCatchUp;
 
   @override
   State<AstraApp> createState() => _AstraAppState();
@@ -54,6 +55,9 @@ class AstraApp extends StatefulWidget {
 
 /// Safety net: persist at least this often during continuous walking.
 const kMaxPersistStaleness = Duration(minutes: 5);
+
+/// One-shot phone read after unlock when the live buffer had no pocket events.
+const kResumePhoneCatchUpTimeout = Duration(seconds: 8);
 
 /// Whether the staleness fallback should run a persist cycle.
 @visibleForTesting
@@ -79,6 +83,7 @@ class _AstraAppState extends State<AstraApp> with WidgetsBindingObserver {
   Timer? _stalenessPersistTimer;
   DateTime? _lastPersistAt;
   bool _livePipelineStarted = false;
+  DateTime? _backgroundedAt;
   Future<void>? _persistInFlight;
   Future<void>? _lifecycleTransitionInFlight;
 
@@ -111,7 +116,7 @@ class _AstraAppState extends State<AstraApp> with WidgetsBindingObserver {
     }
   }
 
-  /// Serializes pause/resume handlers so foreground recovery cannot race background [LiveStepMonitor.stop].
+  /// Serializes pause/resume handlers so foreground recovery cannot race background persist.
   Future<void> _enqueueLifecycleTransition(
     Future<void> Function() operation,
   ) async {
@@ -132,26 +137,44 @@ class _AstraAppState extends State<AstraApp> with WidgetsBindingObserver {
   }
 
   Future<void> _onAppBackgrounded() async {
+    _backgroundedAt = DateTime.now();
+    livePipelineLog(
+      'app',
+      'lifecycle PAUSED',
+      details: {
+        'monitorRunning': widget.deps.liveStepMonitor.isRunning,
+        'monitorTotal': widget.deps.liveStepMonitor.currentTodaySteps,
+        'cubitSteps': _todayCubit?.state.steps,
+      },
+    );
     await _persistOnPause();
     if (!_showMainShell) {
       return;
     }
     _stopActivityBasedPersist();
+    _todayCubit?.setLiveStepAppliesPaused(true);
     final healthFgs = widget.deps.healthForegroundCoordinator;
-    if (widget.enableLiveStepPipeline) {
-      await widget.testBeforeMonitorStop?.call();
-      await widget.deps.liveStepMonitor.stop();
-    }
     await healthFgs.setUiActive(false);
     await healthFgs.startHealthCollectionService();
   }
 
   Future<void> _onAppForegrounded() async {
+    livePipelineLog('app', 'lifecycle RESUMED');
     final healthFgs = widget.deps.healthForegroundCoordinator;
     await healthFgs.stopHealthCollectionService();
     await healthFgs.setUiActive(true);
-    await widget.deps.dataLifecycleService.runMaintenance();
-    await _collectAndRefreshToday();
+    unawaited(widget.deps.dataLifecycleService.runMaintenance());
+    if (widget.enableLiveStepPipeline && _showMainShell) {
+      await _resumeLivePipeline();
+    } else {
+      await _enqueuePersistCycle(
+        enableGoalNotification: false,
+        syncTodayAfter: true,
+      );
+      await _todayCubit?.refreshMetadata();
+      await _historyCubit?.refresh(silent: true);
+      await _myDataCubit?.refresh(silent: true);
+    }
     if (_livePipelineStarted && widget.enablePeriodicPersist) {
       _startActivityBasedPersist();
     }
@@ -170,7 +193,10 @@ class _AstraAppState extends State<AstraApp> with WidgetsBindingObserver {
 
   /// Persists buffered phone readings via [BackgroundCollector] (sole bucket writer),
   /// then reconciles [LiveStepMonitor] from SQLite without lowering the overlay.
-  Future<int> _runPersistCycle({required bool enableGoalNotification}) async {
+  Future<int> _runPersistCycle({
+    required bool enableGoalNotification,
+    Duration? sourceTimeout,
+  }) async {
     final monitor = widget.deps.liveStepMonitor;
     final collector = widget.deps.backgroundCollector;
     await monitor.beginReconcile();
@@ -178,6 +204,7 @@ class _AstraAppState extends State<AstraApp> with WidgetsBindingObserver {
       final upserted = await collector.collectOnce(
         maxReadingsPerSource: _persistMaxReadingsPerSource,
         enableGoalNotification: enableGoalNotification,
+        sourceTimeout: sourceTimeout,
       );
       await monitor.reconcileFromDatabase();
       _lastPersistAt = DateTime.now();
@@ -246,25 +273,122 @@ class _AstraAppState extends State<AstraApp> with WidgetsBindingObserver {
     }
   }
 
-  Future<void> _collectAndRefreshToday() async {
-    if (widget.enableLiveStepPipeline) {
-      await _enqueuePersistCycle(
-        enableGoalNotification: false,
-        syncTodayAfter: true,
-      );
-      if (_livePipelineStarted) {
-        await widget.deps.liveStepMonitor.restart();
-        await _bindLiveMonitorToToday();
+  /// Foreground resume: keep the pedometer subscription alive, drain pocket
+  /// buffer, then one-shot phone catch-up only when SQLite did not advance.
+  Future<void> _resumeLivePipeline() async {
+    final monitor = widget.deps.liveStepMonitor;
+    final repo = widget.deps.stepRepository;
+    final stepsBeforeCollect = await repo.getTodaySteps();
+
+    final upsertedFromDrain = await _enqueuePersistCycleReturningCount(
+      enableGoalNotification: false,
+    );
+
+    final stepsAfterDrain = await repo.getTodaySteps();
+    final persistedNewSteps = stepsAfterDrain > stepsBeforeCollect;
+    final monitorAheadOfDb = monitor.currentTodaySteps > stepsAfterDrain;
+    final pauseDuration = _backgroundedAt == null
+        ? Duration.zero
+        : DateTime.now().difference(_backgroundedAt!);
+    _backgroundedAt = null;
+    final likelyPocketWalk =
+        pauseDuration >= widget.minPauseForPhoneCatchUp;
+
+    if (!persistedNewSteps &&
+        upsertedFromDrain == 0 &&
+        !monitorAheadOfDb &&
+        likelyPocketWalk) {
+      final wasRunning = monitor.isRunning;
+      if (wasRunning) {
+        await monitor.stop();
       }
-    } else {
-      await _enqueuePersistCycle(
-        enableGoalNotification: false,
-        syncTodayAfter: true,
+      final pocketEvent = await monitor.peekPhoneStepEvent(
+        timeout: kResumePhoneCatchUpTimeout,
       );
+      if (pocketEvent != null) {
+        monitor.enqueueReadingForCollection(
+          StepReading(
+            cumulativeSteps: pocketEvent.steps,
+            observedAtUtc: pocketEvent.timeStamp,
+          ),
+        );
+        if (!monitor.isRunning) {
+          await monitor.start();
+        }
+        await _runPersistCycle(enableGoalNotification: false);
+      } else if (wasRunning && !monitor.isRunning) {
+        await monitor.start();
+      }
     }
+
+    if (monitor.isRunning) {
+      await monitor.reconcileFromDatabase();
+    } else {
+      await monitor.start();
+      await monitor.reconcileFromDatabase();
+    }
+
+    _todayCubit?.setLiveStepAppliesPaused(false);
+    await _bindLiveMonitorToToday(foregroundCatchUp: true);
+    _livePipelineStarted = true;
+    livePipelineLog(
+      'app',
+      'resume pipeline DONE',
+      details: {
+        'pauseSec': pauseDuration.inSeconds,
+        'upsertedDrain': upsertedFromDrain,
+        'stepsBefore': stepsBeforeCollect,
+        'stepsAfterDrain': stepsAfterDrain,
+        'phoneCatchUp': likelyPocketWalk &&
+            !persistedNewSteps &&
+            upsertedFromDrain == 0 &&
+            !monitorAheadOfDb,
+        'monitorRunning': monitor.isRunning,
+        'monitorTotal': monitor.currentTodaySteps,
+        'cubitSteps': _todayCubit?.state.steps,
+        'catchUp': _todayCubit?.state.foregroundCatchUp ?? false,
+      },
+    );
     await _todayCubit?.refreshMetadata();
     await _historyCubit?.refresh(silent: true);
     await _myDataCubit?.refresh(silent: true);
+  }
+
+  Future<int> _enqueuePersistCycleReturningCount({
+    required bool enableGoalNotification,
+    Duration? sourceTimeout,
+  }) async {
+    while (_persistInFlight != null) {
+      await _persistInFlight;
+    }
+
+    late final Future<void> operation;
+    var upserted = 0;
+    operation = () async {
+      if (widget.enableLiveStepPipeline) {
+        if (!_livePipelineStarted && !enableGoalNotification) {
+          return;
+        }
+        upserted = await _runPersistCycle(
+          enableGoalNotification: enableGoalNotification,
+          sourceTimeout: sourceTimeout,
+        );
+        return;
+      }
+      upserted = await widget.deps.backgroundCollector.collectOnce(
+        enableGoalNotification: enableGoalNotification,
+        sourceTimeout: sourceTimeout,
+      );
+    }();
+    _persistInFlight = operation;
+    try {
+      await operation;
+      return upserted;
+    } finally {
+      if (_persistInFlight == operation) {
+        _persistInFlight = null;
+      }
+    }
   }
 
   Future<void> _initialTodayRefresh() async {
@@ -320,6 +444,15 @@ class _AstraAppState extends State<AstraApp> with WidgetsBindingObserver {
       return;
     }
     _livePipelineStarted = true;
+    livePipelineLog(
+      'app',
+      'cold-start pipeline DONE',
+      details: {
+        'monitorRunning': widget.deps.liveStepMonitor.isRunning,
+        'monitorTotal': widget.deps.liveStepMonitor.currentTodaySteps,
+        'cubitSteps': _todayCubit?.state.steps,
+      },
+    );
     _startActivityBasedPersist();
   }
 
@@ -330,14 +463,12 @@ class _AstraAppState extends State<AstraApp> with WidgetsBindingObserver {
     await _bindLiveMonitorToToday();
   }
 
-  Future<void> _bindLiveMonitorToToday() async {
+  Future<void> _bindLiveMonitorToToday({bool foregroundCatchUp = false}) async {
     if (!await widget.deps.activityPermissionGranted()) {
+      livePipelineLog('app', 'bind SKIPPED reason=no_permission');
       await _todayCubit?.refresh();
       return;
     }
-
-    // SQLite daily sum before live overlay (Today Display Truth Model).
-    await _todayCubit?.refresh(silent: true);
 
     final monitor = widget.deps.liveStepMonitor;
     if (!monitor.isRunning) {
@@ -345,8 +476,35 @@ class _AstraAppState extends State<AstraApp> with WidgetsBindingObserver {
       await monitor.reconcileFromDatabase();
     }
 
-    _todayCubit?.attachLiveMonitor(monitor);
-    await _todayCubit?.syncSteps(monitor.currentTodaySteps);
+    // SQLite daily sum before live overlay (Today Display Truth Model).
+    if (!foregroundCatchUp) {
+      await _todayCubit?.refresh(silent: true);
+    }
+
+    if (foregroundCatchUp) {
+      await _todayCubit?.syncSteps(
+        monitor.currentTodaySteps,
+        foregroundCatchUp: true,
+      );
+      _todayCubit?.attachLiveMonitor(monitor, replayLatest: false);
+    } else {
+      _todayCubit?.attachLiveMonitor(monitor);
+      await _todayCubit?.syncSteps(
+        monitor.currentTodaySteps,
+        clampStaleDisplay: true,
+      );
+    }
+    livePipelineLog(
+      'app',
+      'bindLiveMonitor',
+      details: {
+        'foregroundCatchUp': foregroundCatchUp,
+        'monitorRunning': monitor.isRunning,
+        'monitorTotal': monitor.currentTodaySteps,
+        'cubitSteps': _todayCubit?.state.steps,
+        'catchUp': _todayCubit?.state.foregroundCatchUp ?? false,
+      },
+    );
     await _todayCubit?.refreshMetadata();
   }
 

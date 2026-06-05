@@ -353,7 +353,29 @@ void main() {
       expect(idleCount, 0);
     });
 
-    test('restart re-subscribes and preserves monotonic display', () async {
+    test('peekPhoneStepEvent reads hardware while monitor is stopped', () async {
+      final replay = [
+        PhoneStepEvent(steps: 200, timeStamp: DateTime.utc(2026, 6, 2, 12, 5)),
+      ];
+      final peekMonitor = LiveStepMonitor(
+        stepRepository: repository,
+        baselineRepository: baselineRepository,
+        clock: clock,
+        stepEventStreamFactory: () async* {
+          for (final event in replay) {
+            yield event;
+          }
+          yield* events.stream;
+        },
+        emitThrottle: Duration.zero,
+      );
+
+      final peeked = await peekMonitor.peekPhoneStepEvent();
+      expect(peeked?.steps, 200);
+      peekMonitor.dispose();
+    });
+
+    test('stop and start re-subscribes and preserves monotonic display', () async {
       await monitor.start();
       events.add(
         PhoneStepEvent(steps: 50, timeStamp: DateTime.utc(2026, 6, 2, 12)),
@@ -364,7 +386,9 @@ void main() {
       await Future<void>.delayed(Duration.zero);
       expect(monitor.currentTodaySteps, 30);
 
-      await monitor.restart();
+      await monitor.stop();
+      await monitor.start();
+      await monitor.reconcileFromDatabase();
       expect(monitor.isRunning, isTrue);
       expect(monitor.currentTodaySteps, greaterThanOrEqualTo(30));
 

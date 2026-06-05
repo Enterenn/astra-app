@@ -118,6 +118,7 @@ class _GoalRingCard extends StatelessWidget {
                     state: state,
                     userPreferences: cubit.userPreferences,
                     localDayIso: formatLocalDayIso(cubit.clock.snapshot()),
+                    onForegroundCatchUpHandled: cubit.clearForegroundCatchUp,
                   ),
           ),
           const SizedBox(height: AstraSpacing.kSpaceLg),

@@ -8,6 +8,52 @@ import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import '../../helpers/astra_theme_test_helper.dart';
 
+class _ForegroundCatchUpHarness extends StatefulWidget {
+  const _ForegroundCatchUpHarness({super.key});
+
+  @override
+  State<_ForegroundCatchUpHarness> createState() =>
+      _ForegroundCatchUpHarnessState();
+}
+
+class _ForegroundCatchUpHarnessState extends State<_ForegroundCatchUpHarness> {
+  bool catchUpHandled = false;
+  late TodayState ringState;
+
+  @override
+  void initState() {
+    super.initState();
+    ringState = TodayState.fromData(
+      steps: 100,
+      goal: 8000,
+      isStale: false,
+    );
+  }
+
+  void triggerForegroundCatchUp() {
+    setState(() {
+      ringState = ringState.copyWith(
+        foregroundCatchUp: true,
+        catchUpTargetSteps: 105,
+      );
+    });
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return GoalRing(
+      state: ringState,
+      debugLastDisplayedSteps: 100,
+      onForegroundCatchUpHandled: () {
+        catchUpHandled = true;
+        setState(() {
+          ringState = ringState.copyWith(foregroundCatchUp: false);
+        });
+      },
+    );
+  }
+}
+
 void main() {
   group('GoalRing', () {
     setUp(() {
@@ -294,6 +340,41 @@ void main() {
       );
 
       handle.dispose();
+    });
+
+    testWidgets('foreground catch-up plays count-up for small deltas', (
+      tester,
+    ) async {
+      final harnessKey = GlobalKey<_ForegroundCatchUpHarnessState>();
+
+      await tester.pumpWidget(
+        wrapWithAstraTheme(
+          Center(
+            child: SizedBox(
+              width: 400,
+              child: _ForegroundCatchUpHarness(key: harnessKey),
+            ),
+          ),
+        ),
+      );
+      await tester.pump();
+      await tester.pump();
+
+      harnessKey.currentState!.triggerForegroundCatchUp();
+      await tester.pump();
+
+      expect(harnessKey.currentState!.catchUpHandled, isFalse);
+      await tester.pump(kForegroundCatchUpDelay);
+      await tester.pump();
+
+      expect(harnessKey.currentState!.catchUpHandled, isFalse);
+      await tester.pump(const Duration(milliseconds: 50));
+      final midPainter = ringPainter(tester);
+      expect(midPainter.progress, greaterThan(100 / 8000));
+      expect(midPainter.progress, lessThan(105 / 8000));
+      await tester.pumpAndSettle();
+      expect(harnessKey.currentState!.catchUpHandled, isTrue);
+      expect(ringPainter(tester).progress, closeTo(105 / 8000, 0.001));
     });
 
     testWidgets('empty state shows zero count', (tester) async {

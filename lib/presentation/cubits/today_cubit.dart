@@ -3,6 +3,7 @@ import 'dart:io';
 
 import 'package:flutter/foundation.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
+import '../../core/debug/live_pipeline_log.dart';
 import '../../core/health/stale_data_evaluator.dart';
 import '../../core/metrics/derived_activity_metrics.dart';
 import '../../core/permissions/activity_permission_resolver.dart'
@@ -45,14 +46,74 @@ class TodayCubit extends Cubit<TodayState> {
 
   Future<void>? _refreshInFlight;
   StreamSubscription<int>? _liveStepsSubscription;
+  LiveStepMonitor? _attachedMonitor;
   String? _lastAppliedLocalDay;
+  bool _pauseLiveStepApplies = false;
+
+  /// While true, live monitor events do not update [TodayState] (screen off).
+  @visibleForTesting
+  bool get liveStepAppliesPaused => _pauseLiveStepApplies;
+
+  void setLiveStepAppliesPaused(bool paused) {
+    if (_pauseLiveStepApplies == paused) {
+      return;
+    }
+    _pauseLiveStepApplies = paused;
+    livePipelineLog(
+      'cubit',
+      paused ? 'live applies PAUSED' : 'live applies RESUMED',
+      details: {
+        'stateSteps': state.steps,
+        'foregroundCatchUp': state.foregroundCatchUp,
+      },
+    );
+  }
 
   /// Subscribes to [monitor] live step stream (replays current value immediately).
-  void attachLiveMonitor(LiveStepMonitor monitor) {
+  void attachLiveMonitor(
+    LiveStepMonitor monitor, {
+    bool replayLatest = true,
+  }) {
+    _attachedMonitor = monitor;
     _liveStepsSubscription?.cancel();
-    _liveStepsSubscription = monitor.watchTodaySteps().listen((steps) {
-      unawaited(_applyLiveSteps(steps));
-    });
+    livePipelineLog(
+      'cubit',
+      'attachLiveMonitor',
+      details: {
+        'replayLatest': replayLatest,
+        'monitorRunning': monitor.isRunning,
+        'monitorTotal': monitor.currentTodaySteps,
+        'stateSteps': state.steps,
+        'livePaused': _pauseLiveStepApplies,
+        'foregroundCatchUp': state.foregroundCatchUp,
+      },
+    );
+    _liveStepsSubscription = monitor
+        .watchTodaySteps(replayLatest: replayLatest)
+        .listen((steps) {
+          if (_pauseLiveStepApplies) {
+            livePipelineLog(
+              'cubit',
+              'live IGNORED reason=paused_applies',
+              details: {'steps': steps, 'stateSteps': state.steps},
+              minInterval: const Duration(seconds: 3),
+            );
+            return;
+          }
+          if (state.foregroundCatchUp) {
+            livePipelineLog(
+              'cubit',
+              'live IGNORED reason=foreground_catch_up',
+              details: {
+                'steps': steps,
+                'catchUpTarget': state.catchUpTargetSteps,
+              },
+              minInterval: const Duration(seconds: 3),
+            );
+            return;
+          }
+          unawaited(_applyLiveSteps(steps));
+        });
   }
 
   /// Persists a new daily step goal and refreshes ring + week strip.
@@ -125,12 +186,53 @@ class TodayCubit extends Cubit<TodayState> {
   }
 
   /// Applies [steps] from the live monitor after resume or reconcile.
-  Future<void> syncSteps(int steps) async {
+  ///
+  /// Set [foregroundCatchUp] on app resume so [GoalRing] plays a full count-up
+  /// from the last displayed value instead of live micro-ticks.
+  ///
+  /// [clampStaleDisplay] on live-pipeline bind lowers inflated
+  /// [UserPreferencesRepository.getLastDisplayedSteps] when they exceed the
+  /// monitor/SQLite truth so live increments are visible immediately.
+  Future<void> syncSteps(
+    int steps, {
+    bool foregroundCatchUp = false,
+    bool clampStaleDisplay = false,
+  }) async {
     if (isClosed) {
       return;
     }
     if (state.status == TodayStatus.noPermission) {
       return;
+    }
+
+    if (foregroundCatchUp) {
+      if (steps <= state.steps) {
+        livePipelineLog(
+          'cubit',
+          'syncSteps catch-up SKIPPED (already at target)',
+          details: {'steps': steps, 'stateSteps': state.steps},
+        );
+        return;
+      }
+      livePipelineLog(
+        'cubit',
+        'syncSteps catch-up START',
+        details: {
+          'from': state.steps,
+          'to': steps,
+        },
+      );
+      emit(
+        state.copyWith(
+          foregroundCatchUp: true,
+          catchUpTargetSteps: steps,
+        ),
+      );
+      return;
+    }
+
+    if (clampStaleDisplay) {
+      await _clampStaleLastDisplayed(steps);
     }
 
     var goal = state.goal;
@@ -150,7 +252,34 @@ class TodayCubit extends Cubit<TodayState> {
       activityMetrics: _liveMetricsForSteps(steps),
       heightCm: state.heightCm,
       weightKg: state.weightKg,
+      allowDecrease: clampStaleDisplay,
     );
+  }
+
+  /// Clears [TodayState.foregroundCatchUp] after [GoalRing] finishes catch-up.
+  void clearForegroundCatchUp() {
+    if (isClosed || !state.foregroundCatchUp) {
+      return;
+    }
+    final target =
+        state.catchUpTargetSteps ?? _attachedMonitor?.currentTodaySteps;
+    livePipelineLog(
+      'cubit',
+      'catch-up DONE',
+      details: {
+        'target': target,
+        'stateSteps': state.steps,
+      },
+    );
+    emit(
+      state.copyWith(
+        foregroundCatchUp: false,
+        catchUpTargetSteps: null,
+      ),
+    );
+    if (target != null) {
+      unawaited(syncSteps(target));
+    }
   }
 
   /// Updates goal, stale metadata, and permission without re-reading step count.
@@ -277,7 +406,10 @@ class TodayCubit extends Cubit<TodayState> {
       return;
     }
 
-    final steps = results[0]! as int;
+    final stepsFromDb = results[0]! as int;
+    // SQLite is authoritative on refresh; stale-high lastDisplayed prefs are
+    // reconciled on live-pipeline bind via [syncSteps] + [clampStaleDisplay].
+    final steps = stepsFromDb;
     final goal = results[1]! as int;
     final displayName = results[2] as String?;
     final lastUtc = results[3] as DateTime?;
@@ -324,6 +456,11 @@ class TodayCubit extends Cubit<TodayState> {
     }
 
     if (state.status == TodayStatus.noPermission) {
+      livePipelineLog(
+        'cubit',
+        'applyLiveSteps SKIPPED reason=no_permission',
+        details: {'steps': steps},
+      );
       return;
     }
 
@@ -334,6 +471,7 @@ class TodayCubit extends Cubit<TodayState> {
         return;
       }
     }
+    final previous = state.steps;
     await _applyTodaySnapshot(
       steps: steps,
       goal: goal,
@@ -345,6 +483,18 @@ class TodayCubit extends Cubit<TodayState> {
       heightCm: state.heightCm,
       weightKg: state.weightKg,
     );
+    if (steps != previous) {
+      livePipelineLog(
+        'cubit',
+        'applyLiveSteps',
+        details: {
+          'from': previous,
+          'to': steps,
+          'status': state.status.name,
+        },
+        minInterval: const Duration(milliseconds: 400),
+      );
+    }
   }
 
   Future<List<WeekDayStatus>> _loadWeekDays({required int goal}) async {
@@ -375,9 +525,26 @@ class TodayCubit extends Cubit<TodayState> {
     ];
   }
 
-  /// Applies step count with monotonic same-day merge: display never drops within
-  /// the local day except on rollover (Today Display Truth Model — see
-  /// `_bmad-output/planning-artifacts/architecture.md`).
+  Future<void> _clampStaleLastDisplayed(int truthSteps) async {
+    final todayIso = formatLocalDayIso(clock.snapshot());
+    final lastDisplayed = await userPreferences.getLastDisplayedSteps(todayIso);
+    if (lastDisplayed == null || lastDisplayed <= truthSteps) {
+      return;
+    }
+    livePipelineLog(
+      'cubit',
+      'clamp stale lastDisplayed',
+      details: {
+        'from': lastDisplayed,
+        'to': truthSteps,
+      },
+    );
+    await userPreferences.setLastDisplayedSteps(
+      localDayIso: todayIso,
+      steps: truthSteps,
+    );
+  }
+
   ActivityMetricsSnapshot _liveMetricsForSteps(int steps) {
     return ActivityMetricsSnapshot(
       distanceKm: DerivedActivityMetrics.computeDistanceKm(
@@ -407,6 +574,7 @@ class TodayCubit extends Cubit<TodayState> {
     ActivityMetricsSnapshot? activityMetrics,
     int? heightCm,
     double? weightKg,
+    bool allowDecrease = false,
   }) async {
     if (isClosed) {
       return;
@@ -414,7 +582,8 @@ class TodayCubit extends Cubit<TodayState> {
 
     final todayIso = formatLocalDayIso(clock.snapshot());
     var effectiveSteps = steps;
-    if (_lastAppliedLocalDay == todayIso &&
+    if (!allowDecrease &&
+        _lastAppliedLocalDay == todayIso &&
         state.status != TodayStatus.loading &&
         state.status != TodayStatus.noPermission &&
         steps < state.steps) {
@@ -442,6 +611,8 @@ class TodayCubit extends Cubit<TodayState> {
       activityMetrics: resolvedMetrics,
       heightCm: heightCm ?? state.heightCm,
       weightKg: weightKg ?? state.weightKg,
+      foregroundCatchUp: state.foregroundCatchUp,
+      catchUpTargetSteps: state.catchUpTargetSteps,
     );
     await _maybeTriggerCelebration(
       steps: effectiveSteps,
@@ -488,6 +659,7 @@ class TodayCubit extends Cubit<TodayState> {
   Future<void> close() {
     unawaited(_liveStepsSubscription?.cancel());
     _liveStepsSubscription = null;
+    _attachedMonitor = null;
     return super.close();
   }
 }

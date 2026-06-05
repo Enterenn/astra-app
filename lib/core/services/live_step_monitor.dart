@@ -9,6 +9,7 @@ import '../../data/datasources/step_increment_calculator.dart';
 import '../../data/models/step_reading.dart';
 import '../../data/repositories/ingestion_baseline_repository.dart';
 import '../../data/repositories/step_repository.dart';
+import '../debug/live_pipeline_log.dart';
 import '../time/local_day_formatter.dart';
 import '../time/time_provider.dart';
 
@@ -67,8 +68,10 @@ class LiveStepMonitor {
   int get currentTodaySteps => _persistedTodaySteps + _pendingDelta;
 
   /// Replays the latest count to new subscribers, then forwards live updates.
-  Stream<int> watchTodaySteps() async* {
-    yield _lastEmittedValue;
+  Stream<int> watchTodaySteps({bool replayLatest = true}) async* {
+    if (replayLatest) {
+      yield _lastEmittedValue;
+    }
     yield* _stepsController.stream;
   }
 
@@ -80,9 +83,27 @@ class LiveStepMonitor {
     _persistedTodaySteps = await stepRepository.getTodaySteps();
     _trackedLocalDay = formatLocalDayIso(clock.snapshot());
     _running = true;
+    livePipelineLog(
+      'monitor',
+      'start',
+      details: {
+        'persisted': _persistedTodaySteps,
+        'pendingDelta': _pendingDelta,
+        'baseline': _memoryBaseline,
+      },
+    );
     _subscription = _stepEventStreamFactory().listen(
       _onPhoneEvent,
-      onError: (_) {},
+      onError: (Object error, StackTrace stackTrace) {
+        livePipelineLog(
+          'monitor',
+          'stream ERROR',
+          details: {'error': error},
+        );
+        if (kDebugMode) {
+          debugPrintStack(stackTrace: stackTrace);
+        }
+      },
     );
   }
 
@@ -90,6 +111,14 @@ class LiveStepMonitor {
     if (!_running) {
       return;
     }
+    livePipelineLog(
+      'monitor',
+      'stop',
+      details: {
+        'total': currentTodaySteps,
+        'buffered': _readingsBuffer.length,
+      },
+    );
     _running = false;
     _emitTimer?.cancel();
     _emitTimer = null;
@@ -98,13 +127,51 @@ class LiveStepMonitor {
     _subscription = null;
   }
 
-  /// Re-subscribes to the pedometer stream and re-syncs from SQLite.
-  ///
-  /// Used on app resume when the platform stream may have stalled in background.
-  Future<void> restart() async {
-    await stop();
-    await start();
-    await reconcileFromDatabase();
+  /// One-shot pedometer read while the monitor is stopped (no dual subscription).
+  Future<PhoneStepEvent?> peekPhoneStepEvent({
+    Duration timeout = const Duration(seconds: 2),
+  }) async {
+    final completer = Completer<PhoneStepEvent?>();
+    StreamSubscription<PhoneStepEvent>? subscription;
+    subscription = _stepEventStreamFactory().listen(
+      (event) {
+        unawaited(subscription?.cancel());
+        if (!completer.isCompleted) {
+          completer.complete(event);
+        }
+      },
+      onError: (Object error, StackTrace stackTrace) {
+        livePipelineLog(
+          'monitor',
+          'peek stream ERROR',
+          details: {'error': error},
+        );
+        if (!completer.isCompleted) {
+          completer.complete(null);
+        }
+      },
+      cancelOnError: true,
+    );
+    try {
+      final event = await completer.future.timeout(timeout);
+      livePipelineLog(
+        'monitor',
+        event == null ? 'peek timeout' : 'peek ok',
+        details: {
+          'timeoutMs': timeout.inMilliseconds,
+          if (event != null) 'cumulative': event.steps,
+        },
+      );
+      return event;
+    } on TimeoutException {
+      await subscription.cancel();
+      livePipelineLog(
+        'monitor',
+        'peek timeout',
+        details: {'timeoutMs': timeout.inMilliseconds},
+      );
+      return null;
+    }
   }
 
   /// Pauses pending-delta accumulation and aligns memory baseline with SQLite.
@@ -147,7 +214,22 @@ class LiveStepMonitor {
     }
 
     _trackedLocalDay = formatLocalDayIso(clock.snapshot());
+    livePipelineLog(
+      'monitor',
+      'reconcile',
+      details: {
+        'floor': floorDisplay,
+        'persisted': _persistedTodaySteps,
+        'pendingDelta': _pendingDelta,
+        'total': currentTodaySteps,
+      },
+    );
     _emitNow(force: true);
+  }
+
+  /// Queues a reading for the next [drainReadingsForCollection] without live UI.
+  void enqueueReadingForCollection(StepReading reading) {
+    _bufferReading(reading);
   }
 
   /// Drains all buffered readings for [BackgroundCollector] normalization.
@@ -180,7 +262,22 @@ class LiveStepMonitor {
       observedAtUtc: event.timeStamp,
     );
     _bufferReading(reading);
+    livePipelineLog(
+      'monitor',
+      'hardware event',
+      details: {
+        'cumulative': event.steps,
+        'reconciling': _reconciling,
+        'buffered': _readingsBuffer.length,
+      },
+      minInterval: const Duration(seconds: 2),
+    );
     if (_reconciling) {
+      livePipelineLog(
+        'monitor',
+        'event buffered during reconcile',
+        minInterval: const Duration(seconds: 5),
+      );
       return;
     }
     _handleLocalDayRollover();
@@ -225,16 +322,36 @@ class LiveStepMonitor {
       elapsedSincePrevious: elapsedSincePrevious,
     );
     if (increment == null) {
+      livePipelineLog(
+        'monitor',
+        'increment rejected (noise/rollover)',
+        details: {'cumulative': cumulative, 'baseline': _memoryBaseline},
+        minInterval: const Duration(seconds: 5),
+      );
       _resetActivityIdleTimer();
       return;
     }
 
     _memoryBaseline = cumulative;
     if (increment <= 0) {
+      livePipelineLog(
+        'monitor',
+        'increment zero',
+        details: {'cumulative': cumulative},
+        minInterval: const Duration(seconds: 5),
+      );
       _resetActivityIdleTimer();
       return;
     }
 
+    livePipelineLog(
+      'monitor',
+      'delta +$increment',
+      details: {
+        'total': _persistedTodaySteps + _pendingDelta + increment,
+        'cumulative': cumulative,
+      },
+    );
     _pendingDelta += increment;
     _scheduleEmit();
     _resetActivityIdleTimer();
@@ -281,6 +398,17 @@ class LiveStepMonitor {
       return;
     }
     _lastEmittedValue = total;
+    livePipelineLog(
+      'monitor',
+      'emit',
+      details: {
+        'total': total,
+        'persisted': _persistedTodaySteps,
+        'pendingDelta': _pendingDelta,
+        'listeners': _stepsController.hasListener,
+      },
+      minInterval: const Duration(milliseconds: 500),
+    );
     _stepsController.add(total);
   }
 }
