@@ -5,6 +5,7 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 
 import 'core/constants/astra_theme.dart';
 import 'core/di/app_dependencies.dart';
+import 'core/services/live_step_monitor.dart';
 import 'data/repositories/user_preferences_repository.dart';
 import 'presentation/cubits/onboarding_cubit.dart';
 import 'presentation/cubits/theme_cubit.dart';
@@ -40,10 +41,11 @@ class AstraApp extends StatefulWidget {
   State<AstraApp> createState() => _AstraAppState();
 }
 
-class _AstraAppState extends State<AstraApp> with WidgetsBindingObserver {
-  static const _persistInterval = Duration(seconds: 60);
+/// Safety net: persist at least this often during continuous walking.
+const kMaxPersistStaleness = Duration(minutes: 5);
 
-  /// Must cover [LiveStepMonitor.maxBufferedReadings] so periodic persist
+class _AstraAppState extends State<AstraApp> with WidgetsBindingObserver {
+  /// Must cover [LiveStepMonitor.maxBufferedReadings] so activity-idle persist
   /// normalizes every buffered phone reading in one collect.
   static const _persistMaxReadingsPerSource = 250;
 
@@ -52,9 +54,10 @@ class _AstraAppState extends State<AstraApp> with WidgetsBindingObserver {
   HistoryCubit? _historyCubit;
   MyDataCubit? _myDataCubit;
   late final Future<int> _foregroundBackfill;
-  Timer? _persistTimer;
+  Timer? _stalenessPersistTimer;
+  DateTime? _lastPersistAt;
   bool _livePipelineStarted = false;
-  Future<void>? _backgroundPersistInFlight;
+  Future<void>? _persistInFlight;
 
   @override
   void initState() {
@@ -70,7 +73,7 @@ class _AstraAppState extends State<AstraApp> with WidgetsBindingObserver {
 
   @override
   void dispose() {
-    _persistTimer?.cancel();
+    _stopActivityBasedPersist();
     WidgetsBinding.instance.removeObserver(this);
     unawaited(widget.deps.liveStepMonitor.stop());
     super.dispose();
@@ -90,8 +93,7 @@ class _AstraAppState extends State<AstraApp> with WidgetsBindingObserver {
     if (!_showMainShell) {
       return;
     }
-    _persistTimer?.cancel();
-    _persistTimer = null;
+    _stopActivityBasedPersist();
     final healthFgs = widget.deps.healthForegroundCoordinator;
     if (widget.enableLiveStepPipeline) {
       await widget.deps.liveStepMonitor.stop();
@@ -107,7 +109,7 @@ class _AstraAppState extends State<AstraApp> with WidgetsBindingObserver {
     await widget.deps.dataLifecycleService.runMaintenance();
     await _collectAndRefreshToday();
     if (_livePipelineStarted && widget.enablePeriodicPersist) {
-      _startPeriodicPersist();
+      _startActivityBasedPersist();
     }
   }
 
@@ -119,31 +121,7 @@ class _AstraAppState extends State<AstraApp> with WidgetsBindingObserver {
     if (!_showMainShell) {
       return;
     }
-
-    if (_backgroundPersistInFlight != null) {
-      return _backgroundPersistInFlight;
-    }
-
-    _backgroundPersistInFlight = _persistOnPauseImpl();
-    try {
-      await _backgroundPersistInFlight;
-    } finally {
-      _backgroundPersistInFlight = null;
-    }
-  }
-
-  Future<void> _persistOnPauseImpl() async {
-    if (widget.enableLiveStepPipeline) {
-      if (!_livePipelineStarted) {
-        return;
-      }
-      await _runPersistCycle(enableGoalNotification: false);
-      return;
-    }
-
-    await widget.deps.backgroundCollector.collectOnce(
-      enableGoalNotification: false,
-    );
+    await _enqueuePersistCycle(enableGoalNotification: false);
   }
 
   /// Persists buffered phone readings via [BackgroundCollector] (sole bucket writer),
@@ -158,30 +136,87 @@ class _AstraAppState extends State<AstraApp> with WidgetsBindingObserver {
         enableGoalNotification: enableGoalNotification,
       );
       await monitor.reconcileFromDatabase();
+      _lastPersistAt = DateTime.now();
       return upserted;
     } finally {
       monitor.endReconcile();
     }
   }
 
-  Future<void> _collectAndRefreshToday() async {
-    final pendingPausePersist = _backgroundPersistInFlight;
-    if (pendingPausePersist != null) {
-      await pendingPausePersist;
+  Future<void> _runPersistIfNotInFlight() async {
+    if (!_showMainShell || !_livePipelineStarted) {
+      return;
+    }
+    await _enqueuePersistCycle(
+      enableGoalNotification: false,
+      syncTodayAfter: true,
+    );
+  }
+
+  /// Serializes pause, idle, staleness, and resume persist cycles.
+  Future<void> _enqueuePersistCycle({
+    required bool enableGoalNotification,
+    bool syncTodayAfter = false,
+  }) async {
+    while (_persistInFlight != null) {
+      await _persistInFlight;
     }
 
+    late final Future<void> operation;
+    operation = _persistCycleWithOptionalSync(
+      enableGoalNotification: enableGoalNotification,
+      syncTodayAfter: syncTodayAfter,
+    );
+    _persistInFlight = operation;
+    try {
+      await operation;
+    } finally {
+      if (_persistInFlight == operation) {
+        _persistInFlight = null;
+      }
+    }
+  }
+
+  Future<void> _persistCycleWithOptionalSync({
+    required bool enableGoalNotification,
+    required bool syncTodayAfter,
+  }) async {
+    if (widget.enableLiveStepPipeline) {
+      if (!_livePipelineStarted && !enableGoalNotification) {
+        return;
+      }
+      await _runPersistCycle(enableGoalNotification: enableGoalNotification);
+      if (syncTodayAfter) {
+        await _todayCubit?.syncSteps(
+          widget.deps.liveStepMonitor.currentTodaySteps,
+        );
+      }
+      return;
+    }
+
+    await widget.deps.backgroundCollector.collectOnce(
+      enableGoalNotification: enableGoalNotification,
+    );
+    if (syncTodayAfter) {
+      await _todayCubit?.refresh(silent: true);
+    }
+  }
+
+  Future<void> _collectAndRefreshToday() async {
     if (widget.enableLiveStepPipeline) {
       final monitor = widget.deps.liveStepMonitor;
       if (_livePipelineStarted && !monitor.isRunning) {
         await monitor.restart();
       }
-      await _runPersistCycle(enableGoalNotification: false);
-      await _todayCubit?.syncSteps(monitor.currentTodaySteps);
-    } else {
-      await widget.deps.backgroundCollector.collectOnce(
+      await _enqueuePersistCycle(
         enableGoalNotification: false,
+        syncTodayAfter: true,
       );
-      await _todayCubit?.refresh(silent: true);
+    } else {
+      await _enqueuePersistCycle(
+        enableGoalNotification: false,
+        syncTodayAfter: true,
+      );
     }
     await _todayCubit?.refreshMetadata();
     await _historyCubit?.refresh(silent: true);
@@ -241,7 +276,7 @@ class _AstraAppState extends State<AstraApp> with WidgetsBindingObserver {
       return;
     }
     _livePipelineStarted = true;
-    _startPeriodicPersist();
+    _startActivityBasedPersist();
   }
 
   Future<void> _reattachLivePipeline() async {
@@ -271,14 +306,29 @@ class _AstraAppState extends State<AstraApp> with WidgetsBindingObserver {
     await _todayCubit?.refreshMetadata();
   }
 
-  void _startPeriodicPersist() {
+  void _startActivityBasedPersist() {
     if (!widget.enablePeriodicPersist) {
       return;
     }
-    _persistTimer?.cancel();
-    _persistTimer = Timer.periodic(_persistInterval, (_) {
-      unawaited(_runPersistCycle(enableGoalNotification: false));
+    final monitor = widget.deps.liveStepMonitor;
+    monitor.onActivityIdle = () {
+      unawaited(_runPersistIfNotInFlight());
+    };
+
+    _stalenessPersistTimer?.cancel();
+    _stalenessPersistTimer = Timer.periodic(kMaxPersistStaleness, (_) {
+      final lastPersist = _lastPersistAt;
+      if (lastPersist == null ||
+          DateTime.now().difference(lastPersist) >= kMaxPersistStaleness) {
+        unawaited(_runPersistIfNotInFlight());
+      }
     });
+  }
+
+  void _stopActivityBasedPersist() {
+    _stalenessPersistTimer?.cancel();
+    _stalenessPersistTimer = null;
+    widget.deps.liveStepMonitor.onActivityIdle = null;
   }
 
   void _onOnboardingComplete() {
