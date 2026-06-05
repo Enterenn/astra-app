@@ -254,7 +254,7 @@ void main() {
       );
 
       expect(result.buckets, hasLength(1));
-      expect(result.buckets.single.value, lessThanOrEqualTo(2));
+      expect(result.buckets.single.value, 1);
       expect(result.terminalBaseline, 1050);
     });
 

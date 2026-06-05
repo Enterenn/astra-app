@@ -209,8 +209,7 @@ void main() {
       );
       await Future<void>.delayed(Duration.zero);
 
-      expect(monitor.currentTodaySteps, lessThanOrEqualTo(2));
-      expect(monitor.currentTodaySteps, greaterThanOrEqualTo(1));
+      expect(monitor.currentTodaySteps, 1);
     });
 
     test('restart re-subscribes and preserves monotonic display', () async {

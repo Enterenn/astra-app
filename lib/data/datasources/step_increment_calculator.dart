@@ -9,7 +9,11 @@
 /// `DateTime.now()` at Dart receipt — delivery latency, not hardware step time.
 /// That is acceptable for burst/shake detection.
 class StepIncrementCalculator {
-  const StepIncrementCalculator();
+  const StepIncrementCalculator({this.rateLimitEnabled = kRateLimitEnabled});
+
+  /// When false, [calculate] returns the raw delta even when
+  /// [elapsedSincePrevious] is set. Defaults to [kRateLimitEnabled].
+  final bool rateLimitEnabled;
 
   /// Maximum physiologically plausible steps credited per second of inter-arrival
   /// time. Human sprint peaks around ~4/s; 5/s adds margin.
@@ -37,7 +41,7 @@ class StepIncrementCalculator {
   }) {
     if (current >= baseline) {
       final rawDelta = current - baseline;
-      if (elapsedSincePrevious == null || !kRateLimitEnabled) {
+      if (elapsedSincePrevious == null || !rateLimitEnabled) {
         return rawDelta;
       }
       final maxDelta = _maxDeltaForElapsed(elapsedSincePrevious.inMilliseconds);
@@ -53,6 +57,9 @@ class StepIncrementCalculator {
   }
 
   int _maxDeltaForElapsed(int elapsedMs) {
+    if (elapsedMs <= 0) {
+      return 1;
+    }
     final scaled = (kMaxStepsPerSecond * elapsedMs) / 1000.0;
     final capped = scaled.ceil();
     return capped < 1 ? 1 : capped;

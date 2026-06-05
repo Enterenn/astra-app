@@ -1,5 +1,5 @@
 # generated: 2026-05-25
-# last_updated: 2026-06-05 (Story 6.2 review — 6.3 idle flush created)
+# last_updated: 2026-06-05 (Story 6.2 done — review patches committed)
 # NEXT: 6.3 → epic-7 → 7-1 → 7-2 → 7-3
 # Ref: planning-artifacts/sprint-change-proposal-2026-06-04.md
 # project: astra-app
@@ -109,7 +109,7 @@ development_status:
 
   epic-6: in-progress
   6-1-derived-activity-metrics: done          # after epic-5.12
-  6-2-pedometer-shake-noise-rate-limit: review  # inter-arrival rate cap; Nord drip shake deferred
+  6-2-pedometer-shake-noise-rate-limit: done  # inter-arrival rate cap; Nord drip shake deferred to 6.3
   6-3-activity-idle-persist-flush: ready-for-dev  # universal: flush after step-stream idle
   epic-6-retrospective: optional
 

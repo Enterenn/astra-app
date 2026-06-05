@@ -37,14 +37,46 @@ void main() {
       );
     });
 
-    test('shake burst credits at most one step per 200 ms', () {
-      final credited = calculator.calculate(
-        current: 60,
-        baseline: 10,
-        elapsedSincePrevious: const Duration(milliseconds: 200),
+    test('shake burst credits one step per 200 ms', () {
+      expect(
+        calculator.calculate(
+          current: 60,
+          baseline: 10,
+          elapsedSincePrevious: const Duration(milliseconds: 200),
+        ),
+        1,
       );
-      expect(credited, lessThanOrEqualTo(2));
-      expect(credited, greaterThanOrEqualTo(1));
+    });
+
+    test('zero or negative elapsed credits at most one step', () {
+      expect(
+        calculator.calculate(
+          current: 15,
+          baseline: 10,
+          elapsedSincePrevious: Duration.zero,
+        ),
+        1,
+      );
+      expect(
+        calculator.calculate(
+          current: 60,
+          baseline: 10,
+          elapsedSincePrevious: const Duration(milliseconds: -500),
+        ),
+        1,
+      );
+    });
+
+    test('rate limit disabled credits full burst delta', () {
+      const disabled = StepIncrementCalculator(rateLimitEnabled: false);
+      expect(
+        disabled.calculate(
+          current: 60,
+          baseline: 10,
+          elapsedSincePrevious: const Duration(milliseconds: 200),
+        ),
+        50,
+      );
     });
 
     test('normal walk credits full delta within rate limit', () {

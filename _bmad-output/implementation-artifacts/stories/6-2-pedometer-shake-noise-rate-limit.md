@@ -1,6 +1,6 @@
 # Story 6.2: Pedometer Shake Noise Rate Limit
 
-Status: review
+Status: done
 
 <!-- Baptiste 2026-06-05: Nord 4 / Snapdragon Step Counter credits phone shakes as steps. -->
 <!-- Design review: reject event-drop filter in PhonePedometerSource; rate-limit credited delta in StepIncrementCalculator. -->
@@ -304,6 +304,15 @@ Composer (Cursor)
 - `test/core/services/live_step_monitor_test.dart`
 - `test/presentation/cubits/today_cubit_test.dart`
 
+### Review Findings
+
+- [x] [Review][Decision] Nord drip shake (+23 in 10 s) — accepted known limitation; burst cap ships; drip follow-up in 6.3/optional accelerometer gate.
+- [x] [Review][Patch] `STEP_RATE_LIMIT_ENABLED` testability — `rateLimitEnabled` constructor param + unit test.
+- [x] [Review][Patch] Negative/zero elapsed guard — `_maxDeltaForElapsed` clamps `elapsedMs <= 0` to 1.
+- [x] [Review][Patch] Tighten burst test assertions — expect exactly 1 credited step for +50 in 200 ms.
+- [x] [Review][Defer] `_lastProcessedObservedAtUtc` not reset on restart — intentional resume semantics; pre-existing.
+
 ### Change Log
 
 - 2026-06-05: Rate-limit credited step delta in shared increment calculator; wired normalizer + live monitor; tests + Nord field notes.
+- 2026-06-05: Code review patches — elapsed guard, testability, tighter burst assertions; story marked done.
