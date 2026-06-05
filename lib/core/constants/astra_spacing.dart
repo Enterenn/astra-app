@@ -32,7 +32,7 @@ abstract final class AstraSpacing {
   static const double kBottomNavBottomOffset = kSpaceXl;
 
   static const double kBottomNavItemSize = 52;
-  static const double kBottomNavIconLabelGap = 6;
+  static const double kBottomNavIconLabelGap = 4;
 
   /// Active tab squircle corner radius (= kRadiusLg = 16px).
   static const double kBottomNavSquircleRadius = kRadiusLg;

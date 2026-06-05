@@ -55,6 +55,28 @@ void main() {
       expect(changed, AstraAccentPreset.blue);
     });
 
+    testWidgets('does not overflow at narrow card width', (tester) async {
+      await tester.pumpWidget(
+        MaterialApp(
+          theme: buildAstraLightTheme(),
+          home: Scaffold(
+            body: Center(
+              child: SizedBox(
+                width: 264,
+                child: AccentPresetSelector(
+                  selected: AstraAccentPreset.orange,
+                  onSelected: (_) {},
+                ),
+              ),
+            ),
+          ),
+        ),
+      );
+      await tester.pump();
+
+      expect(tester.takeException(), isNull);
+    });
+
     testWidgets('selected chip has selected semantics state', (tester) async {
       await pumpSelector(tester, selected: AstraAccentPreset.green);
 

@@ -115,14 +115,15 @@ class _NavItem extends StatelessWidget {
   final Color squircleFill;
   final VoidCallback onTap;
 
-  static const double _iconSize = 24;
+  static const double _iconSize = 20;
 
   @override
   Widget build(BuildContext context) {
     final colors = context.astraColors;
     final inactiveColor = colors.accentSecondary;
     final activeColor = colors.accentPrimary;
-    final labelStyle = AstraTypography.captionFor(colors).copyWith(
+    final labelStyle = TextStyle(
+      fontFamily: AstraTypography.figtree,
       fontSize: 10,
       fontWeight: FontWeight.w600,
       letterSpacing: 0.4,

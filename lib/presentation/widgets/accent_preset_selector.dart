@@ -35,15 +35,11 @@ class AccentPresetSelector extends StatelessWidget {
     final colors = context.astraColors;
     final baseColor = colors.bgElevated;
 
-    return Padding(
-      padding: const EdgeInsets.symmetric(
-        horizontal: AstraSpacing.kScreenHorizontalPadding,
-      ),
-      child: Row(
-        mainAxisAlignment: MainAxisAlignment.spaceBetween,
-        children: [
-          for (final preset in _presets)
-            _AccentChip(
+    return Row(
+      children: [
+        for (final preset in _presets)
+          Expanded(
+            child: _AccentChip(
               preset: preset,
               baseColor: baseColor,
               accentColor: accentPaletteFor(preset).primary,
@@ -55,8 +51,8 @@ class AccentPresetSelector extends StatelessWidget {
                   ? () => onSelected(preset)
                   : null,
             ),
-        ],
-      ),
+          ),
+      ],
     );
   }
 }
@@ -101,7 +97,7 @@ class _AccentChip extends StatelessWidget {
           onTap: onTap,
           customBorder: const CircleBorder(),
           child: SizedBox(
-            width: AstraSpacing.kMinTouchTarget,
+            width: double.infinity,
             height: AstraSpacing.kMinTouchTarget,
             child: Center(
               child: SizedBox(
