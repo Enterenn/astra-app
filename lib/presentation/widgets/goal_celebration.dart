@@ -9,10 +9,15 @@ import 'package:flutter/services.dart';
 import '../../core/constants/astra_colors.dart';
 import '../../core/constants/astra_typography.dart';
 import '../cubits/today_state.dart';
+import 'goal_celebration_particles.dart';
 import 'goal_ring.dart';
+import 'goal_ring_effects.dart';
 
-const _kCelebrationSequenceMs = 2500;
+const _kCelebrationSequenceMs = 4000;
 const _kReducedMotionCopyFadeMs = 500;
+const _kArcSweepMs = 400;
+const _kRingPulseMs = 720;
+const _kRingPulsePeak = 1.08;
 const _kRingMinDiameter = 220.0;
 const _kRingMaxDiameter = 260.0;
 
@@ -33,6 +38,9 @@ class GoalCelebration extends StatefulWidget {
   static const celebrationSequenceDuration = Duration(
     milliseconds: _kCelebrationSequenceMs,
   );
+
+  @visibleForTesting
+  static final celebrationParticles = generateCelebrationParticles();
 
   @override
   State<GoalCelebration> createState() => _GoalCelebrationState();
@@ -70,13 +78,13 @@ class _GoalCelebrationState extends State<GoalCelebration>
     _sequenceTimer = Timer(duration, _finishSequence);
 
     if (!reduceMotion) {
-      _scheduleHaptic();
+      _scheduleHaptics();
     }
   }
 
-  void _scheduleHaptic() {
+  void _scheduleHaptics() {
     _hapticTimer?.cancel();
-    _hapticTimer = Timer(const Duration(milliseconds: 300), () {
+    _hapticTimer = Timer(const Duration(milliseconds: 260), () {
       if (!mounted || _hapticFired) {
         return;
       }
@@ -124,129 +132,192 @@ class _GoalCelebrationState extends State<GoalCelebration>
     return Semantics(
       liveRegion: true,
       label: 'Daily goal reached',
-      child: Column(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          if (controller == null)
-            GoalRing(state: widget.state)
-          else if (reduceMotion)
-            _buildReducedMotionRing(colors)
-          else
-            AnimatedBuilder(
-              animation: controller,
-              builder: (context, child) => _buildAnimatedRing(
-                context,
-                colors,
-                controller.value,
-              ),
-            ),
-          const SizedBox(height: 12),
-          if (controller != null)
-            _buildMicroCopy(colors, controller, reduceMotion: reduceMotion),
-        ],
-      ),
-    );
-  }
-
-  Widget _buildReducedMotionRing(AstraColors colors) {
-    return ExcludeSemantics(
       child: LayoutBuilder(
         builder: (context, constraints) {
           final diameter = _ringDiameter(constraints.maxWidth);
-          return SizedBox(
-            width: diameter,
-            height: diameter,
-            child: GoalRing(state: widget.state),
-          );
-        },
-      ),
-    );
-  }
-
-  Widget _buildAnimatedRing(
-    BuildContext context,
-    AstraColors colors,
-    double t,
-  ) {
-    final ringScale = _pulseScale(
-      t,
-      durationMs: 600,
-      peak: 1.05,
-      curve: Curves.easeOutCubic,
-    );
-    final glowOpacity = _pulseOpacity(t, durationMs: 800, peak: 0.18);
-    final shimmerStrength = _windowPulse(
-      t,
-      startMs: 200,
-      endMs: 700,
-      peak: 0.25,
-    );
-    final centerScale = _pulseScale(
-      t,
-      durationMs: 500,
-      startMs: 100,
-      peak: 1.02,
-      curve: Curves.easeInOut,
-    );
-
-    return ExcludeSemantics(
-      child: LayoutBuilder(
-        builder: (context, constraints) {
-          final diameter = _ringDiameter(constraints.maxWidth);
-          final size = Size.square(diameter);
-          final progress = widget.state.progressRatio;
-
           return SizedBox(
             width: diameter,
             height: diameter,
             child: Stack(
+              clipBehavior: Clip.none,
               alignment: Alignment.center,
               children: [
-                if (glowOpacity > 0)
-                  ExcludeSemantics(
-                    child: Opacity(
-                      opacity: glowOpacity,
-                      child: ImageFiltered(
-                        imageFilter: ImageFilter.blur(sigmaX: 24, sigmaY: 24),
-                        child: Container(
-                          width: diameter,
-                          height: diameter,
-                          decoration: BoxDecoration(
-                            shape: BoxShape.circle,
-                            color: colors.accentPrimary,
-                          ),
-                        ),
-                      ),
+                if (controller == null)
+                  GoalRing(state: widget.state)
+                else if (reduceMotion)
+                  _buildReducedMotionRing(colors, diameter)
+                else
+                  AnimatedBuilder(
+                    animation: controller,
+                    builder: (context, child) => _buildAnimatedRing(
+                      colors,
+                      controller.value,
+                      diameter,
                     ),
                   ),
-                Transform.scale(
-                  scale: ringScale,
-                  child: Stack(
-                    alignment: Alignment.center,
-                    children: [
-                      Transform.scale(
-                        scale: centerScale,
-                        child: GoalRing(state: widget.state),
-                      ),
-                      if (shimmerStrength > 0)
-                        CustomPaint(
-                          size: size,
-                          painter: _CelebrationShimmerPainter(
-                            progress: progress,
-                            color: colors.accentPrimary,
-                            shimmerStrength: shimmerStrength,
-                            strokeWidth: 9,
-                          ),
-                        ),
-                    ],
+                if (controller != null)
+                  Positioned(
+                    left: 0,
+                    right: 0,
+                    bottom: 0,
+                    child: _buildMicroCopy(
+                      colors,
+                      controller,
+                      reduceMotion: reduceMotion,
+                    ),
                   ),
-                ),
               ],
             ),
           );
         },
       ),
     );
+  }
+
+  Widget _buildReducedMotionRing(AstraColors colors, double diameter) {
+    return ExcludeSemantics(
+      child: SizedBox(
+        width: diameter,
+        height: diameter,
+        child: GoalRing(state: widget.state, freezeMotion: true),
+      ),
+    );
+  }
+
+  Widget _buildAnimatedRing(
+    AstraColors colors,
+    double t,
+    double diameter,
+  ) {
+    final ringScale = _ringScale(t);
+    final glowOpacity = _pulseOpacity(t, durationMs: 1200, peak: 0.30);
+    final shimmerStrength = _windowPulse(
+      t,
+      startMs: 550,
+      endMs: 1100,
+      peak: 0.22,
+    );
+    final arcSweepT = (t * _kCelebrationSequenceMs / _kArcSweepMs).clamp(0.0, 1.0);
+    final startProgress = widget.state.progressRatio.clamp(0.0, 1.0);
+    final size = Size.square(diameter);
+    final particleCanvas = diameter * 1.45;
+    final ringRadius = (diameter - 9) / 2;
+
+    return ExcludeSemantics(
+      child: Stack(
+        clipBehavior: Clip.none,
+        alignment: Alignment.center,
+        children: [
+          if (glowOpacity > 0)
+            OverflowBox(
+              maxWidth: diameter * 1.35,
+              maxHeight: diameter * 1.35,
+              child: ExcludeSemantics(
+                child: Opacity(
+                  opacity: glowOpacity,
+                  child: ImageFiltered(
+                    imageFilter: ImageFilter.blur(sigmaX: 28, sigmaY: 28),
+                    child: Container(
+                      width: diameter,
+                      height: diameter,
+                      decoration: BoxDecoration(
+                        shape: BoxShape.circle,
+                        color: colors.accentPrimary,
+                      ),
+                    ),
+                  ),
+                ),
+              ),
+            ),
+          Transform.scale(
+            scale: ringScale,
+            child: SizedBox(
+              width: diameter,
+              height: diameter,
+              child: Stack(
+                alignment: Alignment.center,
+                children: [
+                  if (arcSweepT < 1) ...[
+                    CustomPaint(
+                      size: size,
+                      painter: GoalRingPainter(
+                        progress: 0,
+                        trackColor: colors.bgSubtle,
+                        progressColor: colors.accentPrimary,
+                        strokeWidth: 9,
+                        dashedTrack: false,
+                      ),
+                    ),
+                    CustomPaint(
+                      size: size,
+                      painter: GoalRingArcSweepPainter(
+                        fromProgress: startProgress,
+                        toProgress: 1,
+                        sweepT: arcSweepT,
+                        color: colors.accentPrimary,
+                        strokeWidth: 9,
+                      ),
+                    ),
+                  ] else
+                    CustomPaint(
+                      size: size,
+                      painter: GoalRingPainter(
+                        progress: 1,
+                        trackColor: colors.bgSubtle,
+                        progressColor: colors.accentPrimary,
+                        strokeWidth: 9,
+                        dashedTrack: false,
+                      ),
+                    ),
+                  GoalRing(
+                    state: widget.state,
+                    showRing: false,
+                    freezeMotion: true,
+                  ),
+                  if (shimmerStrength > 0)
+                    CustomPaint(
+                      size: size,
+                      painter: GoalRingShimmerPainter(
+                        progress: 1,
+                        color: colors.accentPrimary,
+                        shimmerStrength: shimmerStrength,
+                        strokeWidth: 9,
+                      ),
+                    ),
+                ],
+              ),
+            ),
+          ),
+          OverflowBox(
+            maxWidth: particleCanvas,
+            maxHeight: particleCanvas,
+            child: ExcludeSemantics(
+              child: CustomPaint(
+                size: Size.square(particleCanvas),
+                painter: GoalCelebrationParticlesPainter(
+                  t: t,
+                  ringRadius: ringRadius * ringScale,
+                  primaryColor: colors.accentPrimary,
+                  mutedColor: colors.accentPrimaryMuted,
+                  sparkleColor: colors.textPrimary.withValues(alpha: 0.55),
+                  particles: GoalCelebration.celebrationParticles,
+                ),
+              ),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  /// Single smooth bump — sin envelope avoids the kink of the old triangle pulse.
+  double _ringScale(double t) {
+    final end = _kRingPulseMs / _kCelebrationSequenceMs;
+    if (t <= 0 || t >= end) {
+      return 1;
+    }
+    final bump = math.sin((t / end) * math.pi);
+    return 1 + (_kRingPulsePeak - 1) * bump;
   }
 
   Widget _buildMicroCopy(
@@ -274,7 +345,7 @@ class _GoalCelebrationState extends State<GoalCelebration>
 
   double _microCopyOpacity(double t) {
     const fadeInEnd = 500 / _kCelebrationSequenceMs;
-    const fadeOutStart = 2000 / _kCelebrationSequenceMs;
+    const fadeOutStart = 3500 / _kCelebrationSequenceMs;
     if (t <= fadeInEnd) {
       return t / fadeInEnd;
     }
@@ -334,57 +405,5 @@ class _GoalCelebrationState extends State<GoalCelebration>
     final local = (t - start) / (end - start);
     final shaped = local <= 0.5 ? local * 2 : (1 - local) * 2;
     return peak * Curves.easeInOut.transform(shaped);
-  }
-}
-
-class _CelebrationShimmerPainter extends CustomPainter {
-  _CelebrationShimmerPainter({
-    required this.progress,
-    required this.color,
-    required this.shimmerStrength,
-    required this.strokeWidth,
-  });
-
-  final double progress;
-  final Color color;
-  final double shimmerStrength;
-  final double strokeWidth;
-
-  static const _startAngle = -math.pi / 2;
-  static const _fullSweep = math.pi * 2;
-
-  @override
-  void paint(Canvas canvas, Size size) {
-    if (progress <= 0) {
-      return;
-    }
-
-    final center = Offset(size.width / 2, size.height / 2);
-    final radius = (size.width - strokeWidth) / 2;
-    final rect = Rect.fromCircle(center: center, radius: radius);
-    final alpha = (255 * (1 + shimmerStrength).clamp(0.0, 1.25))
-        .round()
-        .clamp(0, 255);
-
-    final paint = Paint()
-      ..color = color.withAlpha(alpha)
-      ..style = PaintingStyle.stroke
-      ..strokeWidth = strokeWidth
-      ..strokeCap = StrokeCap.round;
-
-    canvas.drawArc(
-      rect,
-      _startAngle,
-      _fullSweep * progress.clamp(0.0, 1.0),
-      false,
-      paint,
-    );
-  }
-
-  @override
-  bool shouldRepaint(covariant _CelebrationShimmerPainter oldDelegate) {
-    return progress != oldDelegate.progress ||
-        color != oldDelegate.color ||
-        shimmerStrength != oldDelegate.shimmerStrength;
   }
 }

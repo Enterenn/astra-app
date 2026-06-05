@@ -1,6 +1,7 @@
 import 'package:astra_app/core/constants/astra_theme.dart';
 import 'package:astra_app/presentation/cubits/today_state.dart';
 import 'package:astra_app/presentation/widgets/goal_celebration.dart';
+import 'package:astra_app/presentation/widgets/goal_celebration_particles.dart';
 import 'package:astra_app/presentation/widgets/goal_ring.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
@@ -102,6 +103,74 @@ void main() {
       await tester.pumpWidget(const SizedBox.shrink());
       await tester.pump();
 
+      expect(completed, isTrue);
+    });
+
+    testWidgets('full motion uses ~4s celebration sequence', (tester) async {
+      expect(
+        GoalCelebration.celebrationSequenceDuration,
+        const Duration(milliseconds: 4000),
+      );
+    });
+
+    testWidgets('full motion matches GoalRing layout footprint', (
+      tester,
+    ) async {
+      var completed = false;
+      await tester.pumpWidget(
+        MaterialApp(
+          theme: buildAstraLightTheme(),
+          home: Scaffold(
+            body: Center(
+              child: SizedBox(
+                width: 400,
+                child: GoalRing(state: celebrationState),
+              ),
+            ),
+          ),
+        ),
+      );
+      await tester.pump();
+      final ringSize = tester.getSize(find.byType(GoalRing));
+
+      await pumpCelebration(
+        tester,
+        onComplete: () => completed = true,
+      );
+      await tester.pump(const Duration(milliseconds: 200));
+
+      final celebrationSize = tester.getSize(find.byType(GoalCelebration));
+      expect(celebrationSize, ringSize);
+
+      await tester.pump(GoalCelebration.celebrationSequenceDuration);
+      await tester.pump(const Duration(milliseconds: 1));
+      expect(completed, isTrue);
+    });
+
+    testWidgets('full motion renders particle burst layer', (tester) async {
+      var completed = false;
+      await pumpCelebration(
+        tester,
+        onComplete: () => completed = true,
+      );
+
+      await tester.pump();
+      await tester.pump(const Duration(milliseconds: 200));
+
+      final painters = tester.widgetList<CustomPaint>(
+        find.descendant(
+          of: find.byType(GoalCelebration),
+          matching: find.byType(CustomPaint),
+        ),
+      );
+      expect(
+        painters.any((p) => p.painter is GoalCelebrationParticlesPainter),
+        isTrue,
+      );
+      expect(GoalCelebration.celebrationParticles, isNotEmpty);
+
+      await tester.pump(GoalCelebration.celebrationSequenceDuration);
+      await tester.pump(const Duration(milliseconds: 1));
       expect(completed, isTrue);
     });
 
