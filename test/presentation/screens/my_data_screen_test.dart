@@ -175,6 +175,28 @@ void main() {
       expect(find.byType(DisplayNameEditorRow), findsNothing);
     });
 
+    testWidgets('shows My Data screen title with semantics label', (
+      tester,
+    ) async {
+      final cubit = buildSeededCubit(_readyState());
+      addTearDown(cubit.close);
+
+      await pumpScreen(tester, cubit: cubit);
+
+      expect(find.text('My Data'), findsOneWidget);
+      expect(
+        find.descendant(
+          of: find.byType(MyDataScreen),
+          matching: find.byWidgetPredicate(
+            (widget) =>
+                widget is Semantics &&
+                widget.properties.label == 'My Data',
+          ),
+        ),
+        findsOneWidget,
+      );
+    });
+
     testWidgets('sections appear in Storage → Backup order', (
       tester,
     ) async {
