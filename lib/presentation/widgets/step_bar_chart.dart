@@ -121,6 +121,8 @@ class _ReadyChart extends StatelessWidget {
   final int dailyGoal;
   final AstraColors colors;
 
+  static const _kBelowGoalBarAlpha = 0.66;
+
   static const _weekdayLabels = [
     'Mon',
     'Tue',
@@ -237,7 +239,11 @@ class _ReadyChart extends StatelessWidget {
                   barRods: [
                     BarChartRodData(
                       toY: points[i].totalSteps.toDouble(),
-                      color: colors.dataPositive,
+                      color: _barColor(
+                        colors: colors,
+                        steps: points[i].totalSteps,
+                        dailyGoal: dailyGoal,
+                      ),
                       width: 12,
                       borderRadius: const BorderRadius.vertical(
                         top: Radius.circular(4),
@@ -250,6 +256,17 @@ class _ReadyChart extends StatelessWidget {
         ),
       ),
     );
+  }
+
+  static Color _barColor({
+    required AstraColors colors,
+    required int steps,
+    required int dailyGoal,
+  }) {
+    if (dailyGoal > 0 && steps >= dailyGoal) {
+      return colors.dataPositive;
+    }
+    return colors.accentPrimary.withValues(alpha: _kBelowGoalBarAlpha);
   }
 
   static bool _shouldShowBottomLabel(int index, int pointCount) {
