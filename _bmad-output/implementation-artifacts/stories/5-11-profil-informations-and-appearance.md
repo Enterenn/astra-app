@@ -101,7 +101,7 @@ Also: [Source: `_bmad-output/planning-artifacts/ux-design-specification.md` §2.
 
 - [x] **A — Nav label: PROFILE** (AC: #6)
   - [x] Change `AppBottomNav` fourth tab label `PROFIL` → `PROFILE`
-  - [x] Update tests: `app_bottom_nav_test.dart`, `app_scaffold_test.dart`, `widget_test.dart`
+  - [x] Update tests: `app_scaffold_test.dart`, `widget_test.dart` (`app_bottom_nav_test.dart` removed 2026-06-05 — `spec-test-suite-cleanup.md`)
   - [x] **Stop → review brief → Baptiste OK → commit**
 
 - [x] **B — Preferences + ProfileCubit** (AC: #3, #4, #7)
@@ -324,7 +324,7 @@ Composer (dev-story workflow)
 - lib/presentation/widgets/height_editor_sheet.dart
 - lib/presentation/widgets/weight_editor_sheet.dart
 - lib/presentation/widgets/accent_preset_selector.dart
-- test/presentation/widgets/app_bottom_nav_test.dart
+- ~~test/presentation/widgets/app_bottom_nav_test.dart~~ (removed 2026-06-05)
 - test/widget_test.dart
 - test/presentation/screens/app_scaffold_test.dart
 - test/presentation/screens/profile_screen_test.dart

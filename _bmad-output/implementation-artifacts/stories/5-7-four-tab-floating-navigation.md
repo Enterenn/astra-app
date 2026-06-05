@@ -81,7 +81,7 @@ so that I can reach Today, Trends, Data, and Profil quickly.
   - [x] Squircle fill: `bgElevated` (light) / charcoal surface token (dark, best-effort; **5.8** owns final nav squircle token)
   - [x] Active icon: `PhosphorIconsFill.*`; inactive: `PhosphorIconsRegular.*`; label color `accentPrimary` (active) / `textPrimary` (inactive)
   - [x] Labels: uppercase TODAY, TRENDS, DATA, PROFIL
-  - [x] Extend `phosphoricons_flutter_test.dart` with `PhosphorIconsFill` compile guard for the four tab icons
+  - [x] Extend `phosphoricons_flutter_test.dart` with `PhosphorIconsFill` compile guard for the four tab icons *(file removed 2026-06-05 — compile guard via `app_bottom_nav.dart` imports; see `spec-test-suite-cleanup.md`)*
   - [x] **Stop → review brief → Baptiste OK → commit**
 
 - [x] **Sub-task B — Wire `AppScaffold` to 4 tabs** (AC: #3–#7)
@@ -214,7 +214,7 @@ PhosphorIconsFill.database
 PhosphorIconsFill.user
 ```
 
-Compile-time guard: extend `test/dependencies/phosphoricons_flutter_test.dart` for **both** Regular and Fill sets.
+Compile-time guard: `app_bottom_nav.dart` imports **both** `PhosphorIconsRegular` and `PhosphorIconsFill` for the four tab icons. Do **not** recreate `phosphoricons_flutter_test.dart` (removed Phase A — `spec-test-suite-cleanup.md`).
 
 **Do not** switch to `phosphor_flutter` 2.x without planning doc amendment (Dart 3.12 `IconData` final).
 
@@ -324,14 +324,15 @@ Composer (Cursor)
 - lib/presentation/widgets/app_bottom_nav.dart
 - lib/presentation/screens/app_scaffold.dart
 - lib/presentation/screens/profile_screen.dart
-- test/dependencies/phosphoricons_flutter_test.dart
-- test/presentation/widgets/app_bottom_nav_test.dart
+- ~~test/dependencies/phosphoricons_flutter_test.dart~~ (removed 2026-06-05)
+- ~~test/presentation/widgets/app_bottom_nav_test.dart~~ (removed 2026-06-05)
 - test/presentation/screens/app_scaffold_test.dart
 - test/widget_test.dart
 
 ### Change Log
 
 - 2026-06-04: Story 5.7 implemented — four-tab floating navigation, tests updated, status → review.
+- 2026-06-05: Dedicated nav/phosphor test files removed — coverage via `app_scaffold_test.dart` + `widget_test.dart` (`spec-test-suite-cleanup.md`).
 
 - 2026-06-04: Baptiste refinements — 72px bar, 24px padding, 52×52 items, 6px icon-label gap, Regular→Fill active icons, dark squircle charcoal (best-effort), History screen mockup, Profil placeholder confirmed.
 - 2026-06-04: Squircle radius **16px**, Figma corner smoothing **100%** → `ContinuousRectangleBorder` / optional `RoundedSuperellipseBorder`.

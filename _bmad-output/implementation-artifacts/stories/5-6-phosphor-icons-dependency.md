@@ -176,19 +176,20 @@ Composer (Cursor)
 - Added `phosphoricons_flutter: ^1.0.0` to `pubspec.yaml` (not `phosphor_flutter` — incompatible with Dart 3.12); lockfile pins 1.0.0. No `lib/` changes (scope boundary for 5.7).
 - Documented Phosphor in `docs/DEPENDENCIES.md` with network policy, 5.7 API preview, deferred Material migration.
 - AC #1 and #2 satisfied; prerequisite ready for Story 5.7 four-tab nav.
-- Post-review: DEPENDENCIES table alignment; `phosphoricons_flutter_test.dart` guards 5.7 tab icon API.
+- Post-review: DEPENDENCIES table alignment; `phosphoricons_flutter_test.dart` guarded 5.7 tab icon API (removed 2026-06-05 — see `spec-test-suite-cleanup.md`; compile-time guarantee via `app_bottom_nav.dart` imports).
 
 ### File List
 
 - `pubspec.yaml`
 - `pubspec.lock`
 - `docs/DEPENDENCIES.md`
-- `test/dependencies/phosphoricons_flutter_test.dart`
+- ~~`test/dependencies/phosphoricons_flutter_test.dart`~~ (removed Phase A test cleanup, 2026-06-05)
 
 ### Change Log
 
 - 2026-06-04: Story 5.6 — add `phosphor_flutter` dependency and DEPENDENCIES documentation (install-only; no lib edits).
 - 2026-06-04: Code review fixes — DEPENDENCIES table row; `phosphoricons_flutter` swap + API smoke test; story/sprint marked done.
+- 2026-06-05: `phosphoricons_flutter_test.dart` removed (low-value; see `spec-test-suite-cleanup.md`).
 
 ## Previous Story Intelligence
 

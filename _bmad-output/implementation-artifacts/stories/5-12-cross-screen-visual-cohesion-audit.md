@@ -141,7 +141,7 @@ so that the app feels cohesive before OSS beta release.
 
 - [x] **F — Tests & regression** (AC: #13)
   - [x] Update `history_screen_test.dart`, `profile_screen_test.dart`, `trend_chip_test.dart`, `app_scaffold_test.dart`
-  - [x] Update `app_bottom_nav_test.dart`, `widget_test.dart` (Trends title, w700)
+  - [x] Update `widget_test.dart` (Trends title, w700); `app_bottom_nav_test.dart` removed 2026-06-05 (`spec-test-suite-cleanup.md`)
   - [x] Full `flutter test` + `flutter analyze`
   - [x] **Stop → review brief → Baptiste OK → commit**
 
@@ -403,7 +403,7 @@ Pattern: small focused fixes per surface; colocated tests; semantic colors only.
 - `test/presentation/screens/history_screen_test.dart` (new — Trends title, Semantics, bottom padding)
 - `test/presentation/screens/profile_screen_test.dart` (modified — ColoredBox shell assert)
 - `test/presentation/screens/app_scaffold_test.dart` (modified — Trends title)
-- `test/presentation/widgets/app_bottom_nav_test.dart` (modified — w700)
+- ~~`test/presentation/widgets/app_bottom_nav_test.dart`~~ (removed 2026-06-05 — w700 label covered in source)
 - `test/widget_test.dart` (modified — Trends title)
 
 ---

@@ -54,7 +54,7 @@ So that phone (and future ADP) sources can feed buckets without duplicating delt
   - [x] Emit `NormalizedStepBucket` with: `type=steps`, `unit=count`, `resolution=5min`, ISO 8601 UTC `start_time`/`end_time`, immutable `zone_offset` from `TimeProvider`, `provider`/`device_id` from source.
   - [x] Align 5-minute windows to UTC boundaries derived from `TimeProvider.nowUtc()` (document alignment rule in code comment if non-obvious).
   - [x] Add `test/data/datasources/step_normalizer_test.dart` — **mandatory** reset/reboot scenario plus at least one happy-path multi-reading sequence.
-  - [x] Add `test/data/datasources/adp_ble_source_test.dart` — stub emits no events.
+  - [x] Add `test/data/datasources/adp_ble_source_test.dart` — stub emits no events *(removed 2026-06-05 — low-value stub; see `spec-test-suite-cleanup.md`)*
   - [x] **Stop → review brief → wait for Baptiste OK → commit**
 
 - [x] **Sub-task E — AppDependencies wiring** (AC: #1)
@@ -199,7 +199,7 @@ lib/core/di/app_dependencies.dart                    # UPDATE
 
 test/core/time/fake_time_provider.dart
 test/data/datasources/step_normalizer_test.dart
-test/data/datasources/adp_ble_source_test.dart
+# adp_ble_source_test.dart removed 2026-06-05 (spec-test-suite-cleanup.md)
 test/data/datasources/phone_pedometer_source_test.dart  # optional if stream factory tested
 ```
 
@@ -362,9 +362,9 @@ Expose getters on `AppDependencies` for later `BackgroundCollector` (Story 2.4).
 - `lib/data/models/normalized_step_bucket.dart`
 - `lib/data/models/step_reading.dart`
 - `test/core/time/fake_time_provider.dart`
-- `test/core/time/time_provider_test.dart`
+- ~~`test/core/time/time_provider_test.dart`~~ (removed 2026-06-05)
 - `test/core/di/app_dependencies_test.dart`
-- `test/data/datasources/adp_ble_source_test.dart`
+- ~~`test/data/datasources/adp_ble_source_test.dart`~~ (removed 2026-06-05)
 - `test/data/datasources/data_ingestion_source_test.dart`
 - `test/data/datasources/phone_pedometer_source_test.dart`
 - `test/data/datasources/step_normalizer_test.dart`

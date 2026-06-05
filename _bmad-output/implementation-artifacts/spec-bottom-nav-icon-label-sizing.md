@@ -12,12 +12,14 @@ route: 'one-shot'
 
 **Problem:** Tab bar icons and labels did not match the updated Figma spec (24dp icons, semibold caption-derived labels).
 
-**Approach:** Set Phosphor icons to 20×20 logical px and tab labels to Figtree 10sp bold (w700) in `AppBottomNav`, with widget tests locking the sizes.
+**Approach:** Set Phosphor icons to 20×20 logical px and tab labels to Figtree 10sp bold (w700) in `AppBottomNav`. Nav integration covered by `widget_test.dart` and `app_scaffold_test.dart` (dedicated `app_bottom_nav_test.dart` removed in test-suite Phase A — see `spec-test-suite-cleanup.md`).
 
 ## Suggested Review Order
 
 - Icons 20dp and Figtree 10sp bold labels on accent bar
   [`app_bottom_nav.dart:118`](../../lib/presentation/widgets/app_bottom_nav.dart#L118)
 
-- Widget tests lock icon size and label typography
-  [`app_bottom_nav_test.dart:59`](../../test/presentation/widgets/app_bottom_nav_test.dart#L59)
+- Icon size and label typography defined in widget source; nav smoke in scaffold/widget tests
+  [`app_bottom_nav.dart:118`](../../lib/presentation/widgets/app_bottom_nav.dart#L118)
+  [`app_scaffold_test.dart`](../../test/presentation/screens/app_scaffold_test.dart)
+  [`widget_test.dart`](../../test/widget_test.dart)
