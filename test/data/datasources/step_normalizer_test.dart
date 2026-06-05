@@ -234,6 +234,30 @@ void main() {
       },
     );
 
+    test('rate-limits shake burst so buckets do not store full phantom jump', () {
+      final normalizer = StepNormalizer(
+        clock: _SequenceTimeProvider([DateTime.utc(2026, 6, 2, 7, 1)]),
+      );
+      final t0 = DateTime.utc(2026, 6, 2, 7);
+      final readings = [
+        StepReading(cumulativeSteps: 1000, observedAtUtc: t0),
+        StepReading(
+          cumulativeSteps: 1050,
+          observedAtUtc: t0.add(const Duration(milliseconds: 200)),
+        ),
+      ];
+      final source = _FakeStepSource(readings);
+
+      final result = normalizer.normalizeReadings(
+        source: source,
+        readings: readings,
+      );
+
+      expect(result.buckets, hasLength(1));
+      expect(result.buckets.single.value, lessThanOrEqualTo(2));
+      expect(result.terminalBaseline, 1050);
+    });
+
     test('rejects small counter dips as glitches', () async {
       final normalizer = StepNormalizer(
         clock: _SequenceTimeProvider([DateTime.utc(2026, 6, 2, 7, 1)]),

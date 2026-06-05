@@ -52,18 +52,26 @@ class StepNormalizer {
 
     int? baseline = initialBaseline;
     int? lastCumulative;
+    DateTime? previousObservedAtUtc;
     for (final reading in readings) {
       final cumulativeSteps = reading.cumulativeSteps;
       lastCumulative = cumulativeSteps;
 
       if (baseline == null) {
         baseline = cumulativeSteps;
+        previousObservedAtUtc = reading.observedAtUtc;
         continue;
       }
+
+      final elapsedSincePrevious = previousObservedAtUtc == null
+          ? null
+          : reading.observedAtUtc.difference(previousObservedAtUtc);
+      previousObservedAtUtc = reading.observedAtUtc;
 
       final increment = incrementCalculator.calculate(
         current: cumulativeSteps,
         baseline: baseline,
+        elapsedSincePrevious: elapsedSincePrevious,
       );
 
       if (increment == null) {
