@@ -22,6 +22,12 @@ class AstraButton extends StatelessWidget {
 
   bool get _isDisabled => onPressed == null || isLoading;
 
+  static bool _isInteractive(Set<WidgetState> states) {
+    return states.contains(WidgetState.hovered) ||
+        states.contains(WidgetState.focused) ||
+        states.contains(WidgetState.pressed);
+  }
+
   @override
   Widget build(BuildContext context) {
     final colors = context.astraColors;
@@ -48,13 +54,33 @@ class AstraButton extends StatelessWidget {
           ),
         AstraButtonVariant.secondary => OutlinedButton(
             onPressed: _isDisabled ? null : onPressed,
-            style: OutlinedButton.styleFrom(
-              minimumSize: const Size.fromHeight(AstraSpacing.kMinTouchTarget),
-              foregroundColor: colors.textPrimary,
-              disabledForegroundColor: colors.textMuted,
-              side: BorderSide(color: colors.borderDefault),
-              shape: RoundedRectangleBorder(
-                borderRadius: BorderRadius.circular(AstraSpacing.kRadiusSm),
+            style: ButtonStyle(
+              minimumSize: WidgetStateProperty.all(
+                const Size.fromHeight(AstraSpacing.kMinTouchTarget),
+              ),
+              foregroundColor: WidgetStateProperty.resolveWith((states) {
+                if (_isDisabled) {
+                  return colors.textMuted;
+                }
+                return colors.textPrimary;
+              }),
+              backgroundColor: WidgetStateProperty.resolveWith((states) {
+                if (_isDisabled) {
+                  return Colors.transparent;
+                }
+                if (_isInteractive(states)) {
+                  return colors.borderDefault;
+                }
+                return Colors.transparent;
+              }),
+              overlayColor: WidgetStateProperty.all(Colors.transparent),
+              side: WidgetStateProperty.all(
+                BorderSide(color: colors.borderDefault),
+              ),
+              shape: WidgetStateProperty.all(
+                RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(AstraSpacing.kRadiusSm),
+                ),
               ),
             ),
             child: _buildChild(labelStyle),

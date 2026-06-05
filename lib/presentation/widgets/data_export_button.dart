@@ -21,6 +21,12 @@ class DataExportButton extends StatelessWidget {
 
   bool get _isDisabled => onPressed == null || isLoading;
 
+  static bool _isInteractive(Set<WidgetState> states) {
+    return states.contains(WidgetState.hovered) ||
+        states.contains(WidgetState.focused) ||
+        states.contains(WidgetState.pressed);
+  }
+
   @override
   Widget build(BuildContext context) {
     final colors = context.astraColors;
@@ -36,15 +42,38 @@ class DataExportButton extends StatelessWidget {
         constraints: const BoxConstraints(minHeight: AstraSpacing.kMinTouchTarget),
         child: OutlinedButton(
           onPressed: _isDisabled ? null : onPressed,
-          style: OutlinedButton.styleFrom(
-            minimumSize: const Size.fromHeight(AstraSpacing.kMinTouchTarget),
-            foregroundColor: colors.textPrimary,
-            disabledForegroundColor: colors.textMuted,
-            side: BorderSide(
-              color: _isDisabled ? colors.borderDefault : colors.accentPrimary,
+          style: ButtonStyle(
+            minimumSize: WidgetStateProperty.all(
+              const Size.fromHeight(AstraSpacing.kMinTouchTarget),
             ),
-            shape: RoundedRectangleBorder(
-              borderRadius: BorderRadius.circular(AstraSpacing.kRadiusSm),
+            foregroundColor: WidgetStateProperty.resolveWith((states) {
+              if (_isDisabled) {
+                return colors.textMuted;
+              }
+              if (_isInteractive(states)) {
+                return colors.accentSecondary;
+              }
+              return colors.textPrimary;
+            }),
+            backgroundColor: WidgetStateProperty.resolveWith((states) {
+              if (_isDisabled) {
+                return Colors.transparent;
+              }
+              if (_isInteractive(states)) {
+                return colors.accentPrimary;
+              }
+              return Colors.transparent;
+            }),
+            overlayColor: WidgetStateProperty.all(Colors.transparent),
+            side: WidgetStateProperty.resolveWith(
+              (states) => BorderSide(
+                color: _isDisabled ? colors.borderDefault : colors.accentPrimary,
+              ),
+            ),
+            shape: WidgetStateProperty.all(
+              RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(AstraSpacing.kRadiusSm),
+              ),
             ),
           ),
           child: isLoading
