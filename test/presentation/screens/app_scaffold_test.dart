@@ -12,6 +12,7 @@ import 'package:astra_app/presentation/cubits/today_state.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:astra_app/presentation/screens/app_scaffold.dart';
 import 'package:astra_app/presentation/widgets/app_bottom_nav.dart';
+import 'package:astra_app/presentation/widgets/goal_ring.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:phosphoricons_flutter/phosphoricons_flutter.dart';
@@ -113,6 +114,14 @@ void main() {
   group('AppScaffold', () {
     late Database db;
     late AppDependencies deps;
+
+    setUp(() {
+      GoalRing.disableStepPersistence = true;
+    });
+
+    tearDown(() {
+      GoalRing.disableStepPersistence = false;
+    });
 
     setUpAll(() async {
       db = await openAstraDatabase(databasePath: inMemoryDatabasePath);
