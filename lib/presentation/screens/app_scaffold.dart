@@ -182,18 +182,11 @@ class _AppScaffoldState extends State<AppScaffold> {
     }
   }
 
-  void _navigateToMyData() {
-    setState(() {
-      _selectedIndex = 2;
-    });
-    unawaited(_myDataCubit.refresh());
-  }
-
   Widget _buildScreen(int index) {
     return switch (index) {
       0 => BlocProvider.value(
         value: _todayCubit,
-        child: TodayScreen(onNavigateToMyData: _navigateToMyData),
+        child: const TodayScreen(),
       ),
       1 => BlocProvider.value(
         value: _historyCubit,

@@ -12,7 +12,6 @@ import 'package:astra_app/presentation/cubits/today_state.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:astra_app/presentation/screens/app_scaffold.dart';
 import 'package:astra_app/presentation/widgets/app_bottom_nav.dart';
-import 'package:astra_app/presentation/widgets/status_banner.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:phosphoricons_flutter/phosphoricons_flutter.dart';
@@ -34,26 +33,6 @@ HistoryCubit _testHistoryCubit(AppDependencies deps) {
     stepRepository: deps.stepRepository,
     userPreferences: deps.userPreferences,
   );
-}
-
-class _StaleTodayCubit extends TodayCubit {
-  _StaleTodayCubit({
-    required super.stepRepository,
-    required super.userPreferences,
-    required super.clock,
-  }) : super(activityPermissionGranted: () async => true);
-
-  @override
-  Future<void> refresh({bool silent = true}) async {
-    emit(
-      TodayState.fromData(
-        steps: 1200,
-        goal: 8000,
-        isStale: true,
-        lastIngestionUtc: DateTime.utc(2020, 1, 1),
-      ),
-    );
-  }
 }
 
 class _RefreshCountingCubit extends TodayCubit {
@@ -266,47 +245,6 @@ void main() {
         (cubit! as _RefreshCountingCubit).refreshCallCount,
         initialCalls + 1,
       );
-
-      await _disposeScaffold(tester);
-    });
-
-    testWidgets('stale compact banner navigates to My Data tab', (
-      tester,
-    ) async {
-      TodayCubit? staleCubit;
-
-      await _pumpAppScaffold(
-        tester,
-        AppScaffold(
-          deps: deps,
-          createTodayCubit: (dependencies) {
-            staleCubit = _StaleTodayCubit(
-              stepRepository: dependencies.stepRepository,
-              userPreferences: dependencies.userPreferences,
-              clock: dependencies.timeProvider,
-            );
-            return staleCubit!;
-          },
-        ),
-        userPreferences: deps.userPreferences,
-      );
-
-      await tester.runAsync(() async {
-        await staleCubit!.refresh();
-      });
-      await tester.pump();
-
-      expect(find.byType(StatusBanner), findsOneWidget);
-
-      await tester.tap(find.byType(StatusBanner));
-      await tester.pump();
-      await tester.runAsync(() async {
-        await Future<void>.delayed(const Duration(milliseconds: 50));
-      });
-      await tester.pump();
-
-      expect(find.text('Storage on this device'), findsOneWidget);
-      expect(find.text('Backup & restore'), findsOneWidget);
 
       await _disposeScaffold(tester);
     });

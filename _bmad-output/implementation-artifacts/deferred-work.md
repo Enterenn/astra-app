@@ -63,3 +63,11 @@ Do **not** open hotfix stories before 6.3 unless a blocker prevents running the 
 | Item | Notes |
 |------|-------|
 | History FAB "KPI-01 running (50 iterations…)" | **Debug-only** (`kDebugMode` + `ChartBenchmarkDevFab`). Not in release APK. `Database_closed` = dev benchmark touching DB while app lifecycle closes DB — ignore for beta; optional dev-tool hardening later |
+
+## Deferred from: remove-today-stale-banner one-shot (2026-06-05)
+
+- **`TodayState.isStale` computed but not surfaced in UI** — stale ingestion still tracked in cubit; no in-app stale UX after banner removal. Needs product decision (ring hint, snackbar, Profile, or restore a Data surface).
+
+- **`StatusBannerVariant.staleCompact` / `staleFull` unused in production** — enum variants and widget tests remain as stubs; delete or wire when stale UX is redesigned.
+
+- **Story AC / UX docs still reference Today compact stale → My Data** — stories 5.9, 4.2 and UX §2.3 need amendment to match 5.10 sovereignty layout pivot.

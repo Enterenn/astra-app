@@ -12,16 +12,10 @@ import '../widgets/goal_celebration.dart';
 import '../widgets/goal_editor_sheet.dart';
 import '../widgets/goal_ring.dart';
 import '../widgets/section_card.dart';
-import '../widgets/status_banner.dart';
 import '../widgets/week_progress_row.dart';
 
 class TodayScreen extends StatelessWidget {
-  const TodayScreen({
-    required this.onNavigateToMyData,
-    super.key,
-  });
-
-  final VoidCallback onNavigateToMyData;
+  const TodayScreen({super.key});
 
   static const _kScreenTitle = "Today's activity";
   static const _kSetGoalLabel = 'Set goal';
@@ -57,13 +51,6 @@ class TodayScreen extends StatelessWidget {
                       _kScreenTitle,
                       style: AstraTypography.captionFor(colors),
                     ),
-                    if (state.isStale) ...[
-                      const SizedBox(height: AstraSpacing.kSpaceSm),
-                      StatusBanner(
-                        variant: StatusBannerVariant.staleCompact,
-                        onTap: onNavigateToMyData,
-                      ),
-                    ],
                     const SizedBox(height: AstraSpacing.kSpaceMd),
                     _GoalRingCard(state: state),
                     if (state.status == TodayStatus.noPermission) ...[

@@ -9,6 +9,7 @@ import 'package:astra_app/presentation/models/week_day_status.dart';
 import 'package:astra_app/presentation/screens/today_screen.dart';
 import 'package:astra_app/presentation/widgets/activity_stats_row.dart';
 import 'package:astra_app/presentation/widgets/section_card.dart';
+import 'package:astra_app/presentation/widgets/status_banner.dart';
 import 'package:astra_app/presentation/widgets/week_progress_row.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
@@ -87,7 +88,7 @@ void main() {
           theme: buildAstraLightTheme(),
           home: BlocProvider<TodayCubit>.value(
             value: cubit,
-            child: TodayScreen(onNavigateToMyData: () {}),
+            child: const TodayScreen(),
           ),
         ),
       );
@@ -126,6 +127,23 @@ void main() {
 
       expect(find.textContaining('Hello,'), findsNothing);
       expect(find.text('Phone sensor'), findsNothing);
+    });
+
+    testWidgets('does not show stale banner when data is stale', (tester) async {
+      final cubit = buildCubit(
+        TodayState.fromData(
+          steps: 1200,
+          goal: 8000,
+          isStale: true,
+          weekDays: sampleWeekDays(),
+        ),
+      );
+      addTearDown(cubit.close);
+
+      await pumpScreen(tester, cubit);
+
+      expect(find.byType(StatusBanner), findsNothing);
+      expect(find.textContaining('Steps may be delayed'), findsNothing);
     });
 
     testWidgets('shows three main cards', (tester) async {
