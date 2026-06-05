@@ -154,7 +154,7 @@ void main() {
         await tester.pump();
         await _awaitHistoryRefresh(tester);
 
-        expect(find.text('History'), findsWidgets);
+        expect(find.text('Trends'), findsWidgets);
         expect(find.text('7 days'), findsOneWidget);
         expect(find.text('30 days'), findsOneWidget);
 

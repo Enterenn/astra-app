@@ -107,7 +107,7 @@ void main() {
       });
       await tester.pump(const Duration(milliseconds: 200));
 
-      expect(find.text('History'), findsWidgets);
+      expect(find.text('Trends'), findsWidgets);
       expect(find.text('7 days'), findsOneWidget);
       expect(find.text('30 days'), findsOneWidget);
       expect(

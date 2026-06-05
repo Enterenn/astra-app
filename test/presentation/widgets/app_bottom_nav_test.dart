@@ -71,6 +71,6 @@ void main() {
     final trendsLabel = tester.widget<Text>(find.text('TRENDS'));
     expect(trendsLabel.style?.fontFamily, AstraTypography.figtree);
     expect(trendsLabel.style?.fontSize, 10);
-    expect(trendsLabel.style?.fontWeight, FontWeight.w600);
+    expect(trendsLabel.style?.fontWeight, FontWeight.w700);
   });
 }

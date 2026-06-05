@@ -127,10 +127,10 @@ so that the app feels cohesive before OSS beta release.
   - [x] Delete orphan `goal_editor_row.dart`, `profile_initials_badge.dart` + tests
   - [x] **Stop → review brief → Baptiste OK → commit**
 
-- [ ] **D — Today card consolidation** (AC: #9)
+- [x] **D — Today card consolidation** (AC: #9)
   - [x] Extract shared elevated card widget or extend `SectionCard` for headline-optional use
   - [x] Replace `_ElevatedCard` in `today_screen.dart` with shared widget
-  - [ ] **Stop → review brief → Baptiste OK → commit**
+  - [x] **Stop → review brief → Baptiste OK → commit**
 
 - [ ] **E — Device checklist pass** (AC: #2, #3–#5, #10, #13)
   - [ ] Run V-1–V-13 on physical device: system + light + dark × 6 accent presets on all surfaces
@@ -140,8 +140,9 @@ so that the app feels cohesive before OSS beta release.
   - [ ] **Stop → review brief → Baptiste OK → commit**
 
 - [ ] **F — Tests & regression** (AC: #13)
-  - [ ] Update `history_screen_test.dart`, `profile_screen_test.dart`, `trend_chip_test.dart`, `app_scaffold_test.dart`
-  - [ ] Full `flutter test` + `flutter analyze`
+  - [x] Update `history_screen_test.dart`, `profile_screen_test.dart`, `trend_chip_test.dart`, `app_scaffold_test.dart`
+  - [x] Update `app_bottom_nav_test.dart`, `widget_test.dart` (Trends title, w700)
+  - [x] Full `flutter test` + `flutter analyze`
   - [ ] **Stop → review brief → Baptiste OK → commit**
 
 ---
@@ -397,6 +398,11 @@ Pattern: small focused fixes per surface; colocated tests; semantic colors only.
 - `lib/presentation/widgets/elevated_card.dart` (new — shared elevated surface)
 - `lib/presentation/widgets/section_card.dart` (modified — composes ElevatedCard)
 - `lib/presentation/screens/today_screen.dart` (modified — uses ElevatedCard)
+- `test/presentation/screens/history_screen_test.dart` (new — Trends title, Semantics, bottom padding)
+- `test/presentation/screens/profile_screen_test.dart` (modified — ColoredBox shell assert)
+- `test/presentation/screens/app_scaffold_test.dart` (modified — Trends title)
+- `test/presentation/widgets/app_bottom_nav_test.dart` (modified — w700)
+- `test/widget_test.dart` (modified — Trends title)
 
 ---
 

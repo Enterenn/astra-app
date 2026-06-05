@@ -124,6 +124,36 @@ void main() {
       await db.close();
     });
 
+    testWidgets('uses ColoredBox shell without nested Scaffold', (
+      tester,
+    ) async {
+      final cubit = _SeededProfileCubit(
+        userPreferences: userPreferences,
+        notificationService: NotificationService(
+          permissionChecker: () async => PermissionStatus.granted,
+        ),
+        seededState: ProfileState.ready(),
+      );
+      addTearDown(cubit.close);
+
+      await _pumpProfileScreen(tester, profileCubit: cubit);
+
+      expect(
+        find.descendant(
+          of: find.byType(ProfileScreen),
+          matching: find.byType(Scaffold),
+        ),
+        findsNothing,
+      );
+      expect(
+        find.descendant(
+          of: find.byType(ProfileScreen),
+          matching: find.byType(ColoredBox),
+        ),
+        findsWidgets,
+      );
+    });
+
     testWidgets('shows title and three section cards without Age row', (
       WidgetTester tester,
     ) async {
