@@ -4,19 +4,29 @@ import 'package:phosphoricons_flutter/phosphoricons_flutter.dart';
 import '../../core/constants/astra_colors.dart';
 import '../../core/constants/astra_spacing.dart';
 import '../../core/constants/astra_typography.dart';
+import '../cubits/today_state.dart';
+import '../formatters/activity_metrics_formatter.dart';
 
-/// Three-column activity stats (Epic 6 fills real values; Story 5.9 mock placeholders).
+/// Three-column activity stats (kcal, km, walking duration).
 class ActivityStatsRow extends StatelessWidget {
-  const ActivityStatsRow({super.key});
+  const ActivityStatsRow({
+    super.key,
+    required this.status,
+    required this.metrics,
+  });
 
-  /// Visual-only placeholders until Epic 6 derived metrics.
-  static const _kMockKcal = '420';
-  static const _kMockKm = '4.2';
-  static const _kMockDuration = '00:37:20';
+  final TodayStatus status;
+  final ActivityMetricsSnapshot metrics;
+
+  static const _kLoadingPlaceholder = '—';
+  static const _kZeroKcal = '0';
+  static const _kZeroKm = '0.0';
+  static const _kZeroDuration = '00:00:00';
 
   @override
   Widget build(BuildContext context) {
     final colors = context.astraColors;
+    final (kcal, km, duration) = _formattedValues();
 
     return IntrinsicHeight(
       child: Row(
@@ -25,7 +35,7 @@ class ActivityStatsRow extends StatelessWidget {
           Expanded(
             child: _StatColumn(
               icon: PhosphorIconsRegular.fire,
-              value: _kMockKcal,
+              value: kcal,
               label: 'Kcal',
               colors: colors,
             ),
@@ -34,7 +44,7 @@ class ActivityStatsRow extends StatelessWidget {
           Expanded(
             child: _StatColumn(
               icon: PhosphorIconsRegular.mapPin,
-              value: _kMockKm,
+              value: km,
               label: 'Km',
               colors: colors,
             ),
@@ -43,12 +53,27 @@ class ActivityStatsRow extends StatelessWidget {
           Expanded(
             child: _StatColumn(
               icon: PhosphorIconsRegular.clock,
-              value: _kMockDuration,
+              value: duration,
               colors: colors,
+              tabular: true,
             ),
           ),
         ],
       ),
+    );
+  }
+
+  (String, String, String) _formattedValues() {
+    if (status == TodayStatus.loading) {
+      return (_kLoadingPlaceholder, _kLoadingPlaceholder, _kLoadingPlaceholder);
+    }
+    if (status == TodayStatus.noPermission) {
+      return (_kZeroKcal, _kZeroKm, _kZeroDuration);
+    }
+    return (
+      formatKcal(metrics.kcal),
+      formatDistanceKm(metrics.distanceKm),
+      formatWalkingDuration(metrics.walkingDuration),
     );
   }
 }
@@ -74,16 +99,21 @@ class _StatColumn extends StatelessWidget {
     required this.value,
     required this.colors,
     this.label,
+    this.tabular = false,
   });
 
   final IconData icon;
   final String value;
   final String? label;
   final AstraColors colors;
+  final bool tabular;
 
   TextStyle get _dataStyle => AstraTypography.captionFor(colors).copyWith(
         fontWeight: FontWeight.w500,
         color: colors.textPrimary,
+        fontFeatures: tabular
+            ? const [FontFeature.tabularFigures()]
+            : null,
       );
 
   @override
@@ -106,9 +136,7 @@ class _StatColumn extends StatelessWidget {
         else
           Text(
             value,
-            style: _dataStyle.copyWith(
-              fontFeatures: const [FontFeature.tabularFigures()],
-            ),
+            style: _dataStyle,
             textAlign: TextAlign.center,
           ),
       ],

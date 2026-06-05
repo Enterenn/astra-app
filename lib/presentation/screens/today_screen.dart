@@ -67,7 +67,12 @@ class TodayScreen extends StatelessWidget {
                       ),
                     ],
                     const SizedBox(height: AstraSpacing.kSpaceMd),
-                    const ElevatedCard(child: ActivityStatsRow()),
+                    ElevatedCard(
+                      child: ActivityStatsRow(
+                        status: state.status,
+                        metrics: state.activityMetrics,
+                      ),
+                    ),
                     const SizedBox(height: AstraSpacing.kSpaceMd),
                     SectionCard(
                       headline: 'This week',
