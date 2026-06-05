@@ -14,6 +14,21 @@ import 'package:sqflite/sqflite.dart';
 import '../../core/time/fake_time_provider.dart';
 import '../../helpers/sqflite_test_helper.dart';
 
+Future<void> _persistBufferedSteps(
+  LiveStepMonitor monitor,
+  BackgroundCollector collector, {
+  void Function()? onComplete,
+}) async {
+  await monitor.beginReconcile();
+  try {
+    await collector.collectOnce(maxReadingsPerSource: 250);
+    await monitor.reconcileFromDatabase();
+  } finally {
+    monitor.endReconcile();
+    onComplete?.call();
+  }
+}
+
 void main() {
   setUpAll(() async {
     await setUpSqfliteFfi();
@@ -210,6 +225,132 @@ void main() {
       await Future<void>.delayed(Duration.zero);
 
       expect(monitor.currentTodaySteps, 1);
+    });
+
+    test('activity idle fires after delay with no new readings', () async {
+      var idleCount = 0;
+      monitor = LiveStepMonitor(
+        stepRepository: repository,
+        baselineRepository: baselineRepository,
+        clock: clock,
+        stepEventStreamFactory: () => events.stream,
+        emitThrottle: Duration.zero,
+        activityIdleFlushDelay: const Duration(milliseconds: 100),
+        onActivityIdle: () => idleCount++,
+      );
+
+      await monitor.start();
+      events.add(
+        PhoneStepEvent(steps: 10, timeStamp: DateTime.utc(2026, 6, 2, 12)),
+      );
+      events.add(
+        PhoneStepEvent(steps: 25, timeStamp: DateTime.utc(2026, 6, 2, 12, 1)),
+      );
+      await Future<void>.delayed(Duration.zero);
+      expect(idleCount, 0);
+
+      await Future<void>.delayed(const Duration(milliseconds: 150));
+      expect(idleCount, 1);
+    });
+
+    test('new reading cancels pending activity idle timer', () async {
+      var idleCount = 0;
+      monitor = LiveStepMonitor(
+        stepRepository: repository,
+        baselineRepository: baselineRepository,
+        clock: clock,
+        stepEventStreamFactory: () => events.stream,
+        emitThrottle: Duration.zero,
+        activityIdleFlushDelay: const Duration(milliseconds: 100),
+        onActivityIdle: () => idleCount++,
+      );
+
+      await monitor.start();
+      events.add(
+        PhoneStepEvent(steps: 10, timeStamp: DateTime.utc(2026, 6, 2, 12)),
+      );
+      await Future<void>.delayed(Duration.zero);
+
+      await Future<void>.delayed(const Duration(milliseconds: 60));
+      events.add(
+        PhoneStepEvent(steps: 20, timeStamp: DateTime.utc(2026, 6, 2, 12, 1)),
+      );
+      await Future<void>.delayed(Duration.zero);
+
+      await Future<void>.delayed(const Duration(milliseconds: 80));
+      expect(idleCount, 0);
+
+      await Future<void>.delayed(const Duration(milliseconds: 50));
+      expect(idleCount, 1);
+    });
+
+    test('activity idle triggers persist cycle without lifecycle pause', () async {
+      const idleDelay = Duration(milliseconds: 100);
+      final persistDone = Completer<void>();
+      final normalizer = StepNormalizer(clock: clock);
+
+      monitor = LiveStepMonitor(
+        stepRepository: repository,
+        baselineRepository: baselineRepository,
+        clock: clock,
+        stepEventStreamFactory: () => events.stream,
+        emitThrottle: Duration.zero,
+        activityIdleFlushDelay: idleDelay,
+      );
+      final collector = BackgroundCollector(
+        sources: [MonitorDrainSource(monitor)],
+        normalizer: normalizer,
+        repository: repository,
+        baselineRepository: baselineRepository,
+        sourceTimeout: const Duration(milliseconds: 50),
+      );
+      monitor.onActivityIdle = () {
+        unawaited(
+          _persistBufferedSteps(
+            monitor,
+            collector,
+            onComplete: persistDone.complete,
+          ),
+        );
+      };
+
+      await monitor.start();
+      events.add(
+        PhoneStepEvent(steps: 100, timeStamp: DateTime.utc(2026, 6, 2, 12)),
+      );
+      events.add(
+        PhoneStepEvent(steps: 200, timeStamp: DateTime.utc(2026, 6, 2, 12, 1)),
+      );
+      await Future<void>.delayed(Duration.zero);
+      expect(monitor.currentTodaySteps, 100);
+      expect(await repository.getTodaySteps(), 0);
+
+      await Future<void>.delayed(idleDelay);
+      await persistDone.future;
+      expect(await repository.getTodaySteps(), 100);
+    });
+
+    test('stop cancels activity idle timer', () async {
+      var idleCount = 0;
+      monitor = LiveStepMonitor(
+        stepRepository: repository,
+        baselineRepository: baselineRepository,
+        clock: clock,
+        stepEventStreamFactory: () => events.stream,
+        emitThrottle: Duration.zero,
+        activityIdleFlushDelay: const Duration(milliseconds: 50),
+        onActivityIdle: () => idleCount++,
+      );
+
+      await monitor.start();
+      events.add(
+        PhoneStepEvent(steps: 10, timeStamp: DateTime.utc(2026, 6, 2, 12)),
+      );
+      await Future<void>.delayed(Duration.zero);
+      await monitor.stop();
+
+      await Future<void>.delayed(const Duration(milliseconds: 100));
+      expect(idleCount, 0);
     });
 
     test('restart re-subscribes and preserves monotonic display', () async {

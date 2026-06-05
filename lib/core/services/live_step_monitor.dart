@@ -1,6 +1,8 @@
 import 'dart:async';
 import 'dart:collection';
 
+import 'package:flutter/foundation.dart';
+
 import '../../data/datasources/data_ingestion_source.dart';
 import '../../data/datasources/phone_pedometer_source.dart';
 import '../../data/datasources/step_increment_calculator.dart';
@@ -11,6 +13,9 @@ import '../time/local_day_formatter.dart';
 import '../time/time_provider.dart';
 
 typedef ActivityPermissionChecker = Future<bool> Function();
+
+/// Delay after the last processed step reading before [LiveStepMonitor.onActivityIdle] fires.
+const kActivityIdleFlushDelay = Duration(seconds: 15);
 
 /// Foreground owner of the phone pedometer stream and live today-step display.
 ///
@@ -24,6 +29,8 @@ class LiveStepMonitor {
     PhoneStepEventStreamFactory? stepEventStreamFactory,
     this.emitThrottle = const Duration(milliseconds: 500),
     this.maxBufferedReadings = 200,
+    this.activityIdleFlushDelay = kActivityIdleFlushDelay,
+    this.onActivityIdle,
   }) : _stepEventStreamFactory =
            stepEventStreamFactory ?? PhonePedometerSource.defaultStepEventStreamFactory;
 
@@ -34,6 +41,8 @@ class LiveStepMonitor {
   final PhoneStepEventStreamFactory _stepEventStreamFactory;
   final Duration emitThrottle;
   final int maxBufferedReadings;
+  final Duration activityIdleFlushDelay;
+  VoidCallback? onActivityIdle;
 
   final Queue<StepReading> _readingsBuffer = ListQueue<StepReading>();
 
@@ -51,6 +60,7 @@ class LiveStepMonitor {
       StreamController<int>.broadcast();
   Timer? _emitTimer;
   bool _emitScheduled = false;
+  Timer? _activityIdleTimer;
 
   bool get isRunning => _running;
 
@@ -83,6 +93,7 @@ class LiveStepMonitor {
     _running = false;
     _emitTimer?.cancel();
     _emitTimer = null;
+    _cancelActivityIdleTimer();
     await _subscription?.cancel();
     _subscription = null;
   }
@@ -199,6 +210,7 @@ class LiveStepMonitor {
     if (_memoryBaseline == null) {
       _memoryBaseline = cumulative;
       _lastProcessedObservedAtUtc = reading.observedAtUtc;
+      _resetActivityIdleTimer();
       return;
     }
 
@@ -213,16 +225,35 @@ class LiveStepMonitor {
       elapsedSincePrevious: elapsedSincePrevious,
     );
     if (increment == null) {
+      _resetActivityIdleTimer();
       return;
     }
 
     _memoryBaseline = cumulative;
     if (increment <= 0) {
+      _resetActivityIdleTimer();
       return;
     }
 
     _pendingDelta += increment;
     _scheduleEmit();
+    _resetActivityIdleTimer();
+  }
+
+  void _resetActivityIdleTimer() {
+    _activityIdleTimer?.cancel();
+    if (!_running || onActivityIdle == null) {
+      return;
+    }
+    _activityIdleTimer = Timer(activityIdleFlushDelay, () {
+      _activityIdleTimer = null;
+      onActivityIdle?.call();
+    });
+  }
+
+  void _cancelActivityIdleTimer() {
+    _activityIdleTimer?.cancel();
+    _activityIdleTimer = null;
   }
 
   void _scheduleEmit() {
