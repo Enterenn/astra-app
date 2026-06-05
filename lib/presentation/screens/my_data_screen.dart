@@ -97,20 +97,22 @@ class _MyDataScreenBody extends StatelessWidget {
         AstraSpacing.kBottomNavBarHeight +
         AstraSpacing.kSpaceMd;
 
-    return SingleChildScrollView(
-      padding: EdgeInsets.fromLTRB(
-        horizontalPadding,
-        AstraSpacing.kSpaceSm,
-        horizontalPadding,
-        bottomScrollPadding,
-      ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.stretch,
-        children: [
-          Text(
-            MyDataScreen._kScreenTitle,
-            style: AstraTypography.screenTitleFor(colors),
-          ),
+    return Semantics(
+      label: MyDataScreen._kScreenTitle,
+      child: SingleChildScrollView(
+        padding: EdgeInsets.fromLTRB(
+          horizontalPadding,
+          AstraSpacing.kSpaceSm,
+          horizontalPadding,
+          bottomScrollPadding,
+        ),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          children: [
+            Text(
+              MyDataScreen._kScreenTitle,
+              style: AstraTypography.screenTitleFor(colors),
+            ),
           if (state.exportErrorMessage != null) ...[
             const SizedBox(height: AstraSpacing.kSpaceMd),
             StatusBanner(
@@ -218,6 +220,7 @@ class _MyDataScreenBody extends StatelessWidget {
                   ),
           ),
         ],
+      ),
       ),
     );
   }

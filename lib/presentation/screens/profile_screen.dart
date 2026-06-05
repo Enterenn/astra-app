@@ -26,9 +26,9 @@ class ProfileScreen extends StatelessWidget {
   Widget build(BuildContext context) {
     final colors = context.astraColors;
 
-    return Scaffold(
-      backgroundColor: colors.bgBase,
-      body: SafeArea(
+    return ColoredBox(
+      color: colors.bgBase,
+      child: SafeArea(
         bottom: false,
         child: BlocBuilder<ProfileCubit, ProfileState>(
           builder: (context, state) {

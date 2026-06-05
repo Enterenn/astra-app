@@ -110,13 +110,14 @@ so that the app feels cohesive before OSS beta release.
   - [x] Add completion-note template for V-1–V-13 device pass results
   - [x] Document "Last sync" semantics in completion notes
   - [x] Close superseded greeting item in `deferred-work.md`
-  - [ ] **Stop → review brief → Baptiste OK → commit**
+  - [x] **Stop → review brief → Baptiste OK → commit**
 
-- [ ] **B — Shell & spacing fixes** (AC: #6, #7)
-  - [ ] `history_screen.dart`: add `_kScreenTitle` const, `Semantics`, bottom nav clearance
-  - [ ] `profile_screen.dart`: replace nested `Scaffold` with `ColoredBox` + `SafeArea` (preserve scroll + loading/error states)
-  - [ ] `my_data_screen.dart`: add `Semantics(label: _kScreenTitle)` if missing
-  - [ ] **Stop → review brief → Baptiste OK → commit**
+- [x] **B — Shell & spacing fixes** (AC: #6, #7)
+  - [x] `history_screen.dart`: add `_kScreenTitle` const, `Semantics`, bottom nav clearance
+  - [x] `profile_screen.dart`: replace nested `Scaffold` with `ColoredBox` + `SafeArea` (preserve scroll + loading/error states)
+  - [x] `my_data_screen.dart`: add `Semantics(label: _kScreenTitle)` if missing
+  - [x] `app_bottom_nav.dart`: nav label `w600` → `w700` (point 6)
+  - [x] **Stop → review brief → Baptiste OK → commit**
 
 - [ ] **C — Phosphor icon migration** (AC: #8)
   - [ ] `trend_chip.dart`: `arrowUp` / `arrowDown` / `minus` Phosphor equivalents
@@ -345,9 +346,13 @@ Pattern: small focused fixes per surface; colocated tests; semantic colors only.
 
 **Deferred-work triage:** Greeting item closed as superseded by 5.9 removal.
 
+**Task E workflow (point 5):** Code fixes land in B–D+F first; device matrix V-1–V-13 is filled by Baptiste on a physical release/profile build after those tasks merge. Agent leaves the table ready; no blocker to ship code without device rows filled.
+
+**Last sync copy (point 7):** No copy change in this story — semantics documented above. If device pass still confuses users, optional copy tweak tracked in Epic 7 checklist (`deferred-work.md` line 47).
+
 ### V-1–V-13 Device Pass Results
 
-> **Device pass (Task E):** Baptiste runs this matrix on a physical device after code tasks B–D. Mark each row Pass / Fail / Exception.
+> **Device pass (Task E):** Run after Tasks B–D+F on physical device (release or profile build). System + light + dark × 6 accent presets. Mark Pass / Fail / Exception per row.
 
 | # | Result | Notes |
 |---|--------|-------|
@@ -371,6 +376,10 @@ Pattern: small focused fixes per surface; colocated tests; semantic colors only.
 - `_bmad-output/implementation-artifacts/deferred-work.md` (modified — greeting superseded)
 - `_bmad-output/implementation-artifacts/stories/5-12-cross-screen-visual-cohesion-audit.md` (modified — completion notes, Task A)
 - `_bmad-output/implementation-artifacts/sprint-status.yaml` (modified — in-progress)
+- `lib/presentation/screens/history_screen.dart` (modified — Trends title, Semantics, bottom padding)
+- `lib/presentation/screens/profile_screen.dart` (modified — ColoredBox shell)
+- `lib/presentation/screens/my_data_screen.dart` (modified — Semantics)
+- `lib/presentation/widgets/app_bottom_nav.dart` (modified — w700 label)
 
 ---
 

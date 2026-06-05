@@ -13,9 +13,15 @@ import '../widgets/trend_chip.dart';
 class HistoryScreen extends StatelessWidget {
   const HistoryScreen({super.key});
 
+  static const _kScreenTitle = 'Trends';
+
   @override
   Widget build(BuildContext context) {
     final colors = context.astraColors;
+    final bottomScrollPadding =
+        AstraSpacing.kBottomNavBottomOffset +
+        AstraSpacing.kBottomNavBarHeight +
+        AstraSpacing.kSpaceMd;
 
     return ColoredBox(
       color: colors.bgBase,
@@ -23,43 +29,46 @@ class HistoryScreen extends StatelessWidget {
         bottom: false,
         child: BlocBuilder<HistoryCubit, HistoryState>(
           builder: (context, state) {
-            return Padding(
-              padding: const EdgeInsets.fromLTRB(
-                AstraSpacing.kScreenHorizontalPadding,
-                AstraSpacing.kSpaceSm,
-                AstraSpacing.kScreenHorizontalPadding,
-                0,
-              ),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.stretch,
-                children: [
-                  Text(
-                    'History',
-                    style: AstraTypography.screenTitleFor(colors),
-                  ),
-                  const SizedBox(height: AstraSpacing.kSpaceMd),
-                  PeriodToggle(
-                    selected: state.period,
-                    onChanged: context.read<HistoryCubit>().selectPeriod,
-                  ),
-                  if (state.trend != null) ...[
+            return Semantics(
+              label: _kScreenTitle,
+              child: Padding(
+                padding: EdgeInsets.fromLTRB(
+                  AstraSpacing.kScreenHorizontalPadding,
+                  AstraSpacing.kSpaceSm,
+                  AstraSpacing.kScreenHorizontalPadding,
+                  bottomScrollPadding,
+                ),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.stretch,
+                  children: [
+                    Text(
+                      _kScreenTitle,
+                      style: AstraTypography.screenTitleFor(colors),
+                    ),
                     const SizedBox(height: AstraSpacing.kSpaceMd),
-                    Align(
-                      alignment: Alignment.centerLeft,
-                      child: TrendChip(trend: state.trend!),
+                    PeriodToggle(
+                      selected: state.period,
+                      onChanged: context.read<HistoryCubit>().selectPeriod,
                     ),
+                    if (state.trend != null) ...[
+                      const SizedBox(height: AstraSpacing.kSpaceMd),
+                      Align(
+                        alignment: Alignment.centerLeft,
+                        child: TrendChip(trend: state.trend!),
+                      ),
+                    ],
+                    const SizedBox(height: AstraSpacing.kSpaceMd),
+                    Expanded(
+                      child: StepBarChart(
+                        key: ValueKey(state.period),
+                        points: state.chartPoints,
+                        dailyGoal: state.dailyGoal,
+                        status: state.status,
+                      ),
+                    ),
+                    const SizedBox(height: AstraSpacing.kSpaceMd),
                   ],
-                  const SizedBox(height: AstraSpacing.kSpaceMd),
-                  Expanded(
-                    child: StepBarChart(
-                      key: ValueKey(state.period),
-                      points: state.chartPoints,
-                      dailyGoal: state.dailyGoal,
-                      status: state.status,
-                    ),
-                  ),
-                  const SizedBox(height: AstraSpacing.kSpaceMd),
-                ],
+                ),
               ),
             );
           },
