@@ -70,6 +70,21 @@ bool shouldTriggerStalenessPersist({
       now.difference(lastPersistAt) >= maxStaleness;
 }
 
+/// Whether resume should stop the monitor briefly for a one-shot phone peek.
+@visibleForTesting
+bool shouldRunResumePhoneCatchUp({
+  required bool persistedNewSteps,
+  required int upsertedFromDrain,
+  required bool monitorAheadOfDb,
+  required Duration pauseDuration,
+  required Duration minPauseForPhoneCatchUp,
+}) {
+  return !persistedNewSteps &&
+      upsertedFromDrain == 0 &&
+      !monitorAheadOfDb &&
+      pauseDuration >= minPauseForPhoneCatchUp;
+}
+
 class _AstraAppState extends State<AstraApp> with WidgetsBindingObserver {
   /// Must cover [LiveStepMonitor.maxBufferedReadings] so activity-idle persist
   /// normalizes every buffered phone reading in one collect.
@@ -163,7 +178,9 @@ class _AstraAppState extends State<AstraApp> with WidgetsBindingObserver {
     final healthFgs = widget.deps.healthForegroundCoordinator;
     await healthFgs.stopHealthCollectionService();
     await healthFgs.setUiActive(true);
-    unawaited(widget.deps.dataLifecycleService.runMaintenance());
+    // Heavy DB maintenance (downsample + VACUUM) must not run here — it can
+    // invalidate the UI SQLite connection while _resumeLivePipeline reads/writes.
+    // Android: WorkManager; manual: My Data purge/optimize flows.
     if (widget.enableLiveStepPipeline && _showMainShell) {
       await _resumeLivePipeline();
     } else {
@@ -276,82 +293,95 @@ class _AstraAppState extends State<AstraApp> with WidgetsBindingObserver {
   /// Foreground resume: keep the pedometer subscription alive, drain pocket
   /// buffer, then one-shot phone catch-up only when SQLite did not advance.
   Future<void> _resumeLivePipeline() async {
-    final monitor = widget.deps.liveStepMonitor;
-    final repo = widget.deps.stepRepository;
-    final stepsBeforeCollect = await repo.getTodaySteps();
+    try {
+      final monitor = widget.deps.liveStepMonitor;
+      final repo = widget.deps.stepRepository;
+      final stepsBeforeCollect = await repo.getTodaySteps();
 
-    final upsertedFromDrain = await _enqueuePersistCycleReturningCount(
-      enableGoalNotification: false,
-    );
-
-    final stepsAfterDrain = await repo.getTodaySteps();
-    final persistedNewSteps = stepsAfterDrain > stepsBeforeCollect;
-    final monitorAheadOfDb = monitor.currentTodaySteps > stepsAfterDrain;
-    final pauseDuration = _backgroundedAt == null
-        ? Duration.zero
-        : DateTime.now().difference(_backgroundedAt!);
-    _backgroundedAt = null;
-    final likelyPocketWalk =
-        pauseDuration >= widget.minPauseForPhoneCatchUp;
-
-    if (!persistedNewSteps &&
-        upsertedFromDrain == 0 &&
-        !monitorAheadOfDb &&
-        likelyPocketWalk) {
-      final wasRunning = monitor.isRunning;
-      if (wasRunning) {
-        await monitor.stop();
-      }
-      final pocketEvent = await monitor.peekPhoneStepEvent(
-        timeout: kResumePhoneCatchUpTimeout,
+      final upsertedFromDrain = await _enqueuePersistCycleReturningCount(
+        enableGoalNotification: false,
       );
-      if (pocketEvent != null) {
-        monitor.enqueueReadingForCollection(
-          StepReading(
-            cumulativeSteps: pocketEvent.steps,
-            observedAtUtc: pocketEvent.timeStamp,
-          ),
+
+      final stepsAfterDrain = await repo.getTodaySteps();
+      final persistedNewSteps = stepsAfterDrain > stepsBeforeCollect;
+      final monitorAheadOfDb = monitor.currentTodaySteps > stepsAfterDrain;
+      final pauseDuration = _backgroundedAt == null
+          ? Duration.zero
+          : DateTime.now().difference(_backgroundedAt!);
+      _backgroundedAt = null;
+      final likelyPocketWalk = shouldRunResumePhoneCatchUp(
+        persistedNewSteps: persistedNewSteps,
+        upsertedFromDrain: upsertedFromDrain,
+        monitorAheadOfDb: monitorAheadOfDb,
+        pauseDuration: pauseDuration,
+        minPauseForPhoneCatchUp: widget.minPauseForPhoneCatchUp,
+      );
+
+      if (likelyPocketWalk) {
+        final wasRunning = monitor.isRunning;
+        if (wasRunning) {
+          await monitor.stop();
+        }
+        final pocketEvent = await monitor.peekPhoneStepEvent(
+          timeout: kResumePhoneCatchUpTimeout,
         );
-        if (!monitor.isRunning) {
+        if (pocketEvent != null) {
+          monitor.enqueueReadingForCollection(
+            StepReading(
+              cumulativeSteps: pocketEvent.steps,
+              observedAtUtc: pocketEvent.timeStamp,
+            ),
+          );
+          if (!monitor.isRunning) {
+            await monitor.start();
+          }
+          await _enqueuePersistCycleReturningCount(
+            enableGoalNotification: false,
+          );
+        } else if (wasRunning && !monitor.isRunning) {
           await monitor.start();
         }
-        await _runPersistCycle(enableGoalNotification: false);
-      } else if (wasRunning && !monitor.isRunning) {
-        await monitor.start();
       }
-    }
 
-    if (monitor.isRunning) {
-      await monitor.reconcileFromDatabase();
-    } else {
-      await monitor.start();
-      await monitor.reconcileFromDatabase();
-    }
+      if (monitor.isRunning) {
+        await monitor.reconcileFromDatabase();
+      } else {
+        await monitor.start();
+        await monitor.reconcileFromDatabase();
+      }
 
-    _todayCubit?.setLiveStepAppliesPaused(false);
-    await _bindLiveMonitorToToday(foregroundCatchUp: true);
-    _livePipelineStarted = true;
-    livePipelineLog(
-      'app',
-      'resume pipeline DONE',
-      details: {
-        'pauseSec': pauseDuration.inSeconds,
-        'upsertedDrain': upsertedFromDrain,
-        'stepsBefore': stepsBeforeCollect,
-        'stepsAfterDrain': stepsAfterDrain,
-        'phoneCatchUp': likelyPocketWalk &&
-            !persistedNewSteps &&
-            upsertedFromDrain == 0 &&
-            !monitorAheadOfDb,
-        'monitorRunning': monitor.isRunning,
-        'monitorTotal': monitor.currentTodaySteps,
-        'cubitSteps': _todayCubit?.state.steps,
-        'catchUp': _todayCubit?.state.foregroundCatchUp ?? false,
-      },
-    );
-    await _todayCubit?.refreshMetadata();
-    await _historyCubit?.refresh(silent: true);
-    await _myDataCubit?.refresh(silent: true);
+      await _bindLiveMonitorToToday(foregroundCatchUp: true);
+      _livePipelineStarted = true;
+      livePipelineLog(
+        'app',
+        'resume pipeline DONE',
+        details: {
+          'pauseSec': pauseDuration.inSeconds,
+          'upsertedDrain': upsertedFromDrain,
+          'stepsBefore': stepsBeforeCollect,
+          'stepsAfterDrain': stepsAfterDrain,
+          'phoneCatchUp': likelyPocketWalk,
+          'monitorRunning': monitor.isRunning,
+          'monitorTotal': monitor.currentTodaySteps,
+          'cubitSteps': _todayCubit?.state.steps,
+          'catchUp': _todayCubit?.state.foregroundCatchUp ?? false,
+        },
+      );
+      await _todayCubit?.refreshMetadata();
+      await _historyCubit?.refresh(silent: true);
+      await _myDataCubit?.refresh(silent: true);
+    } catch (error, stackTrace) {
+      livePipelineLog(
+        'app',
+        'resume pipeline ERROR',
+        details: {'error': error},
+      );
+      if (kDebugMode) {
+        debugPrintStack(stackTrace: stackTrace);
+      }
+    } finally {
+      _todayCubit?.setLiveStepAppliesPaused(false);
+    }
   }
 
   Future<int> _enqueuePersistCycleReturningCount({
@@ -486,7 +516,13 @@ class _AstraAppState extends State<AstraApp> with WidgetsBindingObserver {
         monitor.currentTodaySteps,
         foregroundCatchUp: true,
       );
-      _todayCubit?.attachLiveMonitor(monitor, replayLatest: false);
+      // When catch-up was skipped (already aligned), replayLatest re-attaches
+      // the stream without triggering a redundant GoalRing count-up animation.
+      final catchUpActive = _todayCubit?.state.foregroundCatchUp ?? false;
+      _todayCubit?.attachLiveMonitor(
+        monitor,
+        replayLatest: !catchUpActive,
+      );
     } else {
       _todayCubit?.attachLiveMonitor(monitor);
       await _todayCubit?.syncSteps(

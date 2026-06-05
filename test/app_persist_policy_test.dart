@@ -71,6 +71,62 @@ void main() {
     });
   });
 
+  group('shouldRunResumePhoneCatchUp', () {
+    const minPause = Duration(seconds: 10);
+
+    test('returns false when pause is shorter than minPauseForPhoneCatchUp', () {
+      expect(
+        shouldRunResumePhoneCatchUp(
+          persistedNewSteps: false,
+          upsertedFromDrain: 0,
+          monitorAheadOfDb: false,
+          pauseDuration: const Duration(seconds: 9),
+          minPauseForPhoneCatchUp: minPause,
+        ),
+        isFalse,
+      );
+    });
+
+    test('returns true when pause meets threshold and no drain progress', () {
+      expect(
+        shouldRunResumePhoneCatchUp(
+          persistedNewSteps: false,
+          upsertedFromDrain: 0,
+          monitorAheadOfDb: false,
+          pauseDuration: minPause,
+          minPauseForPhoneCatchUp: minPause,
+        ),
+        isTrue,
+      );
+    });
+
+    test('returns false when SQLite already advanced on resume drain', () {
+      expect(
+        shouldRunResumePhoneCatchUp(
+          persistedNewSteps: true,
+          upsertedFromDrain: 1,
+          monitorAheadOfDb: false,
+          pauseDuration: minPause,
+          minPauseForPhoneCatchUp: minPause,
+        ),
+        isFalse,
+      );
+    });
+
+    test('returns false when monitor is ahead of SQLite', () {
+      expect(
+        shouldRunResumePhoneCatchUp(
+          persistedNewSteps: false,
+          upsertedFromDrain: 0,
+          monitorAheadOfDb: true,
+          pauseDuration: minPause,
+          minPauseForPhoneCatchUp: minPause,
+        ),
+        isFalse,
+      );
+    });
+  });
+
   group('staleness fallback during continuous walking', () {
     late Database db;
     late StepRepository repository;

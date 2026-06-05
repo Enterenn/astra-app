@@ -102,9 +102,8 @@ Future<LifecycleRunResult> _runFileMaintenanceIsolate(
 
 /// FR11 downsampling and FR12 `PRAGMA optimize` / `VACUUM` maintenance.
 ///
-/// Phase 0 scheduling: Android weekly WorkManager; iOS opportunistic on
-/// [AppLifecycleState.resumed] when due. Reliable iOS background VACUUM is not
-/// required for acceptance — foreground/resume is sufficient.
+/// Phase 0 scheduling: Android weekly WorkManager; iOS via WorkManager /
+/// My Data flows — not on app resume (resume must not VACUUM while UI DB is open).
 ///
 /// File-backed databases run the full pipeline in a [compute] isolate with a
 /// short-lived connection so VACUUM does not race the UI connection. Pass

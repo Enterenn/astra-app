@@ -123,3 +123,27 @@ await _enqueueLifecycleTransition(() async {
 
 - Resume must restart even when monitor already reports running
   [`app_live_pipeline_lifecycle_test.dart:358`](../../test/app_live_pipeline_lifecycle_test.dart#L358)
+
+## Implementation Amendment (2026-06-05, post field-test + code review)
+
+The approved frozen intent (stop monitor → restart on resume) was superseded during implementation:
+
+- **Keep-alive on pause:** `LiveStepMonitor` stays subscribed while the screen is locked; FGS still starts but in-process collection drains the monitor buffer (single native subscription).
+- **Resume path:** `_resumeLivePipeline()` — drain persist → optional phone peek (≥10s background) → reconcile → `_bindLiveMonitorToToday(foregroundCatchUp: true)`.
+- **Cubit gating:** `setLiveStepAppliesPaused(true)` suppresses UI applies while locked; GoalRing foreground catch-up animates unlock deltas when monitor total exceeds displayed steps.
+- **Removed:** `LiveStepMonitor.restart()` — replaced by keep-alive + `peekPhoneStepEvent` fallback.
+- **IndexedStack:** `AppScaffold` keeps Today mounted across tab switches (supports uninterrupted monitor subscription).
+
+### Review Findings (2026-06-05)
+
+- [x] [Review][Patch] Resume bind fallback when catch-up skipped — use `replayLatest: true` when `foregroundCatchUp` sync is skipped (no redundant count-up) [`app.dart:_bindLiveMonitorToToday`]
+- [x] [Review][Patch] Remove `runMaintenance()` from resume — VACUUM invalidates UI SQLite during `_resumeLivePipeline` [`app.dart:_onAppForegrounded`]
+- [x] [Review][Patch] `try/finally` on `_resumeLivePipeline` — always `setLiveStepAppliesPaused(false)` [`app.dart:_resumeLivePipeline`]
+- [x] [Review][Patch] Extract `shouldRunResumePhoneCatchUp` + unit tests for 10s gate [`app.dart`, `test/app_persist_policy_test.dart`]
+- [x] [Review][Patch] Remove unnecessary `foundation.dart` import [`app.dart`]
+- [x] [Review][Defer] E2E GoalRing catch-up without `_finishResumeCatchUp` test helper — covered by isolated `goal_ring_test.dart`; full widget path deferred
+- [x] [Review][Defer] IndexedStack tab retention — intentional for Today pipeline; documented above
+
+## Out of Scope (separate follow-up)
+
+Idle flush bucket overwrite (`persisted` regressing on idle reconcile, hot restart drops steps) is **not** part of 6.4. Tracked in [`spec-fix-idle-flush-bucket-overwrite.md`](spec-fix-idle-flush-bucket-overwrite.md).

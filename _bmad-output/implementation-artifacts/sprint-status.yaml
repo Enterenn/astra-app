@@ -1,5 +1,5 @@
 # generated: 2026-05-25
-# last_updated: 2026-06-05 (Story 6.4 in-progress — screen-lock pedometer freeze)
+# last_updated: 2026-06-05 (Story 6.4 done — screen-lock pedometer freeze)
 # NEXT: epic-7 → 7-1 → 7-2 → 7-3
 # Ref: planning-artifacts/sprint-change-proposal-2026-06-04.md
 # project: astra-app
@@ -107,11 +107,11 @@ development_status:
   5-13-goal-overflow-animation-polish: done  # after 5.12 (optional)
   epic-5-retrospective: optional
 
-  epic-6: in-progress
+  epic-6: done
   6-1-derived-activity-metrics: done          # after epic-5.12
   6-2-pedometer-shake-noise-rate-limit: done  # inter-arrival rate cap; Nord drip shake deferred to 6.3
   6-3-activity-idle-persist-flush: done  # universal: flush after step-stream idle
-  6-4-screen-lock-pedometer-freeze: review  # keep monitor alive on lock; resume drain + clamp stale prefs
+  6-4-screen-lock-pedometer-freeze: done  # keep monitor alive on lock; resume drain + clamp stale prefs
   epic-6-retrospective: optional
 
   epic-7: backlog
