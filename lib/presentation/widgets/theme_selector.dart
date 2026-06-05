@@ -82,7 +82,7 @@ class _SegmentButton extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final textStyle = AstraTypography.labelFor(colors).copyWith(
-      color: selected ? colors.textPrimary : colors.textMuted,
+      color: colors.textPrimary,
     );
 
     final interactionEnabled = enabled && onTap != null;
