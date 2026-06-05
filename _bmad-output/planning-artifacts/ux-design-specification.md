@@ -473,7 +473,7 @@ Single line Figtree `type.caption` `color.text.secondary`: **"Daily goal reached
 ### 2.4 Trends Surface
 
 **FR refs:** FR-16, FR-17 · **UJ:** UJ-3  
-**Tab label:** TRENDS (short). **Screen title:** "History" or "Trends" — TBD in Story 5.12; chart behavior unchanged from pre-redesign.
+**Tab label:** TRENDS (short). **Screen title:** **Trends** (locked Story 5.12); chart behavior unchanged from pre-redesign.
 
 #### Layout
 
@@ -1125,14 +1125,14 @@ Use before beta handoff. Maps to PRD beta checklist visual cohesion items.
 | V-1 | Theme default | System on first launch; no wrong-theme flash; light and dark palettes both verified |
 | V-2 | Token consistency | All screens use `AstraColors` tokens — no hardcoded hex in widgets |
 | V-3 | Typography | Figtree + Darker Grotesque only; no system font fallback visible unless bundle fail |
-| V-4 | Tab cohesion | 3 tabs same bar style, amber active state |
+| V-4 | Tab cohesion | 4 tabs (TODAY, TRENDS, DATA, PROFILE) — same floating pill bar, accent active squircle |
 | V-5 | Today hero | Ring + count + chip aligned center; no layout jump on sync |
 | V-6 | GoalCelebration | Plays once/day; reduce-motion variant tested |
 | V-7 | History perf | Chart bind <100ms with 90d inject (KPI-01) |
-| V-8 | My Data hierarchy | Status → footprint → goal → actions order preserved |
+| V-8 | My Data hierarchy | Background → Footprint → Your data (goal/theme/display name on Today/Profile per Story 5.10) |
 | V-9 | Purge empty state | 0 samples, goal retained (D-11), no ghost data on Today |
 | V-10 | Onboarding once | No re-show after complete; trust before permission |
-| V-11 | Stale dual banner | Compact Today + full My Data when >12h |
+| V-11 | Stale dual banner | **Exception (2026-06-05):** Today compact banner removed; Data may show full stale banner when >12h — product TBD for Today stale UX |
 | V-12 | Destructive clarity | Purge dialog mentions export; danger color on confirm only |
 | V-13 | Screenshot readiness | Today + My Data framable for README GIF (SM-7) |
 

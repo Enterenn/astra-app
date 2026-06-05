@@ -34,8 +34,8 @@ Do **not** open hotfix stories before 6.3 unless a blocker prevents running the 
 
 | Item | Target story | Notes |
 |------|--------------|-------|
-| Hello greeting too small / not bold | **5.12** (+ AC in epics.md) | 4.8 shipped `type.caption`; user wants title-scale engaging greeting |
-| Donut + chart bars green when goal met | **5.8** (+ AC in epics.md) | Semantic `status.ok` for goal-met days |
+| ~~Hello greeting too small / not bold~~ | **Superseded (5.9, 2026-06-04)** | Greeting removed — ring is sole hero; do not restore |
+| Donut + chart bars green when goal met | **5.8** (+ AC in epics.md) | Semantic `status.ok` for goal-met days — **done in 5.8** |
 
 ### Deferred hotfix batch (post–6.3) — checklist + debug pass
 
