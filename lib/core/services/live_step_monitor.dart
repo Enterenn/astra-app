@@ -385,6 +385,15 @@ class LiveStepMonitor {
     }
     _activityIdleTimer = Timer(activityIdleFlushDelay, () {
       _activityIdleTimer = null;
+      livePipelineLog(
+        'monitor',
+        'activity idle — firing persist',
+        details: {
+          'total': currentTodaySteps,
+          'buffered': _readingsBuffer.length,
+          'delaySec': activityIdleFlushDelay.inSeconds,
+        },
+      );
       onActivityIdle?.call();
     });
   }

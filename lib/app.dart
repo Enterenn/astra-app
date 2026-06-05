@@ -100,6 +100,7 @@ class _AstraAppState extends State<AstraApp> with WidgetsBindingObserver {
   bool _livePipelineStarted = false;
   DateTime? _backgroundedAt;
   Future<void>? _persistInFlight;
+  void Function(String message)? _showDebugSnackBar;
   Future<void>? _lifecycleTransitionInFlight;
 
   @override
@@ -239,6 +240,68 @@ class _AstraAppState extends State<AstraApp> with WidgetsBindingObserver {
       enableGoalNotification: false,
       syncTodayAfter: true,
     );
+  }
+
+  /// Activity-idle persist with debug feedback (snackbar + structured log).
+  Future<void> _onActivityIdlePersist() async {
+    if (!_showMainShell || !_livePipelineStarted) {
+      return;
+    }
+
+    final monitor = widget.deps.liveStepMonitor;
+    final repo = widget.deps.stepRepository;
+    final persistedBefore = await repo.getTodaySteps();
+    final displayBefore = monitor.currentTodaySteps;
+
+    livePipelineLog(
+      'app',
+      'idle flush START',
+      details: {
+        'persistedBefore': persistedBefore,
+        'displayBefore': displayBefore,
+      },
+    );
+
+    await _enqueuePersistCycle(
+      enableGoalNotification: false,
+      syncTodayAfter: true,
+    );
+
+    if (!mounted) {
+      return;
+    }
+
+    final persistedAfter = await repo.getTodaySteps();
+    final total = monitor.currentTodaySteps;
+    final pendingDelta = total - persistedAfter;
+    final message =
+        'Idle flush · persisted $persistedAfter · total $total'
+        '${pendingDelta > 0 ? ' · pending $pendingDelta' : ''}';
+
+    livePipelineLog(
+      'app',
+      'idle flush complete',
+      details: {
+        'persistedBefore': persistedBefore,
+        'persisted': persistedAfter,
+        'pendingDelta': pendingDelta,
+        'total': total,
+        'displayBefore': displayBefore,
+      },
+    );
+
+    if (kDebugMode) {
+      final show = _showDebugSnackBar;
+      if (show == null) {
+        livePipelineLog(
+          'app',
+          'idle flush snackbar SKIPPED reason=no_scaffold_host',
+        );
+        return;
+      }
+      livePipelineLog('app', 'idle flush snackbar SHOW');
+      show(message);
+    }
   }
 
   /// Serializes pause, idle, staleness, and resume persist cycles.
@@ -550,7 +613,7 @@ class _AstraAppState extends State<AstraApp> with WidgetsBindingObserver {
     }
     final monitor = widget.deps.liveStepMonitor;
     monitor.onActivityIdle = () {
-      unawaited(_runPersistIfNotInFlight());
+      unawaited(_onActivityIdlePersist());
     };
 
     final maxStaleness = widget.maxPersistStaleness;
@@ -600,6 +663,7 @@ class _AstraAppState extends State<AstraApp> with WidgetsBindingObserver {
                     foregroundBackfill: widget.deps.initialOnboardingComplete
                         ? _foregroundBackfill
                         : null,
+                    onDebugSnackBarReady: (show) => _showDebugSnackBar = show,
                     onTodayCubitReady: _onTodayCubitReady,
                     onTodayCubitDisposed: () => _todayCubit = null,
                     onHistoryCubitReady: _onHistoryCubitReady,
