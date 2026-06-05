@@ -1,9 +1,7 @@
 import 'package:flutter/material.dart';
 
-import '../../core/constants/astra_colors.dart';
-import '../../core/constants/astra_spacing.dart';
-import '../../core/constants/astra_typography.dart';
 import '../cubits/theme_state.dart';
+import 'astra_segmented_control.dart';
 
 class ThemeSelector extends StatelessWidget {
   const ThemeSelector({
@@ -18,112 +16,32 @@ class ThemeSelector extends StatelessWidget {
   final bool enabled;
 
   static const _options = [
-    (AstraThemePreference.system, 'System', 'System appearance'),
-    (AstraThemePreference.light, 'Light', 'Light appearance'),
-    (AstraThemePreference.dark, 'Dark', 'Dark appearance'),
+    AstraSegmentOption(
+      value: AstraThemePreference.system,
+      label: 'System',
+      semanticsLabel: 'System appearance',
+    ),
+    AstraSegmentOption(
+      value: AstraThemePreference.light,
+      label: 'Light',
+      semanticsLabel: 'Light appearance',
+    ),
+    AstraSegmentOption(
+      value: AstraThemePreference.dark,
+      label: 'Dark',
+      semanticsLabel: 'Dark appearance',
+    ),
   ];
 
   @override
   Widget build(BuildContext context) {
-    final colors = context.astraColors;
-    final disableAnimations = MediaQuery.disableAnimationsOf(context);
-
-    return DecoratedBox(
-      decoration: BoxDecoration(
-        color: colors.bgSubtle,
-        borderRadius: BorderRadius.circular(AstraSpacing.kRadiusFull),
-      ),
-      child: Padding(
-        padding: const EdgeInsets.all(AstraSpacing.kSpaceXs),
-        child: Row(
-          children: [
-            for (var i = 0; i < _options.length; i++) ...[
-              if (i > 0) const SizedBox(width: AstraSpacing.kSpaceLg),
-              Expanded(
-                child: _SegmentButton(
-                  label: _options[i].$2,
-                  semanticsLabel: _options[i].$3,
-                  selected: selected == _options[i].$1,
-                  enabled: enabled,
-                  colors: colors,
-                  disableAnimations: disableAnimations,
-                  onTap: enabled && selected != _options[i].$1
-                      ? () => onChanged(_options[i].$1)
-                      : null,
-                ),
-              ),
-            ],
-          ],
-        ),
-      ),
-    );
-  }
-}
-
-class _SegmentButton extends StatelessWidget {
-  const _SegmentButton({
-    required this.label,
-    required this.semanticsLabel,
-    required this.selected,
-    required this.enabled,
-    required this.colors,
-    required this.disableAnimations,
-    required this.onTap,
-  });
-
-  final String label;
-  final String semanticsLabel;
-  final bool selected;
-  final bool enabled;
-  final AstraColors colors;
-  final bool disableAnimations;
-  final VoidCallback? onTap;
-
-  @override
-  Widget build(BuildContext context) {
-    final textStyle = AstraTypography.labelFor(colors).copyWith(
-      color: colors.textPrimary,
-    );
-
-    final interactionEnabled = enabled && onTap != null;
-
-    return Semantics(
-      button: interactionEnabled,
-      enabled: interactionEnabled,
+    return AstraSegmentedControl<AstraThemePreference>(
+      options: _options,
       selected: selected,
-      label: semanticsLabel,
-      hint: 'App theme',
-      child: Material(
-        color: selected ? colors.bgElevated : Colors.transparent,
-        borderRadius: BorderRadius.circular(AstraSpacing.kRadiusFull),
-        child: InkWell(
-          onTap: onTap,
-          borderRadius: BorderRadius.circular(AstraSpacing.kRadiusFull),
-          child: ConstrainedBox(
-            constraints: const BoxConstraints(
-              minHeight: AstraSpacing.kMinTouchTarget,
-            ),
-            child: Column(
-              mainAxisAlignment: MainAxisAlignment.center,
-              children: [
-                Text(label, style: textStyle),
-                AnimatedContainer(
-                  duration: disableAnimations
-                      ? Duration.zero
-                      : const Duration(milliseconds: 150),
-                  height: 2,
-                  width: selected ? 32 : 0,
-                  margin: const EdgeInsets.only(top: AstraSpacing.kSpaceXs),
-                  decoration: BoxDecoration(
-                    color: colors.accentPrimary,
-                    borderRadius: BorderRadius.circular(1),
-                  ),
-                ),
-              ],
-            ),
-          ),
-        ),
-      ),
+      onChanged: onChanged,
+      enabled: enabled,
+      fireOnReselect: false,
+      semanticsHint: 'App theme',
     );
   }
 }
