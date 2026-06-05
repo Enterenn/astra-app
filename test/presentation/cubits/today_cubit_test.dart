@@ -671,20 +671,6 @@ void main() {
       cubit.close();
     });
 
-    test('refreshMetadata updates display name without changing steps', () async {
-      final cubit = buildCubit();
-      await cubit.refresh();
-      await cubit.syncSteps(3000);
-      expect(cubit.state.displayName, isNull);
-
-      await userPreferences.setDisplayName('Alex');
-      await cubit.refreshMetadata();
-
-      expect(cubit.state.steps, 3000);
-      expect(cubit.state.displayName, 'Alex');
-      cubit.close();
-    });
-
     test('coalesced refresh awaits a single in-flight operation', () async {
       final permissionGate = Completer<bool>();
       final cubit = buildCubit(

@@ -246,7 +246,6 @@ class TodayCubit extends Cubit<TodayState> {
     await _applyTodaySnapshot(
       steps: steps,
       goal: goal,
-      displayName: state.displayName,
       isStale: state.isStale,
       lastIngestionUtc: state.lastIngestionUtc,
       activityMetrics: _liveMetricsForSteps(steps),
@@ -316,7 +315,6 @@ class TodayCubit extends Cubit<TodayState> {
 
     final results = await Future.wait<Object?>([
       userPreferences.getDailyStepGoal(),
-      userPreferences.getDisplayName(),
       stepRepository.getLastIngestionUtc(),
       stepRepository.getTodayActiveBuckets(),
       userPreferences.getHeightCm(),
@@ -327,11 +325,10 @@ class TodayCubit extends Cubit<TodayState> {
     }
 
     final goal = results[0]! as int;
-    final displayName = results[1] as String?;
-    final lastUtc = results[2] as DateTime?;
-    final buckets = results[3]! as List<TimeseriesSampleModel>;
-    final heightCm = results[4] as int?;
-    final weightKg = results[5] as double?;
+    final lastUtc = results[1] as DateTime?;
+    final buckets = results[2]! as List<TimeseriesSampleModel>;
+    final heightCm = results[3] as int?;
+    final weightKg = results[4] as double?;
     final stale = isStaleData(
       lastIngestionUtc: lastUtc,
       nowUtc: clock.nowUtc(),
@@ -355,7 +352,6 @@ class TodayCubit extends Cubit<TodayState> {
     await _applyTodaySnapshot(
       steps: state.steps,
       goal: goal,
-      displayName: displayName,
       isStale: stale,
       lastIngestionUtc: lastUtc,
       weekDays: weekDays,
@@ -396,7 +392,6 @@ class TodayCubit extends Cubit<TodayState> {
     final results = await Future.wait<Object?>([
       stepRepository.getTodaySteps(),
       userPreferences.getDailyStepGoal(),
-      userPreferences.getDisplayName(),
       stepRepository.getLastIngestionUtc(),
       stepRepository.getTodayActiveBuckets(),
       userPreferences.getHeightCm(),
@@ -411,11 +406,10 @@ class TodayCubit extends Cubit<TodayState> {
     // reconciled on live-pipeline bind via [syncSteps] + [clampStaleDisplay].
     final steps = stepsFromDb;
     final goal = results[1]! as int;
-    final displayName = results[2] as String?;
-    final lastUtc = results[3] as DateTime?;
-    final buckets = results[4]! as List<TimeseriesSampleModel>;
-    final heightCm = results[5] as int?;
-    final weightKg = results[6] as double?;
+    final lastUtc = results[2] as DateTime?;
+    final buckets = results[3]! as List<TimeseriesSampleModel>;
+    final heightCm = results[4] as int?;
+    final weightKg = results[5] as double?;
 
     final stale = isStaleData(
       lastIngestionUtc: lastUtc,
@@ -440,7 +434,6 @@ class TodayCubit extends Cubit<TodayState> {
     await _applyTodaySnapshot(
       steps: steps,
       goal: goal,
-      displayName: displayName,
       isStale: stale,
       lastIngestionUtc: lastUtc,
       weekDays: weekDays,
@@ -475,7 +468,6 @@ class TodayCubit extends Cubit<TodayState> {
     await _applyTodaySnapshot(
       steps: steps,
       goal: goal,
-      displayName: state.displayName,
       isStale: state.isStale,
       lastIngestionUtc: state.lastIngestionUtc,
       weekDays: state.weekDays,
@@ -567,7 +559,6 @@ class TodayCubit extends Cubit<TodayState> {
   Future<void> _applyTodaySnapshot({
     required int steps,
     required int goal,
-    String? displayName,
     required bool isStale,
     DateTime? lastIngestionUtc,
     List<WeekDayStatus>? weekDays,
@@ -604,7 +595,6 @@ class TodayCubit extends Cubit<TodayState> {
     final baseState = TodayState.fromData(
       steps: effectiveSteps,
       goal: goal,
-      displayName: displayName,
       isStale: isStale,
       lastIngestionUtc: lastIngestionUtc,
       weekDays: weekDays ?? state.weekDays,

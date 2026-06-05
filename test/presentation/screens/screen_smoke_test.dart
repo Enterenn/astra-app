@@ -147,7 +147,6 @@ void main() {
         TodayState.fromData(
           steps: 5420,
           goal: 8000,
-          displayName: 'Alex',
           isStale: false,
           weekDays: sampleWeekDays(),
         ),
