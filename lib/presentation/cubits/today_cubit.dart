@@ -360,9 +360,41 @@ class TodayCubit extends Cubit<TodayState> {
   }
 
   void dismissCelebration() {
-    if (state.showCelebration) {
-      emit(state.copyWith(showCelebration: false));
+    if (state.showCelebration || state.isGoalPreviewActive) {
+      emit(
+        state.copyWith(
+          showCelebration: false,
+          goalPreviewNonce: 0,
+        ),
+      );
     }
+  }
+
+  /// Debug-only: count-up from last displayed steps → goal, then celebration.
+  /// Does not claim [celebration_shown_date] or mutate persisted step truth.
+  void previewCelebration() {
+    if (isClosed || state.goal <= 0) {
+      return;
+    }
+    emit(
+      state.copyWith(
+        showCelebration: false,
+        goalPreviewNonce: state.goalPreviewNonce + 1,
+      ),
+    );
+  }
+
+  /// Called when the debug preview count-up reaches the daily goal.
+  void completeGoalPreviewCountUp() {
+    if (isClosed || !state.isGoalPreviewActive) {
+      return;
+    }
+    emit(
+      state.copyWith(
+        showCelebration: true,
+        celebrationPreviewNonce: state.celebrationPreviewNonce + 1,
+      ),
+    );
   }
 
   Future<void> _maybeTriggerCelebration({
@@ -374,7 +406,13 @@ class TodayCubit extends Cubit<TodayState> {
       return;
     }
     if (goal <= 0 || steps < goal) {
-      emit(baseState.copyWith(showCelebration: false));
+      emit(
+        baseState.copyWith(
+          showCelebration: state.isGoalPreviewActive
+              ? state.showCelebration
+              : false,
+        ),
+      );
       return;
     }
 

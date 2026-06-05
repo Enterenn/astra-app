@@ -19,6 +19,8 @@ class TodayState {
     this.isStale = false,
     this.lastIngestionUtc,
     this.showCelebration = false,
+    this.celebrationPreviewNonce = 0,
+    this.goalPreviewNonce = 0,
     this.weekDays = const [],
   });
 
@@ -29,7 +31,12 @@ class TodayState {
   final bool isStale;
   final DateTime? lastIngestionUtc;
   final bool showCelebration;
+  final int celebrationPreviewNonce;
+  /// Debug preview: increments while count-up → celebration sequence is active.
+  final int goalPreviewNonce;
   final List<WeekDayStatus> weekDays;
+
+  bool get isGoalPreviewActive => goalPreviewNonce > 0;
 
   const TodayState.loading() : this(status: TodayStatus.loading);
 
@@ -42,6 +49,8 @@ class TodayState {
     required bool isStale,
     DateTime? lastIngestionUtc,
     bool showCelebration = false,
+    int celebrationPreviewNonce = 0,
+    int goalPreviewNonce = 0,
     List<WeekDayStatus> weekDays = const [],
   }) {
     return TodayState(
@@ -52,6 +61,8 @@ class TodayState {
       isStale: isStale,
       lastIngestionUtc: lastIngestionUtc,
       showCelebration: showCelebration,
+      celebrationPreviewNonce: celebrationPreviewNonce,
+      goalPreviewNonce: goalPreviewNonce,
       weekDays: weekDays,
     );
   }
@@ -64,6 +75,8 @@ class TodayState {
     bool? isStale,
     DateTime? lastIngestionUtc,
     bool? showCelebration,
+    int? celebrationPreviewNonce,
+    int? goalPreviewNonce,
     List<WeekDayStatus>? weekDays,
   }) {
     return TodayState(
@@ -76,6 +89,9 @@ class TodayState {
       isStale: isStale ?? this.isStale,
       lastIngestionUtc: lastIngestionUtc ?? this.lastIngestionUtc,
       showCelebration: showCelebration ?? this.showCelebration,
+      celebrationPreviewNonce:
+          celebrationPreviewNonce ?? this.celebrationPreviewNonce,
+      goalPreviewNonce: goalPreviewNonce ?? this.goalPreviewNonce,
       weekDays: weekDays ?? this.weekDays,
     );
   }
