@@ -12,6 +12,7 @@ import '../widgets/activity_stats_row.dart';
 import '../widgets/elevated_card.dart';
 import '../widgets/goal_celebration.dart';
 import '../widgets/goal_editor_sheet.dart';
+import '../widgets/astra_pressable.dart';
 import '../widgets/goal_ring.dart';
 import '../widgets/section_card.dart';
 import '../widgets/week_progress_row.dart';
@@ -116,20 +117,22 @@ class _GoalRingCard extends StatelessWidget {
           ),
           const SizedBox(height: AstraSpacing.kSpaceLg),
           Center(
-            child: Material(
-              color: colors.bgSubtle,
-              borderRadius: BorderRadius.circular(AstraSpacing.kRadiusFull),
-              child: InkWell(
-                onTap: () => _onSetGoalTapped(context),
+            child: AstraPressable(
+              child: Material(
+                color: colors.bgSubtle,
                 borderRadius: BorderRadius.circular(AstraSpacing.kRadiusFull),
-                child: Padding(
-                  padding: const EdgeInsets.symmetric(
-                    horizontal: AstraSpacing.kSpaceLg,
-                    vertical: AstraSpacing.kSpaceSm,
-                  ),
-                  child: Text(
-                    TodayScreen._kSetGoalLabel,
-                    style: AstraTypography.labelFor(colors),
+                child: InkWell(
+                  onTap: () => _onSetGoalTapped(context),
+                  borderRadius: BorderRadius.circular(AstraSpacing.kRadiusFull),
+                  child: Padding(
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: AstraSpacing.kSpaceLg,
+                      vertical: AstraSpacing.kSpaceSm,
+                    ),
+                    child: Text(
+                      TodayScreen._kSetGoalLabel,
+                      style: AstraTypography.labelFor(colors),
+                    ),
                   ),
                 ),
               ),

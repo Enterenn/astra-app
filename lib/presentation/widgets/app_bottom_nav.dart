@@ -5,6 +5,7 @@ import 'package:phosphoricons_flutter/phosphoricons_flutter.dart';
 import '../../core/constants/astra_colors.dart';
 import '../../core/constants/astra_spacing.dart';
 import '../../core/constants/astra_typography.dart';
+import 'astra_pressable.dart';
 
 /// Four-tab floating pill navigation (UX §2.1, Story 5.7).
 class AppBottomNav extends StatelessWidget {
@@ -176,13 +177,15 @@ class _NavItem extends StatelessWidget {
       button: true,
       selected: selected,
       label: tab.label,
-      child: InkWell(
-        onTap: onTap,
-        borderRadius: BorderRadius.circular(AstraSpacing.kRadiusFull),
-        child: SizedBox(
-          height: AstraSpacing.kBottomNavItemSize,
-          width: double.infinity,
-          child: Center(child: squircleChild),
+      child: AstraPressable(
+        child: InkWell(
+          onTap: onTap,
+          borderRadius: BorderRadius.circular(AstraSpacing.kRadiusFull),
+          child: SizedBox(
+            height: AstraSpacing.kBottomNavItemSize,
+            width: double.infinity,
+            child: Center(child: squircleChild),
+          ),
         ),
       ),
     );

@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import '../../core/constants/astra_colors.dart';
 import '../../core/constants/astra_spacing.dart';
 import '../../core/constants/astra_typography.dart';
+import 'astra_pressable.dart';
 
 enum AstraButtonVariant { primary, secondary, ghost, danger }
 
@@ -35,9 +36,13 @@ class AstraButton extends StatelessWidget {
       color: _labelColor(colors),
     );
 
-    return ConstrainedBox(
-      constraints: const BoxConstraints(minHeight: AstraSpacing.kMinTouchTarget),
-      child: switch (variant) {
+    return AstraPressable(
+      enabled: !_isDisabled,
+      child: ConstrainedBox(
+        constraints: const BoxConstraints(
+          minHeight: AstraSpacing.kMinTouchTarget,
+        ),
+        child: switch (variant) {
         AstraButtonVariant.primary => FilledButton(
             onPressed: _isDisabled ? null : onPressed,
             style: FilledButton.styleFrom(
@@ -111,7 +116,8 @@ class AstraButton extends StatelessWidget {
             ),
             child: _buildChild(labelStyle),
           ),
-      },
+        },
+      ),
     );
   }
 

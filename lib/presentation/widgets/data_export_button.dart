@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import '../../core/constants/astra_colors.dart';
 import '../../core/constants/astra_spacing.dart';
 import '../../core/constants/astra_typography.dart';
+import 'astra_pressable.dart';
 
 /// Accent-outline action button for My Data export/import flows (UX-DR14).
 class DataExportButton extends StatelessWidget {
@@ -38,9 +39,13 @@ class DataExportButton extends StatelessWidget {
       label: semanticsLabel,
       button: true,
       enabled: !_isDisabled,
-      child: ConstrainedBox(
-        constraints: const BoxConstraints(minHeight: AstraSpacing.kMinTouchTarget),
-        child: OutlinedButton(
+      child: AstraPressable(
+        enabled: !_isDisabled,
+        child: ConstrainedBox(
+          constraints: const BoxConstraints(
+            minHeight: AstraSpacing.kMinTouchTarget,
+          ),
+          child: OutlinedButton(
           onPressed: _isDisabled ? null : onPressed,
           style: ButtonStyle(
             minimumSize: WidgetStateProperty.all(
@@ -86,6 +91,7 @@ class DataExportButton extends StatelessWidget {
                   ),
                 )
               : Text(label, style: labelStyle),
+          ),
         ),
       ),
     );
