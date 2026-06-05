@@ -1,6 +1,6 @@
 # generated: 2026-05-25
-# last_updated: 2026-06-05 (Story 6.1 done)
-# NEXT: 5.7 → 5.8 → 5.9 → 5.10 → 5.11 → 5.12 → epic-6 → 5.13 (optional)
+# last_updated: 2026-06-05 (Epic 5 & 6 done — 5.12 validated)
+# NEXT: epic-7 → 7-1 → 7-2 → 7-3
 # Ref: planning-artifacts/sprint-change-proposal-2026-06-04.md
 # project: astra-app
 # project_key: NOKEY
@@ -95,7 +95,7 @@ development_status:
   4-9-profile-initials-on-my-data: done
   epic-4-retrospective: optional
 
-  epic-5: in-progress
+  epic-5: done
   5-5-built-in-kotlin-plugin-migration: done
   # Mandatory order (2026-06-04 — IDs match sequence):
   5-6-phosphor-icons-dependency: done               # 1
@@ -103,11 +103,11 @@ development_status:
   5-9-today-figma-layout-no-greeting: done          # 4 — stats row visible, empty until epic-6
   5-10-data-screen-sovereignty-layout: done         # 5 — tab DATA, screen title "My Data"
   5-11-profil-informations-and-appearance: done     # 6 — bi-tone circles + theme_mode + PROFILE nav label
-  5-12-cross-screen-visual-cohesion-audit: review  # 7
+  5-12-cross-screen-visual-cohesion-audit: done     # 7
   5-13-goal-overflow-animation-polish: done  # after 5.12 (optional)
   epic-5-retrospective: optional
 
-  epic-6: in-progress
+  epic-6: done
   6-1-derived-activity-metrics: done          # after epic-5.12
   epic-6-retrospective: optional
 
