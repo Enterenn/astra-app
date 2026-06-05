@@ -139,11 +139,11 @@ so that the app feels cohesive before OSS beta release.
   - [ ] Verify V-13 screenshot framing for Today + My Data
   - [ ] **Stop → review brief → Baptiste OK → commit**
 
-- [ ] **F — Tests & regression** (AC: #13)
+- [x] **F — Tests & regression** (AC: #13)
   - [x] Update `history_screen_test.dart`, `profile_screen_test.dart`, `trend_chip_test.dart`, `app_scaffold_test.dart`
   - [x] Update `app_bottom_nav_test.dart`, `widget_test.dart` (Trends title, w700)
   - [x] Full `flutter test` + `flutter analyze`
-  - [ ] **Stop → review brief → Baptiste OK → commit**
+  - [x] **Stop → review brief → Baptiste OK → commit**
 
 ---
 
