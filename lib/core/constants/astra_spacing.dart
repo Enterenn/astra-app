@@ -29,7 +29,7 @@ abstract final class AstraSpacing {
   static const double kBottomNavHorizontalPadding = 24;
 
   /// Offset from bottom safe area to the floating pill (Figma).
-  static const double kBottomNavBottomOffset = kSpaceXl;
+  static const double kBottomNavBottomOffset = kSpaceMd;
 
   static const double kBottomNavItemSize = 52;
   static const double kBottomNavIconLabelGap = 4;
