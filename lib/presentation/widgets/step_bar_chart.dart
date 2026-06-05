@@ -32,7 +32,7 @@ class StepBarChart extends StatelessWidget {
         constraints: const BoxConstraints(minHeight: 200),
         child: DecoratedBox(
           decoration: BoxDecoration(
-            color: colors.bgSubtle,
+            color: colors.bgElevated,
             borderRadius: BorderRadius.circular(AstraSpacing.kRadiusMd),
           ),
           child: ClipRRect(
@@ -180,7 +180,7 @@ class _ReadyChart extends StatelessWidget {
                       return Text(
                         '0',
                         style: AstraTypography.captionFor(colors).copyWith(
-                          color: colors.textMuted,
+                          color: colors.textPrimary,
                         ),
                       );
                     }
@@ -188,7 +188,7 @@ class _ReadyChart extends StatelessWidget {
                       return Text(
                         _formatAxisValue(safeYMax.round()),
                         style: AstraTypography.captionFor(colors).copyWith(
-                          color: colors.textMuted,
+                          color: colors.textPrimary,
                         ),
                       );
                     }
@@ -214,7 +214,7 @@ class _ReadyChart extends StatelessWidget {
                       child: Text(
                         _formatDayLabel(points[index].localDay),
                         style: AstraTypography.captionFor(colors).copyWith(
-                          color: colors.textMuted,
+                          color: colors.textPrimary,
                         ),
                       ),
                     );

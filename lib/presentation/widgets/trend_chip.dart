@@ -19,7 +19,7 @@ class TrendChip extends StatelessWidget {
     final (icon, color) = switch (trend.direction) {
       TrendDirection.up => (Icons.arrow_upward, colors.dataPositive),
       TrendDirection.down => (Icons.arrow_downward, colors.dataNegative),
-      TrendDirection.flat => (Icons.remove, colors.textMuted),
+      TrendDirection.flat => (Icons.remove, colors.textPrimary),
     };
 
     return Semantics(
