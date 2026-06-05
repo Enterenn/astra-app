@@ -535,6 +535,60 @@ void main() {
       cubit.close();
     });
 
+    test('syncSteps monotonic merge keeps distance aligned with display steps', () async {
+      final cubit = buildCubit();
+      await cubit.refresh();
+      await cubit.syncSteps(1200);
+      final distanceAt1200 = cubit.state.activityMetrics.distanceKm;
+      expect(distanceAt1200, closeTo(0.912, 0.001));
+
+      await cubit.syncSteps(1100);
+
+      expect(cubit.state.steps, 1200);
+      expect(cubit.state.activityMetrics.distanceKm, closeTo(distanceAt1200, 0.001));
+      cubit.close();
+    });
+
+    test('refresh preserves distance when live steps exceed SQLite total', () async {
+      final events = StreamController<PhoneStepEvent>.broadcast();
+      final monitor = LiveStepMonitor(
+        stepRepository: stepRepository,
+        baselineRepository: IngestionBaselineRepository(db),
+        clock: clock,
+        stepEventStreamFactory: () => events.stream,
+        emitThrottle: Duration.zero,
+      );
+      final cubit = buildCubit();
+      cubit.attachLiveMonitor(monitor);
+      await monitor.start();
+      await monitor.reconcileFromDatabase();
+
+      events.add(
+        PhoneStepEvent(steps: 100, timeStamp: DateTime.utc(2026, 6, 2, 12)),
+      );
+      events.add(
+        PhoneStepEvent(steps: 1150, timeStamp: DateTime.utc(2026, 6, 2, 12, 1)),
+      );
+      await Future<void>.delayed(const Duration(milliseconds: 10));
+
+      expect(cubit.state.steps, 1050);
+      final distanceBefore = cubit.state.activityMetrics.distanceKm;
+      expect(distanceBefore, closeTo(0.798, 0.001));
+
+      await cubit.refresh();
+
+      expect(cubit.state.steps, greaterThanOrEqualTo(1050));
+      expect(
+        cubit.state.activityMetrics.distanceKm,
+        closeTo(distanceBefore, 0.001),
+      );
+
+      await cubit.close();
+      await monitor.stop();
+      monitor.dispose();
+      await events.close();
+    });
+
     test('refreshMetadata updates stale without changing steps', () async {
       await stepRepository.upsertIngestionBucket(
         _bucket(

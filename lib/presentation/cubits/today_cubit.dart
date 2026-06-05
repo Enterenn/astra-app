@@ -422,6 +422,16 @@ class TodayCubit extends Cubit<TodayState> {
     }
     _lastAppliedLocalDay = todayIso;
 
+    final baseMetrics = activityMetrics ?? state.activityMetrics;
+    final resolvedMetrics = ActivityMetricsSnapshot(
+      distanceKm: DerivedActivityMetrics.computeDistanceKm(
+        displaySteps: effectiveSteps,
+        heightCm: heightCm ?? state.heightCm,
+      ),
+      walkingDuration: baseMetrics.walkingDuration,
+      kcal: baseMetrics.kcal,
+    );
+
     final baseState = TodayState.fromData(
       steps: effectiveSteps,
       goal: goal,
@@ -429,7 +439,7 @@ class TodayCubit extends Cubit<TodayState> {
       isStale: isStale,
       lastIngestionUtc: lastIngestionUtc,
       weekDays: weekDays ?? state.weekDays,
-      activityMetrics: activityMetrics ?? state.activityMetrics,
+      activityMetrics: resolvedMetrics,
       heightCm: heightCm ?? state.heightCm,
       weightKg: weightKg ?? state.weightKg,
     );

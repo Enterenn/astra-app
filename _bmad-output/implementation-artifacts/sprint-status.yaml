@@ -1,5 +1,5 @@
 # generated: 2026-05-25
-# last_updated: 2026-06-05 (Story 6.1 review)
+# last_updated: 2026-06-05 (Story 6.1 done)
 # NEXT: 5.7 → 5.8 → 5.9 → 5.10 → 5.11 → 5.12 → epic-6 → 5.13 (optional)
 # Ref: planning-artifacts/sprint-change-proposal-2026-06-04.md
 # project: astra-app
@@ -108,7 +108,7 @@ development_status:
   epic-5-retrospective: optional
 
   epic-6: in-progress
-  6-1-derived-activity-metrics: review       # after epic-5.12
+  6-1-derived-activity-metrics: done          # after epic-5.12
   epic-6-retrospective: optional
 
   epic-7: backlog

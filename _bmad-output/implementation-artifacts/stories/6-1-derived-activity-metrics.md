@@ -1,6 +1,6 @@
 # Story 6.1: Derived Activity Metrics
 
-Status: review
+Status: done
 
 <!-- Baptiste 2026-06-05: "pièce de résistance" — kcal, km, walking time. -->
 <!-- 2026-06-05: Formulas amended after Gemini + Claude review — supersedes PRD FR-33 raw bucket-sum and simplified kcal coefficient. -->
@@ -384,6 +384,12 @@ Composer (Cursor)
 - `test/presentation/cubits/today_cubit_test.dart`
 - `test/presentation/widgets/activity_stats_row_test.dart`
 
+### Review Findings
+
+- [x] [Review][Patch] Distance desynced from display steps after monotonic merge [`today_cubit.dart:425`] — fixed: `_applyTodaySnapshot` now recomputes distance from `effectiveSteps`
+- [x] [Review][Patch] Missing tests for monotonic merge + distance truth model [`today_cubit_test.dart`] — added syncSteps and refresh-after-live coverage
+
 ### Change Log
 
+- 2026-06-05: Code review patches — distance always derived from `effectiveSteps` in `_applyTodaySnapshot`; regression tests added.
 - 2026-06-05: Story 6.1 implemented — derived kcal/km/duration on Today stats row; live distance scaling; bucket-only time/kcal refresh.
