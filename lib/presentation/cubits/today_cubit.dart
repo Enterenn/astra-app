@@ -506,7 +506,7 @@ class TodayCubit extends Cubit<TodayState> {
     );
     final weekDayKeys = CalendarWeek.daysContaining(referenceToday);
 
-    final aggregates = await stepRepository.getChartDailyAggregates(days: 30);
+    final aggregates = await stepRepository.getChartDailyAggregates(days: 7);
     final stepsByDay = {
       for (final aggregate in aggregates)
         aggregate.localDay: aggregate.totalSteps,

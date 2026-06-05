@@ -74,15 +74,15 @@ class StepRepository {
   }
 
   Future<int> getTodaySteps() async {
-    final timeSnapshot = clock.snapshot();
-    final referenceToday = LocalDayCalculator.localDay(
-      utc: timeSnapshot.nowUtc,
-      zoneOffset: TimestampCodec.formatZoneOffset(timeSnapshot.zoneOffset),
-    );
+    final bounds = _todaySampleUtcBounds();
     final rows = await db.query(
       'timeseries_samples',
-      where: 'type = ?',
-      whereArgs: [kStepSampleType],
+      where: 'type = ? AND start_time >= ? AND start_time < ?',
+      whereArgs: [
+        kStepSampleType,
+        TimestampCodec.formatUtc(bounds.lowerInclusive),
+        TimestampCodec.formatUtc(bounds.upperExclusive),
+      ],
     );
 
     var total = 0;
@@ -92,7 +92,7 @@ class StepRepository {
         utc: sample.startTimeUtc,
         zoneOffset: sample.zoneOffset,
       );
-      if (rowLocalDay == referenceToday) {
+      if (rowLocalDay == bounds.referenceToday) {
         total += sample.value.toInt();
       }
     }
@@ -106,15 +106,18 @@ class StepRepository {
   /// local day are excluded to prevent double-counting. The activity threshold
   /// (40 steps) is applied in [DerivedActivityMetrics], not in SQL.
   Future<List<TimeseriesSampleModel>> getTodayActiveBuckets() async {
-    final timeSnapshot = clock.snapshot();
-    final referenceToday = LocalDayCalculator.localDay(
-      utc: timeSnapshot.nowUtc,
-      zoneOffset: TimestampCodec.formatZoneOffset(timeSnapshot.zoneOffset),
-    );
+    final bounds = _todaySampleUtcBounds();
     final rows = await db.query(
       'timeseries_samples',
-      where: 'type = ? AND resolution = ? AND value > 0',
-      whereArgs: [kStepSampleType, kFiveMinuteResolution],
+      where:
+          'type = ? AND resolution = ? AND value > 0 '
+          'AND start_time >= ? AND start_time < ?',
+      whereArgs: [
+        kStepSampleType,
+        kFiveMinuteResolution,
+        TimestampCodec.formatUtc(bounds.lowerInclusive),
+        TimestampCodec.formatUtc(bounds.upperExclusive),
+      ],
     );
 
     final buckets = <TimeseriesSampleModel>[];
@@ -124,12 +127,31 @@ class StepRepository {
         utc: sample.startTimeUtc,
         zoneOffset: sample.zoneOffset,
       );
-      if (rowLocalDay == referenceToday) {
+      if (rowLocalDay == bounds.referenceToday) {
         buckets.add(sample);
       }
     }
 
     return buckets;
+  }
+
+  /// Conservative UTC window for today's rows before per-row [zone_offset] filtering.
+  ///
+  /// Uses reference local day ±1 day so extreme offsets (+14/−12) still match
+  /// [LocalDayCalculator] semantics while excluding aged history via
+  /// [idx_timeseries_query].
+  ({DateTime referenceToday, DateTime lowerInclusive, DateTime upperExclusive})
+  _todaySampleUtcBounds() {
+    final timeSnapshot = clock.snapshot();
+    final referenceToday = LocalDayCalculator.localDay(
+      utc: timeSnapshot.nowUtc,
+      zoneOffset: TimestampCodec.formatZoneOffset(timeSnapshot.zoneOffset),
+    );
+    return (
+      referenceToday: referenceToday,
+      lowerInclusive: referenceToday.subtract(const Duration(days: 1)),
+      upperExclusive: referenceToday.add(const Duration(days: 2)),
+    );
   }
 
   /// Returns daily step totals for the History chart (7 or 30 day window).

@@ -16,6 +16,7 @@ import 'presentation/cubits/theme_state.dart';
 import 'presentation/cubits/history_cubit.dart';
 import 'presentation/cubits/my_data_cubit.dart';
 import 'presentation/cubits/today_cubit.dart';
+import 'presentation/cubits/today_state.dart';
 import 'presentation/onboarding/onboarding_flow.dart';
 import 'presentation/screens/app_scaffold.dart';
 
@@ -102,12 +103,18 @@ class _AstraAppState extends State<AstraApp> with WidgetsBindingObserver {
   Future<void>? _persistInFlight;
   void Function(String message)? _showDebugSnackBar;
   Future<void>? _lifecycleTransitionInFlight;
+  Stopwatch? _coldStartStopwatch;
+  bool _coldStartReadyLogged = false;
 
   @override
   void initState() {
     super.initState();
     _showMainShell = widget.deps.initialOnboardingComplete;
     WidgetsBinding.instance.addObserver(this);
+    if (_showMainShell) {
+      _coldStartStopwatch = Stopwatch()..start();
+      livePipelineLog('app', 'cold start START', details: {'elapsedMs': 0});
+    }
     _foregroundBackfill = widget.enableLiveStepPipeline
         ? _runPersistCycle(enableGoalNotification: true)
         : widget.deps.backgroundCollector.collectOnce(
@@ -486,10 +493,49 @@ class _AstraAppState extends State<AstraApp> with WidgetsBindingObserver {
 
   Future<void> _initialTodayRefresh() async {
     await _foregroundBackfill;
+    _logColdStartPhase('cold start backfill DONE');
     if (!mounted) {
       return;
     }
     await _todayCubit?.refresh();
+    _logColdStartReadyIfNeeded();
+  }
+
+  void _logColdStartPhase(
+    String phase, {
+    Map<String, Object?> details = const {},
+  }) {
+    final stopwatch = _coldStartStopwatch;
+    if (stopwatch == null) {
+      return;
+    }
+    livePipelineLog(
+      'app',
+      phase,
+      details: {
+        'elapsedMs': stopwatch.elapsedMilliseconds,
+        ...details,
+      },
+    );
+  }
+
+  void _logColdStartReadyIfNeeded() {
+    if (_coldStartReadyLogged || _coldStartStopwatch == null) {
+      return;
+    }
+    final cubit = _todayCubit;
+    if (cubit == null || cubit.state.status == TodayStatus.loading) {
+      return;
+    }
+    _coldStartReadyLogged = true;
+    _coldStartStopwatch!.stop();
+    _logColdStartPhase(
+      'cold start UI READY',
+      details: {
+        'steps': cubit.state.steps,
+        'status': cubit.state.status.name,
+      },
+    );
   }
 
   void _onTodayCubitReady(TodayCubit cubit) {
@@ -529,6 +575,7 @@ class _AstraAppState extends State<AstraApp> with WidgetsBindingObserver {
       return;
     }
     await _foregroundBackfill;
+    _logColdStartPhase('cold start backfill DONE');
     if (!mounted) {
       return;
     }
@@ -537,15 +584,15 @@ class _AstraAppState extends State<AstraApp> with WidgetsBindingObserver {
       return;
     }
     _livePipelineStarted = true;
-    livePipelineLog(
-      'app',
-      'cold-start pipeline DONE',
+    _logColdStartPhase(
+      'cold start pipeline DONE',
       details: {
         'monitorRunning': widget.deps.liveStepMonitor.isRunning,
         'monitorTotal': widget.deps.liveStepMonitor.currentTodaySteps,
         'cubitSteps': _todayCubit?.state.steps,
       },
     );
+    _logColdStartReadyIfNeeded();
     _startActivityBasedPersist();
   }
 
@@ -604,7 +651,12 @@ class _AstraAppState extends State<AstraApp> with WidgetsBindingObserver {
         'catchUp': _todayCubit?.state.foregroundCatchUp ?? false,
       },
     );
-    await _todayCubit?.refreshMetadata();
+    // Cold-start bind already ran refresh(silent); resume catch-up skips it.
+    if (foregroundCatchUp) {
+      await _todayCubit?.refreshMetadata();
+    } else {
+      _logColdStartReadyIfNeeded();
+    }
   }
 
   void _startActivityBasedPersist() {

@@ -2,6 +2,7 @@ import 'package:astra_app/core/database/app_database.dart';
 import 'package:astra_app/core/time/time_provider.dart';
 import 'package:astra_app/data/datasources/data_ingestion_source.dart';
 import 'package:astra_app/data/models/normalized_step_bucket.dart';
+import 'package:astra_app/data/models/timeseries_sample_model.dart';
 import 'package:astra_app/data/repositories/step_repository.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:sqflite/sqflite.dart';
@@ -137,6 +138,35 @@ void main() {
         expect(await repository.getTodaySteps(), 100);
       },
     );
+
+    test('ignores step rows outside the today UTC query window', () async {
+      final repository = StepRepository(
+        db: db,
+        clock: FakeTimeProvider(
+          fixedNowUtc: DateTime.utc(2026, 6, 2, 10),
+          zoneOffset: const Duration(hours: 2),
+        ),
+      );
+      await repository.upsertIngestionBucket(
+        _bucket(
+          startTimeUtc: DateTime.utc(2026, 6, 2, 8),
+          value: 42,
+          zoneOffset: '+02:00',
+        ),
+      );
+      await repository.insertDevSamplesBatch([
+        TimeseriesSampleModel.fromNormalizedBucket(
+          bucket: _bucket(
+            startTimeUtc: DateTime.utc(2026, 1, 1, 8),
+            value: 9999,
+            zoneOffset: '+02:00',
+          ),
+          id: 'ancient-noise',
+        ),
+      ]);
+
+      expect(await repository.getTodaySteps(), 42);
+    });
   });
 }
 
