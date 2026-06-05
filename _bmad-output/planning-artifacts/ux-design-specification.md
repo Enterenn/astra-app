@@ -422,7 +422,7 @@ Modal for destructive or irreversible actions.
 | **empty** | Ring at 0%, count `0` | Post-purge or pre-permission |
 | **progress** | Arc 0–99% | Live update on foreground + background sync |
 | **goal met** | Full ring + **`GoalCelebration` playing** | Once per local calendar day — see §2.3.1 |
-| **overflow** | Full ring unchanged | Count shows actual > goal |
+| **overflow** | Full ring + calm **ambient shimmer** loop (distinct from celebration) | Count shows actual > goal; live micro-tick on +1 |
 | **no permission** | Ring dashed track, count `--` | CTA link → system settings (not blocking whole app) |
 
 **Copy rules:** Never "You're crushing it!" — no coach language.
@@ -437,21 +437,22 @@ Dedicated celebration moment when daily steps **first reach or exceed** `daily_s
 - If triggered in background: animation plays on **next Today visit** that day (single play, not repeated on every tab switch)
 - Persist flag: `celebration_shown_date` in local prefs (same day boundary as step aggregation §1.3)
 
-**Visual layers (simultaneous, 900ms total):**
+**Visual layers (rewarding tier — Story 5.13, ~4s total):**
 
 | Layer | Animation | Timing | Easing |
 |-------|-----------|--------|--------|
-| **Ring scale** | 1.0 → 1.05 → 1.0 | 0–600ms | `Curves.easeOutCubic` |
-| **Ring glow** | Halo `color.accent.primary` @ 0% → 18% → 0%, blur 24dp, behind ring | 0–800ms | ease-out |
-| **Stroke shimmer** | Progress stroke opacity 1.0 → 1.25 → 1.0 (not hue shift) | 200–700ms | ease-in-out |
+| **Arc sweep** | Remaining arc draws to 360° | 0–400ms | `Curves.easeInOut` |
+| **Ring scale** | 1.0 → 1.10 → 1.0, then second pulse 1.0 → 1.04 → 1.0 | 0–700ms + ~1200ms | `Curves.easeOutCubic` |
+| **Ring glow** | Halo `color.accent.primary` @ 0% → 30% → 0%, blur 28dp, behind ring | 0–1200ms | ease-out |
+| **Stroke shimmer** | Progress stroke opacity 1.0 → 1.25 → 1.0 (not hue shift) | 200–900ms | ease-in-out |
 | **Center count** | Scale 1.0 → 1.02 → 1.0 | 100–500ms | subtle, optional |
 
 **No:** confetti, particles, full-screen overlay, sound, streak badge, "Goal reached!" modal, coach copy toast.
 
-**Optional micro-copy (below ring, 2s fade):**  
+**Optional micro-copy (below ring, ~3.5s visibility):**  
 Single line Figtree `type.caption` `color.text.secondary`: **"Daily goal reached"** — appears once, fades out, does not stack with notifications.
 
-**Haptics (Android):** `HapticFeedback.lightImpact()` at animation peak (~300ms). iOS: optional `HapticFeedback.mediumImpact()` if not conflicting with notification.
+**Haptics:** Android `lightImpact` at ~300ms and softer second tap at ~1200ms; iOS `mediumImpact` + light at second peak.
 
 **Overflow (>100%):** Same celebration at first crossing of goal; subsequent steps same day do **not** re-trigger.
 
@@ -467,6 +468,19 @@ Single line Figtree `type.caption` `color.text.secondary`: **"Daily goal reached
 ```
 
 **Relation to notification (FR-25):** Notification and celebration are independent — user may get notification while app closed; celebration plays on next Today open. No duplicate modal if both occur.
+
+#### 2.3.2 Step count motion (Story 5.13)
+
+| Scenario | Motion | Curve | Duration |
+|----------|--------|-------|----------|
+| **Cold start** | Count-up from `last_displayed_steps` (same local day) to current steps; arc sync | `Curves.easeInOut` | `clamp(600ms, delta × 1.5ms, 1800ms)` |
+| **Tab return** | Delta count-up only (not full replay) | `Curves.easeInOut` | min 100ms |
+| **Live +1** | Per-digit micro-tick (4–6px vertical clip on changed digits) | `Curves.easeOut` | ~150ms |
+| **Reduce motion** | Instant final values | — | 0 |
+
+**Persistence:** `last_displayed_steps` + `last_displayed_steps_local_day` in `user_preferences` (no schema migration). Semantics announce **target** count, not intermediate frames.
+
+**Overflow ambient:** After celebration dismisses, `overflow` state shows slow shimmer loop on full ring — static when reduce motion enabled. `goalMet` exactly (not overflow) stays static full arc.
 
 ---
 
