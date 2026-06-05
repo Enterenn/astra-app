@@ -16,3 +16,8 @@ String formatStepCount(int count) {
   }
   return buffer.toString();
 }
+
+/// Character segments of [formatStepCount] output (thin spaces included).
+List<String> stepCountSegments(int count) {
+  return formatStepCount(count).split('');
+}

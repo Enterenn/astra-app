@@ -157,6 +157,32 @@ class UserPreferencesRepository {
     await _writeValue(kCelebrationShownDateKey, localDayIso);
   }
 
+  /// Last step count displayed on Today for the given local day, or null when unset.
+  Future<int?> getLastDisplayedSteps(String localDayIso) async {
+    final storedDay = await _readValue(kLastDisplayedStepsLocalDayKey);
+    if (storedDay != localDayIso) {
+      return null;
+    }
+    final value = await _readValue(kLastDisplayedStepsKey);
+    return int.tryParse(value ?? '');
+  }
+
+  Future<void> setLastDisplayedSteps({
+    required String localDayIso,
+    required int steps,
+  }) async {
+    if (steps < 0) {
+      throw ArgumentError.value(steps, 'steps', 'must be non-negative');
+    }
+    await _writeValue(kLastDisplayedStepsLocalDayKey, localDayIso);
+    await _writeValue(kLastDisplayedStepsKey, steps.toString());
+  }
+
+  Future<void> clearLastDisplayedSteps() async {
+    await _deleteValue(kLastDisplayedStepsKey);
+    await _deleteValue(kLastDisplayedStepsLocalDayKey);
+  }
+
   /// UTC instant of the last successful `PRAGMA optimize` / `VACUUM` run.
   Future<DateTime?> getLastDatabaseOptimizedAt() async {
     final value = await _readValue(kLastDatabaseOptimizedAtKey);

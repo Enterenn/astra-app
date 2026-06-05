@@ -9,6 +9,13 @@ import '../../helpers/astra_theme_test_helper.dart';
 
 void main() {
   group('GoalRing', () {
+    setUp(() {
+      GoalRing.disableStepPersistence = true;
+    });
+
+    tearDown(() {
+      GoalRing.disableStepPersistence = false;
+    });
     Future<void> pumpGoalRing(
       WidgetTester tester, {
       required TodayState state,
@@ -30,13 +37,18 @@ void main() {
     }
 
     GoalRingPainter ringPainter(WidgetTester tester) {
-      final painter = tester.widget<CustomPaint>(
+      final painters = tester.widgetList<CustomPaint>(
         find.descendant(
           of: find.byType(GoalRing),
           matching: find.byType(CustomPaint),
         ),
       );
-      return painter.painter! as GoalRingPainter;
+      for (final painter in painters) {
+        if (painter.painter is GoalRingPainter) {
+          return painter.painter! as GoalRingPainter;
+        }
+      }
+      throw StateError('GoalRingPainter not found');
     }
 
     test('ringProgressFor caps overflow at 100%', () {
@@ -143,6 +155,36 @@ void main() {
       final delegate = ringPainter(tester);
       expect(delegate.dashedTrack, isTrue);
       expect(delegate.progress, 0);
+    });
+
+    testWidgets('preview count-up fills arc while steps are still empty', (
+      tester,
+    ) async {
+      await tester.pumpWidget(
+        wrapWithAstraTheme(
+          Center(
+            child: SizedBox(
+              width: 400,
+              child: GoalRing(
+                state: TodayState.fromData(
+                  steps: 0,
+                  goal: 2500,
+                  isStale: false,
+                ),
+                previewCountUpTarget: 2500,
+              ),
+            ),
+          ),
+        ),
+      );
+      await tester.pump();
+      await tester.pump();
+      await tester.pump(const Duration(milliseconds: 900));
+      await tester.pump();
+
+      final delegate = ringPainter(tester);
+      expect(delegate.progress, greaterThan(0.1));
+      expect(delegate.progress, lessThan(1.0));
     });
 
     testWidgets('empty state shows zero count', (tester) async {
