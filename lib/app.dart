@@ -1,5 +1,6 @@
 import 'dart:async';
 
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 
@@ -26,6 +27,7 @@ class AstraApp extends StatefulWidget {
     this.createMyDataCubit,
     this.enablePeriodicPersist = true,
     this.enableLiveStepPipeline = true,
+    this.maxPersistStaleness = kMaxPersistStaleness,
   });
 
   final AppDependencies deps;
@@ -37,12 +39,26 @@ class AstraApp extends StatefulWidget {
   final bool enablePeriodicPersist;
   final bool enableLiveStepPipeline;
 
+  /// Override in tests to avoid multi-minute [Timer.periodic] waits.
+  final Duration maxPersistStaleness;
+
   @override
   State<AstraApp> createState() => _AstraAppState();
 }
 
 /// Safety net: persist at least this often during continuous walking.
 const kMaxPersistStaleness = Duration(minutes: 5);
+
+/// Whether the staleness fallback should run a persist cycle.
+@visibleForTesting
+bool shouldTriggerStalenessPersist({
+  required DateTime? lastPersistAt,
+  required DateTime now,
+  required Duration maxStaleness,
+}) {
+  return lastPersistAt == null ||
+      now.difference(lastPersistAt) >= maxStaleness;
+}
 
 class _AstraAppState extends State<AstraApp> with WidgetsBindingObserver {
   /// Must cover [LiveStepMonitor.maxBufferedReadings] so activity-idle persist
@@ -315,11 +331,14 @@ class _AstraAppState extends State<AstraApp> with WidgetsBindingObserver {
       unawaited(_runPersistIfNotInFlight());
     };
 
+    final maxStaleness = widget.maxPersistStaleness;
     _stalenessPersistTimer?.cancel();
-    _stalenessPersistTimer = Timer.periodic(kMaxPersistStaleness, (_) {
-      final lastPersist = _lastPersistAt;
-      if (lastPersist == null ||
-          DateTime.now().difference(lastPersist) >= kMaxPersistStaleness) {
+    _stalenessPersistTimer = Timer.periodic(maxStaleness, (_) {
+      if (shouldTriggerStalenessPersist(
+        lastPersistAt: _lastPersistAt,
+        now: DateTime.now(),
+        maxStaleness: maxStaleness,
+      )) {
         unawaited(_runPersistIfNotInFlight());
       }
     });

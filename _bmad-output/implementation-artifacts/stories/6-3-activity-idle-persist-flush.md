@@ -1,6 +1,6 @@
 # Story 6.3: Activity-Idle Persist Flush
 
-Status: review
+Status: done
 
 <!-- Baptiste 2026-06-05: Flush when user stops moving (15 s step-stream idle), not fixed 60 s timer. -->
 <!-- Universal — not OEM-specific; addresses live vs SQLite gap on process kill (Story 6.2 field notes). -->
@@ -173,7 +173,15 @@ Composer
 - lib/data/repositories/user_preferences_repository.dart
 - test/core/services/live_step_monitor_test.dart
 - test/app_live_pipeline_lifecycle_test.dart
+- test/app_persist_policy_test.dart
+
+### Review Findings
+
+- [x] [Review][Patch] AC #5 staleness fallback test — `shouldTriggerStalenessPersist` + `app_persist_policy_test.dart`
+- [x] [Review][Defer] `enablePeriodicPersist` rename — deferred, low value vs churn
+- [x] [Review][Defer] AstraApp widget test for idle wiring — deferred, manual validation + unit coverage
 
 ### Change Log
 
 - 2026-06-05: Story 6.3 implemented — activity-idle persist, staleness fallback, persist mutex, field-validated
+- 2026-06-05: Code review patches — staleness testability, story marked done

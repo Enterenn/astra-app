@@ -1,6 +1,6 @@
 # generated: 2026-05-25
-# last_updated: 2026-06-05 (Story 6.2 done — review patches committed)
-# NEXT: 6.3 → epic-7 → 7-1 → 7-2 → 7-3
+# last_updated: 2026-06-05 (Story 6.3 done — epic-6 complete)
+# NEXT: epic-7 → 7-1 → 7-2 → 7-3
 # Ref: planning-artifacts/sprint-change-proposal-2026-06-04.md
 # project: astra-app
 # project_key: NOKEY
@@ -107,10 +107,10 @@ development_status:
   5-13-goal-overflow-animation-polish: done  # after 5.12 (optional)
   epic-5-retrospective: optional
 
-  epic-6: in-progress
+  epic-6: done
   6-1-derived-activity-metrics: done          # after epic-5.12
   6-2-pedometer-shake-noise-rate-limit: done  # inter-arrival rate cap; Nord drip shake deferred to 6.3
-  6-3-activity-idle-persist-flush: review  # universal: flush after step-stream idle
+  6-3-activity-idle-persist-flush: done  # universal: flush after step-stream idle
   epic-6-retrospective: optional
 
   epic-7: backlog
