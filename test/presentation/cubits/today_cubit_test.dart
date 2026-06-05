@@ -413,8 +413,9 @@ void main() {
       events.add(
         PhoneStepEvent(steps: 10, timeStamp: DateTime.utc(2026, 6, 2, 12)),
       );
+      // ~12 min gap so +3490 credits fully under 5 steps/s rate limit (story 6.2).
       events.add(
-        PhoneStepEvent(steps: 3500, timeStamp: DateTime.utc(2026, 6, 2, 12, 1)),
+        PhoneStepEvent(steps: 3500, timeStamp: DateTime.utc(2026, 6, 2, 12, 12)),
       );
       await Future<void>.delayed(const Duration(milliseconds: 10));
 
@@ -445,8 +446,9 @@ void main() {
       events.add(
         PhoneStepEvent(steps: 100, timeStamp: DateTime.utc(2026, 6, 2, 12)),
       );
+      // 10 min gap for +3000 delta under rate limit (story 6.2).
       events.add(
-        PhoneStepEvent(steps: 3100, timeStamp: DateTime.utc(2026, 6, 2, 12, 1)),
+        PhoneStepEvent(steps: 3100, timeStamp: DateTime.utc(2026, 6, 2, 12, 10)),
       );
       await Future<void>.delayed(const Duration(milliseconds: 10));
 
@@ -475,8 +477,9 @@ void main() {
       events.add(
         PhoneStepEvent(steps: 100, timeStamp: DateTime.utc(2026, 6, 2, 12)),
       );
+      // 3.5 min gap for +1050 delta under rate limit (story 6.2).
       events.add(
-        PhoneStepEvent(steps: 1150, timeStamp: DateTime.utc(2026, 6, 2, 12, 1)),
+        PhoneStepEvent(steps: 1150, timeStamp: DateTime.utc(2026, 6, 2, 12, 3, 30)),
       );
       await Future<void>.delayed(const Duration(milliseconds: 10));
       expect(cubit.state.steps, 1050);
@@ -510,8 +513,9 @@ void main() {
       events.add(
         PhoneStepEvent(steps: 10, timeStamp: DateTime.utc(2026, 6, 2, 12)),
       );
+      // ~100 s gap for +490 delta under rate limit (story 6.2).
       events.add(
-        PhoneStepEvent(steps: 500, timeStamp: DateTime.utc(2026, 6, 2, 12, 1)),
+        PhoneStepEvent(steps: 500, timeStamp: DateTime.utc(2026, 6, 2, 12, 1, 40)),
       );
       await Future<void>.delayed(const Duration(milliseconds: 10));
 
@@ -566,8 +570,9 @@ void main() {
       events.add(
         PhoneStepEvent(steps: 100, timeStamp: DateTime.utc(2026, 6, 2, 12)),
       );
+      // 3.5 min gap for +1050 delta under rate limit (story 6.2).
       events.add(
-        PhoneStepEvent(steps: 1150, timeStamp: DateTime.utc(2026, 6, 2, 12, 1)),
+        PhoneStepEvent(steps: 1150, timeStamp: DateTime.utc(2026, 6, 2, 12, 3, 30)),
       );
       await Future<void>.delayed(const Duration(milliseconds: 10));
 

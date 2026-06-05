@@ -15,6 +15,13 @@ class StepIncrementCalculator {
   /// time. Human sprint peaks around ~4/s; 5/s adds margin.
   static const int kMaxStepsPerSecond = 5;
 
+  /// Field A/B shake test: build with
+  /// `--dart-define=STEP_RATE_LIMIT_ENABLED=false` to disable the cap.
+  static const bool kRateLimitEnabled = bool.fromEnvironment(
+    'STEP_RATE_LIMIT_ENABLED',
+    defaultValue: true,
+  );
+
   /// Returns the step delta from [baseline] to [current], or null when the
   /// reading should be ignored (sensor noise).
   ///
@@ -30,7 +37,7 @@ class StepIncrementCalculator {
   }) {
     if (current >= baseline) {
       final rawDelta = current - baseline;
-      if (elapsedSincePrevious == null) {
+      if (elapsedSincePrevious == null || !kRateLimitEnabled) {
         return rawDelta;
       }
       final maxDelta = _maxDeltaForElapsed(elapsedSincePrevious.inMilliseconds);
