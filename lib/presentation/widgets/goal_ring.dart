@@ -13,9 +13,13 @@ import '../formatters/step_count_formatter.dart';
 import 'animated_step_count.dart';
 import 'goal_ring_effects.dart';
 
-const _kRingStrokeWidth = 9.0;
-const _kRingMinDiameter = 220.0;
-const _kRingMaxDiameter = 260.0;
+/// Figma Today screen progress ring stroke width.
+const kGoalRingStrokeWidth = 24.0;
+
+/// Ring diameter = card inner width × [kGoalRingWidthFactor], clamped to [min, max].
+const kGoalRingMinDiameter = 240.0;
+const kGoalRingMaxDiameter = 300.0;
+const kGoalRingWidthFactor = 0.80;
 
 /// Progress arc opacity when goal not yet reached (Figma / Story 5.8).
 const _kRingProgressOpacityInProgress = 0.66;
@@ -566,9 +570,9 @@ class _GoalRingState extends State<GoalRing> with TickerProviderStateMixin {
 
     return LayoutBuilder(
       builder: (context, constraints) {
-        final diameter = (constraints.maxWidth * 0.6).clamp(
-          _kRingMinDiameter,
-          _kRingMaxDiameter,
+        final diameter = (constraints.maxWidth * kGoalRingWidthFactor).clamp(
+          kGoalRingMinDiameter,
+          kGoalRingMaxDiameter,
         );
         final size = Size.square(diameter);
 
@@ -610,7 +614,7 @@ class _GoalRingState extends State<GoalRing> with TickerProviderStateMixin {
         progress: _effectiveProgress,
         trackColor: colors.bgSubtle,
         progressColor: progressColor,
-        strokeWidth: _kRingStrokeWidth,
+        strokeWidth: kGoalRingStrokeWidth,
         dashedTrack: status == TodayStatus.noPermission,
       ),
     );
@@ -639,7 +643,7 @@ class _GoalRingState extends State<GoalRing> with TickerProviderStateMixin {
             size: size,
             painter: GoalRingOverflowAmbientPainter(
               color: colors.accentPrimary,
-              strokeWidth: _kRingStrokeWidth,
+              strokeWidth: kGoalRingStrokeWidth,
               phase: phase,
               strength: strength,
             ),
@@ -660,9 +664,7 @@ class _GoalRingState extends State<GoalRing> with TickerProviderStateMixin {
       _ => null,
     };
 
-    final stepCountStyle = AstraTypography.displayFor(colors).copyWith(
-      fontWeight: FontWeight.w900,
-    );
+    final stepCountStyle = AstraTypography.goalRingStepCountFor(colors);
 
     return FittedBox(
       fit: BoxFit.scaleDown,
@@ -672,16 +674,19 @@ class _GoalRingState extends State<GoalRing> with TickerProviderStateMixin {
           Row(
             mainAxisSize: MainAxisSize.min,
             children: [
-              Icon(
-                PhosphorIconsFill.sneakerMove,
-                size: 20,
-                color: colors.neutralGray,
+              SizedBox(
+                width: 20,
+                height: 20,
+                child: Icon(
+                  PhosphorIconsFill.sneakerMove,
+                  size: 20,
+                  color: colors.neutralGray,
+                ),
               ),
               const SizedBox(width: AstraSpacing.kSpaceXs),
-              Text('Steps', style: AstraTypography.captionFor(colors)),
+              Text('Steps', style: AstraTypography.goalRingLabelFor(colors)),
             ],
           ),
-          const SizedBox(height: 4),
           if (centerText != null)
             Text(centerText, style: stepCountStyle)
           else if (reduceMotion || widget.freezeMotion)
@@ -696,7 +701,7 @@ class _GoalRingState extends State<GoalRing> with TickerProviderStateMixin {
           const SizedBox(height: 2),
           Text(
             '/${formatStepCount(widget.state.goal)}',
-            style: AstraTypography.captionFor(colors),
+            style: AstraTypography.goalRingLabelFor(colors),
           ),
         ],
       ),

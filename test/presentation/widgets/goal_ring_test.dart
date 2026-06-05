@@ -365,7 +365,7 @@ void main() {
       handle.dispose();
     });
 
-    testWidgets('ring diameter clamps between 220 and 260 logical pixels', (
+    testWidgets('ring diameter clamps to kGoalRingMaxDiameter', (
       tester,
     ) async {
       await pumpGoalRing(
@@ -380,8 +380,8 @@ void main() {
           matching: find.byType(CustomPaint),
         ),
       );
-      expect(ringSize.width, 260);
-      expect(ringSize.height, 260);
+      expect(ringSize.width, kGoalRingMaxDiameter);
+      expect(ringSize.height, kGoalRingMaxDiameter);
     });
   });
 }

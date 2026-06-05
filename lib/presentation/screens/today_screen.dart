@@ -99,6 +99,7 @@ class _GoalRingCard extends StatelessWidget {
     final cubit = context.read<TodayCubit>();
 
     return ElevatedCard(
+      padding: AstraSpacing.kSpaceLg,
       child: Column(
         children: [
           Center(

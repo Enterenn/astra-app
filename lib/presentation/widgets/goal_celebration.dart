@@ -18,11 +18,11 @@ const _kReducedMotionCopyFadeMs = 500;
 const _kArcSweepMs = 400;
 const _kRingPulseMs = 720;
 const _kRingPulsePeak = 1.08;
-const _kRingMinDiameter = 220.0;
-const _kRingMaxDiameter = 260.0;
-
 double _ringDiameter(double maxWidth) =>
-    (maxWidth * 0.6).clamp(_kRingMinDiameter, _kRingMaxDiameter);
+    (maxWidth * kGoalRingWidthFactor).clamp(
+      kGoalRingMinDiameter,
+      kGoalRingMaxDiameter,
+    );
 
 class GoalCelebration extends StatefulWidget {
   const GoalCelebration({
@@ -201,7 +201,7 @@ class _GoalCelebrationState extends State<GoalCelebration>
     final startProgress = widget.state.progressRatio.clamp(0.0, 1.0);
     final size = Size.square(diameter);
     final particleCanvas = diameter * 1.45;
-    final ringRadius = (diameter - 9) / 2;
+    final ringRadius = (diameter - kGoalRingStrokeWidth) / 2;
 
     return ExcludeSemantics(
       child: Stack(
@@ -244,7 +244,7 @@ class _GoalCelebrationState extends State<GoalCelebration>
                         progress: 0,
                         trackColor: colors.bgSubtle,
                         progressColor: colors.accentPrimary,
-                        strokeWidth: 9,
+                        strokeWidth: kGoalRingStrokeWidth,
                         dashedTrack: false,
                       ),
                     ),
@@ -255,7 +255,7 @@ class _GoalCelebrationState extends State<GoalCelebration>
                         toProgress: 1,
                         sweepT: arcSweepT,
                         color: colors.accentPrimary,
-                        strokeWidth: 9,
+                        strokeWidth: kGoalRingStrokeWidth,
                       ),
                     ),
                   ] else
@@ -265,7 +265,7 @@ class _GoalCelebrationState extends State<GoalCelebration>
                         progress: 1,
                         trackColor: colors.bgSubtle,
                         progressColor: colors.accentPrimary,
-                        strokeWidth: 9,
+                        strokeWidth: kGoalRingStrokeWidth,
                         dashedTrack: false,
                       ),
                     ),
@@ -281,7 +281,7 @@ class _GoalCelebrationState extends State<GoalCelebration>
                         progress: 1,
                         color: colors.accentPrimary,
                         shimmerStrength: shimmerStrength,
-                        strokeWidth: 9,
+                        strokeWidth: kGoalRingStrokeWidth,
                       ),
                     ),
                 ],

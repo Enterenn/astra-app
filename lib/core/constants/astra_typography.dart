@@ -15,6 +15,24 @@ abstract final class AstraTypography {
     color: colors.textPrimary,
   );
 
+  /// Today goal ring step count (Darker Grotesque Black 64px).
+  static TextStyle goalRingStepCountFor(AstraColors colors) => TextStyle(
+    fontFamily: darkerGrotesque,
+    fontSize: 64,
+    fontWeight: FontWeight.w900,
+    height: 1.05,
+    color: colors.textPrimary,
+  );
+
+  /// Goal ring "Steps" label and `/goal` line (Figtree 16px medium).
+  static TextStyle goalRingLabelFor(AstraColors colors) => TextStyle(
+    fontFamily: figtree,
+    fontSize: 16,
+    fontWeight: FontWeight.w500,
+    height: 1.5,
+    color: colors.neutralGray,
+  );
+
   static TextStyle titleFor(AstraColors colors) => TextStyle(
     fontFamily: darkerGrotesque,
     fontSize: 24,
