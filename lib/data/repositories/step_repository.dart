@@ -98,6 +98,38 @@ class StepRepository {
     return total;
   }
 
+  /// Returns today's 5-minute step buckets with positive values for activity metrics.
+  ///
+  /// Only `resolution = '5min'` rows are included; coarser tiers for the same
+  /// local day are excluded to prevent double-counting. The activity threshold
+  /// (40 steps) is applied in [DerivedActivityMetrics], not in SQL.
+  Future<List<TimeseriesSampleModel>> getTodayActiveBuckets() async {
+    final timeSnapshot = clock.snapshot();
+    final referenceToday = LocalDayCalculator.localDay(
+      utc: timeSnapshot.nowUtc,
+      zoneOffset: TimestampCodec.formatZoneOffset(timeSnapshot.zoneOffset),
+    );
+    final rows = await db.query(
+      'timeseries_samples',
+      where: 'type = ? AND resolution = ? AND value > 0',
+      whereArgs: [kStepSampleType, kFiveMinuteResolution],
+    );
+
+    final buckets = <TimeseriesSampleModel>[];
+    for (final row in rows) {
+      final sample = TimeseriesSampleModel.fromMap(row);
+      final rowLocalDay = LocalDayCalculator.localDay(
+        utc: sample.startTimeUtc,
+        zoneOffset: sample.zoneOffset,
+      );
+      if (rowLocalDay == referenceToday) {
+        buckets.add(sample);
+      }
+    }
+
+    return buckets;
+  }
+
   /// Returns daily step totals for the History chart (7 or 30 day window).
   ///
   /// Aggregation runs in Dart using each row's stored [TimeseriesSampleModel.zoneOffset].
