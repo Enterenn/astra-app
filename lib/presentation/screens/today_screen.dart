@@ -49,7 +49,7 @@ class TodayScreen extends StatelessWidget {
                   children: [
                     Text(
                       _kScreenTitle,
-                      style: AstraTypography.captionFor(colors),
+                      style: AstraTypography.screenTitleFor(colors),
                     ),
                     const SizedBox(height: AstraSpacing.kSpaceMd),
                     _GoalRingCard(state: state),

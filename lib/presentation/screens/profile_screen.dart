@@ -137,7 +137,7 @@ class _ProfileScreenBody extends StatelessWidget {
           children: [
             Text(
               ProfileScreen._kScreenTitle,
-              style: AstraTypography.captionFor(colors),
+              style: AstraTypography.screenTitleFor(colors),
             ),
             const SizedBox(height: AstraSpacing.kSpaceMd),
             SectionCard(

@@ -24,14 +24,19 @@ class HistoryScreen extends StatelessWidget {
         child: BlocBuilder<HistoryCubit, HistoryState>(
           builder: (context, state) {
             return Padding(
-              padding: const EdgeInsets.symmetric(
-                horizontal: AstraSpacing.kScreenHorizontalPadding,
+              padding: const EdgeInsets.fromLTRB(
+                AstraSpacing.kScreenHorizontalPadding,
+                AstraSpacing.kSpaceSm,
+                AstraSpacing.kScreenHorizontalPadding,
+                0,
               ),
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.stretch,
                 children: [
-                  const SizedBox(height: AstraSpacing.kSpaceMd),
-                  Text('History', style: AstraTypography.title(context)),
+                  Text(
+                    'History',
+                    style: AstraTypography.screenTitleFor(colors),
+                  ),
                   const SizedBox(height: AstraSpacing.kSpaceMd),
                   PeriodToggle(
                     selected: state.period,

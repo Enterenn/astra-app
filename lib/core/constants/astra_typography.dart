@@ -39,6 +39,14 @@ abstract final class AstraTypography {
     color: colors.textPrimary,
   );
 
+  static TextStyle screenTitleFor(AstraColors colors) => TextStyle(
+    fontFamily: figtree,
+    fontSize: 16,
+    fontWeight: FontWeight.w500,
+    height: 1.5,
+    color: colors.neutralGray,
+  );
+
   static TextStyle labelFor(AstraColors colors) => TextStyle(
     fontFamily: figtree,
     fontSize: 14,
@@ -72,6 +80,9 @@ abstract final class AstraTypography {
       headlineFor(context.astraColors);
 
   static TextStyle body(BuildContext context) => bodyFor(context.astraColors);
+
+  static TextStyle screenTitle(BuildContext context) =>
+      screenTitleFor(context.astraColors);
 
   static TextStyle label(BuildContext context) => labelFor(context.astraColors);
 

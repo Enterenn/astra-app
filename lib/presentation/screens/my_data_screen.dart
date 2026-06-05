@@ -109,7 +109,7 @@ class _MyDataScreenBody extends StatelessWidget {
         children: [
           Text(
             MyDataScreen._kScreenTitle,
-            style: AstraTypography.captionFor(colors),
+            style: AstraTypography.screenTitleFor(colors),
           ),
           if (state.exportErrorMessage != null) ...[
             const SizedBox(height: AstraSpacing.kSpaceMd),
