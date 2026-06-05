@@ -1,6 +1,25 @@
 import '../../core/constants/preference_keys.dart';
 import '../models/week_day_status.dart';
 
+/// Raw derived activity metrics for the Today stats row (format in widget).
+class ActivityMetricsSnapshot {
+  const ActivityMetricsSnapshot({
+    required this.distanceKm,
+    required this.walkingDuration,
+    required this.kcal,
+  });
+
+  final double distanceKm;
+  final Duration walkingDuration;
+  final int kcal;
+
+  static const zero = ActivityMetricsSnapshot(
+    distanceKm: 0,
+    walkingDuration: Duration.zero,
+    kcal: 0,
+  );
+}
+
 enum TodayStatus {
   loading,
   noPermission,
@@ -20,6 +39,9 @@ class TodayState {
     this.lastIngestionUtc,
     this.showCelebration = false,
     this.weekDays = const [],
+    this.activityMetrics = ActivityMetricsSnapshot.zero,
+    this.heightCm,
+    this.weightKg,
   });
 
   final TodayStatus status;
@@ -30,6 +52,9 @@ class TodayState {
   final DateTime? lastIngestionUtc;
   final bool showCelebration;
   final List<WeekDayStatus> weekDays;
+  final ActivityMetricsSnapshot activityMetrics;
+  final int? heightCm;
+  final double? weightKg;
 
   const TodayState.loading() : this(status: TodayStatus.loading);
 
@@ -43,6 +68,9 @@ class TodayState {
     DateTime? lastIngestionUtc,
     bool showCelebration = false,
     List<WeekDayStatus> weekDays = const [],
+    ActivityMetricsSnapshot activityMetrics = ActivityMetricsSnapshot.zero,
+    int? heightCm,
+    double? weightKg,
   }) {
     return TodayState(
       status: _resolveStatus(steps: steps, goal: goal),
@@ -53,6 +81,9 @@ class TodayState {
       lastIngestionUtc: lastIngestionUtc,
       showCelebration: showCelebration,
       weekDays: weekDays,
+      activityMetrics: activityMetrics,
+      heightCm: heightCm,
+      weightKg: weightKg,
     );
   }
 
@@ -65,6 +96,9 @@ class TodayState {
     DateTime? lastIngestionUtc,
     bool? showCelebration,
     List<WeekDayStatus>? weekDays,
+    ActivityMetricsSnapshot? activityMetrics,
+    Object? heightCm = _unset,
+    Object? weightKg = _unset,
   }) {
     return TodayState(
       status: status ?? this.status,
@@ -77,6 +111,9 @@ class TodayState {
       lastIngestionUtc: lastIngestionUtc ?? this.lastIngestionUtc,
       showCelebration: showCelebration ?? this.showCelebration,
       weekDays: weekDays ?? this.weekDays,
+      activityMetrics: activityMetrics ?? this.activityMetrics,
+      heightCm: heightCm == _unset ? this.heightCm : heightCm as int?,
+      weightKg: weightKg == _unset ? this.weightKg : weightKg as double?,
     );
   }
 

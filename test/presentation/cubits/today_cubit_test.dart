@@ -650,6 +650,118 @@ void main() {
       });
     });
 
+    group('activity metrics', () {
+      test('refresh computes distance kcal and duration from buckets', () async {
+        await userPreferences.setHeightCm(175);
+        await userPreferences.setWeightKg(70);
+        await stepRepository.upsertIngestionBucket(
+          _bucket(
+            startTimeUtc: DateTime.utc(2026, 6, 2, 10),
+            value: 500,
+            zoneOffset: '+02:00',
+          ),
+        );
+        final cubit = buildCubit();
+
+        await cubit.refresh();
+
+        expect(cubit.state.heightCm, 175);
+        expect(cubit.state.weightKg, 70);
+        expect(cubit.state.activityMetrics.distanceKm, closeTo(0.362, 0.001));
+        expect(
+          cubit.state.activityMetrics.walkingDuration,
+          const Duration(minutes: 5),
+        );
+        expect(cubit.state.activityMetrics.kcal, 21);
+        cubit.close();
+      });
+
+      test('syncSteps updates distance only preserving bucket metrics', () async {
+        await userPreferences.setHeightCm(175);
+        await stepRepository.upsertIngestionBucket(
+          _bucket(
+            startTimeUtc: DateTime.utc(2026, 6, 2, 10),
+            value: 500,
+            zoneOffset: '+02:00',
+          ),
+        );
+        final cubit = buildCubit();
+        await cubit.refresh();
+
+        final kcalBefore = cubit.state.activityMetrics.kcal;
+        final durationBefore = cubit.state.activityMetrics.walkingDuration;
+
+        await cubit.syncSteps(10000);
+
+        expect(cubit.state.steps, 10000);
+        expect(cubit.state.activityMetrics.distanceKm, closeTo(7.245, 0.001));
+        expect(cubit.state.activityMetrics.kcal, kcalBefore);
+        expect(cubit.state.activityMetrics.walkingDuration, durationBefore);
+        cubit.close();
+      });
+
+      test('refreshMetadata reloads buckets for kcal and duration', () async {
+        await stepRepository.upsertIngestionBucket(
+          _bucket(
+            startTimeUtc: DateTime.utc(2026, 6, 2, 10),
+            value: 50,
+            zoneOffset: '+02:00',
+          ),
+        );
+        final cubit = buildCubit();
+        await cubit.refresh();
+        expect(cubit.state.activityMetrics.kcal, 2);
+
+        await stepRepository.upsertIngestionBucket(
+          _bucket(
+            startTimeUtc: DateTime.utc(2026, 6, 2, 10, 5),
+            value: 500,
+            zoneOffset: '+02:00',
+          ),
+        );
+        await cubit.refreshMetadata();
+
+        expect(cubit.state.activityMetrics.kcal, 24);
+        expect(
+          cubit.state.activityMetrics.walkingDuration,
+          const Duration(minutes: 5, seconds: 30),
+        );
+        cubit.close();
+      });
+
+      test('refreshMetadata applies updated height to distance', () async {
+        final cubit = buildCubit();
+        await cubit.refresh();
+        await cubit.syncSteps(10000);
+        final defaultDistance = cubit.state.activityMetrics.distanceKm;
+
+        await userPreferences.setHeightCm(175);
+        await cubit.refreshMetadata();
+
+        expect(cubit.state.heightCm, 175);
+        expect(
+          cubit.state.activityMetrics.distanceKm,
+          closeTo(7.245, 0.001),
+        );
+        expect(
+          cubit.state.activityMetrics.distanceKm,
+          isNot(closeTo(defaultDistance, 0.001)),
+        );
+        cubit.close();
+      });
+
+      test('noPermission exposes zero metrics', () async {
+        final cubit = buildCubit(
+          activityPermissionGranted: () async => false,
+        );
+
+        await cubit.refresh();
+
+        expect(cubit.state.activityMetrics, ActivityMetricsSnapshot.zero);
+        cubit.close();
+      });
+    });
+
     group('updateDailyStepGoal', () {
       test('persists goal and refreshes state', () async {
         final cubit = buildCubit();

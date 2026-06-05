@@ -4,6 +4,7 @@ import 'dart:io';
 import 'package:flutter/foundation.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import '../../core/health/stale_data_evaluator.dart';
+import '../../core/metrics/derived_activity_metrics.dart';
 import '../../core/permissions/activity_permission_resolver.dart'
     show isActivityRecognitionGranted;
 import '../../core/services/live_step_monitor.dart';
@@ -13,6 +14,7 @@ import '../../core/time/local_day_formatter.dart';
 import '../../core/time/time_provider.dart';
 import '../../core/time/timestamp_codec.dart';
 import '../../core/validation/step_goal_validator.dart';
+import '../../data/models/timeseries_sample_model.dart';
 import '../../data/repositories/step_repository.dart';
 import '../../data/repositories/user_preferences_repository.dart';
 import '../models/week_day_status.dart';
@@ -145,6 +147,9 @@ class TodayCubit extends Cubit<TodayState> {
       displayName: state.displayName,
       isStale: state.isStale,
       lastIngestionUtc: state.lastIngestionUtc,
+      activityMetrics: _liveMetricsForSteps(steps),
+      heightCm: state.heightCm,
+      weightKg: state.weightKg,
     );
   }
 
@@ -170,7 +175,13 @@ class TodayCubit extends Cubit<TodayState> {
       if (isClosed) {
         return;
       }
-      emit(TodayState(status: TodayStatus.noPermission, weekDays: weekDays));
+      emit(
+        TodayState(
+          status: TodayStatus.noPermission,
+          weekDays: weekDays,
+          activityMetrics: ActivityMetricsSnapshot.zero,
+        ),
+      );
       return;
     }
 
@@ -178,6 +189,9 @@ class TodayCubit extends Cubit<TodayState> {
       userPreferences.getDailyStepGoal(),
       userPreferences.getDisplayName(),
       stepRepository.getLastIngestionUtc(),
+      stepRepository.getTodayActiveBuckets(),
+      userPreferences.getHeightCm(),
+      userPreferences.getWeightKg(),
     ]);
     if (isClosed) {
       return;
@@ -186,6 +200,9 @@ class TodayCubit extends Cubit<TodayState> {
     final goal = results[0]! as int;
     final displayName = results[1] as String?;
     final lastUtc = results[2] as DateTime?;
+    final buckets = results[3]! as List<TimeseriesSampleModel>;
+    final heightCm = results[4] as int?;
+    final weightKg = results[5] as double?;
     final stale = isStaleData(
       lastIngestionUtc: lastUtc,
       nowUtc: clock.nowUtc(),
@@ -197,6 +214,15 @@ class TodayCubit extends Cubit<TodayState> {
       return;
     }
 
+    final metrics = _toMetricsSnapshot(
+      DerivedActivityMetrics.compute(
+        displaySteps: state.steps,
+        activeBuckets: buckets,
+        heightCm: heightCm,
+        weightKg: weightKg,
+      ),
+    );
+
     await _applyTodaySnapshot(
       steps: state.steps,
       goal: goal,
@@ -204,6 +230,9 @@ class TodayCubit extends Cubit<TodayState> {
       isStale: stale,
       lastIngestionUtc: lastUtc,
       weekDays: weekDays,
+      activityMetrics: metrics,
+      heightCm: heightCm,
+      weightKg: weightKg,
     );
   }
 
@@ -225,7 +254,13 @@ class TodayCubit extends Cubit<TodayState> {
       if (isClosed) {
         return;
       }
-      emit(TodayState(status: TodayStatus.noPermission, weekDays: weekDays));
+      emit(
+        TodayState(
+          status: TodayStatus.noPermission,
+          weekDays: weekDays,
+          activityMetrics: ActivityMetricsSnapshot.zero,
+        ),
+      );
       return;
     }
 
@@ -234,6 +269,9 @@ class TodayCubit extends Cubit<TodayState> {
       userPreferences.getDailyStepGoal(),
       userPreferences.getDisplayName(),
       stepRepository.getLastIngestionUtc(),
+      stepRepository.getTodayActiveBuckets(),
+      userPreferences.getHeightCm(),
+      userPreferences.getWeightKg(),
     ]);
     if (isClosed) {
       return;
@@ -243,6 +281,9 @@ class TodayCubit extends Cubit<TodayState> {
     final goal = results[1]! as int;
     final displayName = results[2] as String?;
     final lastUtc = results[3] as DateTime?;
+    final buckets = results[4]! as List<TimeseriesSampleModel>;
+    final heightCm = results[5] as int?;
+    final weightKg = results[6] as double?;
 
     final stale = isStaleData(
       lastIngestionUtc: lastUtc,
@@ -255,6 +296,15 @@ class TodayCubit extends Cubit<TodayState> {
       return;
     }
 
+    final metrics = _toMetricsSnapshot(
+      DerivedActivityMetrics.compute(
+        displaySteps: steps,
+        activeBuckets: buckets,
+        heightCm: heightCm,
+        weightKg: weightKg,
+      ),
+    );
+
     await _applyTodaySnapshot(
       steps: steps,
       goal: goal,
@@ -262,6 +312,9 @@ class TodayCubit extends Cubit<TodayState> {
       isStale: stale,
       lastIngestionUtc: lastUtc,
       weekDays: weekDays,
+      activityMetrics: metrics,
+      heightCm: heightCm,
+      weightKg: weightKg,
     );
   }
 
@@ -288,6 +341,9 @@ class TodayCubit extends Cubit<TodayState> {
       isStale: state.isStale,
       lastIngestionUtc: state.lastIngestionUtc,
       weekDays: state.weekDays,
+      activityMetrics: _liveMetricsForSteps(steps),
+      heightCm: state.heightCm,
+      weightKg: state.weightKg,
     );
   }
 
@@ -322,6 +378,25 @@ class TodayCubit extends Cubit<TodayState> {
   /// Applies step count with monotonic same-day merge: display never drops within
   /// the local day except on rollover (Today Display Truth Model — see
   /// `_bmad-output/planning-artifacts/architecture.md`).
+  ActivityMetricsSnapshot _liveMetricsForSteps(int steps) {
+    return ActivityMetricsSnapshot(
+      distanceKm: DerivedActivityMetrics.computeDistanceKm(
+        displaySteps: steps,
+        heightCm: state.heightCm,
+      ),
+      walkingDuration: state.activityMetrics.walkingDuration,
+      kcal: state.activityMetrics.kcal,
+    );
+  }
+
+  ActivityMetricsSnapshot _toMetricsSnapshot(DerivedActivityResult result) {
+    return ActivityMetricsSnapshot(
+      distanceKm: result.distanceKm,
+      walkingDuration: result.walkingDuration,
+      kcal: result.kcal,
+    );
+  }
+
   Future<void> _applyTodaySnapshot({
     required int steps,
     required int goal,
@@ -329,6 +404,9 @@ class TodayCubit extends Cubit<TodayState> {
     required bool isStale,
     DateTime? lastIngestionUtc,
     List<WeekDayStatus>? weekDays,
+    ActivityMetricsSnapshot? activityMetrics,
+    int? heightCm,
+    double? weightKg,
   }) async {
     if (isClosed) {
       return;
@@ -351,6 +429,9 @@ class TodayCubit extends Cubit<TodayState> {
       isStale: isStale,
       lastIngestionUtc: lastIngestionUtc,
       weekDays: weekDays ?? state.weekDays,
+      activityMetrics: activityMetrics ?? state.activityMetrics,
+      heightCm: heightCm ?? state.heightCm,
+      weightKg: weightKg ?? state.weightKg,
     );
     await _maybeTriggerCelebration(
       steps: effectiveSteps,
