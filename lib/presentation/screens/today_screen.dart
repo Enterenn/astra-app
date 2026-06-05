@@ -8,6 +8,7 @@ import '../../core/constants/astra_typography.dart';
 import '../cubits/today_cubit.dart';
 import '../cubits/today_state.dart';
 import '../widgets/activity_stats_row.dart';
+import '../widgets/elevated_card.dart';
 import '../widgets/goal_celebration.dart';
 import '../widgets/goal_editor_sheet.dart';
 import '../widgets/goal_ring.dart';
@@ -64,7 +65,7 @@ class TodayScreen extends StatelessWidget {
                       ),
                     ],
                     const SizedBox(height: AstraSpacing.kSpaceMd),
-                    _ElevatedCard(child: const ActivityStatsRow()),
+                    const ElevatedCard(child: ActivityStatsRow()),
                     const SizedBox(height: AstraSpacing.kSpaceMd),
                     SectionCard(
                       headline: 'This week',
@@ -96,7 +97,7 @@ class _GoalRingCard extends StatelessWidget {
     final colors = context.astraColors;
     final cubit = context.read<TodayCubit>();
 
-    return _ElevatedCard(
+    return ElevatedCard(
       child: Column(
         children: [
           Center(
@@ -154,27 +155,5 @@ class _GoalRingCard extends StatelessWidget {
         ),
       );
     }
-  }
-}
-
-class _ElevatedCard extends StatelessWidget {
-  const _ElevatedCard({required this.child});
-
-  final Widget child;
-
-  @override
-  Widget build(BuildContext context) {
-    final colors = context.astraColors;
-
-    return DecoratedBox(
-      decoration: BoxDecoration(
-        color: colors.bgElevated,
-        borderRadius: BorderRadius.circular(AstraSpacing.kRadiusMd),
-      ),
-      child: Padding(
-        padding: const EdgeInsets.all(AstraSpacing.kCardPadding),
-        child: child,
-      ),
-    );
   }
 }

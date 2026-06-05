@@ -119,17 +119,17 @@ so that the app feels cohesive before OSS beta release.
   - [x] `app_bottom_nav.dart`: nav label `w600` → `w700` (point 6)
   - [x] **Stop → review brief → Baptiste OK → commit**
 
-- [ ] **C — Phosphor icon migration** (AC: #8)
+- [x] **C — Phosphor icon migration** (AC: #8)
   - [x] `trend_chip.dart`: `arrowUp` / `arrowDown` / `minus` Phosphor equivalents
   - [x] `profile_info_row.dart`, `display_name_editor_row.dart`: `caretRight` Phosphor
   - [x] Onboarding back pages: `arrowLeft` Phosphor
   - [x] Remove or exclude `source_chip.dart`; update imports/tests
   - [x] Delete orphan `goal_editor_row.dart`, `profile_initials_badge.dart` + tests
-  - [ ] **Stop → review brief → Baptiste OK → commit**
+  - [x] **Stop → review brief → Baptiste OK → commit**
 
 - [ ] **D — Today card consolidation** (AC: #9)
-  - [ ] Extract shared elevated card widget or extend `SectionCard` for headline-optional use
-  - [ ] Replace `_ElevatedCard` in `today_screen.dart` with shared widget
+  - [x] Extract shared elevated card widget or extend `SectionCard` for headline-optional use
+  - [x] Replace `_ElevatedCard` in `today_screen.dart` with shared widget
   - [ ] **Stop → review brief → Baptiste OK → commit**
 
 - [ ] **E — Device checklist pass** (AC: #2, #3–#5, #10, #13)
@@ -394,6 +394,9 @@ Pattern: small focused fixes per surface; colocated tests; semantic colors only.
 - `test/presentation/widgets/status_banner_test.dart` (modified — removed SourceChip tests)
 - `test/presentation/widgets/profile_initials_badge_test.dart` (deleted)
 - `test/presentation/screens/my_data_screen_test.dart` (modified — removed orphan type asserts)
+- `lib/presentation/widgets/elevated_card.dart` (new — shared elevated surface)
+- `lib/presentation/widgets/section_card.dart` (modified — composes ElevatedCard)
+- `lib/presentation/screens/today_screen.dart` (modified — uses ElevatedCard)
 
 ---
 
