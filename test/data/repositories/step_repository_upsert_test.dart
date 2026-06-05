@@ -46,17 +46,26 @@ void main() {
       expect(rows.single['zone_offset'], '+02:00');
     });
 
-    test('updates duplicate bucket value without replacing the id', () async {
+    test('merges duplicate bucket increments without replacing the id', () async {
       await repository.upsertIngestionBucket(_bucket(value: 100));
       final originalRows = await db.query('timeseries_samples');
       final originalId = originalRows.single['id'];
 
-      await repository.upsertIngestionBucket(_bucket(value: 175));
+      await repository.upsertIngestionBucket(_bucket(value: 75));
 
       final rows = await db.query('timeseries_samples');
       expect(rows, hasLength(1));
       expect(rows.single['id'], originalId);
       expect(rows.single['value'], 175);
+    });
+
+    test('second upsert same window adds increment instead of replacing', () async {
+      await repository.upsertIngestionBucket(_bucket(value: 51));
+
+      await repository.upsertIngestionBucket(_bucket(value: 16));
+
+      final rows = await db.query('timeseries_samples');
+      expect(rows.single['value'], 67);
     });
 
     test('database rejects negative step values', () async {

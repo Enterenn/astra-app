@@ -29,8 +29,10 @@ class StepRepository {
 
   /// Persists an ingestion bucket from the background collection pipeline only.
   ///
-  /// Production callers must be limited to `BackgroundCollector` once Story 2.4
-  /// wires that component. Tests may call this method directly.
+  /// On bucket identity conflict, [bucket.value] is **added** to the stored total
+  /// (per-collect increment), not replaced. Production callers must be limited to
+  /// `BackgroundCollector` once Story 2.4 wires that component. Tests may call
+  /// this method directly.
   Future<void> upsertIngestionBucket(NormalizedStepBucket bucket) async {
     final model = TimeseriesSampleModel.fromNormalizedBucket(
       bucket: bucket,
@@ -54,7 +56,7 @@ class StepRepository {
       )
       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
       ON CONFLICT(provider, device_id, type, start_time, end_time, resolution)
-      DO UPDATE SET value = excluded.value
+      DO UPDATE SET value = timeseries_samples.value + excluded.value
       ''',
       [
         row['id'],

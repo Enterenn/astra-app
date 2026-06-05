@@ -2,8 +2,8 @@
 title: 'Fix idle flush overwriting persisted step buckets'
 type: 'bugfix'
 created: '2026-06-05'
-status: 'ready'
-baseline_commit: 'HEAD'
+status: 'done'
+baseline_commit: '84975b5'
 context:
   - '_bmad-output/implementation-artifacts/stories/6-3-activity-idle-persist-flush.md'
   - '_bmad-output/implementation-artifacts/spec-fix-screen-lock-pedometer-freeze.md'
@@ -120,12 +120,12 @@ Track last persisted cumulative in baseline repo. `MonitorDrainSource` / monitor
 
 **Execution:**
 
-- [ ] Reproduce in test: seed SQLite with bucket value 51; upsert same window with value 16 → total must not drop (currently fails).
-- [ ] Fix upsert merge semantics (`step_repository.dart`).
-- [ ] Ensure idle flush only persists net-new readings (normalizer + drain + baseline alignment).
-- [ ] Add regression test: live walk → idle flush → `getTodaySteps()` ≥ steps before flush + new live delta.
+- [x] Reproduce in test: seed SQLite with bucket value 51; upsert same window with value 16 → total must not drop (currently fails).
+- [x] Fix upsert merge semantics (`step_repository.dart`).
+- [x] Ensure idle flush only persists net-new readings (normalizer + drain + baseline alignment).
+- [x] Add regression test: live walk → idle flush → `getTodaySteps()` ≥ steps before flush + new live delta.
 - [ ] Manual: walk to ~100+ steps → wait 15 s → note total → hot restart → same total (± rate-limit cap).
-- [ ] Register story in `sprint-status.yaml` (e.g. `6-5-idle-flush-bucket-merge` or hotfix epic) when work starts.
+- [x] Register story in `sprint-status.yaml` (e.g. `6-5-idle-flush-bucket-merge` or hotfix epic) when work starts.
 
 **Acceptance Criteria:**
 
@@ -154,10 +154,24 @@ flutter test test/core/services/live_step_monitor_test.dart
 
 ## Suggested Review Order
 
-1. `step_repository.dart` — upsert conflict policy (smoking gun).
-2. `monitor_drain_source.dart` + `live_step_monitor.dart` — what gets drained on each collect.
-3. `step_normalizer.dart` — increment vs replace semantics per bucket window.
-4. Integration test reproducing 81 → 47 regression.
+- Additive merge on bucket conflict — core fix for overwrite regression
+  [`step_repository.dart:57`](../../lib/data/repositories/step_repository.dart#L57)
+
+**Baseline-gated drain**
+
+- Skip readings already credited in ingestion baseline
+  [`live_step_monitor.dart:235`](../../lib/core/services/live_step_monitor.dart#L235)
+
+- Async drain wired into collection source
+  [`monitor_drain_source.dart:27`](../../lib/data/datasources/monitor_drain_source.dart#L27)
+
+**Tests**
+
+- Upsert merge regression (51 + 16 = 67)
+  [`step_repository_upsert_test.dart:62`](../../test/data/repositories/step_repository_upsert_test.dart#L62)
+
+- Idle flush integration reproducing field scenario
+  [`idle_flush_persist_test.dart:78`](../../test/core/services/idle_flush_persist_test.dart#L78)
 
 ## Notes
 

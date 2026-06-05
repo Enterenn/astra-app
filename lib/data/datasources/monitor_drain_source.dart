@@ -24,10 +24,14 @@ class MonitorDrainSource implements DataIngestionSource {
   String get deviceId => kSmartphoneDeviceId;
 
   @override
-  Stream<StepReading> watchStepReadings() {
+  Stream<StepReading> watchStepReadings() async* {
     if (_monitor.isRunning) {
-      return Stream.fromIterable(_monitor.drainReadingsForCollection());
+      final readings = await _monitor.drainReadingsForCollectionGated();
+      for (final reading in readings) {
+        yield reading;
+      }
+      return;
     }
-    return _phoneFallback.watchStepReadings();
+    yield* _phoneFallback.watchStepReadings();
   }
 }

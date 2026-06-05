@@ -232,8 +232,24 @@ class LiveStepMonitor {
     _bufferReading(reading);
   }
 
-  /// Drains all buffered readings for [BackgroundCollector] normalization.
-  List<StepReading> drainReadingsForCollection() {
+  /// Drains buffered readings for [BackgroundCollector], gated by ingestion baseline.
+  ///
+  /// Readings at or below the persisted cumulative baseline are removed from the
+  /// buffer but not returned — they were already credited in a prior collect.
+  Future<List<StepReading>> drainReadingsForCollectionGated() async {
+    final baseline = await baselineRepository.getBaseline(
+      provider: kInternalPhoneProvider,
+      deviceId: kSmartphoneDeviceId,
+    );
+    return drainReadingsForCollection(sinceCumulative: baseline);
+  }
+
+  /// Drains buffered readings for [BackgroundCollector] normalization.
+  ///
+  /// When [sinceCumulative] is set, only readings with a higher cumulative counter
+  /// are returned; the rest are discarded from the buffer.
+  @visibleForTesting
+  List<StepReading> drainReadingsForCollection({int? sinceCumulative}) {
     if (_readingsBuffer.isEmpty) {
       return const [];
     }
@@ -241,7 +257,12 @@ class LiveStepMonitor {
       _readingsBuffer.length,
       (_) => _readingsBuffer.removeFirst(),
     );
-    return drained;
+    if (sinceCumulative == null) {
+      return drained;
+    }
+    return drained
+        .where((reading) => reading.cumulativeSteps > sinceCumulative)
+        .toList(growable: false);
   }
 
   void dispose() {
