@@ -1,4 +1,3 @@
-import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:permission_handler/permission_handler.dart';
@@ -22,7 +21,6 @@ class TodayScreen extends StatelessWidget {
 
   static const _kScreenTitle = "Today's activity";
   static const _kSetGoalLabel = 'Set goal';
-  static const kPreviewGoalCelebrationLabel = 'Preview goal';
 
   @override
   Widget build(BuildContext context) {
@@ -97,6 +95,7 @@ class _GoalRingCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final colors = context.astraColors;
     final cubit = context.read<TodayCubit>();
 
     return ElevatedCard(
@@ -105,62 +104,38 @@ class _GoalRingCard extends StatelessWidget {
           Center(
             child: state.showCelebration
                 ? GoalCelebration(
-                    key: ValueKey(state.celebrationPreviewNonce),
-                    state: _celebrationDisplayState(state),
+                    state: state,
                     onComplete: () => cubit.dismissCelebration(),
                   )
                 : GoalRing(
-                    key: state.isGoalPreviewActive
-                        ? ValueKey('preview-${state.goalPreviewNonce}')
-                        : null,
                     state: state,
                     userPreferences: cubit.userPreferences,
                     localDayIso: formatLocalDayIso(cubit.clock.snapshot()),
-                    previewCountUpTarget: state.isGoalPreviewActive
-                        ? state.goal
-                        : null,
-                    onPreviewCountUpComplete: state.isGoalPreviewActive
-                        ? cubit.completeGoalPreviewCountUp
-                        : null,
                   ),
           ),
           const SizedBox(height: AstraSpacing.kSpaceLg),
           Center(
-            child: Wrap(
-              alignment: WrapAlignment.center,
-              spacing: AstraSpacing.kSpaceSm,
-              runSpacing: AstraSpacing.kSpaceSm,
-              children: [
-                _GoalActionChip(
-                  label: TodayScreen._kSetGoalLabel,
-                  onTap: () => _onSetGoalTapped(context),
-                ),
-                if (kDebugMode)
-                  _GoalActionChip(
-                    label: TodayScreen.kPreviewGoalCelebrationLabel,
-                    onTap: cubit.previewCelebration,
+            child: Material(
+              color: colors.bgSubtle,
+              borderRadius: BorderRadius.circular(AstraSpacing.kRadiusFull),
+              child: InkWell(
+                onTap: () => _onSetGoalTapped(context),
+                borderRadius: BorderRadius.circular(AstraSpacing.kRadiusFull),
+                child: Padding(
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: AstraSpacing.kSpaceLg,
+                    vertical: AstraSpacing.kSpaceSm,
                   ),
-              ],
+                  child: Text(
+                    TodayScreen._kSetGoalLabel,
+                    style: AstraTypography.labelFor(colors),
+                  ),
+                ),
+              ),
             ),
           ),
         ],
       ),
-    );
-  }
-
-  TodayState _celebrationDisplayState(TodayState state) {
-    if (state.steps >= state.goal && state.goal > 0) {
-      return state;
-    }
-    return TodayState.fromData(
-      steps: state.goal,
-      goal: state.goal,
-      displayName: state.displayName,
-      isStale: state.isStale,
-      lastIngestionUtc: state.lastIngestionUtc,
-      showCelebration: state.showCelebration,
-      celebrationPreviewNonce: state.celebrationPreviewNonce,
-      weekDays: state.weekDays,
     );
   }
 
@@ -185,33 +160,5 @@ class _GoalRingCard extends StatelessWidget {
         ),
       );
     }
-  }
-}
-
-class _GoalActionChip extends StatelessWidget {
-  const _GoalActionChip({required this.label, required this.onTap});
-
-  final String label;
-  final VoidCallback onTap;
-
-  @override
-  Widget build(BuildContext context) {
-    final colors = context.astraColors;
-
-    return Material(
-      color: colors.bgSubtle,
-      borderRadius: BorderRadius.circular(AstraSpacing.kRadiusFull),
-      child: InkWell(
-        onTap: onTap,
-        borderRadius: BorderRadius.circular(AstraSpacing.kRadiusFull),
-        child: Padding(
-          padding: const EdgeInsets.symmetric(
-            horizontal: AstraSpacing.kSpaceLg,
-            vertical: AstraSpacing.kSpaceSm,
-          ),
-          child: Text(label, style: AstraTypography.labelFor(colors)),
-        ),
-      ),
-    );
   }
 }

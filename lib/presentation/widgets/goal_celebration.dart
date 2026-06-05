@@ -372,25 +372,6 @@ class _GoalCelebrationState extends State<GoalCelebration>
     return peak * shaped;
   }
 
-  double _pulseScale(
-    double t, {
-    required int durationMs,
-    int startMs = 0,
-    required double peak,
-    Curve curve = Curves.linear,
-  }) {
-    final start = startMs / _kCelebrationSequenceMs;
-    final end = (startMs + durationMs) / _kCelebrationSequenceMs;
-    if (t <= start || t >= end) {
-      return 1;
-    }
-    final local = (t - start) / (end - start);
-    final shaped = local <= 0.5
-        ? curve.transform(local * 2)
-        : curve.transform((1 - local) * 2);
-    return 1 + (peak - 1) * shaped;
-  }
-
   double _windowPulse(
     double t, {
     required int startMs,

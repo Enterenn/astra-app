@@ -1,10 +1,11 @@
 import 'package:astra_app/core/constants/astra_accent_preset.dart';
 import 'package:astra_app/core/constants/astra_colors.dart';
 import 'package:astra_app/presentation/cubits/today_state.dart';
+import 'package:astra_app/presentation/widgets/animated_step_count.dart';
 import 'package:astra_app/presentation/widgets/goal_ring.dart';
+import 'package:astra_app/presentation/widgets/goal_ring_effects.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
-
 import '../../helpers/astra_theme_test_helper.dart';
 
 void main() {
@@ -34,6 +35,7 @@ void main() {
         ),
       );
       await tester.pump();
+      await tester.pump();
     }
 
     GoalRingPainter ringPainter(WidgetTester tester) {
@@ -62,6 +64,13 @@ void main() {
       expect(GoalRing.ringProgressFor(state), 1);
     });
 
+    test('useMicroTickForLiveDelta micro-tick up to 15 steps', () {
+      expect(useMicroTickForLiveDelta(1), isTrue);
+      expect(useMicroTickForLiveDelta(15), isTrue);
+      expect(useMicroTickForLiveDelta(16), isFalse);
+      expect(useMicroTickForLiveDelta(200), isFalse);
+    });
+
     testWidgets('progress state shows formatted step count and goal label', (
       tester,
     ) async {
@@ -74,7 +83,8 @@ void main() {
         ),
       );
 
-      expect(find.text('3\u2009200'), findsOneWidget);
+      expect(find.byType(AnimatedStepCount), findsOneWidget);
+      expect(find.text('3'), findsOneWidget);
       expect(find.text('Steps'), findsOneWidget);
       expect(find.text('/8\u2009000'), findsOneWidget);
     });
@@ -91,7 +101,9 @@ void main() {
         ),
       );
 
-      expect(find.text('10\u2009847'), findsOneWidget);
+      expect(find.byType(AnimatedStepCount), findsOneWidget);
+      expect(find.text('1'), findsOneWidget);
+      expect(find.text('8'), findsOneWidget);
 
       expect(ringPainter(tester).progress, 1);
     });
@@ -157,7 +169,66 @@ void main() {
       expect(delegate.progress, 0);
     });
 
-    testWidgets('preview count-up fills arc while steps are still empty', (
+    testWidgets('overflow state renders ambient shimmer layer', (tester) async {
+      await pumpGoalRing(
+        tester,
+        state: TodayState.fromData(
+          steps: 10_847,
+          goal: 8000,
+          isStale: false,
+        ),
+      );
+      await tester.pump(const Duration(milliseconds: 100));
+
+      final painters = tester.widgetList<CustomPaint>(
+        find.descendant(
+          of: find.byType(GoalRing),
+          matching: find.byType(CustomPaint),
+        ),
+      );
+      expect(
+        painters.any((p) => p.painter is GoalRingOverflowAmbientPainter),
+        isTrue,
+      );
+    });
+
+    testWidgets('overflow reduce motion skips ambient shimmer layer', (
+      tester,
+    ) async {
+      await tester.pumpWidget(
+        wrapWithAstraTheme(
+          MediaQuery(
+            data: const MediaQueryData(disableAnimations: true),
+            child: Center(
+              child: SizedBox(
+                width: 400,
+                child: GoalRing(
+                  state: TodayState.fromData(
+                    steps: 10_847,
+                    goal: 8000,
+                    isStale: false,
+                  ),
+                ),
+              ),
+            ),
+          ),
+        ),
+      );
+      await tester.pump();
+
+      final painters = tester.widgetList<CustomPaint>(
+        find.descendant(
+          of: find.byType(GoalRing),
+          matching: find.byType(CustomPaint),
+        ),
+      );
+      expect(
+        painters.any((p) => p.painter is GoalRingOverflowAmbientPainter),
+        isFalse,
+      );
+    });
+
+    testWidgets('cold start shows stored count before animating to target', (
       tester,
     ) async {
       await tester.pumpWidget(
@@ -167,11 +238,47 @@ void main() {
               width: 400,
               child: GoalRing(
                 state: TodayState.fromData(
-                  steps: 0,
-                  goal: 2500,
+                  steps: 1024,
+                  goal: 8000,
                   isStale: false,
                 ),
-                previewCountUpTarget: 2500,
+                debugLastDisplayedSteps: 470,
+              ),
+            ),
+          ),
+        ),
+      );
+      await tester.pump();
+
+      final initialProgress = ringPainter(tester).progress;
+      expect(initialProgress, closeTo(470 / 8000, 0.02));
+      expect(initialProgress, lessThan(1024 / 8000));
+
+      await tester.pump(const Duration(milliseconds: 400));
+      await tester.pump();
+
+      final delegate = ringPainter(tester);
+      expect(delegate.progress, greaterThan(initialProgress));
+      expect(delegate.progress, lessThan(1.0));
+    });
+
+    testWidgets('semantics report target steps during count-up animation', (
+      tester,
+    ) async {
+      final handle = tester.ensureSemantics();
+
+      await tester.pumpWidget(
+        wrapWithAstraTheme(
+          Center(
+            child: SizedBox(
+              width: 400,
+              child: GoalRing(
+                state: TodayState.fromData(
+                  steps: 1024,
+                  goal: 8000,
+                  isStale: false,
+                ),
+                debugLastDisplayedSteps: 470,
               ),
             ),
           ),
@@ -179,12 +286,14 @@ void main() {
       );
       await tester.pump();
       await tester.pump();
-      await tester.pump(const Duration(milliseconds: 900));
-      await tester.pump();
+      await tester.pump(const Duration(milliseconds: 200));
 
-      final delegate = ringPainter(tester);
-      expect(delegate.progress, greaterThan(0.1));
-      expect(delegate.progress, lessThan(1.0));
+      expect(
+        find.bySemanticsLabel('Steps today: 1024 of 8000'),
+        findsOneWidget,
+      );
+
+      handle.dispose();
     });
 
     testWidgets('empty state shows zero count', (tester) async {

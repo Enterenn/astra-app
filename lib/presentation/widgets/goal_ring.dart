@@ -25,6 +25,15 @@ const _kLiveCoalesceMs = 100;
 const _kLiveArcTweenMs = 200;
 const _kOverflowAmbientCycleMs = 3200;
 
+/// In-session step increases at or below this delta use micro-tick; above uses
+/// easeInOut count-up (e.g. post-sync catch-up). Tune with Baptiste if needed.
+const _kLiveMicroTickMaxDelta = 15;
+
+@visibleForTesting
+bool useMicroTickForLiveDelta(int delta) {
+  return delta > 0 && delta <= _kLiveMicroTickMaxDelta;
+}
+
 @visibleForTesting
 int countUpDurationMs(int delta) {
   if (delta <= 0) {
@@ -48,21 +57,21 @@ class GoalRing extends StatefulWidget {
     this.localDayIso,
     this.showRing = true,
     this.freezeMotion = false,
-    this.previewCountUpTarget,
-    this.onPreviewCountUpComplete,
+    this.debugLastDisplayedSteps,
     super.key,
   });
 
   @visibleForTesting
   static bool disableStepPersistence = false;
 
+  /// Test-only: skip prefs I/O and seed [lastDisplayedSteps] for cold-start tests.
+  final int? debugLastDisplayedSteps;
+
   final TodayState state;
   final UserPreferencesRepository? userPreferences;
   final String? localDayIso;
   final bool showRing;
   final bool freezeMotion;
-  final int? previewCountUpTarget;
-  final VoidCallback? onPreviewCountUpComplete;
 
   @visibleForTesting
   static double ringProgressFor(TodayState state) {
@@ -101,19 +110,29 @@ class _GoalRingState extends State<GoalRing> with TickerProviderStateMixin {
   @override
   void initState() {
     super.initState();
-    if (widget.previewCountUpTarget != null) {
-      _displayedSteps = 0;
-      _animatedProgress = 0;
-      unawaited(_loadLastDisplayedSteps());
-    } else if (widget.freezeMotion) {
+    if (widget.freezeMotion) {
       _displayedSteps = _targetSteps;
       _animatedProgress = _targetProgressRatio;
       _prefsLoaded = true;
       _coldStartHandled = true;
       _lastDisplayedSteps = _targetSteps;
+    } else if (widget.debugLastDisplayedSteps != null) {
+      final seed = widget.debugLastDisplayedSteps!;
+      _lastDisplayedSteps = seed;
+      _displayedSteps = seed;
+      _animatedProgress = _progressRatioFor(seed);
+      _prefsLoaded = true;
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        if (!mounted || _prefsLoadHandled) {
+          return;
+        }
+        _prefsLoadHandled = true;
+        _afterLastDisplayedStepsLoaded();
+      });
     } else {
-      _displayedSteps = _targetSteps;
-      _animatedProgress = _targetProgressRatio;
+      // Hold at zero until prefs resolve — avoids flashing the target count.
+      _displayedSteps = 0;
+      _animatedProgress = 0;
       unawaited(_loadLastDisplayedSteps());
     }
   }
@@ -145,6 +164,20 @@ class _GoalRingState extends State<GoalRing> with TickerProviderStateMixin {
   }
 
   Future<void> _loadLastDisplayedSteps() async {
+    final debugSeed = widget.debugLastDisplayedSteps;
+    if (debugSeed != null) {
+      if (!mounted) {
+        return;
+      }
+      setState(() {
+        _lastDisplayedSteps = debugSeed;
+        _displayedSteps = debugSeed;
+        _animatedProgress = _progressRatioFor(debugSeed);
+        _prefsLoaded = true;
+      });
+      _scheduleAfterPrefsLoaded();
+      return;
+    }
     if (GoalRing.disableStepPersistence) {
       if (!mounted) {
         return;
@@ -170,6 +203,8 @@ class _GoalRingState extends State<GoalRing> with TickerProviderStateMixin {
     }
     setState(() {
       _lastDisplayedSteps = stored ?? 0;
+      _displayedSteps = _lastDisplayedSteps;
+      _animatedProgress = _progressRatioFor(_lastDisplayedSteps);
       _prefsLoaded = true;
     });
     _scheduleAfterPrefsLoaded();
@@ -189,11 +224,8 @@ class _GoalRingState extends State<GoalRing> with TickerProviderStateMixin {
   }
 
   void _afterLastDisplayedStepsLoaded() {
-    if (widget.previewCountUpTarget != null) {
-      _startPreviewCountUp();
-      return;
-    }
-    if (GoalRing.disableStepPersistence) {
+    if (GoalRing.disableStepPersistence &&
+        widget.debugLastDisplayedSteps == null) {
       _coldStartHandled = true;
       _setDisplayedInstant(_targetSteps);
       return;
@@ -205,38 +237,11 @@ class _GoalRingState extends State<GoalRing> with TickerProviderStateMixin {
     );
   }
 
-  void _startPreviewCountUp() {
-    final target = widget.previewCountUpTarget;
-    if (!mounted || target == null) {
-      return;
-    }
-    _coldStartHandled = true;
-    final start = _lastDisplayedSteps;
-    if (start == target) {
-      widget.onPreviewCountUpComplete?.call();
-      return;
-    }
-    if (MediaQuery.disableAnimationsOf(context)) {
-      _setDisplayedInstant(target);
-      widget.onPreviewCountUpComplete?.call();
-      return;
-    }
-    _runCountUp(
-      from: start,
-      to: target,
-      coldStart: true,
-      onComplete: widget.onPreviewCountUpComplete,
-    );
-  }
-
   void _handleStepChange({
     required TodayStatus oldStatus,
     required int oldSteps,
     bool forceColdStart = false,
   }) {
-    if (widget.previewCountUpTarget != null) {
-      return;
-    }
     if (widget.freezeMotion) {
       return;
     }
@@ -285,14 +290,14 @@ class _GoalRingState extends State<GoalRing> with TickerProviderStateMixin {
 
     if (target > _displayedSteps) {
       final delta = target - _displayedSteps;
-      if (delta <= 5 && _countUpController?.isAnimating != true) {
+      if (_countUpController?.isAnimating == true) {
+        _pendingLiveSteps = target;
+        return;
+      }
+      if (useMicroTickForLiveDelta(delta)) {
         _scheduleLiveUpdate(target);
       } else {
-        _runCountUp(
-          from: _displayedSteps,
-          to: target,
-          coldStart: false,
-        );
+        _runCountUp(from: _displayedSteps, to: target, coldStart: false);
       }
       return;
     }
@@ -323,7 +328,6 @@ class _GoalRingState extends State<GoalRing> with TickerProviderStateMixin {
     required int from,
     required int to,
     required bool coldStart,
-    VoidCallback? onComplete,
   }) {
     _countUpController?.dispose();
     _microTickController?.dispose();
@@ -332,7 +336,6 @@ class _GoalRingState extends State<GoalRing> with TickerProviderStateMixin {
     final delta = to - from;
     if (delta <= 0) {
       _setDisplayedInstant(to);
-      onComplete?.call();
       return;
     }
 
@@ -354,10 +357,14 @@ class _GoalRingState extends State<GoalRing> with TickerProviderStateMixin {
         _displayedSteps = to;
         _animatedProgress = toRatio;
         _lastDisplayedSteps = to;
-        if (widget.previewCountUpTarget == null) {
-          unawaited(_persistLastDisplayedSteps(to));
+        unawaited(_persistLastDisplayedSteps(to));
+        _countUpController?.dispose();
+        _countUpController = null;
+        final pending = _pendingLiveSteps;
+        if (pending != null && pending != to) {
+          _pendingLiveSteps = null;
+          _scheduleLiveUpdate(pending);
         }
-        onComplete?.call();
       }
     });
 
@@ -449,8 +456,7 @@ class _GoalRingState extends State<GoalRing> with TickerProviderStateMixin {
   }
 
   Future<void> _persistLastDisplayedSteps(int steps) async {
-    if (widget.previewCountUpTarget != null ||
-        GoalRing.disableStepPersistence ||
+    if (GoalRing.disableStepPersistence ||
         _lastPersistedSteps == steps) {
       return;
     }
@@ -502,9 +508,6 @@ class _GoalRingState extends State<GoalRing> with TickerProviderStateMixin {
   }
 
   int get _targetSteps {
-    if (widget.previewCountUpTarget != null) {
-      return widget.previewCountUpTarget!;
-    }
     return switch (widget.state.status) {
       TodayStatus.loading => 0,
       TodayStatus.noPermission => 0,
@@ -523,15 +526,10 @@ class _GoalRingState extends State<GoalRing> with TickerProviderStateMixin {
     if (widget.freezeMotion) {
       return _targetProgressRatio;
     }
-    if (_countUpController != null ||
-        _microTickController != null ||
-        _liveArcController != null) {
-      return _animatedProgress;
-    }
-    if (widget.state.status == TodayStatus.empty) {
+    if (widget.state.status == TodayStatus.empty && _displayedSteps == 0) {
       return 0;
     }
-    return _targetProgressRatio;
+    return _animatedProgress;
   }
 
   double _progressRatioFor(int steps) {
@@ -544,7 +542,7 @@ class _GoalRingState extends State<GoalRing> with TickerProviderStateMixin {
 
   @override
   void deactivate() {
-    if (!widget.freezeMotion && widget.previewCountUpTarget == null) {
+    if (!widget.freezeMotion) {
       unawaited(_persistLastDisplayedSteps(_displayedSteps));
     }
     super.deactivate();
@@ -658,8 +656,7 @@ class _GoalRingState extends State<GoalRing> with TickerProviderStateMixin {
     final centerText = switch (status) {
       TodayStatus.loading => '',
       TodayStatus.noPermission => '--',
-      TodayStatus.empty when widget.previewCountUpTarget == null =>
-        formatStepCount(0),
+      TodayStatus.empty => formatStepCount(0),
       _ => null,
     };
 

@@ -104,7 +104,7 @@ development_status:
   5-10-data-screen-sovereignty-layout: done         # 5 — tab DATA, screen title "My Data"
   5-11-profil-informations-and-appearance: done     # 6 — bi-tone circles + theme_mode + PROFILE nav label
   5-12-cross-screen-visual-cohesion-audit: review  # 7
-  5-13-goal-overflow-animation-polish: review  # after 5.12 (optional)
+  5-13-goal-overflow-animation-polish: done  # after 5.12 (optional)
   epic-5-retrospective: optional
 
   epic-6: backlog

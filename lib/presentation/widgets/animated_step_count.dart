@@ -22,14 +22,14 @@ class AnimatedStepCount extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    if (previousValue == null ||
-        previousValue == value ||
-        microTickProgress <= 0) {
-      return Text(formatStepCount(value), style: style);
-    }
+    final useMicroTick = previousValue != null &&
+        previousValue != value &&
+        microTickProgress > 0;
 
     final currentSegments = stepCountSegments(value);
-    final previousSegments = stepCountSegments(previousValue!);
+    final previousSegments = useMicroTick
+        ? stepCountSegments(previousValue!)
+        : currentSegments;
     final maxLen = mathMax(currentSegments.length, previousSegments.length);
 
     return Row(
@@ -45,7 +45,7 @@ class AnimatedStepCount extends StatelessWidget {
             previous: index < previousSegments.length
                 ? previousSegments[index]
                 : '',
-            progress: microTickProgress,
+            progress: useMicroTick ? microTickProgress : 0,
             style: style,
           ),
       ],
@@ -70,7 +70,7 @@ class _DigitCell extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    if (current == previous || current.isEmpty) {
+    if (current == previous || current.isEmpty || progress <= 0) {
       return Text(current, style: style);
     }
 

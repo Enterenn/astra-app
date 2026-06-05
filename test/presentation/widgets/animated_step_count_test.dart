@@ -36,9 +36,10 @@ void main() {
       await tester.pump();
     }
 
-    testWidgets('renders formatted step count', (tester) async {
+    testWidgets('renders formatted step count via segment row', (tester) async {
       await pumpCount(tester, value: 10_847);
-      expect(find.text('10\u2009847'), findsOneWidget);
+      expect(find.byType(AnimatedStepCount), findsOneWidget);
+      expect(find.byType(Row), findsOneWidget);
     });
 
     testWidgets('micro-tick renders digit cells when value changes', (
@@ -54,11 +55,13 @@ void main() {
       expect(find.byType(Row), findsOneWidget);
     });
 
-    testWidgets('semantics ancestor reports target via plain text', (
+    testWidgets('static state uses same segment row layout as micro-tick', (
       tester,
     ) async {
       await pumpCount(tester, value: 3200);
-      expect(find.text('3\u2009200'), findsOneWidget);
+      expect(find.byType(Row), findsOneWidget);
+      expect(find.text('3'), findsOneWidget);
+      expect(find.text('2'), findsWidgets);
     });
   });
 

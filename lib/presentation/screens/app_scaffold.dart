@@ -98,6 +98,7 @@ class _AppScaffoldState extends State<AppScaffold> {
             await _myDataCubit.refresh(silent: true);
           },
           postPurgeRefresh: () async {
+            await widget.deps.userPreferences.clearLastDisplayedSteps();
             await widget.deps.liveStepMonitor.reconcileFromDatabase();
             await _todayCubit.refresh(silent: true);
             await _todayCubit.syncSteps(

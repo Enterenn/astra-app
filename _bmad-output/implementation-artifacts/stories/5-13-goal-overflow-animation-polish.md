@@ -1,6 +1,6 @@
 # Story 5.13: Today Motion Polish (Celebration · Count-Up · Overflow)
 
-Status: review
+Status: done
 
 <!-- Scope expanded 2026-06-05 per Baptiste: richer goal celebration, animated step count + ring sync, overflow ambient. Replaces narrow overflow-only brief. -->
 
@@ -17,11 +17,11 @@ So that my progress is acknowledged with satisfying motion without gamified pres
 1. **Given** today's steps first cross `daily_step_goal` and celebration plays (Story 2.6 dedup unchanged)
    **When** `GoalCelebration` runs with animations enabled
    **Then** the sequence feels distinctly more rewarding than today:
-   - Ring scale pulse **1.0 → 1.10 → 1.0** (double pulse: second smaller pulse at ~1.2s)
+   - Ring scale pulse **1.0 → 1.08 → 1.0** (single smooth sin bump ~720ms — Baptiste device pass 2026-06-05)
    - Glow halo peak **~30%** opacity (up from 18%), blur 28dp
    - **Arc completion sweep**: ring draws from current progress to 360° over ~400ms at sequence start (synced with count if mid-animation)
    - Total sequence **~4s** (up from 2.5s); micro-copy holds slightly longer
-   - Haptic: `lightImpact` at ~300ms **and** softer second tap at ~1.2s (Android); iOS `mediumImpact` + light at second peak
+   - Haptic: `lightImpact` @ ~260ms (Android); iOS `mediumImpact` — single tap (Baptiste device pass 2026-06-05)
    **And** once-per-day dedup via `celebration_shown_date` is unchanged (V-6)
 
 2. **Given** reduce-motion enabled
@@ -30,7 +30,8 @@ So that my progress is acknowledged with satisfying motion without gamified pres
 
 3. **Given** celebration intensity upgrade
    **When** implemented
-   **Then** still **no** confetti, particles, sound, streak badge, coach copy, or modal overlay (UX guardrails)
+   **Then** a **moderate** radial particle burst (~45 specks, no confetti) may accompany celebration — Baptiste approved 2026-06-05
+   **And** still **no** confetti, sound, streak badge, coach copy, or modal overlay (UX guardrails)
 
 ### B — Animated step count + ring sync (Baptiste 2026-06-05)
 
@@ -116,7 +117,7 @@ So that my progress is acknowledged with satisfying motion without gamified pres
 
 **Depends on:** Stories 2.6, 2.5, 2.9 (live steps), 5.12.  
 **Stretch (implement only if time after A–F):** see §Stretch goals below.  
-**Out of scope:** Confetti, particles (evaluate post-implementation), sounds, streaks, second ring lap, notification/cubit dedup changes, Epic 6 stats values, History chart bar-grow (KPI-01 risk). Preview button is **dev-only temporary** — must be removed before story done.
+**Out of scope:** Confetti, sounds, streaks, second ring lap, notification/cubit dedup changes, Epic 6 stats values, History chart bar-grow (KPI-01 risk).
 
 ---
 
@@ -402,5 +403,17 @@ claude-4.6-sonnet-medium-thinking (Cursor Agent)
 
 ## Story completion status
 
-- **Status:** review
-- **Completion note:** Scope expanded per Baptiste 2026-06-05 — celebration rewarding tier, easeInOut count-up from last displayed steps + arc sync, easeOut micro-ticks, overflow ambient. Debug preview used during dev, removed per Task H.
+- **Status:** done
+- **Completion note:** Scope expanded per Baptiste 2026-06-05 — celebration rewarding tier (single pulse + moderate particles), easeInOut count-up from last displayed steps + arc sync, easeOut micro-ticks for live deltas ≤15 steps (count-up above), overflow ambient. Debug preview removed post-review (Task H).
+
+### Review Findings (2026-06-05)
+
+- [x] [Review][Patch] Remove debug preview code — removed `previewCelebration`, preview chip, nonce fields, tests
+- [x] [Review][Decision] AC #3 particles — Baptiste approved moderate radial burst; AC updated
+- [x] [Review][Patch] Cold-start count/arc flash — hold at 0 until prefs load; `_effectiveProgress` uses `_animatedProgress`
+- [x] [Review][Decision] Celebration pulse/haptic spec — Baptiste confirmed single 1.08 bump + single haptic; AC #1 updated
+- [x] [Review][Patch] Live step bursts — micro-tick ≤15 steps, count-up above (coalesced 100ms)
+- [x] [Review][Patch] Purge clears `last_displayed_steps` — wired in `postPurgeRefresh`
+- [x] [Review][Patch] Missing tests — overflow shimmer, cold-start progress, semantics during count-up
+- [x] [Review][Patch] Micro-tick layout — always render segment row for consistent width
+- [x] [Review][Patch] Dead `_pulseScale` helper — removed from `goal_celebration.dart`

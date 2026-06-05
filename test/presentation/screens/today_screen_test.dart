@@ -10,7 +10,6 @@ import 'package:astra_app/presentation/screens/today_screen.dart';
 import 'package:astra_app/presentation/widgets/activity_stats_row.dart';
 import 'package:astra_app/presentation/widgets/section_card.dart';
 import 'package:astra_app/presentation/widgets/status_banner.dart';
-import 'package:astra_app/presentation/widgets/goal_celebration.dart';
 import 'package:astra_app/presentation/widgets/goal_ring.dart';
 import 'package:astra_app/presentation/widgets/week_progress_row.dart';
 import 'package:flutter/material.dart';
@@ -179,54 +178,6 @@ void main() {
       expect(find.text('This week'), findsOneWidget);
       expect(find.byType(WeekProgressRow), findsOneWidget);
       expect(find.byType(SectionCard), findsOneWidget);
-    });
-
-    testWidgets('preview goal count-ups to goal then shows celebration', (
-      tester,
-    ) async {
-      final cubit = buildCubit(
-        TodayState.fromData(
-          steps: 0,
-          goal: 2500,
-          isStale: false,
-          weekDays: sampleWeekDays(),
-        ),
-      );
-      addTearDown(cubit.close);
-
-      await pumpScreen(tester, cubit, disableAnimations: false);
-      await tester.tap(find.text(TodayScreen.kPreviewGoalCelebrationLabel));
-      await tester.pump();
-      await tester.pump();
-
-      expect(cubit.state.isGoalPreviewActive, isTrue);
-      expect(find.byType(GoalRing), findsOneWidget);
-      expect(find.byType(GoalCelebration), findsNothing);
-
-      await tester.pump(const Duration(milliseconds: 2000));
-      await tester.pump();
-
-      expect(find.byType(GoalCelebration), findsOneWidget);
-      expect(cubit.state.showCelebration, isTrue);
-    });
-
-    test('previewCelebration chains into celebration after count-up', () {
-      final cubit = buildCubit(
-        TodayState.fromData(
-          steps: 0,
-          goal: 2500,
-          isStale: false,
-          weekDays: sampleWeekDays(),
-        ),
-      );
-      addTearDown(cubit.close);
-
-      cubit.previewCelebration();
-      expect(cubit.state.isGoalPreviewActive, isTrue);
-      expect(cubit.state.showCelebration, isFalse);
-
-      cubit.completeGoalPreviewCountUp();
-      expect(cubit.state.showCelebration, isTrue);
     });
 
   });
