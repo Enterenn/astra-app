@@ -1,3 +1,6 @@
+import 'dart:io';
+
+import 'package:astra_app/data/csv/import_validation_exception.dart';
 import 'package:astra_app/data/csv/timeseries_csv_codec.dart';
 import 'package:astra_app/data/datasources/data_ingestion_source.dart';
 import 'package:astra_app/data/models/normalized_step_bucket.dart';
@@ -5,7 +8,7 @@ import 'package:astra_app/data/models/timeseries_sample_model.dart';
 import 'package:flutter_test/flutter_test.dart';
 
 void main() {
-  group('TimeseriesCsvCodec', () {
+  group('TimeseriesCsvCodec serialize', () {
     test('header row uses exact OW column order', () {
       expect(
         TimeseriesCsvCodec.headerRow,
@@ -40,30 +43,147 @@ void main() {
       );
     });
 
-    test('serializeRow RFC 4180 escapes comma-containing fields', () {
-      final row = TimeseriesCsvCodec.serializeRow(
-        _sample(deviceId: 'phone,test'),
+    test('serializeRow RFC 4180 escapes special characters', () {
+      expect(
+        TimeseriesCsvCodec.serializeRow(_sample(deviceId: 'phone,test')),
+        contains('"phone,test"'),
       );
-
-      expect(row, contains('"phone,test"'));
-    });
-
-    test('serializeRow RFC 4180 escapes quotes and newlines', () {
-      final row = TimeseriesCsvCodec.serializeRow(
-        _sample(deviceId: 'a"b\nc'),
+      expect(
+        TimeseriesCsvCodec.serializeRow(_sample(deviceId: 'a"b\nc')),
+        contains('"a""b\nc"'),
       );
-
-      expect(row, contains('"a""b\nc"'));
-    });
-
-    test('serializeRow RFC 4180 escapes carriage returns', () {
-      final row = TimeseriesCsvCodec.serializeRow(
-        _sample(deviceId: 'line\rend'),
+      expect(
+        TimeseriesCsvCodec.serializeRow(_sample(deviceId: 'line\rend')),
+        contains('"line\rend"'),
       );
-
-      expect(row, contains('"line\rend"'));
     });
   });
+
+  group('TimeseriesCsvCodec parse', () {
+    test('parseHeaderRow accepts exact OW header', () {
+      expect(
+        () => TimeseriesCsvCodec.parseHeaderRow(TimeseriesCsvCodec.headerRow),
+        returnsNormally,
+      );
+    });
+
+    test('parseHeaderRow rejects wrong column order', () {
+      expect(
+        () => TimeseriesCsvCodec.parseHeaderRow(
+          'start_time,id,end_time,type,value,unit,resolution,provider,device_id,zone_offset',
+        ),
+        throwsA(isA<ImportValidationException>()),
+      );
+    });
+
+    test('parseDataRow round-trips serializeRow output', () {
+      final sample = _sample();
+      final row = TimeseriesCsvCodec.serializeRow(sample);
+      final parsed = TimeseriesCsvCodec.parseDataRow(row, rowNumber: 1);
+
+      expect(parsed.id, sample.id);
+      expect(parsed.value, sample.value);
+      expect(parsed.startTimeUtc, sample.startTimeUtc);
+      expect(parsed.zoneOffset, sample.zoneOffset);
+    });
+
+    test('parseDataRow accepts integer steps value', () {
+      final parsed = TimeseriesCsvCodec.parseDataRow(
+        '00000000-0000-4000-8000-000000000001,'
+        '2026-05-22T14:30:00Z,'
+        '2026-05-22T14:35:00Z,'
+        'steps,42,count,5min,internal_phone,smartphone,+02:00',
+        rowNumber: 1,
+      );
+      expect(parsed.value, 42);
+    });
+
+    test('parseDataRow rejects non-integer steps value', () {
+      expect(
+        () => TimeseriesCsvCodec.parseDataRow(
+          '00000000-0000-4000-8000-000000000001,'
+          '2026-05-22T14:30:00Z,'
+          '2026-05-22T14:35:00Z,'
+          'steps,42.5,count,5min,internal_phone,smartphone,+02:00',
+          rowNumber: 3,
+        ),
+        throwsA(
+          predicate<ImportValidationException>(
+            (e) => e.message.contains('Row 3'),
+          ),
+        ),
+      );
+    });
+
+    test('parseDataRow RFC 4180 unescapes quoted comma fields', () {
+      final sample = _sample(deviceId: 'phone,test');
+      final row = TimeseriesCsvCodec.serializeRow(sample);
+      final parsed = TimeseriesCsvCodec.parseDataRow(row, rowNumber: 1);
+      expect(parsed.deviceId, 'phone,test');
+    });
+
+    test('parseCsvFields handles carriage returns inside quoted field', () {
+      final fields = TimeseriesCsvCodec.parseCsvFields('"line\rend"');
+      expect(fields.single, 'line\rend');
+    });
+
+    test('parseHeaderRow handles CRLF-stripped header line', () {
+      expect(
+        () => TimeseriesCsvCodec.parseHeaderRow(
+          '${TimeseriesCsvCodec.headerRow}\r',
+        ),
+        returnsNormally,
+      );
+    });
+
+    test('parseHeaderRow accepts UTF-8 BOM prefix', () {
+      expect(
+        () => TimeseriesCsvCodec.parseHeaderRow(
+          '\uFEFF${TimeseriesCsvCodec.headerRow}',
+        ),
+        returnsNormally,
+      );
+    });
+
+    test('parseImportFile round-trips row with quoted newline in field', () async {
+      final sample = _sample(deviceId: 'phone\ntest');
+      final file = await _writeTempCsv([
+        TimeseriesCsvCodec.headerRow,
+        TimeseriesCsvCodec.serializeRow(sample),
+      ]);
+
+      final parsed = await TimeseriesCsvCodec.parseImportFile(file.path);
+      expect(parsed, hasLength(1));
+      expect(parsed.single.deviceId, 'phone\ntest');
+
+      await file.delete();
+    });
+
+    test('parseDataRow rejects non-steps type', () {
+      expect(
+        () => TimeseriesCsvCodec.parseDataRow(
+          '00000000-0000-4000-8000-000000000001,'
+          '2026-05-22T14:30:00Z,'
+          '2026-05-22T14:35:00Z,'
+          'heart_rate,42,count,5min,internal_phone,smartphone,+02:00',
+          rowNumber: 2,
+        ),
+        throwsA(
+          predicate<ImportValidationException>(
+            (e) => e.message.contains('Row 2'),
+          ),
+        ),
+      );
+    });
+  });
+}
+
+Future<File> _writeTempCsv(List<String> lines) async {
+  final file = File(
+    '${Directory.systemTemp.path}/astra_codec_${DateTime.now().microsecondsSinceEpoch}.csv',
+  );
+  await file.writeAsString(lines.join('\n'));
+  return file;
 }
 
 TimeseriesSampleModel _sample({

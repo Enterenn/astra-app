@@ -73,7 +73,9 @@ Removed four low-value test files; see `_bmad-output/implementation-artifacts/sp
 - `test/presentation/widgets/app_bottom_nav_test.dart`
 - `test/core/time/time_provider_test.dart`
 
-**Phases B–C** (CSV merge, screen smoke consolidation, `@Tags(['dev'])` for `test/dev/`) remain deferred.
+**Phase B done (2026-06-05):** CSV/confirm_dialog merges, `screen_smoke_test.dart`, trimmed design-constant tests — see `spec-test-suite-cleanup.md`.
+
+**Phase C** (`@Tags(['dev'])` for `test/dev/`, exclude from CI) remains deferred.
 
 ## Deferred from: remove-today-stale-banner one-shot (2026-06-05)
 

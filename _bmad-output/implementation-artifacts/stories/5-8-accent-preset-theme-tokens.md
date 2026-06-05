@@ -52,8 +52,7 @@ so that Appearance on Profil can theme the whole app consistently.
 
 8. **Given** token work complete  
    **When** `flutter analyze` and `flutter test` run  
-   **Then** no regressions; `test/core/constants/astra_colors_test.dart` updated for new hex + preset matrix  
-   **And** add `test/core/constants/astra_accent_presets_test.dart` (or equivalent) asserting all six presets × light/dark primary/secondary
+   **Then** no regressions; `astra_colors_test.dart` + `astra_accent_presets_test.dart` cover parse aliases and lerp endpoints (full hex matrix trimmed in Phase B cleanup — `spec-test-suite-cleanup.md`)
 
 **Depends on:** Story 5.7 (done).  
 **Prerequisite for:** Stories 5.9, 5.10, 5.11 (`AccentPresetSelector` UI).  

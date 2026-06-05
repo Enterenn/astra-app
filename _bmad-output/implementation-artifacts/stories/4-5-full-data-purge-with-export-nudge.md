@@ -55,7 +55,7 @@ So that I can wipe my history while keeping my preferences.
     - Body: UX §3.11 copy (export nudge, removes step history on device)
     - Actions: **Export first** (secondary) · **Delete anyway** (danger) · **Cancel** (ghost)
     - Return enum or sealed result: `cancelled` | `exportFirst` | `deleteConfirmed` — dialog stays open on Export first; parent runs export then user can still Delete anyway or Cancel
-  - [x] Widget tests: `test/presentation/widgets/confirm_dialog_purge_test.dart` — three actions visible; Export first does not pop route; Delete anyway returns confirm
+  - [x] Widget tests: `test/presentation/widgets/confirm_dialog_test.dart` (purge group) — three actions visible; Export first does not pop route; Delete anyway returns confirm
   - [x] **Stop → review brief → wait for Baptiste OK → commit**
 
 - [x] **Sub-task C — `MyDataCubit` purge orchestration + live overlay reset** (AC: #1–#3)
@@ -202,7 +202,7 @@ lib/presentation/screens/app_scaffold.dart              # UPDATE — postPurgeRe
 
 test/data/repositories/step_repository_purge_test.dart  # NEW
 test/data/repositories/step_repository_roundtrip_purge_test.dart  # NEW (or merge)
-test/presentation/widgets/confirm_dialog_purge_test.dart # NEW
+test/presentation/widgets/confirm_dialog_test.dart # import + purge groups (merged 2026-06-05)
 test/presentation/cubits/my_data_cubit_purge_test.dart  # NEW
 test/presentation/screens/my_data_screen_test.dart      # UPDATE
 ```
@@ -311,7 +311,7 @@ Run VACUUM **outside** this transaction via `DataLifecycleService` (second conne
 |------|---------|
 | `step_repository_purge_test` | Wipe samples + derived prefs; preserve setup keys |
 | Round-trip purge test | export → purge → import → chart aggregates |
-| `confirm_dialog_purge_test` | FR-21 three-action dialog |
+| `confirm_dialog_test` (purge group) | FR-21 three-action dialog |
 | `my_data_cubit_purge_test` | Guards, callbacks, error paths |
 | `my_data_screen_test` | Purge button + snackbar |
 | Manual | Export-first path; goal retained; Today empty ring |
@@ -367,7 +367,7 @@ When `display_name` lands in `user_preferences`, purge allowlist must include th
 - `lib/presentation/screens/my_data_screen.dart` — purge button + dialog + snackbar
 - `lib/presentation/screens/app_scaffold.dart` — `postPurgeRefresh` wiring
 - `test/data/repositories/step_repository_purge_test.dart` — new
-- `test/presentation/widgets/confirm_dialog_purge_test.dart` — new
+- `test/presentation/widgets/confirm_dialog_test.dart` — purge group (merged 2026-06-05)
 - `test/presentation/cubits/my_data_cubit_purge_test.dart` — new
 - `test/presentation/screens/my_data_screen_test.dart` — purge UI tests
 - `_bmad-output/implementation-artifacts/sprint-status.yaml` — story status

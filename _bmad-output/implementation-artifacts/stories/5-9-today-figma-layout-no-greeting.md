@@ -98,7 +98,7 @@ so that the home screen matches the redesigned Figma layout.
   - [x] **Stop → review → commit**
 
 - [x] **E — Tests & cleanup** (AC: #2, #8)
-  - [x] Replace `today_screen_test.dart` greeting group with: title visible; no `Hello,`; no `Phone sensor`; three cards smoke
+  - [x] Replace greeting group with Today smoke in `screen_smoke_test.dart`: title visible; no `Hello,`; no `Phone sensor`; three cards smoke
   - [x] Optional: stop loading `displayName` in `TodayCubit` if unused (or leave until 5.11 — document choice in Dev Agent Record)
   - [x] Full `flutter test` + `flutter analyze`
   - [x] **Stop → review → commit**
@@ -142,7 +142,7 @@ so that the home screen matches the redesigned Figma layout.
 | `lib/presentation/cubits/today_cubit.dart` | Loads `displayName` | Add week load + `updateDailyStepGoal` | `refresh`, `attachLiveMonitor`, silent refresh |
 | `lib/presentation/cubits/today_state.dart` | No week data | Add week pill model | Status enum + `progressRatio` |
 | `lib/data/repositories/step_repository.dart` | `getChartDailyAggregates` | Reuse or add `getCalendarWeekAggregates()` | `getTodaySteps` unchanged |
-| `test/presentation/screens/today_screen_test.dart` | Greeting tests | Title/layout tests | Seeded cubit pattern |
+| `test/presentation/screens/screen_smoke_test.dart` | Greeting tests | Today smoke group | Seeded cubit pattern |
 
 ### Product decisions (Baptiste 2026-06-04)
 
@@ -199,7 +199,7 @@ Goal for comparison: current `daily_step_goal` from prefs at refresh time (same 
 
 | Area | Minimum tests |
 |------|----------------|
-| `today_screen_test.dart` | Title; no greeting; no SourceChip label |
+| `screen_smoke_test.dart` (Today group) | Title; no greeting; no SourceChip label |
 | `activity_stats_row_test.dart` | Three `—` placeholders + icons |
 | `week_progress_row_test.dart` | Today accent fill; past goal met → `accentPrimary` dot; past not met → no dot; future → `neutralGray` dot |
 | `goal_ring_test.dart` | Update golden/copy expectations if existing |
@@ -265,7 +265,7 @@ Composer (Cursor)
 - test/core/time/calendar_week_test.dart
 - test/presentation/widgets/activity_stats_row_test.dart
 - test/presentation/widgets/week_progress_row_test.dart
-- test/presentation/screens/today_screen_test.dart
+- test/presentation/screens/screen_smoke_test.dart
 - test/presentation/widgets/goal_ring_test.dart
 - test/presentation/screens/app_scaffold_test.dart
 - test/widget_test.dart

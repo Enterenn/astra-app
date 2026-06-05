@@ -64,7 +64,7 @@ So that the app feels personal without creating an account or sending data anywh
   - [x] `TodayCubit.refresh()` and `refreshMetadata()`: load `getDisplayName()` alongside goal (use `Future.wait` in `_refreshImpl` / `refreshMetadata`)
   - [x] `TodayScreen`: if `displayName != null`, insert `Padding` + `Text('Hello, $displayName', style: AstraTypography.captionFor(colors))` **after** stale compact banner, **before** `Expanded` ring (`flex: 55`)
   - [x] Semantics: when greeting present, Today screen semantics label includes greeting; do **not** add step count to greeting semantics
-  - [x] `test/presentation/screens/today_screen_test.dart` (create or extend): greeting visible/hidden; no duplicate step line under greeting
+  - [x] `test/presentation/screens/screen_smoke_test.dart` (Today group): greeting visible/hidden superseded by 5.9 no-greeting layout
   - [x] **Stop → review brief → wait for Baptiste OK → commit**
 
 - [x] **Sub-task D — My Data edit row + Today refresh hook** (AC: #4)
@@ -217,7 +217,7 @@ test/data/repositories/user_preferences_repository_test.dart     # UPDATE
 test/data/repositories/step_repository_purge_test.dart           # UPDATE
 test/presentation/cubits/onboarding_cubit_test.dart              # UPDATE
 test/presentation/onboarding/onboarding_flow_test.dart           # UPDATE
-test/presentation/screens/today_screen_test.dart                 # NEW or UPDATE
+test/presentation/screens/screen_smoke_test.dart                 # Today smoke group
 test/presentation/screens/my_data_screen_test.dart               # UPDATE
 ```
 
@@ -270,7 +270,7 @@ Final order after 4.8: Background → Footprint → Daily goal → Appearance �
 | `step_repository_purge_test.dart` | `display_name` survives purge |
 | `onboarding_cubit_test.dart` | Skip vs save name; goal step doesn't complete |
 | `onboarding_flow_test.dart` | 4 steps; display name page reachable |
-| `today_screen_test.dart` | Greeting visible/hidden |
+| `screen_smoke_test.dart` (Today group) | Layout smoke (greeting removed in 5.9) |
 | `my_data_screen_test.dart` | Profile section placement; disabled during purge/export |
 | `today_cubit_test.dart` | Optional: metadata refresh includes displayName |
 
@@ -339,7 +339,7 @@ Composer (dev-story workflow)
 - test/presentation/cubits/onboarding_cubit_test.dart
 - test/presentation/onboarding/onboarding_flow_test.dart
 - test/presentation/cubits/today_cubit_test.dart
-- test/presentation/screens/today_screen_test.dart
+- test/presentation/screens/screen_smoke_test.dart
 - test/presentation/screens/my_data_screen_test.dart
 - test/presentation/screens/app_scaffold_test.dart
 - _bmad-output/implementation-artifacts/sprint-status.yaml

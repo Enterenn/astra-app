@@ -22,7 +22,7 @@ baseline_commit: '600c893b7d44c543b02477eabcbbc93dc2685ab0'
   [`app_scaffold.dart:185`](../../lib/presentation/screens/app_scaffold.dart#L185)
 
 - Regression test locks new contract for stale state
-  [`today_screen_test.dart:131`](../../test/presentation/screens/today_screen_test.dart#L131)
+  [`screen_smoke_test.dart`](../../test/presentation/screens/screen_smoke_test.dart) (Today smoke group)
 
 - Scaffold integration test for banner navigation removed
   [`app_scaffold_test.dart:252`](../../test/presentation/screens/app_scaffold_test.dart#L252)

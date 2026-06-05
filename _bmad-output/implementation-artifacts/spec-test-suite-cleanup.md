@@ -1,12 +1,12 @@
 ---
-title: 'Test suite cleanup — Phase A'
+title: 'Test suite cleanup'
 type: 'maintenance'
 created: '2026-06-05'
-status: 'done'
+status: 'phase-b-done'
 route: 'one-shot'
 ---
 
-# Test suite cleanup — Phase A
+# Test suite cleanup
 
 ## Intent
 
@@ -25,7 +25,17 @@ Remove low-value tests that duplicate compile-time guarantees or are covered els
 
 Future stories must **not** re-add these files unless behavior regresses. Prefer extending existing integration tests (`widget_test.dart`, `app_scaffold_test.dart`, datasource tests that exercise real paths).
 
-## Follow-up (not in Phase A)
+## Phase B — Merges and trims (2026-06-05)
 
-- **Phase B:** merge CSV tests, confirm_dialog smoke, screen smoke consolidation, trim design-constant assertions.
-- **Phase C:** tag `test/dev/` with `@Tags(['dev'])` and exclude from CI.
+| Action | Result |
+|--------|--------|
+| `timeseries_csv_codec_test` + `parse_test` | Single `timeseries_csv_codec_test.dart` (serialize + parse groups) |
+| `confirm_dialog_test` + `confirm_dialog_purge_test` | Single `confirm_dialog_test.dart` (import + purge groups) |
+| `today_screen_test` + `history_screen_test` | `screen_smoke_test.dart` (Today + History smoke groups) |
+| `astra_colors_test` + `astra_accent_presets_test` | Trimmed to parse aliases + lerp endpoints (~6 tests total) |
+
+Do **not** split these back into separate files unless a group grows substantially (>15 cases).
+
+## Follow-up (Phase C)
+
+- Tag `test/dev/` with `@Tags(['dev'])` and exclude from CI.

@@ -137,7 +137,7 @@ So that my progress is acknowledged with satisfying motion without gamified pres
   - [x] `TodayCubit.previewCelebration()` — sets `showCelebration: true`, increments `celebrationPreviewNonce`; **does not** call `tryClaimCelebrationShownDate`
   - [x] `GoalCelebration(key: ValueKey(nonce), …)` so each tap remounts animation mid-sequence
   - [x] `_celebrationDisplayState(state)` in screen — if `steps < goal`, pass visual-only `goalMet` state to widget; cubit truth unchanged
-  - [x] `today_screen_test.dart` — preview tap shows `GoalCelebration`; second tap remounts
+  - [x] ~~`today_screen_test.dart`~~ — preview tap test removed with screen smoke consolidation (2026-06-05); `goal_ring_test.dart` covers celebration widget
   - [x] **Stop → review brief → Baptiste OK → commit**
 
 - [x] **C — Enhanced `GoalCelebration`** (AC: #1–#3)
@@ -340,7 +340,7 @@ Implement only if A–F complete early:
 | `goal_ring_test` | Arc progress follows tween; overflow shimmer when enabled |
 | `goal_celebration_test` | ~4s duration; double scale peak; glow present; reduce motion unchanged |
 | `today_cubit_test` | **No changes** to celebration dedup |
-| `today_screen_test` | Preview button shows/remounts `GoalCelebration` (debug) |
+| `goal_ring_test` | Celebration overlay behavior (screen preview test removed in Phase B cleanup) |
 | Manual device | **Preview goal** replays celebration; cold start count-up; tab return delta; overflow shimmer; reduce motion all static |
 
 ### Previous story intelligence
@@ -389,7 +389,7 @@ claude-4.6-sonnet-medium-thinking (Cursor Agent)
 - `lib/presentation/widgets/goal_ring.dart`
 - `lib/presentation/widgets/goal_ring_effects.dart` (new)
 - `test/presentation/screens/app_scaffold_test.dart`
-- `test/presentation/screens/today_screen_test.dart`
+- ~~`test/presentation/screens/today_screen_test.dart`~~ (merged into `screen_smoke_test.dart`, 2026-06-05)
 - `test/presentation/widgets/animated_step_count_test.dart` (new)
 - `test/presentation/widgets/goal_celebration_test.dart`
 - `test/presentation/widgets/goal_ring_test.dart`

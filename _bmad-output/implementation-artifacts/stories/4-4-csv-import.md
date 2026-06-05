@@ -46,7 +46,7 @@ So that I can restore data after reinstall or device change.
     }
     ```
   - [x] Add `lib/core/database/import_validation_exception.dart` (or `lib/data/csv/`) — typed exception for cubit error mapping
-  - [x] Unit tests: `test/data/csv/timeseries_csv_codec_parse_test.dart` — valid row round-trip from serialize; bad header; bad row; RFC 4180 quoted fields; `\r` handling; integer steps value
+  - [x] Unit tests: `test/data/csv/timeseries_csv_codec_test.dart` (parse group) — valid row round-trip from serialize; bad header; bad row; RFC 4180 quoted fields; `\r` handling; integer steps value
   - [x] **Stop → review brief → wait for Baptiste OK → commit**
 
 - [x] **Sub-task B — `StepRepository.importCsv()`** (AC: #1–#2)
@@ -239,7 +239,7 @@ lib/presentation/cubits/my_data_cubit.dart          # UPDATE — pickAndImport()
 lib/presentation/screens/my_data_screen.dart        # UPDATE — Import UI
 lib/presentation/screens/app_scaffold.dart          # UPDATE — postImportRefresh wiring
 
-test/data/csv/timeseries_csv_codec_parse_test.dart  # NEW
+test/data/csv/timeseries_csv_codec_test.dart  # serialize + parse groups (merged 2026-06-05)
 test/data/repositories/step_repository_import_test.dart  # NEW
 test/data/repositories/step_repository_roundtrip_test.dart  # NEW (optional merge with import_test)
 test/presentation/cubits/my_data_cubit_import_test.dart  # NEW
@@ -359,7 +359,7 @@ Story **4.2** (done): `myDataCubit.refresh()` after admin ops — import must ca
 
 | Test | Purpose |
 |------|---------|
-| `timeseries_csv_codec_parse_test` | Header/row validation, escaping round-trip |
+| `timeseries_csv_codec_test` (parse group) | Header/row validation, escaping round-trip |
 | `step_repository_import_test` | Insert/skip counts, validation abort, bucket duplicate |
 | Round-trip test | export → import empty DB → chart aggregates match |
 | `my_data_cubit_import_test` | In-flight guard, confirm skip on empty DB, refresh callback |
@@ -421,7 +421,7 @@ Composer (Cursor)
 - lib/presentation/widgets/data_import_button.dart
 - pubspec.yaml
 - docs/DEPENDENCIES.md
-- test/data/csv/timeseries_csv_codec_parse_test.dart
+- test/data/csv/timeseries_csv_codec_test.dart
 - test/data/repositories/step_repository_import_test.dart
 - test/presentation/cubits/my_data_cubit_import_test.dart
 - test/presentation/widgets/confirm_dialog_test.dart
