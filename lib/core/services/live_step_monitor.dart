@@ -40,6 +40,7 @@ class LiveStepMonitor {
   int _persistedTodaySteps = 0;
   int _pendingDelta = 0;
   int? _memoryBaseline;
+  DateTime? _lastProcessedObservedAtUtc;
   String? _trackedLocalDay;
   bool _reconciling = false;
   bool _running = false;
@@ -187,6 +188,7 @@ class LiveStepMonitor {
     if (_trackedLocalDay != null && _trackedLocalDay != todayIso) {
       _pendingDelta = 0;
       _memoryBaseline = null;
+      _lastProcessedObservedAtUtc = null;
       unawaited(reconcileFromDatabase());
     }
     _trackedLocalDay ??= todayIso;
@@ -196,12 +198,19 @@ class LiveStepMonitor {
     final cumulative = reading.cumulativeSteps;
     if (_memoryBaseline == null) {
       _memoryBaseline = cumulative;
+      _lastProcessedObservedAtUtc = reading.observedAtUtc;
       return;
     }
+
+    final elapsedSincePrevious = _lastProcessedObservedAtUtc == null
+        ? null
+        : reading.observedAtUtc.difference(_lastProcessedObservedAtUtc!);
+    _lastProcessedObservedAtUtc = reading.observedAtUtc;
 
     final increment = incrementCalculator.calculate(
       current: cumulative,
       baseline: _memoryBaseline!,
+      elapsedSincePrevious: elapsedSincePrevious,
     );
     if (increment == null) {
       return;

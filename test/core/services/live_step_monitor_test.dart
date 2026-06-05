@@ -195,6 +195,24 @@ void main() {
       expect(monitor.currentTodaySteps, 30);
     });
 
+    test('rate-limits shake burst so pending delta does not jump by full hardware delta', () async {
+      await monitor.start();
+      await monitor.reconcileFromDatabase();
+
+      final t0 = DateTime.utc(2026, 6, 2, 12);
+      events.add(PhoneStepEvent(steps: 1000, timeStamp: t0));
+      events.add(
+        PhoneStepEvent(
+          steps: 1050,
+          timeStamp: t0.add(const Duration(milliseconds: 200)),
+        ),
+      );
+      await Future<void>.delayed(Duration.zero);
+
+      expect(monitor.currentTodaySteps, lessThanOrEqualTo(2));
+      expect(monitor.currentTodaySteps, greaterThanOrEqualTo(1));
+    });
+
     test('restart re-subscribes and preserves monotonic display', () async {
       await monitor.start();
       events.add(
