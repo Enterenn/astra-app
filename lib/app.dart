@@ -28,6 +28,7 @@ class AstraApp extends StatefulWidget {
     this.enablePeriodicPersist = true,
     this.enableLiveStepPipeline = true,
     this.maxPersistStaleness = kMaxPersistStaleness,
+    this.testBeforeMonitorStop,
   });
 
   final AppDependencies deps;
@@ -41,6 +42,11 @@ class AstraApp extends StatefulWidget {
 
   /// Override in tests to avoid multi-minute [Timer.periodic] waits.
   final Duration maxPersistStaleness;
+
+  /// Test hook: awaited in [_AstraAppState._onAppBackgrounded] before
+  /// [LiveStepMonitor.stop] to simulate slow pause transitions.
+  @visibleForTesting
+  final Future<void> Function()? testBeforeMonitorStop;
 
   @override
   State<AstraApp> createState() => _AstraAppState();
@@ -74,6 +80,7 @@ class _AstraAppState extends State<AstraApp> with WidgetsBindingObserver {
   DateTime? _lastPersistAt;
   bool _livePipelineStarted = false;
   Future<void>? _persistInFlight;
+  Future<void>? _lifecycleTransitionInFlight;
 
   @override
   void initState() {
@@ -98,9 +105,29 @@ class _AstraAppState extends State<AstraApp> with WidgetsBindingObserver {
   @override
   void didChangeAppLifecycleState(AppLifecycleState state) {
     if (state == AppLifecycleState.paused) {
-      unawaited(_onAppBackgrounded());
+      unawaited(_enqueueLifecycleTransition(_onAppBackgrounded));
     } else if (state == AppLifecycleState.resumed) {
-      unawaited(_onAppForegrounded());
+      unawaited(_enqueueLifecycleTransition(_onAppForegrounded));
+    }
+  }
+
+  /// Serializes pause/resume handlers so foreground recovery cannot race background [LiveStepMonitor.stop].
+  Future<void> _enqueueLifecycleTransition(
+    Future<void> Function() operation,
+  ) async {
+    while (_lifecycleTransitionInFlight != null) {
+      await _lifecycleTransitionInFlight;
+    }
+
+    late final Future<void> transition;
+    transition = operation();
+    _lifecycleTransitionInFlight = transition;
+    try {
+      await transition;
+    } finally {
+      if (_lifecycleTransitionInFlight == transition) {
+        _lifecycleTransitionInFlight = null;
+      }
     }
   }
 
@@ -112,6 +139,7 @@ class _AstraAppState extends State<AstraApp> with WidgetsBindingObserver {
     _stopActivityBasedPersist();
     final healthFgs = widget.deps.healthForegroundCoordinator;
     if (widget.enableLiveStepPipeline) {
+      await widget.testBeforeMonitorStop?.call();
       await widget.deps.liveStepMonitor.stop();
     }
     await healthFgs.setUiActive(false);
@@ -220,14 +248,14 @@ class _AstraAppState extends State<AstraApp> with WidgetsBindingObserver {
 
   Future<void> _collectAndRefreshToday() async {
     if (widget.enableLiveStepPipeline) {
-      final monitor = widget.deps.liveStepMonitor;
-      if (_livePipelineStarted && !monitor.isRunning) {
-        await monitor.restart();
-      }
       await _enqueuePersistCycle(
         enableGoalNotification: false,
         syncTodayAfter: true,
       );
+      if (_livePipelineStarted) {
+        await widget.deps.liveStepMonitor.restart();
+        await _bindLiveMonitorToToday();
+      }
     } else {
       await _enqueuePersistCycle(
         enableGoalNotification: false,

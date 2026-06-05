@@ -279,6 +279,164 @@ void main() {
       await _unmountAstraApp(tester);
     });
 
+    testWidgets('rapid pause resume keeps live updates after background stop', (
+      tester,
+    ) async {
+      TodayCubit? todayCubit;
+      final stopGate = Completer<void>();
+
+      await tester.runAsync(() async {
+        await tester.pumpWidget(
+          AstraApp(
+            deps: deps,
+            createTodayCubit: (dependencies) {
+              todayCubit = _testTodayCubit(dependencies);
+              return todayCubit!;
+            },
+            createHistoryCubit: _testHistoryCubit,
+            enablePeriodicPersist: false,
+            enableLiveStepPipeline: true,
+            testBeforeMonitorStop: () => stopGate.future,
+          ),
+        );
+        await tester.pump();
+
+        await _waitForLivePipeline(monitor, todayCubit!);
+
+        events.add(
+          PhoneStepEvent(steps: 100, timeStamp: DateTime.utc(2026, 6, 2, 8)),
+        );
+        events.add(
+          PhoneStepEvent(steps: 150, timeStamp: DateTime.utc(2026, 6, 2, 8, 1)),
+        );
+
+        for (var attempt = 0; attempt < 100; attempt++) {
+          await Future<void>.delayed(const Duration(milliseconds: 20));
+          if (todayCubit!.state.steps >= 50) {
+            break;
+          }
+        }
+        expect(todayCubit!.state.steps, 50);
+
+        tester.binding.handleAppLifecycleStateChanged(
+          AppLifecycleState.paused,
+        );
+        tester.binding.handleAppLifecycleStateChanged(
+          AppLifecycleState.resumed,
+        );
+
+        stopGate.complete();
+        for (var attempt = 0; attempt < 150; attempt++) {
+          await Future<void>.delayed(const Duration(milliseconds: 20));
+          await tester.pump(const Duration(milliseconds: 20));
+          if (monitor.isRunning) {
+            break;
+          }
+        }
+        expect(monitor.isRunning, isTrue);
+
+        events.add(
+          PhoneStepEvent(steps: 300, timeStamp: DateTime.utc(2026, 6, 2, 8, 7)),
+        );
+        events.add(
+          PhoneStepEvent(steps: 380, timeStamp: DateTime.utc(2026, 6, 2, 8, 8)),
+        );
+
+        var stepsAfterResume = todayCubit!.state.steps;
+        for (var attempt = 0; attempt < 100; attempt++) {
+          await Future<void>.delayed(const Duration(milliseconds: 20));
+          stepsAfterResume = todayCubit!.state.steps;
+          if (stepsAfterResume > 50) {
+            break;
+          }
+        }
+        expect(stepsAfterResume, greaterThan(50));
+      });
+      await _unmountAstraApp(tester);
+    });
+
+    testWidgets('resume restarts monitor even when already running', (
+      tester,
+    ) async {
+      TodayCubit? todayCubit;
+
+      await tester.runAsync(() async {
+        await tester.pumpWidget(
+          AstraApp(
+            deps: deps,
+            createTodayCubit: (dependencies) {
+              todayCubit = _testTodayCubit(dependencies);
+              return todayCubit!;
+            },
+            createHistoryCubit: _testHistoryCubit,
+            enablePeriodicPersist: false,
+            enableLiveStepPipeline: true,
+          ),
+        );
+        await tester.pump();
+
+        await _waitForLivePipeline(monitor, todayCubit!);
+
+        events.add(
+          PhoneStepEvent(steps: 100, timeStamp: DateTime.utc(2026, 6, 2, 8)),
+        );
+        events.add(
+          PhoneStepEvent(steps: 200, timeStamp: DateTime.utc(2026, 6, 2, 8, 1)),
+        );
+        for (var attempt = 0; attempt < 100; attempt++) {
+          await Future<void>.delayed(const Duration(milliseconds: 20));
+          if (todayCubit!.state.steps >= 100) {
+            break;
+          }
+        }
+        expect(todayCubit!.state.steps, 100);
+
+        tester.binding.handleAppLifecycleStateChanged(
+          AppLifecycleState.paused,
+        );
+        for (var attempt = 0; attempt < 150; attempt++) {
+          await Future<void>.delayed(const Duration(milliseconds: 20));
+          if (!monitor.isRunning) {
+            break;
+          }
+        }
+        expect(monitor.isRunning, isFalse);
+
+        await monitor.start();
+        expect(monitor.isRunning, isTrue);
+
+        tester.binding.handleAppLifecycleStateChanged(
+          AppLifecycleState.resumed,
+        );
+        for (var attempt = 0; attempt < 150; attempt++) {
+          await Future<void>.delayed(const Duration(milliseconds: 20));
+          await tester.pump(const Duration(milliseconds: 20));
+          if (monitor.isRunning) {
+            break;
+          }
+        }
+        expect(monitor.isRunning, isTrue);
+
+        events.add(
+          PhoneStepEvent(steps: 400, timeStamp: DateTime.utc(2026, 6, 2, 8, 7)),
+        );
+        events.add(
+          PhoneStepEvent(steps: 500, timeStamp: DateTime.utc(2026, 6, 2, 8, 8)),
+        );
+
+        var stepsAfterResume = todayCubit!.state.steps;
+        for (var attempt = 0; attempt < 100; attempt++) {
+          await Future<void>.delayed(const Duration(milliseconds: 20));
+          stepsAfterResume = todayCubit!.state.steps;
+          if (stepsAfterResume > 100) {
+            break;
+          }
+        }
+        expect(stepsAfterResume, greaterThan(100));
+      });
+      await _unmountAstraApp(tester);
+    });
+
     testWidgets('reattach preserves monitor total when cubit is recreated', (
       tester,
     ) async {
