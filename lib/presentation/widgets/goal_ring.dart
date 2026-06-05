@@ -3,6 +3,7 @@ import 'dart:math' as math;
 
 import 'package:flutter/material.dart';
 import 'package:phosphoricons_flutter/phosphoricons_flutter.dart';
+import 'package:sqflite/sqflite.dart';
 
 import '../../core/constants/astra_colors.dart';
 import '../../core/constants/astra_spacing.dart';
@@ -466,10 +467,14 @@ class _GoalRingState extends State<GoalRing> with TickerProviderStateMixin {
     }
     final prefs = widget.userPreferences;
     final day = widget.localDayIso;
-    if (prefs == null || day == null || !mounted) {
+    if (prefs == null || day == null || !mounted || !prefs.isDatabaseOpen) {
       return;
     }
-    await prefs.setLastDisplayedSteps(localDayIso: day, steps: steps);
+    try {
+      await prefs.setLastDisplayedSteps(localDayIso: day, steps: steps);
+    } on DatabaseException {
+      return;
+    }
     if (!mounted) {
       return;
     }

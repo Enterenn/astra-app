@@ -110,7 +110,7 @@ development_status:
   epic-6: in-progress
   6-1-derived-activity-metrics: done          # after epic-5.12
   6-2-pedometer-shake-noise-rate-limit: done  # inter-arrival rate cap; Nord drip shake deferred to 6.3
-  6-3-activity-idle-persist-flush: ready-for-dev  # universal: flush after step-stream idle
+  6-3-activity-idle-persist-flush: review  # universal: flush after step-stream idle
   epic-6-retrospective: optional
 
   epic-7: backlog

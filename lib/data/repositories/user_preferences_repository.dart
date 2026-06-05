@@ -11,6 +11,8 @@ class UserPreferencesRepository {
 
   final Database _db;
 
+  bool get isDatabaseOpen => _db.isOpen;
+
   Future<int> getDailyStepGoal() async {
     final value = await _readValue(kDailyStepGoalKey);
     final parsed = int.tryParse(value ?? '');

@@ -64,6 +64,13 @@ Future<void> _waitForLivePipeline(
   }
 }
 
+Future<void> _unmountAstraApp(WidgetTester tester) async {
+  if (tester.any(find.byType(AstraApp))) {
+    await tester.pumpWidget(const SizedBox.shrink());
+    await tester.pump();
+  }
+}
+
 void main() {
   setUpAll(() async {
     await setUpSqfliteFfi();
@@ -74,7 +81,6 @@ void main() {
     late AppDependencies deps;
     late StreamController<PhoneStepEvent> events;
     late LiveStepMonitor monitor;
-
     setUp(() async {
       db = await openAstraDatabase(databasePath: inMemoryDatabasePath);
       final userPreferences = UserPreferencesRepository(db);
@@ -145,11 +151,26 @@ void main() {
         tester.binding.handleAppLifecycleStateChanged(
           AppLifecycleState.paused,
         );
+        for (var attempt = 0; attempt < 150; attempt++) {
+          await Future<void>.delayed(const Duration(milliseconds: 20));
+          if (await deps.stepRepository.getTodaySteps() >= 50) {
+            break;
+          }
+        }
+        expect(await deps.stepRepository.getTodaySteps(), 50);
+
         tester.binding.handleAppLifecycleStateChanged(
           AppLifecycleState.resumed,
         );
-        await Future<void>.delayed(const Duration(milliseconds: 100));
-        expect(await _waitForStableTodaySteps(todayCubit!), 50);
+        for (var attempt = 0; attempt < 150; attempt++) {
+          await Future<void>.delayed(const Duration(milliseconds: 20));
+          await tester.pump(const Duration(milliseconds: 20));
+          if (todayCubit!.state.steps >= 50 &&
+              todayCubit!.state.status != TodayStatus.loading) {
+            break;
+          }
+        }
+        expect(todayCubit!.state.steps, 50);
 
         events.add(
           PhoneStepEvent(steps: 300, timeStamp: DateTime.utc(2026, 6, 2, 8, 7)),
@@ -168,6 +189,7 @@ void main() {
         }
         expect(stepsAfterResume, greaterThan(stepsBeforeResume));
       });
+      await _unmountAstraApp(tester);
     });
 
     testWidgets('cold start does not drop steps below live monitor total', (
@@ -207,6 +229,7 @@ void main() {
         final displayed = await _waitForStableTodaySteps(todayCubit!);
         expect(displayed, greaterThanOrEqualTo(liveSteps));
       });
+      await _unmountAstraApp(tester);
     });
 
     testWidgets('persists live monitor buffer when app pauses', (tester) async {
@@ -253,6 +276,7 @@ void main() {
         }
         expect(await deps.stepRepository.getTodaySteps(), 100);
       });
+      await _unmountAstraApp(tester);
     });
 
     testWidgets('reattach preserves monitor total when cubit is recreated', (
@@ -316,6 +340,7 @@ void main() {
 
         expect(secondCubit!.state.steps, greaterThanOrEqualTo(150));
       });
+      await _unmountAstraApp(tester);
     });
   });
 
@@ -413,6 +438,7 @@ void main() {
           expect(monitor.currentTodaySteps, greaterThanOrEqualTo(1050));
           expect(todayCubit!.state.steps, greaterThanOrEqualTo(1050));
         });
+        await _unmountAstraApp(tester);
       },
       timeout: const Timeout(Duration(seconds: 30)),
     );
