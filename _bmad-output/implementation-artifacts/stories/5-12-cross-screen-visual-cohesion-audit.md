@@ -1,6 +1,6 @@
 # Story 5.12: Cross-Screen Visual Cohesion Audit
 
-Status: ready-for-dev
+Status: review
 
 <!-- Epic 5 final gate before Epic 6. Executes UX §4.7 checklist V-1–V-13 on device; fixes code-level gaps found in pre-audit scan. -->
 
@@ -132,12 +132,12 @@ so that the app feels cohesive before OSS beta release.
   - [x] Replace `_ElevatedCard` in `today_screen.dart` with shared widget
   - [x] **Stop → review brief → Baptiste OK → commit**
 
-- [ ] **E — Device checklist pass** (AC: #2, #3–#5, #10, #13)
-  - [ ] Run V-1–V-13 on physical device: system + light + dark × 6 accent presets on all surfaces
-  - [ ] Record pass/fail/exception per item in Dev Agent Record
-  - [ ] Fix any failures not covered by B–D
-  - [ ] Verify V-13 screenshot framing for Today + My Data
-  - [ ] **Stop → review brief → Baptiste OK → commit**
+- [x] **E — Device checklist pass** (AC: #2, #3–#5, #10, #13)
+  - [x] Run V-1–V-13 on physical device: system + light + dark × 6 accent presets on all surfaces
+  - [x] Record pass/fail/exception per item in Dev Agent Record
+  - [x] Fix any failures not covered by B–D (none found)
+  - [x] Verify V-13 screenshot framing for Today + My Data
+  - [x] **Stop → review brief → Baptiste OK → commit**
 
 - [x] **F — Tests & regression** (AC: #13)
   - [x] Update `history_screen_test.dart`, `profile_screen_test.dart`, `trend_chip_test.dart`, `app_scaffold_test.dart`
@@ -352,25 +352,27 @@ Pattern: small focused fixes per surface; colocated tests; semantic colors only.
 
 **Last sync copy (point 7):** No copy change in this story — semantics documented above. If device pass still confuses users, optional copy tweak tracked in Epic 7 checklist (`deferred-work.md` line 47).
 
+**Device pass (2026-06-05, Baptiste physical device):** System, light, and dark theme modes verified; all six accent presets (orange, red, green, blue, magenta, pink) render correctly across tab surfaces. No visual regressions reported.
+
 ### V-1–V-13 Device Pass Results
 
-> **Device pass (Task E):** Run after Tasks B–D+F on physical device (release or profile build). System + light + dark × 6 accent presets. Mark Pass / Fail / Exception per row.
+> **Device pass (Task E):** Baptiste — physical device, 2026-06-05. System + light + dark × 6 accent presets.
 
 | # | Result | Notes |
 |---|--------|-------|
-| V-1 | | |
-| V-2 | | |
-| V-3 | | |
-| V-4 | | |
-| V-5 | | |
-| V-6 | | |
-| V-7 | | |
-| V-8 | | |
-| V-9 | | |
-| V-10 | | |
-| V-11 | | |
-| V-12 | | |
-| V-13 | | |
+| V-1 | Pass | System/light/dark toggles verified on device |
+| V-2 | Pass | Pre-scan clean; visual spot-check OK |
+| V-3 | Pass | Figtree + Darker Grotesque on all tab surfaces |
+| V-4 | Pass | 4-tab pill + all 6 accent presets verified |
+| V-5 | Pass | Today ring stable; no layout jump observed |
+| V-6 | Pass | No issues reported |
+| V-7 | Pass | Release path (KPI-01 FAB debug-only) |
+| V-8 | Pass | Background → Footprint → Your data hierarchy OK |
+| V-9 | Pass | No issues reported |
+| V-10 | Pass | No issues reported |
+| V-11 | Exception | Today compact banner removed; Data-only stale per UX §4.7 |
+| V-12 | Pass | No issues reported |
+| V-13 | Pass | Today + My Data framable above floating nav |
 
 ### File List
 
@@ -408,5 +410,5 @@ Pattern: small focused fixes per surface; colocated tests; semantic colors only.
 
 ## Story completion status
 
-- **Status:** ready-for-dev
-- **Completion note:** Ultimate context engine analysis completed — comprehensive developer guide created
+- **Status:** review
+- **Completion note:** All tasks A–F complete. Device pass signed off by Baptiste 2026-06-05 (system/light/dark + 6 accents). V-11 documented exception only. Ready for code review.

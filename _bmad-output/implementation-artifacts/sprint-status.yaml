@@ -1,5 +1,5 @@
 # generated: 2026-05-25
-# last_updated: 2026-06-05 (Story 5.12 created)
+# last_updated: 2026-06-05 (Story 5.12 review)
 # NEXT: 5.7 → 5.8 → 5.9 → 5.10 → 5.11 → 5.12 → epic-6 → 5.13 (optional)
 # Ref: planning-artifacts/sprint-change-proposal-2026-06-04.md
 # project: astra-app
@@ -103,7 +103,7 @@ development_status:
   5-9-today-figma-layout-no-greeting: done          # 4 — stats row visible, empty until epic-6
   5-10-data-screen-sovereignty-layout: done         # 5 — tab DATA, screen title "My Data"
   5-11-profil-informations-and-appearance: done     # 6 — bi-tone circles + theme_mode + PROFILE nav label
-  5-12-cross-screen-visual-cohesion-audit: in-progress  # 7
+  5-12-cross-screen-visual-cohesion-audit: review  # 7
   5-13-goal-overflow-animation-polish: backlog      # after 5.12 (optional)
   epic-5-retrospective: optional
 
