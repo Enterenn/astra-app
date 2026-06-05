@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:phosphoricons_flutter/phosphoricons_flutter.dart';
 
 import '../../core/constants/astra_colors.dart';
 import '../../core/constants/astra_spacing.dart';
@@ -67,7 +68,7 @@ class DisplayNameEditorRow extends StatelessWidget {
                   ),
                 ),
                 Icon(
-                  Icons.chevron_right,
+                  PhosphorIconsRegular.caretRight,
                   color: _isEnabled ? colors.neutralGray : colors.textMuted,
                   semanticLabel: 'Edit display name',
                 ),

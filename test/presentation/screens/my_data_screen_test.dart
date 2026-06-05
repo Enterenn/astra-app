@@ -12,8 +12,6 @@ import 'package:astra_app/presentation/widgets/data_export_button.dart';
 import 'package:astra_app/presentation/widgets/data_import_button.dart';
 import 'package:astra_app/presentation/widgets/data_purge_button.dart';
 import 'package:astra_app/presentation/widgets/display_name_editor_row.dart';
-import 'package:astra_app/presentation/widgets/goal_editor_row.dart';
-import 'package:astra_app/presentation/widgets/profile_initials_badge.dart';
 import 'package:astra_app/presentation/widgets/theme_selector.dart';
 
 import 'package:flutter/material.dart';
@@ -173,10 +171,8 @@ void main() {
       expect(find.text('Backup & restore'), findsOneWidget);
       expect(find.text('Step tracking'), findsNothing);
 
-      expect(find.byType(GoalEditorRow), findsNothing);
       expect(find.byType(ThemeSelector), findsNothing);
       expect(find.byType(DisplayNameEditorRow), findsNothing);
-      expect(find.byType(ProfileInitialsBadge), findsNothing);
     });
 
     testWidgets('sections appear in Storage → Backup order', (

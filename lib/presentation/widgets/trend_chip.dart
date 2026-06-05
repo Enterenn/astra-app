@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:phosphoricons_flutter/phosphoricons_flutter.dart';
 
 import '../../core/constants/astra_colors.dart';
 import '../../core/constants/astra_spacing.dart';
@@ -17,9 +18,10 @@ class TrendChip extends StatelessWidget {
   Widget build(BuildContext context) {
     final colors = context.astraColors;
     final (icon, color) = switch (trend.direction) {
-      TrendDirection.up => (Icons.arrow_upward, colors.dataPositive),
-      TrendDirection.down => (Icons.arrow_downward, colors.dataNegative),
-      TrendDirection.flat => (Icons.remove, colors.textPrimary),
+      TrendDirection.up => (PhosphorIconsRegular.arrowUp, colors.dataPositive),
+      TrendDirection.down =>
+        (PhosphorIconsRegular.arrowDown, colors.dataNegative),
+      TrendDirection.flat => (PhosphorIconsRegular.minus, colors.textPrimary),
     };
 
     return Semantics(

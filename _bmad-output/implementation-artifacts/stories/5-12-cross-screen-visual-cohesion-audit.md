@@ -120,10 +120,11 @@ so that the app feels cohesive before OSS beta release.
   - [x] **Stop → review brief → Baptiste OK → commit**
 
 - [ ] **C — Phosphor icon migration** (AC: #8)
-  - [ ] `trend_chip.dart`: `arrowUp` / `arrowDown` / `minus` Phosphor equivalents
-  - [ ] `profile_info_row.dart`, `display_name_editor_row.dart`: `caretRight` Phosphor
-  - [ ] Onboarding back pages: `arrowLeft` Phosphor
-  - [ ] Remove or exclude `source_chip.dart`; update imports/tests
+  - [x] `trend_chip.dart`: `arrowUp` / `arrowDown` / `minus` Phosphor equivalents
+  - [x] `profile_info_row.dart`, `display_name_editor_row.dart`: `caretRight` Phosphor
+  - [x] Onboarding back pages: `arrowLeft` Phosphor
+  - [x] Remove or exclude `source_chip.dart`; update imports/tests
+  - [x] Delete orphan `goal_editor_row.dart`, `profile_initials_badge.dart` + tests
   - [ ] **Stop → review brief → Baptiste OK → commit**
 
 - [ ] **D — Today card consolidation** (AC: #9)
@@ -380,6 +381,19 @@ Pattern: small focused fixes per surface; colocated tests; semantic colors only.
 - `lib/presentation/screens/profile_screen.dart` (modified — ColoredBox shell)
 - `lib/presentation/screens/my_data_screen.dart` (modified — Semantics)
 - `lib/presentation/widgets/app_bottom_nav.dart` (modified — w700 label)
+- `lib/presentation/widgets/trend_chip.dart` (modified — Phosphor icons)
+- `lib/presentation/widgets/profile_info_row.dart` (modified — Phosphor caretRight)
+- `lib/presentation/widgets/display_name_editor_row.dart` (modified — Phosphor caretRight)
+- `lib/presentation/onboarding/onboarding_permissions_page.dart` (modified — Phosphor arrowLeft)
+- `lib/presentation/onboarding/onboarding_display_name_page.dart` (modified — Phosphor arrowLeft)
+- `lib/presentation/onboarding/onboarding_goal_page.dart` (modified — Phosphor arrowLeft)
+- `lib/presentation/widgets/source_chip.dart` (deleted — orphan)
+- `lib/presentation/widgets/goal_editor_row.dart` (deleted — orphan)
+- `lib/presentation/widgets/profile_initials_badge.dart` (deleted — orphan)
+- `test/presentation/widgets/trend_chip_test.dart` (modified — Phosphor assertions)
+- `test/presentation/widgets/status_banner_test.dart` (modified — removed SourceChip tests)
+- `test/presentation/widgets/profile_initials_badge_test.dart` (deleted)
+- `test/presentation/screens/my_data_screen_test.dart` (modified — removed orphan type asserts)
 
 ---
 

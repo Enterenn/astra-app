@@ -4,6 +4,7 @@ import 'package:astra_app/presentation/cubits/history_state.dart';
 import 'package:astra_app/presentation/widgets/trend_chip.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:phosphoricons_flutter/phosphoricons_flutter.dart';
 
 import '../../helpers/astra_theme_test_helper.dart';
 
@@ -33,7 +34,7 @@ void main() {
       );
 
       expect(find.text('Up 12% from last week'), findsOneWidget);
-      expect(find.byIcon(Icons.arrow_upward), findsOneWidget);
+      expect(find.byIcon(PhosphorIconsRegular.arrowUp), findsOneWidget);
     });
 
     testWidgets('up and down trends use distinct preset-tinted colors', (
@@ -50,7 +51,8 @@ void main() {
           label: 'Up 5%',
         ),
       );
-      final upColor = tester.widget<Icon>(find.byIcon(Icons.arrow_upward)).color;
+      final upColor =
+          tester.widget<Icon>(find.byIcon(PhosphorIconsRegular.arrowUp)).color;
 
       await pumpChip(
         tester,
@@ -61,7 +63,7 @@ void main() {
         ),
       );
       final downColor =
-          tester.widget<Icon>(find.byIcon(Icons.arrow_downward)).color;
+          tester.widget<Icon>(find.byIcon(PhosphorIconsRegular.arrowDown)).color;
 
       expect(upColor, colors.dataPositive);
       expect(downColor, colors.dataNegative);
@@ -80,7 +82,7 @@ void main() {
       );
 
       expect(find.text('Down 8% from last week'), findsOneWidget);
-      expect(find.byIcon(Icons.arrow_downward), findsOneWidget);
+      expect(find.byIcon(PhosphorIconsRegular.arrowDown), findsOneWidget);
     });
 
     testWidgets('renders flat copy', (tester) async {
@@ -94,8 +96,7 @@ void main() {
       );
 
       expect(find.text('Same as last week'), findsOneWidget);
-      expect(find.byIcon(Icons.remove), findsOneWidget);
+      expect(find.byIcon(PhosphorIconsRegular.minus), findsOneWidget);
     });
-
   });
 }

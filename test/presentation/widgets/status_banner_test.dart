@@ -1,5 +1,4 @@
 import 'package:astra_app/core/constants/astra_theme.dart';
-import 'package:astra_app/presentation/widgets/source_chip.dart';
 import 'package:astra_app/presentation/widgets/status_banner.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
@@ -119,36 +118,6 @@ void main() {
         find.text('Steps update when you open the app on this device.'),
         findsOneWidget,
       );
-    });
-  });
-
-  group('SourceChip', () {
-    testWidgets('shows default Phone sensor label', (tester) async {
-      await tester.pumpWidget(
-        MaterialApp(
-          theme: buildAstraLightTheme(),
-          home: const Scaffold(
-            body: SourceChip(),
-          ),
-        ),
-      );
-
-      expect(find.text('Phone sensor'), findsOneWidget);
-      expect(find.byIcon(Icons.smartphone_outlined), findsOneWidget);
-    });
-
-    testWidgets('can hide icon', (tester) async {
-      await tester.pumpWidget(
-        MaterialApp(
-          theme: buildAstraLightTheme(),
-          home: const Scaffold(
-            body: SourceChip(showIcon: false),
-          ),
-        ),
-      );
-
-      expect(find.text('Phone sensor'), findsOneWidget);
-      expect(find.byIcon(Icons.smartphone_outlined), findsNothing);
     });
   });
 }

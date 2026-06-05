@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:phosphoricons_flutter/phosphoricons_flutter.dart';
 
 import '../../core/constants/astra_colors.dart';
 import '../../core/constants/astra_spacing.dart';
@@ -56,7 +57,7 @@ class _OnboardingGoalPageState extends State<OnboardingGoalPage> {
           children: [
             IconButton(
               onPressed: cubit.previousStep,
-              icon: Icon(Icons.arrow_back, color: colors.textPrimary),
+              icon: Icon(PhosphorIconsRegular.arrowLeft, color: colors.textPrimary),
               tooltip: 'Back',
             ),
             const Expanded(
