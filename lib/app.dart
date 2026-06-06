@@ -86,6 +86,27 @@ bool shouldRunResumePhoneCatchUp({
       pauseDuration >= minPauseForPhoneCatchUp;
 }
 
+/// Whether resume should briefly stop the monitor for a one-shot phone peek.
+///
+/// Skips the destructive stop/peek cycle when background collection (pause
+/// persist and/or FGS) already advanced SQLite during the lock — the Fairphone
+/// long-walk scenario where peek would aggravate a zombie subscription.
+@visibleForTesting
+bool shouldRunResumePhonePeek({
+  required bool likelyPocketWalk,
+  required int stepsBeforeResumeCollect,
+  required int? stepsAtBackground,
+}) {
+  if (!likelyPocketWalk) {
+    return false;
+  }
+  if (stepsAtBackground != null &&
+      stepsBeforeResumeCollect > stepsAtBackground) {
+    return false;
+  }
+  return true;
+}
+
 class _AstraAppState extends State<AstraApp> with WidgetsBindingObserver {
   /// Must cover [LiveStepMonitor.maxBufferedReadings] so activity-idle persist
   /// normalizes every buffered phone reading in one collect.
@@ -100,6 +121,7 @@ class _AstraAppState extends State<AstraApp> with WidgetsBindingObserver {
   DateTime? _lastPersistAt;
   bool _livePipelineStarted = false;
   DateTime? _backgroundedAt;
+  int? _stepsAtBackground;
   Future<void>? _persistInFlight;
   void Function(String message)? _showDebugSnackBar;
   Future<void>? _lifecycleTransitionInFlight;
@@ -174,6 +196,7 @@ class _AstraAppState extends State<AstraApp> with WidgetsBindingObserver {
     if (!_showMainShell) {
       return;
     }
+    _stepsAtBackground = await widget.deps.stepRepository.getTodaySteps();
     _stopActivityBasedPersist();
     _todayCubit?.setLiveStepAppliesPaused(true);
     final healthFgs = widget.deps.healthForegroundCoordinator;
@@ -387,8 +410,14 @@ class _AstraAppState extends State<AstraApp> with WidgetsBindingObserver {
         pauseDuration: pauseDuration,
         minPauseForPhoneCatchUp: widget.minPauseForPhoneCatchUp,
       );
+      final needsPhonePeek = shouldRunResumePhonePeek(
+        likelyPocketWalk: likelyPocketWalk,
+        stepsBeforeResumeCollect: stepsBeforeCollect,
+        stepsAtBackground: _stepsAtBackground,
+      );
+      _stepsAtBackground = null;
 
-      if (likelyPocketWalk) {
+      if (needsPhonePeek) {
         final wasRunning = monitor.isRunning;
         if (wasRunning) {
           await monitor.stop();
@@ -431,7 +460,7 @@ class _AstraAppState extends State<AstraApp> with WidgetsBindingObserver {
           'upsertedDrain': upsertedFromDrain,
           'stepsBefore': stepsBeforeCollect,
           'stepsAfterDrain': stepsAfterDrain,
-          'phoneCatchUp': likelyPocketWalk,
+          'phonePeek': needsPhonePeek,
           'monitorRunning': monitor.isRunning,
           'monitorTotal': monitor.currentTodaySteps,
           'cubitSteps': _todayCubit?.state.steps,

@@ -127,6 +127,52 @@ void main() {
     });
   });
 
+  group('shouldRunResumePhonePeek', () {
+    test('returns false when pocket catch-up gate is closed', () {
+      expect(
+        shouldRunResumePhonePeek(
+          likelyPocketWalk: false,
+          stepsBeforeResumeCollect: 120,
+          stepsAtBackground: 50,
+        ),
+        isFalse,
+      );
+    });
+
+    test('returns false when background collection already advanced SQLite', () {
+      expect(
+        shouldRunResumePhonePeek(
+          likelyPocketWalk: true,
+          stepsBeforeResumeCollect: 120,
+          stepsAtBackground: 50,
+        ),
+        isFalse,
+      );
+    });
+
+    test('returns true when long pause left SQLite unchanged at resume', () {
+      expect(
+        shouldRunResumePhonePeek(
+          likelyPocketWalk: true,
+          stepsBeforeResumeCollect: 50,
+          stepsAtBackground: 50,
+        ),
+        isTrue,
+      );
+    });
+
+    test('returns true when background baseline is unknown', () {
+      expect(
+        shouldRunResumePhonePeek(
+          likelyPocketWalk: true,
+          stepsBeforeResumeCollect: 50,
+          stepsAtBackground: null,
+        ),
+        isTrue,
+      );
+    });
+  });
+
   group('staleness fallback during continuous walking', () {
     late Database db;
     late StepRepository repository;
