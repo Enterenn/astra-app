@@ -32,6 +32,7 @@ class LiveStepMonitor {
     this.maxBufferedReadings = 200,
     this.activityIdleFlushDelay = kActivityIdleFlushDelay,
     this.onActivityIdle,
+    this.onLocalDayBoundary,
   }) : _stepEventStreamFactory =
            stepEventStreamFactory ?? PhonePedometerSource.defaultStepEventStreamFactory;
 
@@ -44,6 +45,9 @@ class LiveStepMonitor {
   final int maxBufferedReadings;
   final Duration activityIdleFlushDelay;
   VoidCallback? onActivityIdle;
+
+  /// Invoked when a reading detects a local-day change; app runs persist-then-reset.
+  VoidCallback? onLocalDayBoundary;
 
   final Queue<StepReading> _readingsBuffer = ListQueue<StepReading>();
 
@@ -66,6 +70,9 @@ class LiveStepMonitor {
   bool get isRunning => _running;
 
   int get currentTodaySteps => _persistedTodaySteps + _pendingDelta;
+
+  /// Last local calendar day (`YYYY-MM-DD`) the overlay tracked.
+  String? get trackedLocalDay => _trackedLocalDay;
 
   /// Replays the latest count to new subscribers, then forwards live updates.
   Stream<int> watchTodaySteps({bool replayLatest = true}) async* {
@@ -195,25 +202,31 @@ class LiveStepMonitor {
       return;
     }
     for (final reading in _readingsBuffer) {
-      _handleLocalDayRollover();
+      if (_notifyLocalDayBoundaryIfNeeded()) {
+        continue;
+      }
       _applyReadingToDelta(reading);
     }
   }
 
-  /// Re-reads persisted totals and baseline; never lowers the displayed total.
+  /// Re-reads persisted totals and baseline; never lowers the displayed total
+  /// within the same local day.
   Future<void> reconcileFromDatabase() async {
-    final floorDisplay = currentTodaySteps;
+    final todayIso = formatLocalDayIso(clock.snapshot());
+    final crossDay =
+        _trackedLocalDay != null && _trackedLocalDay != todayIso;
+    final floorDisplay = crossDay ? 0 : currentTodaySteps;
     _persistedTodaySteps = await stepRepository.getTodaySteps();
     await _syncMemoryBaselineFromRepository();
 
     final syncedTotal = _persistedTodaySteps;
-    if (syncedTotal >= floorDisplay) {
+    if (crossDay || syncedTotal >= floorDisplay) {
       _pendingDelta = 0;
     } else {
       _pendingDelta = floorDisplay - syncedTotal;
     }
 
-    _trackedLocalDay = formatLocalDayIso(clock.snapshot());
+    _trackedLocalDay = todayIso;
     livePipelineLog(
       'monitor',
       'reconcile',
@@ -222,6 +235,28 @@ class LiveStepMonitor {
         'persisted': _persistedTodaySteps,
         'pendingDelta': _pendingDelta,
         'total': currentTodaySteps,
+      },
+    );
+    _emitNow(force: true);
+  }
+
+  /// Resets overlay state for a new local day after closing-day persist.
+  Future<void> resetForNewLocalDay() async {
+    _pendingDelta = 0;
+    _memoryBaseline = null;
+    _lastProcessedObservedAtUtc = null;
+    _persistedTodaySteps = await stepRepository.getTodaySteps();
+    await _syncMemoryBaselineFromRepository();
+    _trackedLocalDay = formatLocalDayIso(clock.snapshot());
+    _flushBufferedReadingsToDelta();
+    livePipelineLog(
+      'monitor',
+      'resetForNewLocalDay',
+      details: {
+        'persisted': _persistedTodaySteps,
+        'pendingDelta': _pendingDelta,
+        'total': currentTodaySteps,
+        'trackedDay': _trackedLocalDay,
       },
     );
     _emitNow(force: true);
@@ -301,7 +336,9 @@ class LiveStepMonitor {
       );
       return;
     }
-    _handleLocalDayRollover();
+    if (_notifyLocalDayBoundaryIfNeeded()) {
+      return;
+    }
     _applyReadingToDelta(reading);
   }
 
@@ -312,15 +349,15 @@ class LiveStepMonitor {
     }
   }
 
-  void _handleLocalDayRollover() {
+  /// Returns true when a boundary handler was invoked (defer delta apply).
+  bool _notifyLocalDayBoundaryIfNeeded() {
     final todayIso = formatLocalDayIso(clock.snapshot());
     if (_trackedLocalDay != null && _trackedLocalDay != todayIso) {
-      _pendingDelta = 0;
-      _memoryBaseline = null;
-      _lastProcessedObservedAtUtc = null;
-      unawaited(reconcileFromDatabase());
+      onLocalDayBoundary?.call();
+      return onLocalDayBoundary != null;
     }
     _trackedLocalDay ??= todayIso;
+    return false;
   }
 
   void _applyReadingToDelta(StepReading reading) {

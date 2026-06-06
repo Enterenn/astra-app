@@ -8,6 +8,8 @@ import 'core/constants/astra_theme.dart';
 import 'core/debug/live_pipeline_log.dart';
 import 'core/di/app_dependencies.dart';
 import 'core/services/live_step_monitor.dart';
+import 'core/time/local_day_boundary.dart';
+import 'core/time/local_day_formatter.dart';
 import 'data/models/step_reading.dart';
 import 'data/repositories/user_preferences_repository.dart';
 import 'presentation/cubits/onboarding_cubit.dart';
@@ -118,6 +120,9 @@ class _AstraAppState extends State<AstraApp> with WidgetsBindingObserver {
   MyDataCubit? _myDataCubit;
   late final Future<int> _foregroundBackfill;
   Timer? _stalenessPersistTimer;
+  Timer? _midnightBoundaryTimer;
+  String? _activeLocalDayIso;
+  Future<void>? _dayBoundaryInFlight;
   DateTime? _lastPersistAt;
   bool _livePipelineStarted = false;
   DateTime? _backgroundedAt;
@@ -147,6 +152,7 @@ class _AstraAppState extends State<AstraApp> with WidgetsBindingObserver {
   @override
   void dispose() {
     _stopActivityBasedPersist();
+    _cancelMidnightBoundaryTimer();
     WidgetsBinding.instance.removeObserver(this);
     unawaited(widget.deps.liveStepMonitor.stop());
     super.dispose();
@@ -226,6 +232,10 @@ class _AstraAppState extends State<AstraApp> with WidgetsBindingObserver {
     }
     if (_livePipelineStarted && widget.enablePeriodicPersist) {
       _startActivityBasedPersist();
+    }
+    if (_livePipelineStarted) {
+      _wireLiveMonitorDayBoundaryCallbacks();
+      _scheduleMidnightBoundaryTimer();
     }
   }
 
@@ -388,6 +398,7 @@ class _AstraAppState extends State<AstraApp> with WidgetsBindingObserver {
   /// buffer, then one-shot phone catch-up only when SQLite did not advance.
   Future<void> _resumeLivePipeline() async {
     try {
+      await _runLocalDayBoundaryIfNeeded();
       final monitor = widget.deps.liveStepMonitor;
       final repo = widget.deps.stepRepository;
       final stepsBeforeCollect = await repo.getTodaySteps();
@@ -623,7 +634,9 @@ class _AstraAppState extends State<AstraApp> with WidgetsBindingObserver {
       },
     );
     _logColdStartReadyIfNeeded();
+    _wireLiveMonitorDayBoundaryCallbacks();
     _startActivityBasedPersist();
+    _scheduleMidnightBoundaryTimer();
   }
 
   Future<void> _reattachLivePipeline() async {
@@ -689,6 +702,14 @@ class _AstraAppState extends State<AstraApp> with WidgetsBindingObserver {
     }
   }
 
+  void _wireLiveMonitorDayBoundaryCallbacks() {
+    final monitor = widget.deps.liveStepMonitor;
+    monitor.onLocalDayBoundary = () {
+      unawaited(_runLocalDayBoundaryIfNeeded());
+    };
+    _activeLocalDayIso ??= formatLocalDayIso(widget.deps.timeProvider.snapshot());
+  }
+
   void _startActivityBasedPersist() {
     if (!widget.enablePeriodicPersist) {
       return;
@@ -714,7 +735,114 @@ class _AstraAppState extends State<AstraApp> with WidgetsBindingObserver {
   void _stopActivityBasedPersist() {
     _stalenessPersistTimer?.cancel();
     _stalenessPersistTimer = null;
-    widget.deps.liveStepMonitor.onActivityIdle = null;
+    _cancelMidnightBoundaryTimer();
+    final monitor = widget.deps.liveStepMonitor;
+    monitor.onActivityIdle = null;
+    monitor.onLocalDayBoundary = null;
+  }
+
+  void _cancelMidnightBoundaryTimer() {
+    _midnightBoundaryTimer?.cancel();
+    _midnightBoundaryTimer = null;
+  }
+
+  void _scheduleMidnightBoundaryTimer() {
+    if (!widget.enableLiveStepPipeline || !_showMainShell) {
+      return;
+    }
+    _cancelMidnightBoundaryTimer();
+    final snapshot = widget.deps.timeProvider.snapshot();
+    final delay = untilNextLocalMidnight(snapshot);
+    _midnightBoundaryTimer = Timer(delay, () {
+      unawaited(_onMidnightBoundaryTimerFired());
+    });
+    livePipelineLog(
+      'app',
+      'dayBoundary timer scheduled',
+      details: {'delaySec': delay.inSeconds},
+    );
+  }
+
+  Future<void> _onMidnightBoundaryTimerFired() async {
+    livePipelineLog('app', 'dayBoundary timer FIRED');
+    await _runLocalDayBoundaryIfNeeded();
+    if (mounted && _livePipelineStarted) {
+      _scheduleMidnightBoundaryTimer();
+    }
+  }
+
+  Future<void> _runLocalDayBoundaryIfNeeded() async {
+    if (!_showMainShell || !widget.enableLiveStepPipeline) {
+      return;
+    }
+    final snapshot = widget.deps.timeProvider.snapshot();
+    final tracked =
+        widget.deps.liveStepMonitor.trackedLocalDay ?? _activeLocalDayIso;
+    if (!hasLocalDayChanged(
+      previousDayIso: tracked,
+      snapshot: snapshot,
+    )) {
+      return;
+    }
+    await _runLocalDayBoundary();
+  }
+
+  Future<void> _runLocalDayBoundary() async {
+    while (_dayBoundaryInFlight != null) {
+      await _dayBoundaryInFlight;
+    }
+
+    late final Future<void> operation;
+    operation = _runLocalDayBoundaryImpl();
+    _dayBoundaryInFlight = operation;
+    try {
+      await operation;
+    } finally {
+      if (_dayBoundaryInFlight == operation) {
+        _dayBoundaryInFlight = null;
+      }
+    }
+  }
+
+  Future<void> _runLocalDayBoundaryImpl() async {
+    final snapshot = widget.deps.timeProvider.snapshot();
+    final fromDay =
+        widget.deps.liveStepMonitor.trackedLocalDay ?? _activeLocalDayIso;
+    final toDay = localDayIsoFromSnapshot(snapshot);
+    livePipelineLog(
+      'app',
+      'dayBoundary START',
+      details: {'fromDay': fromDay, 'toDay': toDay},
+    );
+
+    if (_livePipelineStarted) {
+      await _enqueuePersistCycle(
+        enableGoalNotification: false,
+        syncTodayAfter: false,
+      );
+    }
+    await widget.deps.liveStepMonitor.resetForNewLocalDay();
+    _activeLocalDayIso = toDay;
+
+    await _todayCubit?.refreshAfterDayRollover();
+    await _historyCubit?.refresh(silent: true);
+    await _myDataCubit?.refresh(silent: true);
+
+    if (_livePipelineStarted && _todayCubit != null) {
+      await _todayCubit!.syncSteps(
+        widget.deps.liveStepMonitor.currentTodaySteps,
+      );
+    }
+
+    livePipelineLog(
+      'app',
+      'dayBoundary DONE',
+      details: {
+        'monitorTotal': widget.deps.liveStepMonitor.currentTodaySteps,
+        'cubitSteps': _todayCubit?.state.steps,
+        'catchUp': _todayCubit?.state.foregroundCatchUp ?? false,
+      },
+    );
   }
 
   void _onOnboardingComplete() {

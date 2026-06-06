@@ -8,8 +8,13 @@ class FakeTimeProvider implements TimeProvider {
 
   FakeTimeProvider._(this._fixedNowUtc, this._zoneOffset);
 
-  final DateTime _fixedNowUtc;
-  final Duration _zoneOffset;
+  DateTime _fixedNowUtc;
+  Duration _zoneOffset;
+
+  /// Moves the fake clock (tests only).
+  void setNowUtc(DateTime utc) {
+    _fixedNowUtc = utc.toUtc();
+  }
 
   @override
   DateTime nowUtc() => _fixedNowUtc;

@@ -281,6 +281,41 @@ class TodayCubit extends Cubit<TodayState> {
     }
   }
 
+  /// Updates Today after local midnight: SQLite truth, cleared catch-up/celebration.
+  Future<void> refreshAfterDayRollover() async {
+    if (isClosed) {
+      return;
+    }
+    livePipelineLog(
+      'cubit',
+      'dayBoundary refresh',
+      details: {
+        'stateSteps': state.steps,
+        'foregroundCatchUp': state.foregroundCatchUp,
+        'showCelebration': state.showCelebration,
+      },
+    );
+    if (state.foregroundCatchUp || state.showCelebration) {
+      emit(
+        state.copyWith(
+          foregroundCatchUp: false,
+          catchUpTargetSteps: null,
+          showCelebration: false,
+        ),
+      );
+    }
+    _lastAppliedLocalDay = null;
+    if (_refreshInFlight != null) {
+      return _refreshInFlight!;
+    }
+    _refreshInFlight = _refreshImpl(silent: true, allowDayDecrease: true);
+    try {
+      await _refreshInFlight!;
+    } finally {
+      _refreshInFlight = null;
+    }
+  }
+
   /// Updates goal, stale metadata, and permission without re-reading step count.
   Future<void> refreshMetadata() async {
     if (isClosed) {
@@ -361,7 +396,10 @@ class TodayCubit extends Cubit<TodayState> {
     );
   }
 
-  Future<void> _refreshImpl({required bool silent}) async {
+  Future<void> _refreshImpl({
+    required bool silent,
+    bool allowDayDecrease = false,
+  }) async {
     if (!silent && state.status != TodayStatus.loading) {
       emit(const TodayState.loading());
     }
@@ -440,6 +478,7 @@ class TodayCubit extends Cubit<TodayState> {
       activityMetrics: metrics,
       heightCm: heightCm,
       weightKg: weightKg,
+      allowDecrease: allowDayDecrease,
     );
   }
 

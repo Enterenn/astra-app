@@ -121,12 +121,13 @@ void main() {
     late AppDependencies deps;
     late _TestPhoneStreams phoneStreams;
     late LiveStepMonitor monitor;
+    late FakeTimeProvider clock;
     setUp(() async {
       GoalRing.disableStepPersistence = true;
       db = await openAstraDatabase(databasePath: inMemoryDatabasePath);
       final userPreferences = UserPreferencesRepository(db);
       await userPreferences.setOnboardingComplete(true);
-      final clock = FakeTimeProvider(
+      clock = FakeTimeProvider(
         fixedNowUtc: DateTime.utc(2026, 6, 2, 8),
         zoneOffset: const Duration(hours: 2),
       );
@@ -846,6 +847,90 @@ void main() {
         await _waitForLivePipeline(monitor, secondCubit!);
 
         expect(secondCubit!.state.steps, greaterThanOrEqualTo(150));
+      });
+      await _unmountAstraApp(tester);
+    });
+
+    testWidgets('resume after local midnight shows new day and live works', (
+      tester,
+    ) async {
+      TodayCubit? todayCubit;
+
+      await tester.runAsync(() async {
+        clock.setNowUtc(DateTime.utc(2026, 6, 7, 20));
+        await tester.pumpWidget(
+          AstraApp(
+            deps: deps,
+            createTodayCubit: (dependencies) {
+              todayCubit = _testTodayCubit(dependencies);
+              return todayCubit!;
+            },
+            createHistoryCubit: _testHistoryCubit,
+            enablePeriodicPersist: false,
+            enableLiveStepPipeline: true,
+          ),
+        );
+        await tester.pump();
+        await _waitForLivePipeline(monitor, todayCubit!);
+
+        phoneStreams.events.add(
+          PhoneStepEvent(steps: 100, timeStamp: DateTime.utc(2026, 6, 7, 19)),
+        );
+        phoneStreams.events.add(
+          PhoneStepEvent(steps: 200, timeStamp: DateTime.utc(2026, 6, 7, 20)),
+        );
+        for (var attempt = 0; attempt < 100; attempt++) {
+          await Future<void>.delayed(const Duration(milliseconds: 20));
+          if (todayCubit!.state.steps >= 100) {
+            break;
+          }
+        }
+        expect(todayCubit!.state.steps, 100);
+        expect(monitor.trackedLocalDay, '2026-06-07');
+
+        tester.binding.handleAppLifecycleStateChanged(
+          AppLifecycleState.paused,
+        );
+        for (var attempt = 0; attempt < 150; attempt++) {
+          await Future<void>.delayed(const Duration(milliseconds: 20));
+          if (await deps.stepRepository.getTodaySteps() >= 100) {
+            break;
+          }
+        }
+
+        clock.setNowUtc(DateTime.utc(2026, 6, 7, 22, 9));
+        phoneStreams.events.add(
+          PhoneStepEvent(steps: 220, timeStamp: DateTime.utc(2026, 6, 7, 22, 0)),
+        );
+
+        tester.binding.handleAppLifecycleStateChanged(
+          AppLifecycleState.resumed,
+        );
+        for (var attempt = 0; attempt < 200; attempt++) {
+          await Future<void>.delayed(const Duration(milliseconds: 20));
+          await tester.pump(const Duration(milliseconds: 20));
+          if (monitor.trackedLocalDay == '2026-06-08' &&
+              todayCubit!.state.steps < 100) {
+            break;
+          }
+        }
+
+        expect(monitor.trackedLocalDay, '2026-06-08');
+        expect(todayCubit!.state.steps, lessThan(100));
+        expect(todayCubit!.state.foregroundCatchUp, isFalse);
+        expect(todayCubit!.state.showCelebration, isFalse);
+
+        phoneStreams.events.add(
+          PhoneStepEvent(steps: 240, timeStamp: DateTime.utc(2026, 6, 7, 22, 10)),
+        );
+        for (var attempt = 0; attempt < 100; attempt++) {
+          await Future<void>.delayed(const Duration(milliseconds: 20));
+          if (todayCubit!.state.steps >= 20) {
+            break;
+          }
+        }
+        expect(todayCubit!.state.steps, greaterThanOrEqualTo(20));
+        expect(monitor.isRunning, isTrue);
       });
       await _unmountAstraApp(tester);
     });
