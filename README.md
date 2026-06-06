@@ -160,7 +160,10 @@ Reference test to validate the local-first promise on a **release** build:
 3. Enable **airplane mode**
 4. Walk ~500 steps without keeping the app open
 5. Reopen **Today** → steps should have accumulated in the background (Android)
-6. Open the **Data** tab → **My Data** screen → export CSV, verify footprint, test purge
+6. Open **Trends** → bar chart renders from local DB (no network)
+7. Open the **Data** tab → **My Data** screen → export CSV, verify footprint, test purge
+
+Automated manifest gate: `flutter test test/release_manifest_test.dart`
 
 This is the OSS hero demo. Not a marketing claim, a verifiable behavior.
 
