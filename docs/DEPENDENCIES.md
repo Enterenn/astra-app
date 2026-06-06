@@ -1,10 +1,21 @@
-# ASTRA — Dependencies & bundled assets
+# ASTRA: Dependencies & bundled assets
 
 Living inventory of third-party code and bundled assets. Full package audit (FR-27) is completed in Epic 5; this file is started in Story 1.2 for offline fonts.
 
 ## Network policy (health pipeline)
 
 Phase 0: **no runtime network fetch** for fonts or health data processing. Fonts are bundled under `assets/fonts/`.
+
+**FR-27 package audit:** Complete as of Story 7.1. Every direct `pubspec.yaml` dependency is listed below with purpose and network posture.
+
+### Debug vs release INTERNET permission
+
+| Build | INTERNET | Notes |
+|-------|----------|-------|
+| **Release** | Must be absent | Privacy-by-architecture; verified by Story 7.2 `release_manifest_test.dart` |
+| **Debug** | May be present | Flutter tooling / hot reload; not shipped to end users |
+
+Health pipeline code paths do not perform HTTP requests in either build.
 
 ## Android manifest permissions (health pipeline)
 
@@ -24,7 +35,7 @@ Phase 0 step collection declares only local device-health/background permissions
 | Component | Role |
 |-----------|------|
 | `HealthStepForegroundService` (Kotlin) | Android `foregroundServiceType="health"` service; `ServiceCompat.startForeground` with `FOREGROUND_SERVICE_TYPE_HEALTH` on API 34+ |
-| Notification channel `astra_health_tracking` (id `100`) | Honest ongoing copy: "Step tracking active" — distinct from goal channel `astra_goal_reached` (id `1`) |
+| Notification channel `astra_health_tracking` (id `100`) | Honest ongoing copy: "Step tracking active", distinct from goal channel `astra_goal_reached` (id `1`) |
 | `HealthForegroundServiceCoordinator` (Dart) | Method channel `com.astraapp.astra_app/health_foreground`; starts/stops FGS on app pause/resume |
 | `runFgsStepCollectionCycle` | Periodic `BackgroundCollector.collectOnce` every 5 minutes while FGS runs (same bootstrap as WorkManager) |
 
@@ -36,12 +47,12 @@ Phase 0 step collection declares only local device-health/background permissions
 | Component | Role |
 |-----------|------|
 | `BackgroundHealthCapabilityEvaluator` (Dart) | Single D-23 entry point: activity, notification, battery exemption, FGS manifest flag, OEM deferral hint |
-| `BackgroundHealthCapabilitySnapshot` | Immutable flags for Epic 4.2 `BackgroundStatusCard` — no user-facing copy in 2.10 |
+| `BackgroundHealthCapabilitySnapshot` | Immutable flags for Epic 4.2 `BackgroundStatusCard`, no user-facing copy in 2.10 |
 | `BackgroundHealthCapabilityChannel` (Kotlin) | Method channel `com.astraapp.astra_app/background_health_capability`: `PowerManager.isIgnoringBatteryOptimizations`, `Build.MANUFACTURER` |
-| `kAndroidFgsHealthManifestDeclared` | Static manifest truth (verified by `test/android/android_manifest_test.dart`) — not runtime FGS running state |
+| `kAndroidFgsHealthManifestDeclared` | Static manifest truth (verified by `test/android/android_manifest_test.dart`), not runtime FGS running state |
 
-- **Battery optimization:** Status read via native `PowerManager` only; `REQUEST_IGNORE_BATTERY_OPTIMIZATIONS` is **not** added — no auto-request on launch (Epic 4.2 owns settings UX).
-- **OEM deferral hint:** `likelyOemBatteryDeferral` is true for Samsung/Xiaomi/Huawei/Oppo/Vivo/OnePlus/Realme when not battery-exempt — a UX hint, not proof WM was deferred.
+- **Battery optimization:** Status read via native `PowerManager` only; `REQUEST_IGNORE_BATTERY_OPTIMIZATIONS` is **not** added, no auto-request on launch (Epic 4.2 owns settings UX).
+- **OEM deferral hint:** `likelyOemBatteryDeferral` is true for Samsung/Xiaomi/Huawei/Oppo/Vivo/OnePlus/Realme when not battery-exempt, a UX hint, not proof WM was deferred.
 - **WorkManager fallback:** WM registers on Android regardless of FGS; periodic task passes `databasePath` in `inputData`. WM reconciles buckets (~15 min minimum), not realtime 5-min cadence; foreground backfill on open remains mandatory.
 
 ## WorkManager device verification (Story 2.4)
@@ -55,7 +66,7 @@ Automated tests (`test/core/services/workmanager_callback_test.dart`) prove the 
 3. Complete onboarding in the app; note baseline via `adb exec-out run-as com.astraapp cat databases/astra_app.db` (+ `-wal`/`-shm` if needed) or query on-device sqlite3.
 4. Walk a few dozen steps (or move with the phone).
 5. Send the app to background (`adb shell input keyevent KEYCODE_HOME`) or force-stop after first launch so WorkManager is registered.
-6. Optional — force the periodic job before the 15-minute window (Android 14+ namespace required):
+6. Optional: force the periodic job before the 15-minute window (Android 14+ namespace required):
 
    ```bash
    adb shell cmd jobscheduler run -f -u 0 -n androidx.work.systemjobscheduler com.astraapp 2
@@ -75,8 +86,8 @@ Automated tests (`test/core/services/workmanager_callback_test.dart`) prove the 
 | Device | `sdk_gphone16k_x86_64`, Android 17 (API 37) |
 | APK install | PASS |
 | WorkManager job registered | PASS (`androidx.work.systemjobscheduler` job id `2`) |
-| Forced jobscheduler run | PARTIAL — WM accepted force but rescheduled (`executed before schedule`) |
-| Step bucket written | FAIL — emulator pedometer: `StepCount not available` |
+| Forced jobscheduler run | PARTIAL, WM accepted force but rescheduled (`executed before schedule`) |
+| Step bucket written | FAIL, emulator pedometer: `StepCount not available` |
 | Foreground backfill on launch | Ran; same pedometer error, 0 step rows in DB |
 
 Physical-device confirmation remains the reference gate before beta.
@@ -88,19 +99,50 @@ Physical-device confirmation remains the reference gate before beta.
 | Figtree | `assets/fonts/Figtree-VariableFont_wght.ttf` | [SIL Open Font License 1.1](https://scripts.sil.org/OFL) | 400, 500, 600 (`FontWeight`) | `type.body`, `type.caption`, `type.label`, `type.headline` |
 | Darker Grotesque | `assets/fonts/DarkerGrotesque-VariableFont_wght.ttf` | SIL OFL 1.1 | 500, 600 (`FontWeight`) | `type.display`, `type.title`, `type.data` |
 
-- **Source:** [Google Fonts](https://fonts.google.com/) — downloaded into repo; not loaded at runtime.
+- **Source:** [Google Fonts](https://fonts.google.com/), downloaded into repo; not loaded at runtime.
 - **Flutter registration:** `pubspec.yaml` → `flutter.fonts` (two families, one variable file each).
 - **Excluded:** `google_fonts` package and any CDN font loading.
 
 ## Dart / Flutter packages
 
-See `pubspec.yaml` and `pubspec.lock`. Package-level audit table → Epic 5 Story 5.1.
+Direct dependencies from `pubspec.yaml` (locked versions from `pubspec.lock` as of Story 7.1):
 
-| Package | Purpose | Network |
-|---------|---------|---------|
-| `file_picker` ^12.0.0-beta.5 | My Data CSV import — local file selection only (Story 4.4). Beta required for `win32` ^6 compat with `share_plus` ^13.1 | No data upload; OS file picker UI only |
-| `phosphoricons_flutter` ^1.0.0 (locked 1.0.0, [MIT](https://pub.dev/packages/phosphoricons_flutter/license)) | Figma-aligned Phosphor iconography (Epic 5, Story 5.6). **Not** `phosphor_flutter` 2.1.0 — that package extends final `IconData` and fails on Dart 3.12 / Flutter 3.44. Import `package:phosphoricons_flutter/phosphoricons_flutter.dart`; tab API: `PhosphorIconsRegular` / `PhosphorIconsFill` — `sneakerMove`, `chartBar`, `database`, `user` (Story 5.7 nav) | No — icon fonts bundled in package; no runtime fetch |
-| `figma_squircle` ^0.6.3 (locked 0.6.3, [MIT](https://pub.dev/packages/figma_squircle/license)) | Figma corner smoothing on active nav squircle (Story 5.7): `SmoothRectangleBorder` + `cornerRadius` 16 + `cornerSmoothing` 1.0 | No |
+| Package | Locked version | Purpose | Network in health pipeline |
+|---------|----------------|---------|---------------------------|
+| `flutter` | SDK | UI framework | No |
+| `flutter_bloc` | 9.1.1 | Cubit state management (`TodayCubit`, `HistoryCubit`, etc.) | No |
+| `sqflite` | 2.4.2+1 | On-device SQLite (`timeseries_samples`, WAL, migrations) | No |
+| `path` | 1.9.1 | DB path joining, file path helpers | No |
+| `uuid` | 4.5.3 | UUID v4 for sample `id` on insert | No |
+| `workmanager` | 0.9.0+3 | Android background periodic collection (fallback orchestrator) | No |
+| `pedometer` | 4.2.0 | OS step counter sensor stream | No |
+| `permission_handler` | 12.0.1 | OS permission dialogs (`ACTIVITY_RECOGNITION`, notifications) | No (OS UI only) |
+| `fl_chart` | 1.2.0 | Trends bar chart | No |
+| `flutter_local_notifications` | 21.0.0 | Local goal-reached and FGS ongoing notifications, **no FCM/Firebase** | No (local channels only) |
+| `share_plus` | 13.1.0 | CSV export share sheet (user-initiated, local file) | No data upload |
+| `path_provider` | 2.1.5 | App documents/temp paths for export | No |
+| `file_picker` | 12.0.0-beta.5 | My Data CSV import, local file selection | No data upload; OS picker only |
+| `phosphoricons_flutter` | 1.0.0 | Phosphor icon fonts (bundled in package) | No |
+| `figma_squircle` | 0.6.3 | Figma corner smoothing on nav squircle | No |
+
+### `flutter_local_notifications` (local only)
+
+Implementation: `lib/core/services/notification_service.dart`.
+
+- Uses `FlutterLocalNotificationsPlugin` with Android notification channels only
+- Goal reached: channel `astra_goal_reached`
+- FGS ongoing copy: channel `astra_health_tracking` (Kotlin FGS coordination)
+- **No** Firebase Cloud Messaging, **no** remote push, **no** analytics SDK
+
+See KGP section below for Android build patches.
+
+### Epic 5 UI packages (reference)
+
+| Package | Notes |
+|---------|-------|
+| `phosphoricons_flutter` 1.0.0 | Figma-aligned Phosphor icons. **Not** `phosphor_flutter` 2.1.0 (incompatible with Dart 3.12). Tab icons: `sneakerMove`, `chartBar`, `database`, `user` |
+| `figma_squircle` 0.6.3 | `SmoothRectangleBorder` on active nav squircle, `cornerRadius` 16, `cornerSmoothing` 1.0 |
+| `file_picker` 12.0.0-beta.5 | Beta pin for `win32` ^6 compat with `share_plus` ^13.1 (Story 4.4 import) |
 
 ### Android Built-in Kotlin / KGP (Story 5.5)
 
@@ -108,9 +150,9 @@ AGP 9.0.1 + Flutter 3.44.0 use **built-in Kotlin** (no `kotlin-android` on the a
 
 | Plugin | Locked version | Upstream | ASTRA workaround |
 |--------|----------------|----------|------------------|
-| `pedometer` | 4.2.0 | [carp-dk/flutter-plugins](https://github.com/carp-dk/flutter-plugins) — no built-in Kotlin release; track [Flutter AGP 9 umbrella #181383](https://github.com/flutter/flutter/issues/181383) | `scripts/kgp-patches/pedometer-4.2.0-build.gradle` |
+| `pedometer` | 4.2.0 | [carp-dk/flutter-plugins](https://github.com/carp-dk/flutter-plugins), no built-in Kotlin release; track [Flutter AGP 9 umbrella #181383](https://github.com/flutter/flutter/issues/181383) | `scripts/kgp-patches/pedometer-4.2.0-build.gradle` |
 | `share_plus` | 13.1.0 | [plus_plugins#3745](https://github.com/fluttercommunity/plus_plugins/issues/3745) | `scripts/kgp-patches/share_plus-13.1.0-build.gradle` |
-| `workmanager_android` | 0.9.0+2 (via `workmanager` 0.9.0+3) | [flutter_workmanager](https://github.com/fluttercommunity/flutter_workmanager) — track AGP 9 / built-in Kotlin | `scripts/kgp-patches/workmanager_android-0.9.0+2-build.gradle` |
+| `workmanager_android` | 0.9.0+2 (via `workmanager` 0.9.0+3) | [flutter_workmanager](https://github.com/fluttercommunity/flutter_workmanager), track AGP 9 / built-in Kotlin | `scripts/kgp-patches/workmanager_android-0.9.0+2-build.gradle` |
 
 **Patch application (Story 5.5):**
 
@@ -131,13 +173,15 @@ AGP 9.0.1 + Flutter 3.44.0 use **built-in Kotlin** (no `kotlin-android` on the a
 
 **Pub upgrades skipped for KGP:** `pedometer`, `share_plus`, `workmanager`, `file_picker` already at latest compatible versions; `permission_handler` / `sqflite` minor bumps are unrelated to KGP (deferred).
 
-**`file_picker` 12.0.0-beta.5:** AGP9-aware — applies KGP only when `android.builtInKotlin=false`; no patch required once built-in Kotlin is enabled.
+**`file_picker` 12.0.0-beta.5:** AGP9-aware, applies KGP only when `android.builtInKotlin=false`; no patch required once built-in Kotlin is enabled.
 
-### Dev / test only
+### Dev / test only (not shipped in release APK)
 
-| Package | Purpose |
-|---------|---------|
-| `sqflite_common_ffi` | Run sqflite-backed unit tests on VM/desktop without an emulator |
-| `sqlite3` | Native SQLite bindings required by `sqflite_common_ffi` 2.4+ |
+| Package | Locked version | Purpose |
+|---------|----------------|---------|
+| `flutter_test` | SDK | Widget and unit tests |
+| `flutter_lints` | 6.0.0 | Static analysis rules |
+| `sqflite_common_ffi` | 2.4.0+3 | Run sqflite-backed unit tests on VM/desktop without an emulator |
+| `sqlite3` | 3.3.2 | Native SQLite bindings required by `sqflite_common_ffi` 2.4+ |
 
 Windows tests use `hooks.user_defines.sqlite3` with `source: system` and `name_windows: winsqlite3` so Flutter does not copy `sqlite3.dll` into `build/native_assets/` (avoids file-lock errors). See `test/flutter_test_config.dart`.
