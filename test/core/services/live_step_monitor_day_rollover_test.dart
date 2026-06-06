@@ -117,5 +117,52 @@ void main() {
       await Future<void>.delayed(Duration.zero);
       expect(monitor.currentTodaySteps, 5);
     });
+
+    test('defers delta apply on day change when callback unset', () async {
+      await monitor.start();
+      events.add(
+        PhoneStepEvent(steps: 100, timeStamp: DateTime.utc(2026, 6, 7, 20)),
+      );
+      events.add(
+        PhoneStepEvent(steps: 150, timeStamp: DateTime.utc(2026, 6, 7, 21)),
+      );
+      await Future<void>.delayed(Duration.zero);
+      expect(monitor.currentTodaySteps, 50);
+
+      clock.setNowUtc(DateTime.utc(2026, 6, 7, 22, 1));
+      monitor.onLocalDayBoundary = null;
+      events.add(
+        PhoneStepEvent(steps: 170, timeStamp: DateTime.utc(2026, 6, 7, 22, 0)),
+      );
+      await Future<void>.delayed(Duration.zero);
+
+      expect(monitor.trackedLocalDay, '2026-06-07');
+      expect(monitor.currentTodaySteps, 50);
+    });
+
+    test('resetForNewLocalDay ignores closing-day buffer readings', () async {
+      await monitor.start();
+      events.add(
+        PhoneStepEvent(steps: 100, timeStamp: DateTime.utc(2026, 6, 7, 20)),
+      );
+      events.add(
+        PhoneStepEvent(steps: 150, timeStamp: DateTime.utc(2026, 6, 7, 21)),
+      );
+      await Future<void>.delayed(Duration.zero);
+      expect(monitor.currentTodaySteps, 50);
+
+      clock.setNowUtc(DateTime.utc(2026, 6, 7, 22, 2));
+      events.add(
+        PhoneStepEvent(steps: 170, timeStamp: DateTime.utc(2026, 6, 7, 22, 1)),
+      );
+      await Future<void>.delayed(Duration.zero);
+      expect(monitor.currentTodaySteps, 50);
+
+      await _persistBufferedSteps(monitor, collector);
+      await monitor.resetForNewLocalDay();
+
+      expect(monitor.trackedLocalDay, '2026-06-08');
+      expect(monitor.currentTodaySteps, 20);
+    });
   });
 }

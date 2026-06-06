@@ -67,6 +67,12 @@ class TodayCubit extends Cubit<TodayState> {
         'foregroundCatchUp': state.foregroundCatchUp,
       },
     );
+    if (!paused &&
+        !state.foregroundCatchUp &&
+        _attachedMonitor != null &&
+        state.status != TodayStatus.noPermission) {
+      unawaited(_applyLiveSteps(_attachedMonitor!.currentTodaySteps));
+    }
   }
 
   /// Subscribes to [monitor] live step stream (replays current value immediately).

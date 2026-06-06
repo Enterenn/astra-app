@@ -934,6 +934,144 @@ void main() {
       });
       await _unmountAstraApp(tester);
     });
+
+    testWidgets('boundary runs after reconcile advanced trackedLocalDay', (
+      tester,
+    ) async {
+      TodayCubit? todayCubit;
+
+      await tester.runAsync(() async {
+        clock.setNowUtc(DateTime.utc(2026, 6, 7, 20));
+        await tester.pumpWidget(
+          AstraApp(
+            deps: deps,
+            createTodayCubit: (dependencies) {
+              todayCubit = _testTodayCubit(dependencies);
+              return todayCubit!;
+            },
+            createHistoryCubit: _testHistoryCubit,
+            enablePeriodicPersist: false,
+            enableLiveStepPipeline: true,
+          ),
+        );
+        await tester.pump();
+        await _waitForLivePipeline(monitor, todayCubit!);
+
+        phoneStreams.events.add(
+          PhoneStepEvent(steps: 100, timeStamp: DateTime.utc(2026, 6, 7, 19)),
+        );
+        phoneStreams.events.add(
+          PhoneStepEvent(steps: 200, timeStamp: DateTime.utc(2026, 6, 7, 20)),
+        );
+        for (var attempt = 0; attempt < 100; attempt++) {
+          await Future<void>.delayed(const Duration(milliseconds: 20));
+          if (todayCubit!.state.steps >= 100) {
+            break;
+          }
+        }
+        expect(todayCubit!.state.steps, 100);
+
+        tester.binding.handleAppLifecycleStateChanged(
+          AppLifecycleState.paused,
+        );
+        for (var attempt = 0; attempt < 150; attempt++) {
+          await Future<void>.delayed(const Duration(milliseconds: 20));
+          if (await deps.stepRepository.getTodaySteps() >= 100) {
+            break;
+          }
+        }
+
+        clock.setNowUtc(DateTime.utc(2026, 6, 7, 22, 5));
+        await monitor.reconcileFromDatabase();
+        expect(monitor.trackedLocalDay, '2026-06-08');
+        expect(todayCubit!.state.steps, 100);
+
+        tester.binding.handleAppLifecycleStateChanged(
+          AppLifecycleState.resumed,
+        );
+        for (var attempt = 0; attempt < 200; attempt++) {
+          await Future<void>.delayed(const Duration(milliseconds: 20));
+          await tester.pump(const Duration(milliseconds: 20));
+          if (todayCubit!.state.steps < 100) {
+            break;
+          }
+        }
+
+        expect(monitor.trackedLocalDay, '2026-06-08');
+        expect(todayCubit!.state.steps, lessThan(100));
+        expect(todayCubit!.state.foregroundCatchUp, isFalse);
+      });
+      await _unmountAstraApp(tester);
+    });
+
+    testWidgets('goal met yesterday does not replay celebration on new day', (
+      tester,
+    ) async {
+      TodayCubit? todayCubit;
+
+      await tester.runAsync(() async {
+        await deps.userPreferences.setDailyStepGoal(100);
+        clock.setNowUtc(DateTime.utc(2026, 6, 7, 20));
+        await tester.pumpWidget(
+          AstraApp(
+            deps: deps,
+            createTodayCubit: (dependencies) {
+              todayCubit = _testTodayCubit(dependencies);
+              return todayCubit!;
+            },
+            createHistoryCubit: _testHistoryCubit,
+            enablePeriodicPersist: false,
+            enableLiveStepPipeline: true,
+          ),
+        );
+        await tester.pump();
+        await _waitForLivePipeline(monitor, todayCubit!);
+
+        phoneStreams.events.add(
+          PhoneStepEvent(steps: 100, timeStamp: DateTime.utc(2026, 6, 7, 19)),
+        );
+        phoneStreams.events.add(
+          PhoneStepEvent(steps: 200, timeStamp: DateTime.utc(2026, 6, 7, 20)),
+        );
+        for (var attempt = 0; attempt < 150; attempt++) {
+          await Future<void>.delayed(const Duration(milliseconds: 20));
+          if (todayCubit!.state.steps >= 100 &&
+              todayCubit!.state.showCelebration) {
+            break;
+          }
+        }
+        expect(todayCubit!.state.steps, greaterThanOrEqualTo(100));
+        expect(todayCubit!.state.showCelebration, isTrue);
+
+        tester.binding.handleAppLifecycleStateChanged(
+          AppLifecycleState.paused,
+        );
+        for (var attempt = 0; attempt < 150; attempt++) {
+          await Future<void>.delayed(const Duration(milliseconds: 20));
+          if (await deps.stepRepository.getTodaySteps() >= 100) {
+            break;
+          }
+        }
+
+        clock.setNowUtc(DateTime.utc(2026, 6, 7, 22, 9));
+        tester.binding.handleAppLifecycleStateChanged(
+          AppLifecycleState.resumed,
+        );
+        for (var attempt = 0; attempt < 200; attempt++) {
+          await Future<void>.delayed(const Duration(milliseconds: 20));
+          await tester.pump(const Duration(milliseconds: 20));
+          if (monitor.trackedLocalDay == '2026-06-08' &&
+              !todayCubit!.state.showCelebration) {
+            break;
+          }
+        }
+
+        expect(monitor.trackedLocalDay, '2026-06-08');
+        expect(todayCubit!.state.showCelebration, isFalse);
+        expect(todayCubit!.state.steps, lessThan(100));
+      });
+      await _unmountAstraApp(tester);
+    });
   });
 
   // AdpBleSource can block foreground backfill when SQLite is pre-seeded; use monitor-only ingest.

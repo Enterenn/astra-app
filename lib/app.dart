@@ -736,9 +736,7 @@ class _AstraAppState extends State<AstraApp> with WidgetsBindingObserver {
     _stalenessPersistTimer?.cancel();
     _stalenessPersistTimer = null;
     _cancelMidnightBoundaryTimer();
-    final monitor = widget.deps.liveStepMonitor;
-    monitor.onActivityIdle = null;
-    monitor.onLocalDayBoundary = null;
+    widget.deps.liveStepMonitor.onActivityIdle = null;
   }
 
   void _cancelMidnightBoundaryTimer() {
@@ -776,10 +774,9 @@ class _AstraAppState extends State<AstraApp> with WidgetsBindingObserver {
       return;
     }
     final snapshot = widget.deps.timeProvider.snapshot();
-    final tracked =
-        widget.deps.liveStepMonitor.trackedLocalDay ?? _activeLocalDayIso;
+    _activeLocalDayIso ??= formatLocalDayIso(snapshot);
     if (!hasLocalDayChanged(
-      previousDayIso: tracked,
+      previousDayIso: _activeLocalDayIso,
       snapshot: snapshot,
     )) {
       return;
@@ -790,6 +787,15 @@ class _AstraAppState extends State<AstraApp> with WidgetsBindingObserver {
   Future<void> _runLocalDayBoundary() async {
     while (_dayBoundaryInFlight != null) {
       await _dayBoundaryInFlight;
+    }
+
+    final snapshot = widget.deps.timeProvider.snapshot();
+    _activeLocalDayIso ??= formatLocalDayIso(snapshot);
+    if (!hasLocalDayChanged(
+      previousDayIso: _activeLocalDayIso,
+      snapshot: snapshot,
+    )) {
+      return;
     }
 
     late final Future<void> operation;

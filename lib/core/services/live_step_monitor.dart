@@ -197,11 +197,18 @@ class LiveStepMonitor {
   /// Readings that arrived after [drainReadingsForCollection] during reconcile
   /// were buffered but not shown live; this catches the UI up without waiting
   /// for the next platform event.
-  void _flushBufferedReadingsToDelta() {
+  void _flushBufferedReadingsToDelta({bool currentLocalDayOnly = false}) {
     if (_readingsBuffer.isEmpty) {
       return;
     }
+    final todayIso = currentLocalDayOnly
+        ? formatLocalDayIso(clock.snapshot())
+        : null;
     for (final reading in _readingsBuffer) {
+      if (currentLocalDayOnly &&
+          _readingLocalDayIso(reading) != todayIso) {
+        continue;
+      }
       if (_notifyLocalDayBoundaryIfNeeded()) {
         continue;
       }
@@ -248,7 +255,7 @@ class LiveStepMonitor {
     _persistedTodaySteps = await stepRepository.getTodaySteps();
     await _syncMemoryBaselineFromRepository();
     _trackedLocalDay = formatLocalDayIso(clock.snapshot());
-    _flushBufferedReadingsToDelta();
+    _flushBufferedReadingsToDelta(currentLocalDayOnly: true);
     livePipelineLog(
       'monitor',
       'resetForNewLocalDay',
@@ -349,15 +356,25 @@ class LiveStepMonitor {
     }
   }
 
-  /// Returns true when a boundary handler was invoked (defer delta apply).
+  /// Returns true when the reading must not update overlay (day change pending).
   bool _notifyLocalDayBoundaryIfNeeded() {
     final todayIso = formatLocalDayIso(clock.snapshot());
     if (_trackedLocalDay != null && _trackedLocalDay != todayIso) {
       onLocalDayBoundary?.call();
-      return onLocalDayBoundary != null;
+      return true;
     }
     _trackedLocalDay ??= todayIso;
     return false;
+  }
+
+  String _readingLocalDayIso(StepReading reading) {
+    final snapshot = clock.snapshot();
+    return formatLocalDayIso(
+      TimeSnapshot(
+        nowUtc: reading.observedAtUtc.toUtc(),
+        zoneOffset: snapshot.zoneOffset,
+      ),
+    );
   }
 
   void _applyReadingToDelta(StepReading reading) {
