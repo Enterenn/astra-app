@@ -169,7 +169,7 @@ AGP 9.0.1 + Flutter 3.44.0 use **built-in Kotlin** (no `kotlin-android` on the a
 
 **Removal criteria:** delete patch files + script + `settings.gradle.kts` patch block when each plugin publishes a built-in-Kotlin release and `flutter build apk` emits no KGP warnings without patching.
 
-**App-level migration (Story 5.5):** `android.builtInKotlin=false`, `android.newDsl=false`, and `kotlin.incremental=false` removed from `android/gradle.properties`; `org.jetbrains.kotlin.android` removed from `android/settings.gradle.kts`. Built-in Kotlin is now the default AGP 9 path. **Kotlin toolchain:** AGP 9 defaults to KGP 2.2.10; ASTRA pins `kotlin_version=2.3.20` in `gradle.properties` (Flutter minimum 2.2.20; KGP 2.3.10+ compatible with AGP 9.0.x per Kotlin docs).
+**App-level migration (Story 5.5):** `org.jetbrains.kotlin.android` removed from `android/settings.gradle.kts`; `kotlin.incremental=false` removed from `android/gradle.properties`. **Flutter migrator re-adds** `android.builtInKotlin=false` and `android.newDsl=false` on upgrade — these flags remain in `gradle.properties` as of Story 7.2; Phase 0 plugin KGP patches in `settings.gradle.kts` handle legacy plugins until upstream migrates. Do not remove migrator flags without a dedicated follow-up. **Kotlin toolchain:** AGP 9 defaults to KGP 2.2.10; ASTRA pins `kotlin_version=2.3.20` in `gradle.properties` (Flutter minimum 2.2.20; KGP 2.3.10+ compatible with AGP 9.0.x per Kotlin docs).
 
 **Pub upgrades skipped for KGP:** `pedometer`, `share_plus`, `workmanager`, `file_picker` already at latest compatible versions; `permission_handler` / `sqflite` minor bumps are unrelated to KGP (deferred).
 
