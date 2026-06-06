@@ -1,5 +1,5 @@
 # generated: 2026-05-25
-# last_updated: 2026-06-06 (Story 6.5 in-progress — idle flush bucket merge hotfix)
+# last_updated: 2026-06-06 (Story 7.1 review — OSS docs bundle complete)
 # NEXT: epic-7 → 7-1 → 7-2 → 7-3
 # Ref: planning-artifacts/sprint-change-proposal-2026-06-04.md
 # project: astra-app
@@ -112,11 +112,11 @@ development_status:
   6-2-pedometer-shake-noise-rate-limit: done  # inter-arrival rate cap; Nord drip shake deferred to 6.3
   6-3-activity-idle-persist-flush: done  # universal: flush after step-stream idle
   6-4-screen-lock-pedometer-freeze: done  # keep monitor alive on lock; resume drain + clamp stale prefs
-  6-5-idle-flush-bucket-merge: review  # hotfix: additive upsert + baseline-gated drain
+  6-5-idle-flush-bucket-merge: done  # hotfix: additive upsert + baseline-gated drain
   epic-6-retrospective: optional
 
-  epic-7: backlog
-  7-1-open-source-license-and-documentation-bundle: backlog
+  epic-7: in-progress
+  7-1-open-source-license-and-documentation-bundle: review
   7-2-release-manifest-hardening-and-privacy-audit: backlog
   7-3-beta-acceptance-checklist: backlog
   epic-7-retrospective: optional
