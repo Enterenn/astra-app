@@ -10,7 +10,7 @@ Canonical definitions for rows stored in `timeseries_samples`. CSV export/import
 
 | Field | Value | Notes |
 |-------|-------|-------|
-| `type` | `steps` | Enforced by SQLite CHECK in schema v2 |
+| `type` | `steps` | Phase 0 ingestion and CSV import accept `steps` only; schema v2 ensures step values are integers |
 | `unit` | `count` | Integer step count per bucket |
 | `value` | non-negative integer | Schema rejects negative values; step rows must be whole numbers |
 

@@ -1,6 +1,6 @@
 # ASTRA: Dependencies & bundled assets
 
-Living inventory of third-party code and bundled assets. Full package audit (FR-27) is completed in Epic 5; this file is started in Story 1.2 for offline fonts.
+Living inventory of third-party code and bundled assets. Started in Story 1.2 for offline fonts; full package audit (FR-27) completed in Story 7.1.
 
 ## Network policy (health pipeline)
 

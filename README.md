@@ -50,7 +50,7 @@ Phase 0 is not a throwaway prototype. It is a **learning sandbox** that delivers
 - Step counter via phone sensors (`PhonePedometerSource`)
 - Background collection (Android = reference; iOS = foreground backfill)
 - Local SQLite storage (`timeseries_samples`, 5-minute buckets)
-- Four tabs: **Today** · **Trends** · **Data** · **Profil**
+- Four tabs: **Today** · **Trends** · **Data** · **Profile**
 - Trust-first onboarding (permissions, daily goal)
 - CSV export / import ([Open Wearables](https://github.com/theopenwearables/open-wearables)-aligned columns, vocabulary only, no OW server dependency)
 - Full health-data purge
@@ -75,7 +75,7 @@ Phase 0 is not a throwaway prototype. It is a **learning sandbox** that delivers
 | **Today** | Today | Goal ring, step count, derived stats, sensor source label, subtle celebration |
 | **Trends** | Trends | 7d / 30d charts, goal reference line, weekly trend |
 | **Data** | My Data | DB footprint, last optimization, background status, export / import / purge |
-| **Profil** | Profile | Display name, theme, profile info |
+| **Profile** | My Profile | Display name, theme, profile info |
 | **Onboarding** | (first launch) | Trust, permissions, goal (8000 steps default), optional notifications |
 
 **Visual tone:** quiet instrument panel. **System theme default** (follows OS); Light and Dark available on Profile / My Data. Clear hierarchy, no aggressive gamification.
