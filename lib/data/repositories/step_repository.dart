@@ -6,6 +6,7 @@ import 'package:sqflite/sqflite.dart';
 import 'package:uuid/uuid.dart';
 
 import '../../core/constants/preference_keys.dart';
+import '../../core/database/astra_database_session.dart';
 import '../../core/lifecycle/sample_compaction_runner.dart';
 import '../../core/time/local_day_formatter.dart';
 import '../../core/time/local_day_calculator.dart';
@@ -20,12 +21,29 @@ import '../models/timeseries_sample_model.dart';
 import 'ingestion_baseline_repository.dart';
 
 class StepRepository {
-  StepRepository({required this.db, required this.clock, Uuid? uuid})
-    : _uuid = uuid ?? const Uuid();
+  StepRepository({
+    required this.clock,
+    AstraDatabaseSession? session,
+    Database? db,
+    String databasePath = inMemoryDatabasePath,
+    Uuid? uuid,
+  }) : _session =
+           session ??
+           AstraDatabaseSession(
+             databasePath: databasePath,
+             initial: db!,
+           ),
+       _uuid = uuid ?? const Uuid(),
+       assert(session != null || db != null);
 
-  final Database db;
+  final AstraDatabaseSession _session;
   final TimeProvider clock;
   final Uuid _uuid;
+
+  Database get db => _session.database;
+
+  Future<T> _run<T>(Future<T> Function(Database db) action) =>
+      _session.withRetry(action);
 
   /// Persists an ingestion bucket from the background collection pipeline only.
   ///
@@ -40,8 +58,9 @@ class StepRepository {
     );
     final row = model.toMap();
 
-    await db.rawInsert(
-      '''
+    await _run(
+      (db) => db.rawInsert(
+        '''
       INSERT INTO timeseries_samples (
         id,
         start_time,
@@ -58,31 +77,34 @@ class StepRepository {
       ON CONFLICT(provider, device_id, type, start_time, end_time, resolution)
       DO UPDATE SET value = timeseries_samples.value + excluded.value
       ''',
-      [
-        row['id'],
-        row['start_time'],
-        row['end_time'],
-        row['type'],
-        row['value'],
-        row['unit'],
-        row['resolution'],
-        row['provider'],
-        row['device_id'],
-        row['zone_offset'],
-      ],
+        [
+          row['id'],
+          row['start_time'],
+          row['end_time'],
+          row['type'],
+          row['value'],
+          row['unit'],
+          row['resolution'],
+          row['provider'],
+          row['device_id'],
+          row['zone_offset'],
+        ],
+      ),
     );
   }
 
   Future<int> getTodaySteps() async {
     final bounds = _todaySampleUtcBounds();
-    final rows = await db.query(
-      'timeseries_samples',
-      where: 'type = ? AND start_time >= ? AND start_time < ?',
-      whereArgs: [
-        kStepSampleType,
-        TimestampCodec.formatUtc(bounds.lowerInclusive),
-        TimestampCodec.formatUtc(bounds.upperExclusive),
-      ],
+    final rows = await _run(
+      (db) => db.query(
+        'timeseries_samples',
+        where: 'type = ? AND start_time >= ? AND start_time < ?',
+        whereArgs: [
+          kStepSampleType,
+          TimestampCodec.formatUtc(bounds.lowerInclusive),
+          TimestampCodec.formatUtc(bounds.upperExclusive),
+        ],
+      ),
     );
 
     var total = 0;
@@ -107,17 +129,19 @@ class StepRepository {
   /// (40 steps) is applied in [DerivedActivityMetrics], not in SQL.
   Future<List<TimeseriesSampleModel>> getTodayActiveBuckets() async {
     final bounds = _todaySampleUtcBounds();
-    final rows = await db.query(
-      'timeseries_samples',
-      where:
-          'type = ? AND resolution = ? AND value > 0 '
-          'AND start_time >= ? AND start_time < ?',
-      whereArgs: [
-        kStepSampleType,
-        kFiveMinuteResolution,
-        TimestampCodec.formatUtc(bounds.lowerInclusive),
-        TimestampCodec.formatUtc(bounds.upperExclusive),
-      ],
+    final rows = await _run(
+      (db) => db.query(
+        'timeseries_samples',
+        where:
+            'type = ? AND resolution = ? AND value > 0 '
+            'AND start_time >= ? AND start_time < ?',
+        whereArgs: [
+          kStepSampleType,
+          kFiveMinuteResolution,
+          TimestampCodec.formatUtc(bounds.lowerInclusive),
+          TimestampCodec.formatUtc(bounds.upperExclusive),
+        ],
+      ),
     );
 
     final buckets = <TimeseriesSampleModel>[];
@@ -173,13 +197,15 @@ class StepRepository {
     final windowStart = referenceToday.subtract(Duration(days: days - 1));
 
     final sqlLowerBoundUtc = windowStart.subtract(const Duration(days: 1));
-    final rows = await db.query(
-      'timeseries_samples',
-      where: 'type = ? AND start_time >= ?',
-      whereArgs: [
-        kStepSampleType,
-        TimestampCodec.formatUtc(sqlLowerBoundUtc),
-      ],
+    final rows = await _run(
+      (db) => db.query(
+        'timeseries_samples',
+        where: 'type = ? AND start_time >= ?',
+        whereArgs: [
+          kStepSampleType,
+          TimestampCodec.formatUtc(sqlLowerBoundUtc),
+        ],
+      ),
     );
 
     final totals = <DateTime, int>{};
@@ -226,20 +252,22 @@ class StepRepository {
       return true;
     }());
 
-    await db.transaction((txn) async {
-      if (replaceExistingSteps) {
-        await txn.delete(
-          'timeseries_samples',
-          where: 'type = ?',
-          whereArgs: [kStepSampleType],
-        );
-      }
+    await _run(
+      (db) => db.transaction((txn) async {
+        if (replaceExistingSteps) {
+          await txn.delete(
+            'timeseries_samples',
+            where: 'type = ?',
+            whereArgs: [kStepSampleType],
+          );
+        }
 
-      for (final sample in samples) {
-        final row = sample.toMap();
-        await txn.insert('timeseries_samples', row);
-      }
-    });
+        for (final sample in samples) {
+          final row = sample.toMap();
+          await txn.insert('timeseries_samples', row);
+        }
+      }),
+    );
   }
 
   /// Read-only footprint snapshot for My Data display (FR13).
@@ -269,13 +297,15 @@ class StepRepository {
 
   /// Returns the total number of step samples in the database.
   Future<int> countStepSamples() async {
-    final rows = await db.rawQuery(
-      '''
+    final rows = await _run(
+      (db) => db.rawQuery(
+        '''
       SELECT COUNT(*) AS count
       FROM timeseries_samples
       WHERE type = ?
       ''',
-      [kStepSampleType],
+        [kStepSampleType],
+      ),
     );
 
     return (rows.single['count']! as num).toInt();
@@ -307,22 +337,26 @@ class StepRepository {
     }
 
     late final CompactionResult result;
-    await db.transaction((transaction) async {
-      result = await run(transaction);
+    await _run((db) async {
+      await db.transaction((transaction) async {
+        result = await run(transaction);
+      });
     });
     return result;
   }
 
   /// Returns step sample counts grouped by resolution.
   Future<Map<String, int>> countStepSamplesByResolution() async {
-    final rows = await db.rawQuery(
-      '''
+    final rows = await _run(
+      (db) => db.rawQuery(
+        '''
       SELECT resolution, COUNT(*) AS count
       FROM timeseries_samples
       WHERE type = ?
       GROUP BY resolution
       ''',
-      [kStepSampleType],
+        [kStepSampleType],
+      ),
     );
 
     return {
@@ -333,13 +367,15 @@ class StepRepository {
 
   /// Latest step sample end time in UTC, or null when no step samples exist.
   Future<DateTime?> getLastIngestionUtc() async {
-    final rows = await db.rawQuery(
-      '''
+    final rows = await _run(
+      (db) => db.rawQuery(
+        '''
       SELECT MAX(end_time) AS last_end_time
       FROM timeseries_samples
       WHERE type = ?
       ''',
-      [kStepSampleType],
+        [kStepSampleType],
+      ),
     );
     final value = rows.single['last_end_time'] as String?;
 
@@ -368,21 +404,23 @@ class StepRepository {
       String? afterStartTime;
       String? afterId;
       while (true) {
-        final rows = await db.query(
-          'timeseries_samples',
-          where: afterStartTime == null
-              ? 'type = ?'
-              : 'type = ? AND (start_time > ? OR (start_time = ? AND id > ?))',
-          whereArgs: afterStartTime == null
-              ? [kStepSampleType]
-              : [
-                  kStepSampleType,
-                  afterStartTime,
-                  afterStartTime,
-                  afterId,
-                ],
-          orderBy: 'start_time ASC, id ASC',
-          limit: batchSize,
+        final rows = await _run(
+          (db) => db.query(
+            'timeseries_samples',
+            where: afterStartTime == null
+                ? 'type = ?'
+                : 'type = ? AND (start_time > ? OR (start_time = ? AND id > ?))',
+            whereArgs: afterStartTime == null
+                ? [kStepSampleType]
+                : [
+                    kStepSampleType,
+                    afterStartTime,
+                    afterStartTime,
+                    afterId,
+                  ],
+            orderBy: 'start_time ASC, id ASC',
+            limit: batchSize,
+          ),
         );
 
         if (rows.isEmpty) {
@@ -435,20 +473,22 @@ class StepRepository {
     var insertedCount = 0;
     var skippedCount = 0;
 
-    await db.transaction((txn) async {
-      for (final sample in samples) {
-        final rowId = await txn.insert(
-          'timeseries_samples',
-          sample.toMap(),
-          conflictAlgorithm: ConflictAlgorithm.ignore,
-        );
-        if (rowId == 0) {
-          skippedCount++;
-        } else {
-          insertedCount++;
+    await _run(
+      (db) => db.transaction((txn) async {
+        for (final sample in samples) {
+          final rowId = await txn.insert(
+            'timeseries_samples',
+            sample.toMap(),
+            conflictAlgorithm: ConflictAlgorithm.ignore,
+          );
+          if (rowId == 0) {
+            skippedCount++;
+          } else {
+            insertedCount++;
+          }
         }
-      }
-    });
+      }),
+    );
 
     return ImportResult(
       totalRowsInFile: samples.length,
@@ -464,23 +504,25 @@ class StepRepository {
   Future<void> purge({
     @visibleForTesting Future<void> Function(Transaction txn)? testHookAfterDeleteSamples,
   }) async {
-    await db.transaction((txn) async {
-      await txn.delete('timeseries_samples');
-      if (testHookAfterDeleteSamples != null) {
-        await testHookAfterDeleteSamples(txn);
-      }
-      await IngestionBaselineRepository.clearAllBaselines(txn);
-      for (final key in [
-        kCelebrationShownDateKey,
-        kIngestionCollectLockKey,
-        kLastDatabaseOptimizedAtKey,
-      ]) {
-        await txn.delete(
-          'user_preferences',
-          where: 'key = ?',
-          whereArgs: [key],
-        );
-      }
-    });
+    await _run(
+      (db) => db.transaction((txn) async {
+        await txn.delete('timeseries_samples');
+        if (testHookAfterDeleteSamples != null) {
+          await testHookAfterDeleteSamples(txn);
+        }
+        await IngestionBaselineRepository.clearAllBaselines(txn);
+        for (final key in [
+          kCelebrationShownDateKey,
+          kIngestionCollectLockKey,
+          kLastDatabaseOptimizedAtKey,
+        ]) {
+          await txn.delete(
+            'user_preferences',
+            where: 'key = ?',
+            whereArgs: [key],
+          );
+        }
+      }),
+    );
   }
 }

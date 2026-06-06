@@ -12,6 +12,7 @@ import '../lifecycle/sample_compaction_runner.dart';
 import '../time/time_provider.dart';
 import '../time/system_time_provider.dart';
 import '../database/isolate_database_factory.dart';
+import '../database/astra_database_session.dart';
 
 /// Weekly interval between database optimize/VACUUM runs (FR12).
 const kDatabaseMaintenanceInterval = Duration(days: 7);
@@ -111,23 +112,30 @@ Future<LifecycleRunResult> _runFileMaintenanceIsolate(
 /// connection (WorkManager background isolate).
 class DataLifecycleService {
   DataLifecycleService({
-    required Database db,
     required String databasePath,
     required StepRepository repository,
     required UserPreferencesRepository userPreferences,
     required TimeProvider clock,
+    AstraDatabaseSession? session,
+    Database? db,
     DatabaseOptimizeRunner? optimizeAndVacuum,
     bool maintenanceOnCurrentConnection = false,
-  }) : _db = db,
+  }) : _session =
+           session ??
+           AstraDatabaseSession(
+             databasePath: databasePath,
+             initial: db!,
+           ),
        _databasePath = databasePath,
        _repository = repository,
        _userPreferences = userPreferences,
        _clock = clock,
        _optimizeAndVacuum =
            optimizeAndVacuum ?? runPragmaOptimizeAndVacuumOnWorkerIsolate,
-       _maintenanceOnCurrentConnection = maintenanceOnCurrentConnection;
+       _maintenanceOnCurrentConnection = maintenanceOnCurrentConnection,
+       assert(session != null || db != null);
 
-  final Database _db;
+  final AstraDatabaseSession _session;
   final String _databasePath;
   final StepRepository _repository;
   final UserPreferencesRepository _userPreferences;
@@ -176,14 +184,16 @@ class DataLifecycleService {
       );
     }
 
-    return runMaintenanceOnConnection(
-      db: _db,
-      databasePath: _databasePath,
-      repository: _repository,
-      userPreferences: _userPreferences,
-      clock: _clock,
-      force: force,
-      optimizeAndVacuum: _optimizeAndVacuum,
+    return _session.withRetry(
+      (db) => runMaintenanceOnConnection(
+        db: db,
+        databasePath: _databasePath,
+        repository: _repository,
+        userPreferences: _userPreferences,
+        clock: _clock,
+        force: force,
+        optimizeAndVacuum: _optimizeAndVacuum,
+      ),
     );
   }
 }

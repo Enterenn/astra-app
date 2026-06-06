@@ -1,9 +1,13 @@
+import 'dart:io';
+
 import 'package:astra_app/core/database/app_database.dart';
+import 'package:astra_app/core/database/astra_database_session.dart';
 import 'package:astra_app/core/services/notification_service.dart';
 import 'package:astra_app/data/repositories/user_preferences_repository.dart';
 import 'package:astra_app/presentation/cubits/profile_cubit.dart';
 import 'package:astra_app/presentation/cubits/profile_state.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:path/path.dart' as p;
 import 'package:permission_handler/permission_handler.dart';
 import 'package:sqflite/sqflite.dart';
 
@@ -61,6 +65,43 @@ void main() {
       expect(cubit.state.heightCm, 180);
       expect(cubit.state.weightKg, 75.0);
       expect(cubit.state.goalNotificationsEnabled, isTrue);
+
+      await cubit.close();
+    });
+
+    test('refresh recovers when the database connection was closed', () async {
+      final tempDir = await Directory.systemTemp.createTemp(
+        'astra_profile_recovery_',
+      );
+
+      final databasePath = p.join(tempDir.path, 'test.db');
+      final fileDb = await openAstraDatabase(databasePath: databasePath);
+      final session = AstraDatabaseSession(
+        databasePath: databasePath,
+        initial: fileDb,
+      );
+      final prefs = UserPreferencesRepository(session);
+      addTearDown(() async {
+        if (session.database.isOpen) {
+          await session.database.close();
+        }
+        await tempDir.delete(recursive: true);
+      });
+      await prefs.setDisplayName('Jordan');
+      await session.database.close();
+
+      final cubit = ProfileCubit(
+        userPreferences: prefs,
+        notificationService: notificationService,
+        permissionRequester: (permission) async {
+          permissionRequestCount++;
+          return PermissionStatus.granted;
+        },
+      );
+      await cubit.refresh();
+
+      expect(cubit.state.status, ProfileStatus.ready);
+      expect(cubit.state.displayName, 'Jordan');
 
       await cubit.close();
     });

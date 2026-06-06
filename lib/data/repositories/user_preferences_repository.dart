@@ -2,16 +2,25 @@ import 'package:sqflite/sqflite.dart';
 
 import '../../core/constants/astra_accent_preset.dart';
 import '../../core/constants/preference_keys.dart';
+import '../../core/database/astra_database_session.dart';
 import '../../core/time/timestamp_codec.dart';
 import '../../presentation/cubits/theme_state.dart';
 
 /// Sole writer to the `user_preferences` table.
 class UserPreferencesRepository {
-  UserPreferencesRepository(this._db);
+  UserPreferencesRepository(
+    Object sessionOrDatabase, {
+    String databasePath = inMemoryDatabasePath,
+  }) : _session = sessionOrDatabase is AstraDatabaseSession
+           ? sessionOrDatabase
+           : AstraDatabaseSession(
+               databasePath: databasePath,
+               initial: sessionOrDatabase as Database,
+             );
 
-  final Database _db;
+  final AstraDatabaseSession _session;
 
-  bool get isDatabaseOpen => _db.isOpen;
+  bool get isDatabaseOpen => _session.database.isOpen;
 
   Future<int> getDailyStepGoal() async {
     final value = await _readValue(kDailyStepGoalKey);
@@ -206,54 +215,62 @@ class UserPreferencesRepository {
   /// Returns `true` when this caller claimed the day (notification or
   /// celebration may proceed). Returns `false` when today was already claimed.
   Future<bool> tryClaimCelebrationShownDate(String localDayIso) async {
-    return _db.transaction((txn) async {
-      final rows = await txn.query(
+    return _session.withRetry(
+      (db) => db.transaction((txn) async {
+        final rows = await txn.query(
+          'user_preferences',
+          columns: ['value'],
+          where: 'key = ?',
+          whereArgs: [kCelebrationShownDateKey],
+          limit: 1,
+        );
+        final current = rows.isEmpty ? null : rows.first['value'] as String?;
+        if (current == localDayIso) {
+          return false;
+        }
+        await txn.insert(
+          'user_preferences',
+          {'key': kCelebrationShownDateKey, 'value': localDayIso},
+          conflictAlgorithm: ConflictAlgorithm.replace,
+        );
+        return true;
+      }),
+    );
+  }
+
+  Future<String?> _readValue(String key) {
+    return _session.withRetry((db) async {
+      final rows = await db.query(
         'user_preferences',
         columns: ['value'],
         where: 'key = ?',
-        whereArgs: [kCelebrationShownDateKey],
+        whereArgs: [key],
         limit: 1,
       );
-      final current = rows.isEmpty ? null : rows.first['value'] as String?;
-      if (current == localDayIso) {
-        return false;
+      if (rows.isEmpty) {
+        return null;
       }
-      await txn.insert(
-        'user_preferences',
-        {'key': kCelebrationShownDateKey, 'value': localDayIso},
-        conflictAlgorithm: ConflictAlgorithm.replace,
-      );
-      return true;
+      return rows.first['value'] as String?;
     });
   }
 
-  Future<String?> _readValue(String key) async {
-    final rows = await _db.query(
-      'user_preferences',
-      columns: ['value'],
-      where: 'key = ?',
-      whereArgs: [key],
-      limit: 1,
-    );
-    if (rows.isEmpty) {
-      return null;
-    }
-    return rows.first['value'] as String?;
-  }
-
-  Future<void> _writeValue(String key, String value) async {
-    await _db.insert(
-      'user_preferences',
-      {'key': key, 'value': value},
-      conflictAlgorithm: ConflictAlgorithm.replace,
+  Future<void> _writeValue(String key, String value) {
+    return _session.withRetry(
+      (db) => db.insert(
+        'user_preferences',
+        {'key': key, 'value': value},
+        conflictAlgorithm: ConflictAlgorithm.replace,
+      ),
     );
   }
 
-  Future<void> _deleteValue(String key) async {
-    await _db.delete(
-      'user_preferences',
-      where: 'key = ?',
-      whereArgs: [key],
+  Future<void> _deleteValue(String key) {
+    return _session.withRetry(
+      (db) => db.delete(
+        'user_preferences',
+        where: 'key = ?',
+        whereArgs: [key],
+      ),
     );
   }
 

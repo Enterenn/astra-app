@@ -15,7 +15,7 @@ import '../../data/repositories/step_repository.dart';
 import '../../data/repositories/user_preferences_repository.dart';
 import '../../core/constants/astra_accent_preset.dart';
 import '../../presentation/cubits/theme_state.dart';
-import '../database/app_database.dart';
+import '../database/astra_database_session.dart';
 import '../permissions/activity_permission_resolver.dart';
 import '../services/android_platform_capability_probe.dart';
 import '../services/background_collector.dart';
@@ -47,6 +47,7 @@ class AppDependencies {
     required this.backgroundHealthCapabilityEvaluator,
     required this.healthForegroundCoordinator,
     required this.dataLifecycleService,
+    required this.databaseSession,
     required this.databasePath,
   });
 
@@ -65,6 +66,7 @@ class AppDependencies {
   final BackgroundHealthCapabilityEvaluator backgroundHealthCapabilityEvaluator;
   final HealthForegroundServiceCoordinator healthForegroundCoordinator;
   final DataLifecycleService dataLifecycleService;
+  final AstraDatabaseSession databaseSession;
   final String databasePath;
 
   static Future<bool> resolveActivityRecognitionGranted() =>
@@ -100,16 +102,20 @@ class AppDependencies {
     required NotificationService notificationService,
   }) async {
     final databasePath = p.join(await getDatabasesPath(), 'astra_app.db');
-    final db = await openAstraDatabase(databasePath: databasePath);
-    final userPreferences = UserPreferencesRepository(db);
+    final databaseSession = AstraDatabaseSession(databasePath: databasePath);
+    await databaseSession.ensureOpen();
+    final userPreferences = UserPreferencesRepository(databaseSession);
     final initialTheme = await userPreferences.getThemeMode();
     final initialAccentPreset = await userPreferences.getAccentPreset();
     final initialOnboardingComplete = await userPreferences
         .getOnboardingComplete();
     final timeProvider = const SystemTimeProvider();
-    final stepRepository = StepRepository(db: db, clock: timeProvider);
+    final stepRepository = StepRepository(
+      session: databaseSession,
+      clock: timeProvider,
+    );
     final stepNormalizer = StepNormalizer(clock: timeProvider);
-    final baselineRepository = IngestionBaselineRepository(db);
+    final baselineRepository = IngestionBaselineRepository(databaseSession);
     final liveStepMonitor = LiveStepMonitor(
       stepRepository: stepRepository,
       baselineRepository: baselineRepository,
@@ -151,7 +157,7 @@ class AppDependencies {
     );
     healthForeground.registerPlatformHandlers();
     final dataLifecycleService = DataLifecycleService(
-      db: db,
+      session: databaseSession,
       databasePath: databasePath,
       repository: stepRepository,
       userPreferences: userPreferences,
@@ -174,6 +180,7 @@ class AppDependencies {
       backgroundHealthCapabilityEvaluator: capabilityEvaluator,
       healthForegroundCoordinator: healthForeground,
       dataLifecycleService: dataLifecycleService,
+      databaseSession: databaseSession,
       databasePath: databasePath,
     );
   }
@@ -202,9 +209,14 @@ class AppDependencies {
         initialOnboardingComplete ??
         await userPreferences.getOnboardingComplete();
     final clock = timeProvider ?? const SystemTimeProvider();
-    final stepRepository = StepRepository(db: db, clock: clock);
+    final path = databasePath ?? inMemoryDatabasePath;
+    final databaseSession = AstraDatabaseSession(
+      databasePath: path,
+      initial: db,
+    );
+    final stepRepository = StepRepository(session: databaseSession, clock: clock);
     final stepNormalizer = StepNormalizer(clock: clock);
-    final baselineRepository = IngestionBaselineRepository(db);
+    final baselineRepository = IngestionBaselineRepository(databaseSession);
     final monitor =
         liveStepMonitor ??
         LiveStepMonitor(
@@ -255,8 +267,8 @@ class AppDependencies {
     final lifecycleService =
         dataLifecycleService ??
         DataLifecycleService(
-          db: db,
-          databasePath: databasePath ?? inMemoryDatabasePath,
+          session: databaseSession,
+          databasePath: path,
           repository: stepRepository,
           userPreferences: userPreferences,
           clock: clock,
@@ -277,7 +289,8 @@ class AppDependencies {
       backgroundHealthCapabilityEvaluator: capabilityEvaluator,
       healthForegroundCoordinator: healthForeground,
       dataLifecycleService: lifecycleService,
-      databasePath: databasePath ?? inMemoryDatabasePath,
+      databaseSession: databaseSession,
+      databasePath: path,
     );
   }
 }

@@ -183,6 +183,7 @@ class _AstraAppState extends State<AstraApp> with WidgetsBindingObserver {
 
   Future<void> _onAppForegrounded() async {
     livePipelineLog('app', 'lifecycle RESUMED');
+    await widget.deps.databaseSession.ensureOpen();
     final healthFgs = widget.deps.healthForegroundCoordinator;
     await healthFgs.stopHealthCollectionService();
     await healthFgs.setUiActive(true);
