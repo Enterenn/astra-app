@@ -1,6 +1,6 @@
 # Story 7.2: Release Manifest Hardening and Privacy Audit
 
-Status: in-progress
+Status: done
 
 <!-- Epic 7 privacy gate — automated manifest tests, dependency sign-off, release build verification, 24 h airplane-mode field proof. -->
 <!-- Ultimate context engine analysis completed - comprehensive developer guide created -->
@@ -312,12 +312,13 @@ Prior infra pattern: manifest tests live under `test/android/`; this story adds 
 ## Change Log
 
 - 2026-06-06: Tasks A–C, E implemented — release manifest gate, privacy audit sign-off, release build verified, README/DEPENDENCIES aligned. Task D (field test) pending Baptiste.
+- 2026-06-06: Code review patch — FR-18 tests assert exact `<uses-permission>` elements; story marked done.
 
 ---
 
 ## Story Completion Status
 
-- **Status:** in-progress
+- **Status:** done
 - **Epic 7:** Second story — follows 7.1 docs bundle
 - **Next story after done:** 7.3 Beta Acceptance Checklist
 - **Completion note:** Ultimate context engine analysis completed — comprehensive developer guide created

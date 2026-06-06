@@ -1,5 +1,5 @@
 # generated: 2026-05-25
-# last_updated: 2026-06-06 (Story 7.2 ready-for-dev — release manifest & privacy audit)
+# last_updated: 2026-06-06 (Story 7.2 done — release manifest & privacy audit)
 # NEXT: epic-7 → 7-1 → 7-2 → 7-3
 # Ref: planning-artifacts/sprint-change-proposal-2026-06-04.md
 # project: astra-app
@@ -116,7 +116,7 @@ development_status:
   epic-6-retrospective: optional
 
   epic-7: in-progress
-  7-1-open-source-license-and-documentation-bundle: review
-  7-2-release-manifest-hardening-and-privacy-audit: in-progress
+  7-1-open-source-license-and-documentation-bundle: done
+  7-2-release-manifest-hardening-and-privacy-audit: done
   7-3-beta-acceptance-checklist: backlog
   epic-7-retrospective: optional
