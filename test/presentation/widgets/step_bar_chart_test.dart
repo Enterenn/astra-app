@@ -2,6 +2,7 @@ import 'package:astra_app/core/constants/astra_theme.dart';
 import 'package:astra_app/data/models/chart_day_aggregate.dart';
 import 'package:astra_app/presentation/cubits/history_state.dart';
 import 'package:astra_app/presentation/widgets/step_bar_chart.dart';
+import 'package:fl_chart/fl_chart.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 
@@ -12,12 +13,14 @@ void main() {
       required HistoryStatus status,
       List<ChartDayAggregate> points = const [],
       int dailyGoal = 8000,
+      double width = 320,
     }) async {
       await tester.pumpWidget(
         MaterialApp(
           theme: buildAstraLightTheme(),
           home: Scaffold(
             body: SizedBox(
+              width: width,
               height: 240,
               child: StepBarChart(
                 points: points,
@@ -38,9 +41,23 @@ void main() {
     });
 
     testWidgets('loading state shows seven skeleton bars', (tester) async {
-      await pumpChart(tester, status: HistoryStatus.loading);
+      await tester.pumpWidget(
+        MaterialApp(
+          theme: buildAstraLightTheme(),
+          home: const Scaffold(
+            body: SizedBox(
+              height: 240,
+              child: StepBarChart(
+                points: [],
+                dailyGoal: 8000,
+                status: HistoryStatus.loading,
+              ),
+            ),
+          ),
+        ),
+      );
+      await tester.pump();
 
-      expect(find.byType(Container), findsWidgets);
       final containers = tester.widgetList<Container>(find.byType(Container));
       final skeletonBars = containers.where((container) {
         final decoration = container.decoration;
@@ -61,7 +78,7 @@ void main() {
       expect(semantics.label, contains('Step history bar chart'));
     });
 
-    testWidgets('ready state builds without throw', (tester) async {
+    testWidgets('ready state builds BarChart without throw', (tester) async {
       final points = [
         for (var i = 0; i < 7; i++)
           ChartDayAggregate(
@@ -77,10 +94,30 @@ void main() {
       );
 
       expect(tester.takeException(), isNull);
-      expect(find.byType(StepBarChart), findsOneWidget);
+      expect(find.byType(BarChart), findsOneWidget);
     });
 
-    testWidgets('ready state with 30 points builds without throw', (
+    testWidgets('ready 7d shows each weekday label once', (tester) async {
+      final points = [
+        for (var i = 0; i < 7; i++)
+          ChartDayAggregate(
+            localDay: DateTime.utc(2026, 5, 26 + i),
+            totalSteps: 1000 + i * 100,
+          ),
+      ];
+
+      await pumpChart(
+        tester,
+        status: HistoryStatus.ready,
+        points: points,
+      );
+
+      for (final label in ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun']) {
+        expect(find.text(label), findsOneWidget);
+      }
+    });
+
+    testWidgets('ready 30d throttles date labels without duplicates', (
       tester,
     ) async {
       final points = [
@@ -98,7 +135,9 @@ void main() {
         dailyGoal: 8000,
       );
 
-      expect(tester.takeException(), isNull);
+      expect(find.text('3/5'), findsOneWidget);
+      expect(find.text('8/5'), findsOneWidget);
+      expect(find.text('1/6'), findsOneWidget);
     });
   });
 }

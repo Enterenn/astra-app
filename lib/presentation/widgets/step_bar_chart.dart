@@ -122,6 +122,9 @@ class _ReadyChart extends StatelessWidget {
   final AstraColors colors;
 
   static const _kBelowGoalBarAlpha = 0.66;
+  static const _kMaxBarWidth = 12.0;
+  static const _kMinBarWidth = 4.0;
+  static const _kBarSlotFillRatio = 0.55;
 
   static const _weekdayLabels = [
     'Mon',
@@ -154,108 +157,126 @@ class _ReadyChart extends StatelessWidget {
           AstraSpacing.kSpaceMd,
           AstraSpacing.kSpaceSm,
         ),
-        child: BarChart(
-          duration: Duration.zero,
-          BarChartData(
-            maxY: chartMaxY,
-            minY: 0,
-            alignment: BarChartAlignment.spaceAround,
-            gridData: const FlGridData(show: false),
-            borderData: FlBorderData(show: false),
-            barTouchData: const BarTouchData(enabled: false),
-            titlesData: FlTitlesData(
-              topTitles: const AxisTitles(
-                sideTitles: SideTitles(showTitles: false),
-              ),
-              rightTitles: const AxisTitles(
-                sideTitles: SideTitles(showTitles: false),
-              ),
-              leftTitles: AxisTitles(
-                sideTitles: SideTitles(
-                  showTitles: true,
-                  reservedSize: 36,
-                  interval: chartMaxY,
-                  getTitlesWidget: (value, meta) {
-                    if (value.abs() < 0.01) {
-                      return Text(
-                        '0',
-                        style: AstraTypography.captionFor(colors).copyWith(
-                          color: colors.textPrimary,
-                        ),
-                      );
-                    }
-                    if ((value - chartMaxY).abs() < chartMaxY * 0.001) {
-                      return Text(
-                        _formatAxisValue(safeYMax.round()),
-                        style: AstraTypography.captionFor(colors).copyWith(
-                          color: colors.textPrimary,
-                        ),
-                      );
-                    }
-                    return const SizedBox.shrink();
-                  },
+        child: LayoutBuilder(
+          builder: (context, constraints) {
+            final barWidth = _resolveBarWidth(
+              constraints.maxWidth,
+              points.length,
+            );
+
+            return BarChart(
+              duration: Duration.zero,
+              BarChartData(
+                maxY: chartMaxY,
+                minY: 0,
+                alignment: BarChartAlignment.spaceAround,
+                gridData: const FlGridData(show: false),
+                borderData: FlBorderData(show: false),
+                barTouchData: const BarTouchData(enabled: false),
+                titlesData: FlTitlesData(
+                  topTitles: const AxisTitles(
+                    sideTitles: SideTitles(showTitles: false),
+                  ),
+                  rightTitles: const AxisTitles(
+                    sideTitles: SideTitles(showTitles: false),
+                  ),
+                  leftTitles: AxisTitles(
+                    sideTitles: SideTitles(
+                      showTitles: true,
+                      reservedSize: 36,
+                      interval: chartMaxY,
+                      getTitlesWidget: (value, meta) {
+                        if (value.abs() < 0.01) {
+                          return Text(
+                            '0',
+                            style: AstraTypography.captionFor(colors).copyWith(
+                              color: colors.textPrimary,
+                            ),
+                          );
+                        }
+                        if ((value - chartMaxY).abs() < chartMaxY * 0.001) {
+                          return Text(
+                            _formatAxisValue(safeYMax.round()),
+                            style: AstraTypography.captionFor(colors).copyWith(
+                              color: colors.textPrimary,
+                            ),
+                          );
+                        }
+                        return const SizedBox.shrink();
+                      },
+                    ),
+                  ),
+                  bottomTitles: AxisTitles(
+                    sideTitles: SideTitles(
+                      showTitles: true,
+                      reservedSize: 24,
+                      getTitlesWidget: (value, meta) {
+                        final index = value.toInt();
+                        if (index < 0 || index >= points.length) {
+                          return const SizedBox.shrink();
+                        }
+                        if (points.length > 7 &&
+                            !_shouldShowBottomLabel(index, points.length)) {
+                          return const SizedBox.shrink();
+                        }
+                        return Padding(
+                          padding:
+                              const EdgeInsets.only(top: AstraSpacing.kSpaceXs),
+                          child: Text(
+                            _formatDayLabel(points[index].localDay),
+                            style: AstraTypography.captionFor(colors).copyWith(
+                              color: colors.textPrimary,
+                            ),
+                          ),
+                        );
+                      },
+                    ),
+                  ),
                 ),
-              ),
-              bottomTitles: AxisTitles(
-                sideTitles: SideTitles(
-                  showTitles: true,
-                  reservedSize: 24,
-                  getTitlesWidget: (value, meta) {
-                    final index = value.toInt();
-                    if (index < 0 || index >= points.length) {
-                      return const SizedBox.shrink();
-                    }
-                    if (points.length > 7 &&
-                        !_shouldShowBottomLabel(index, points.length)) {
-                      return const SizedBox.shrink();
-                    }
-                    return Padding(
-                      padding: const EdgeInsets.only(top: AstraSpacing.kSpaceXs),
-                      child: Text(
-                        _formatDayLabel(points[index].localDay),
-                        style: AstraTypography.captionFor(colors).copyWith(
-                          color: colors.textPrimary,
-                        ),
-                      ),
-                    );
-                  },
-                ),
-              ),
-            ),
-            extraLinesData: ExtraLinesData(
-              horizontalLines: [
-                HorizontalLine(
-                  y: dailyGoal.toDouble(),
-                  color: colors.dataGoalLine,
-                  strokeWidth: 1.5,
-                  dashArray: const [6, 4],
-                ),
-              ],
-            ),
-            barGroups: [
-              for (var i = 0; i < points.length; i++)
-                BarChartGroupData(
-                  x: i,
-                  barRods: [
-                    BarChartRodData(
-                      toY: points[i].totalSteps.toDouble(),
-                      color: _barColor(
-                        colors: colors,
-                        steps: points[i].totalSteps,
-                        dailyGoal: dailyGoal,
-                      ),
-                      width: 12,
-                      borderRadius: const BorderRadius.vertical(
-                        top: Radius.circular(4),
-                      ),
+                extraLinesData: ExtraLinesData(
+                  horizontalLines: [
+                    HorizontalLine(
+                      y: dailyGoal.toDouble(),
+                      color: colors.dataGoalLine,
+                      strokeWidth: 1.5,
+                      dashArray: const [6, 4],
                     ),
                   ],
                 ),
-            ],
-          ),
+                barGroups: [
+                  for (var i = 0; i < points.length; i++)
+                    BarChartGroupData(
+                      x: i,
+                      barRods: [
+                        BarChartRodData(
+                          toY: points[i].totalSteps.toDouble(),
+                          color: _barColor(
+                            colors: colors,
+                            steps: points[i].totalSteps,
+                            dailyGoal: dailyGoal,
+                          ),
+                          width: barWidth,
+                          borderRadius: const BorderRadius.vertical(
+                            top: Radius.circular(4),
+                          ),
+                        ),
+                      ],
+                    ),
+                ],
+              ),
+            );
+          },
         ),
       ),
     );
+  }
+
+  static double _resolveBarWidth(double chartWidth, int pointCount) {
+    if (pointCount <= 0 || chartWidth <= 0) {
+      return _kMaxBarWidth;
+    }
+    final slotWidth = chartWidth / pointCount;
+    return (slotWidth * _kBarSlotFillRatio).clamp(_kMinBarWidth, _kMaxBarWidth);
   }
 
   static Color _barColor({
