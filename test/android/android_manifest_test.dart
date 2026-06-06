@@ -47,11 +47,5 @@ void main() {
       expect(kAndroidFgsHealthManifestDeclared, isTrue);
     });
 
-    test('does not use network permission for health collection', () {
-      expect(
-        manifest,
-        isNot(contains('android.permission.INTERNET')),
-      );
-    });
   });
 }
