@@ -38,7 +38,7 @@ hooks:
       name_windows: winsqlite3
 
 flutter:
-  uses-material-design: true
+  uses-material-design: false
   fonts:
     - family: Figtree
       fonts:

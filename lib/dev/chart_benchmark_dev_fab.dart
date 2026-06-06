@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:phosphoricons_flutter/phosphoricons_flutter.dart';
 
 import '../core/di/app_dependencies.dart';
 import 'chart_benchmark.dart';
@@ -88,7 +89,7 @@ class _ChartBenchmarkDevFabState extends State<ChartBenchmarkDevFab> {
               height: 18,
               child: CircularProgressIndicator(strokeWidth: 2),
             )
-          : const Icon(Icons.speed),
+          : const Icon(PhosphorIconsRegular.speedometer),
     );
   }
 }
