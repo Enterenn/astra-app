@@ -116,7 +116,8 @@ class HealthStepForegroundService : Service() {
         const val NOTIFICATION_BODY =
             "Counting steps in the background on this device."
 
-        private const val COLLECTION_INTERVAL_MS = 5L * 60L * 1000L
+        // 60s — timely goal notification when walking in background (FR-25).
+        private const val COLLECTION_INTERVAL_MS = 60L * 1000L
 
         @Volatile
         var isRunning: Boolean = false

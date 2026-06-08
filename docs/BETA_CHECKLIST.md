@@ -141,7 +141,7 @@ aapt dump badging build/app/outputs/flutter-apk/app-release.apk | findstr versio
 
 | Date | Runner | Device | Android | Build | APK version | Pass rate | Failed IDs | Blockers / waivers |
 |------|--------|--------|---------|-------|-------------|-----------|------------|-------------------|
-| 2026-06-08 | Baptiste | *(à compléter)* | *(à compléter)* | release | 0.1.0 (1) | **36/39** — story **7.3 review** | — | **Post-close:** FUNC-12 minuit ce soir; REL-03/VIS-13 GIF optional. Notification hotfix `4a92db0`. REL-01 waived ~52 MB. |
+| 2026-06-08 | Baptiste | Oppo CPH2663 (reference) | Android 14+ | release | 0.1.0 (1) | **36/39** — story **7.3 review** | — | **Post-close:** FUNC-12 minuit ce soir; REL-03/VIS-13 GIF optional. Notification hotfix `4a92db0` + latency pass (FGS 60s). REL-01 waived ~52 MB. GIF non requis Phase 0. |
 
 ### KPI-01 (VIS-07) device row
 

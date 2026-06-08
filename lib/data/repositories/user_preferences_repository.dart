@@ -127,6 +127,10 @@ class UserPreferencesRepository {
     await _writeValue(kWeightKgKey, rounded.toString());
   }
 
+  Future<bool> isGoalNotificationsPreferenceSet() async {
+    return (await _readValue(kGoalNotificationsEnabledKey)) != null;
+  }
+
   Future<bool> getGoalNotificationsEnabled() async {
     final value = await _readValue(kGoalNotificationsEnabledKey);
     return value == 'true';

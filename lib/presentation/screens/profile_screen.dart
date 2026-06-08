@@ -234,15 +234,23 @@ class _ProfileScreenBody extends StatelessWidget {
   }
 }
 
-class _ProfileVersionFooter extends StatelessWidget {
+class _ProfileVersionFooter extends StatefulWidget {
   const _ProfileVersionFooter();
+
+  @override
+  State<_ProfileVersionFooter> createState() => _ProfileVersionFooterState();
+}
+
+class _ProfileVersionFooterState extends State<_ProfileVersionFooter> {
+  late final Future<PackageInfo> _packageInfoFuture =
+      PackageInfo.fromPlatform();
 
   @override
   Widget build(BuildContext context) {
     final colors = context.astraColors;
 
     return FutureBuilder<PackageInfo>(
-      future: PackageInfo.fromPlatform(),
+      future: _packageInfoFuture,
       builder: (context, snapshot) {
         if (!snapshot.hasData) {
           return const SizedBox.shrink();

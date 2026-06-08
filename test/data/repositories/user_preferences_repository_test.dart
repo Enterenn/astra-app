@@ -185,6 +185,15 @@ void main() {
       expect(await repository.getGoalNotificationsEnabled(), isFalse);
     });
 
+    test('isGoalNotificationsPreferenceSet is false when key absent', () async {
+      expect(await repository.isGoalNotificationsPreferenceSet(), isFalse);
+    });
+
+    test('isGoalNotificationsPreferenceSet is true after write', () async {
+      await repository.setGoalNotificationsEnabled(false);
+      expect(await repository.isGoalNotificationsPreferenceSet(), isTrue);
+    });
+
     test('round-trips goal notifications flag', () async {
       await repository.setGoalNotificationsEnabled(true);
       expect(await repository.getGoalNotificationsEnabled(), isTrue);

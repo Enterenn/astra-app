@@ -6,6 +6,7 @@ import 'package:sqflite/sqflite.dart';
 
 import 'app.dart';
 import 'core/di/app_dependencies.dart';
+import 'core/preferences/goal_notification_migration.dart';
 import 'core/services/notification_service.dart';
 import 'core/services/workmanager_callback.dart';
 
@@ -22,6 +23,10 @@ Future<void> main() async {
     debugPrintStack(stackTrace: stackTrace);
   }
   final deps = await AppDependencies.create(
+    notificationService: notificationService,
+  );
+  await migrateGoalNotificationPreferenceIfNeeded(
+    userPreferences: deps.userPreferences,
     notificationService: notificationService,
   );
   // WM registers regardless of FGS — reconciliation fallback (D-04), not realtime cadence.

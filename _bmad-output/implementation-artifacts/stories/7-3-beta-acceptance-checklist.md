@@ -118,16 +118,16 @@ so that Phase 0 exit criteria are objectively verifiable before sharing the OSS 
 
 | Artifact | Status | Action |
 |----------|--------|--------|
-| `docs/BETA_CHECKLIST.md` | ❌ Missing | **Create** (Task B) |
-| `pubspec.yaml` `version:` | ❌ Missing | Add `0.1.0+1` (Task A) |
-| In-app version display | ❌ None | Profile footer (Task A) |
-| `test/release_manifest_test.dart` | ✅ Story 7.2 | Reference in checklist |
-| `step_normalizer_test.dart` reset test | ✅ Exists | Reference in checklist |
-| `kpi-01-regression-log.md` | ⚠️ Empty table | Manual device run before V-7 sign-off |
-| Story 7.2 airplane mode field test | ⚠️ Pending Baptiste | Checklist item uses 7.2 evidence or re-run |
-| Release APK size | ⚠️ 51.0 MB (7.2) | May fail NFR2 — record, do not hide |
-| Deferred regressions (2.7, 2.x, 4.5) | ⚠️ Open | Explicit E1–E3 cases |
-| README demo GIF | ❌ Not captured | Task F documents capture |
+| `docs/BETA_CHECKLIST.md` | ✅ Done | Field pass logged 2026-06-08 |
+| `pubspec.yaml` `version:` | ✅ `0.1.0+1` | Task A complete |
+| In-app version display | ✅ Profile footer | `package_info_plus` |
+| `test/release_manifest_test.dart` | ✅ Story 7.2 | Referenced in checklist |
+| `step_normalizer_test.dart` reset test | ✅ Exists | Referenced in checklist |
+| `kpi-01-regression-log.md` | ⚠️ Empty table | VIS-07 subjective pass; formal row optional |
+| Story 7.2 airplane mode field test | ✅ | FUNC-07 pass 2026-06-08 |
+| Release APK size | ✅ ~52 MB | REL-01 waived for Phase 0 sideload beta |
+| Deferred regressions (2.7, 2.x, 4.5) | ✅ Resolved | REG-01–04 pass post-hotfix `4a92db0` |
+| README demo GIF | ⏳ Deferred | REL-03 capture steps documented; not blocking 7.3 |
 
 ### Architecture compliance
 

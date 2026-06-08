@@ -133,6 +133,9 @@ class _AstraAppState extends State<AstraApp> with WidgetsBindingObserver {
   Stopwatch? _coldStartStopwatch;
   bool _coldStartReadyLogged = false;
 
+  /// True after [AppLifecycleState.paused] until [AppLifecycleState.resumed].
+  bool _appInBackground = false;
+
   @override
   void initState() {
     super.initState();
@@ -203,14 +206,17 @@ class _AstraAppState extends State<AstraApp> with WidgetsBindingObserver {
       return;
     }
     _stepsAtBackground = await widget.deps.stepRepository.getTodaySteps();
-    _stopActivityBasedPersist();
+    _stopStalenessPersistTimer();
+    _appInBackground = true;
     _todayCubit?.setLiveStepAppliesPaused(true);
     final healthFgs = widget.deps.healthForegroundCoordinator;
     await healthFgs.setUiActive(false);
     await healthFgs.startHealthCollectionService();
+    await widget.deps.backgroundCollector.maybeNotifyGoalReachedIfGoalMet();
   }
 
   Future<void> _onAppForegrounded() async {
+    _appInBackground = false;
     livePipelineLog('app', 'lifecycle RESUMED');
     await widget.deps.databaseSession.ensureOpen();
     final healthFgs = widget.deps.healthForegroundCoordinator;
@@ -278,7 +284,7 @@ class _AstraAppState extends State<AstraApp> with WidgetsBindingObserver {
       return;
     }
     await _enqueuePersistCycle(
-      enableGoalNotification: false,
+      enableGoalNotification: _appInBackground,
       syncTodayAfter: true,
     );
   }
@@ -304,7 +310,7 @@ class _AstraAppState extends State<AstraApp> with WidgetsBindingObserver {
     );
 
     await _enqueuePersistCycle(
-      enableGoalNotification: false,
+      enableGoalNotification: _appInBackground,
       syncTodayAfter: true,
     );
 
@@ -732,9 +738,13 @@ class _AstraAppState extends State<AstraApp> with WidgetsBindingObserver {
     });
   }
 
-  void _stopActivityBasedPersist() {
+  void _stopStalenessPersistTimer() {
     _stalenessPersistTimer?.cancel();
     _stalenessPersistTimer = null;
+  }
+
+  void _stopActivityBasedPersist() {
+    _stopStalenessPersistTimer();
     _cancelMidnightBoundaryTimer();
     widget.deps.liveStepMonitor.onActivityIdle = null;
   }
