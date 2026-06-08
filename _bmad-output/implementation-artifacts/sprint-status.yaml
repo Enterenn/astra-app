@@ -1,6 +1,6 @@
 # generated: 2026-05-25
-# last_updated: 2026-06-08 (Story 7.3 review — Epic 7 awaiting story sign-off)
-# NEXT: code-review 7.3 → done → optional epic-7-retrospective · FUNC-12 minuit · GIF deferred
+# last_updated: 2026-06-08 (Phase 0 closed — Epic 7 done, Story 7.3 done)
+# NEXT: optional epic-7-retrospective · post-close: FUNC-12 · REL-03 GIF · CI flake hotfix
 # Ref: planning-artifacts/sprint-change-proposal-2026-06-04.md
 # project: astra-app
 # project_key: NOKEY
@@ -116,8 +116,8 @@ development_status:
   6-6-midnight-day-rollover-flush: in-review
   epic-6-retrospective: optional
 
-  epic-7: in-progress
+  epic-7: done
   7-1-open-source-license-and-documentation-bundle: done
   7-2-release-manifest-hardening-and-privacy-audit: done
-  7-3-beta-acceptance-checklist: review
+  7-3-beta-acceptance-checklist: done
   epic-7-retrospective: optional

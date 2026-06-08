@@ -1,6 +1,6 @@
 # Story 7.3: Beta Acceptance Checklist
 
-Status: review
+Status: done
 
 <!-- Epic 7 finale — Phase 0 exit gate: BETA_CHECKLIST.md, version baseline, 100% manual pass, demo GIF, install size. -->
 <!-- Ultimate context engine analysis completed - comprehensive developer guide created -->
@@ -350,7 +350,7 @@ Claude (Cursor Agent)
 
 ## Story Completion Status
 
-- **Status:** review
-- **Epic 7:** in-progress — awaiting 7.3 code review → done
-- **Post-close:** FUNC-12 midnight verification; REL-03 GIF optional; strict 100% SM-7 when sharing OSS publicly
-- **Completion note:** Checklist authored, executed, and logged; version baseline shipped
+- **Status:** done (2026-06-08 — Baptiste Phase 0 sign-off)
+- **Epic 7:** done — OSS credibility & beta readiness complete
+- **Post-close (non-blocking):** FUNC-12 midnight verification; REL-03/VIS-13 GIF; CI flake triage; APK size optimization
+- **Completion note:** Checklist authored, executed, and logged; version baseline shipped; notification latency pass (`19240bc`)
