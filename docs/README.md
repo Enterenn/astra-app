@@ -13,18 +13,9 @@ Two categories of files live here: **agent rules**, **FR-27 OSS credibility bund
 | [SERIES_TYPES.md](./SERIES_TYPES.md) | Phase 0 `steps` / `count` definitions, resolutions, provider IDs (FR-27) |
 | [DEPENDENCIES.md](./DEPENDENCIES.md) | Full package audit; zero network use in health pipeline (FR-18, FR-27) |
 | [REGULATORY_POSITION.md](./REGULATORY_POSITION.md) | General Wellness scope statement (FR-27) |
+| [BETA_CHECKLIST.md](./BETA_CHECKLIST.md) | FR-29 | Phase 0 beta acceptance checklist — 100% pass gate (Story 7.3) |
 
 All planning specifications (PRD, architecture, epics) live under [`_bmad-output/`](../_bmad-output/README.md).
-
----
-
-## Planned (Story 7.3)
-
-| File | FR | Purpose |
-|------|-----|---------|
-| `BETA_CHECKLIST.md` | FR-29 | Beta acceptance checklist tracing to functional requirements |
-
-Do not create placeholder stubs unless implementing the corresponding story.
 
 ---
 

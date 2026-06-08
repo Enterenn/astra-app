@@ -69,6 +69,25 @@ Examples:
 
 ---
 
+## Versioning (Phase 0 beta)
+
+**Single source of truth:** `pubspec.yaml` → `version: major.minor.patch+build`
+
+Flutter propagates this to Android `versionName` / `versionCode` automatically — no manual Gradle sync.
+
+| Part | Example | When to bump |
+|------|---------|--------------|
+| `major` (`x`) | `0` | Reserved for **1.0** public launch narrative |
+| `minor` (`y`) | `1` | Post–Phase 0 feature tranche |
+| `patch` (`z`) | `0` | Bugfix-only hotfix batch |
+| `+build` | `+1` | **Every** sideload APK / checklist run (Android `versionCode`) |
+
+**Baseline:** `0.1.0+1` — `0.x` = pre-1.0 OSS beta.
+
+**In-app display:** Profile tab footer reads from `package_info_plus` (built manifest). Checklist row: displayed version must match `pubspec.yaml` and `aapt dump badging` on release APK.
+
+---
+
 ## Story completion checklist (applies to every story)
 
 Before marking a story done:

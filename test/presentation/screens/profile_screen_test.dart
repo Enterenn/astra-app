@@ -14,6 +14,7 @@ import 'package:astra_app/presentation/widgets/theme_selector.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:package_info_plus/package_info_plus.dart';
 import 'package:sqflite/sqflite.dart';
 
 import '../../helpers/sqflite_test_helper.dart';
@@ -109,6 +110,13 @@ Future<void> _pumpAsync(WidgetTester tester) async {
 void main() {
   setUpAll(() async {
     await setUpSqfliteFfi();
+    PackageInfo.setMockInitialValues(
+      appName: 'ASTRA',
+      packageName: 'com.astraapp',
+      version: '0.1.0',
+      buildNumber: '1',
+      buildSignature: '',
+    );
   });
 
   group('ProfileScreen', () {
@@ -246,6 +254,22 @@ void main() {
       expect(cubit.setGoalNotificationsEnabledCalls, 1);
       expect(cubit.lastEnabledArg, isTrue);
       expect(cubit.state.goalNotificationsEnabled, isTrue);
+    });
+
+    testWidgets('shows muted version footer from package info', (tester) async {
+      final cubit = _SeededProfileCubit(
+        userPreferences: userPreferences,
+        notificationService: NotificationService(
+          permissionChecker: () async => PermissionStatus.granted,
+        ),
+        seededState: ProfileState.ready(),
+      );
+      addTearDown(cubit.close);
+
+      await _pumpProfileScreen(tester, profileCubit: cubit);
+      await tester.pumpAndSettle();
+
+      expect(find.text('ASTRA v0.1.0 (1)'), findsOneWidget);
     });
   });
 }

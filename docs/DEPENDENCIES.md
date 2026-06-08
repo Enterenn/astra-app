@@ -124,6 +124,7 @@ Direct dependencies from `pubspec.yaml` (locked versions from `pubspec.lock` as 
 | `file_picker` | 12.0.0-beta.5 | My Data CSV import, local file selection | No data upload; OS picker only |
 | `phosphoricons_flutter` | 1.0.0 | Phosphor icon fonts (bundled in package) | No |
 | `figma_squircle` | 0.6.3 | Figma corner smoothing on nav squircle | No |
+| `package_info_plus` | 10.1.0 | Profile version footer from built manifest (Story 7.3); local platform channel only | No |
 
 ### `flutter_local_notifications` (local only)
 

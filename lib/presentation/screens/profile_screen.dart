@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:package_info_plus/package_info_plus.dart';
 
 import '../../core/constants/astra_colors.dart';
 import '../../core/constants/astra_spacing.dart';
@@ -225,9 +226,40 @@ class _ProfileScreenBody extends StatelessWidget {
                 ],
               ),
             ),
+            const _ProfileVersionFooter(),
           ],
         ),
       ),
+    );
+  }
+}
+
+class _ProfileVersionFooter extends StatelessWidget {
+  const _ProfileVersionFooter();
+
+  @override
+  Widget build(BuildContext context) {
+    final colors = context.astraColors;
+
+    return FutureBuilder<PackageInfo>(
+      future: PackageInfo.fromPlatform(),
+      builder: (context, snapshot) {
+        if (!snapshot.hasData) {
+          return const SizedBox.shrink();
+        }
+        final info = snapshot.data!;
+        return Padding(
+          padding: const EdgeInsets.only(top: AstraSpacing.kSpaceLg),
+          child: Center(
+            child: Text(
+              'ASTRA v${info.version} (${info.buildNumber})',
+              style: AstraTypography.caption(context).copyWith(
+                color: colors.textMuted,
+              ),
+            ),
+          ),
+        );
+      },
     );
   }
 }

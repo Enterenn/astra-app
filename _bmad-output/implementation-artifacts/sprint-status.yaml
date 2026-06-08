@@ -1,6 +1,6 @@
 # generated: 2026-05-25
-# last_updated: 2026-06-07 (Story 7.2 done — release manifest & privacy audit)
-# NEXT: epic-7 → 7-1 → 7-2 → 7-3
+# last_updated: 2026-06-08 (Story 7.3 review — Epic 7 awaiting story sign-off)
+# NEXT: code-review 7.3 → done → optional epic-7-retrospective · FUNC-12 minuit · GIF deferred
 # Ref: planning-artifacts/sprint-change-proposal-2026-06-04.md
 # project: astra-app
 # project_key: NOKEY
@@ -48,7 +48,7 @@
 # NAVIGATION: _bmad-output/README.md
 
 generated: 2026-05-25
-last_updated: 2026-06-07
+last_updated: 2026-06-08
 project: astra-app
 project_key: NOKEY
 tracking_system: file-system
@@ -119,5 +119,5 @@ development_status:
   epic-7: in-progress
   7-1-open-source-license-and-documentation-bundle: done
   7-2-release-manifest-hardening-and-privacy-audit: done
-  7-3-beta-acceptance-checklist: backlog
+  7-3-beta-acceptance-checklist: review
   epic-7-retrospective: optional
