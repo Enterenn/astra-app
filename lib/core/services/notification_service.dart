@@ -127,9 +127,10 @@ class NotificationService {
     return status.isGranted || status.isLimited || status.isProvisional;
   }
 
-  Future<void> showGoalReached({int? stepsToday}) async {
+  /// Returns `true` when the notification was presented; `false` on skip or failure.
+  Future<bool> showGoalReached({int? stepsToday}) async {
     if (!await hasNotificationPermission()) {
-      return;
+      return false;
     }
 
     if (_usesPlatformPresenter) {
@@ -137,17 +138,24 @@ class NotificationService {
         await initialize();
       }
       if (!_initialized) {
-        return;
+        return false;
       }
     }
 
     final body = stepsToday != null ? '$stepsToday steps today' : null;
     final presenter = _goalNotificationPresenter ?? _platformShowGoalReached;
-    await presenter(
-      id: goalNotificationId,
-      title: goalReachedTitle,
-      body: body,
-    );
+    try {
+      await presenter(
+        id: goalNotificationId,
+        title: goalReachedTitle,
+        body: body,
+      );
+      return true;
+    } catch (error, stackTrace) {
+      debugPrint('NotificationService.showGoalReached failed: $error');
+      debugPrintStack(stackTrace: stackTrace);
+      return false;
+    }
   }
 
   Future<void> _platformShowGoalReached({

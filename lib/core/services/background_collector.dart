@@ -23,6 +23,7 @@ class BackgroundCollector {
     this.clock,
     this.notificationService,
     this.notificationPermissionGranted,
+    this.isUserFacingAppActive,
     this.sourceTimeout = const Duration(seconds: 2),
     this.maxCollectionDuration = const Duration(seconds: 25),
   }) : _sources = List.unmodifiable(sources);
@@ -35,6 +36,9 @@ class BackgroundCollector {
   final TimeProvider? clock;
   final NotificationService? notificationService;
   final Future<bool> Function()? notificationPermissionGranted;
+
+  /// When `true`, the user is on the app — skip goal notification (celebration only).
+  final bool Function()? isUserFacingAppActive;
 
   /// UI isolate hook only. WorkManager isolates should leave this null.
   VoidCallback? _onIngestionComplete;
@@ -122,7 +126,7 @@ class BackgroundCollector {
     }
 
     if (enableGoalNotification) {
-      await _maybeNotifyGoalReached();
+      await maybeNotifyGoalReachedIfGoalMet();
     }
 
     if (upsertedCount > 0) {
@@ -132,7 +136,11 @@ class BackgroundCollector {
     return upsertedCount;
   }
 
-  Future<void> _maybeNotifyGoalReached() async {
+  /// Evaluates goal + prefs and may fire the local notification (FR-25).
+  ///
+  /// Only when the user is **not** on the app (`isUserFacingAppActive` false).
+  /// Independent from in-app celebration dedup.
+  Future<void> maybeNotifyGoalReachedIfGoalMet() async {
     final prefs = userPreferences;
     final notifications = notificationService;
     final time = clock;
@@ -141,6 +149,14 @@ class BackgroundCollector {
         notifications == null ||
         time == null ||
         permissionCheck == null) {
+      return;
+    }
+
+    if (isUserFacingAppActive?.call() ?? false) {
+      return;
+    }
+
+    if (!await prefs.getGoalNotificationsEnabled()) {
       return;
     }
 
@@ -160,11 +176,14 @@ class BackgroundCollector {
       return;
     }
 
-    if (!await prefs.tryClaimCelebrationShownDate(todayIso)) {
+    if (!await prefs.tryClaimGoalNotificationShownDate(todayIso)) {
       return;
     }
 
-    await notifications.showGoalReached(stepsToday: steps);
+    final shown = await notifications.showGoalReached(stepsToday: steps);
+    if (!shown) {
+      await prefs.clearGoalNotificationShownDateIfMatches(todayIso);
+    }
   }
 }
 

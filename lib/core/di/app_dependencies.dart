@@ -125,6 +125,7 @@ class AppDependencies {
       MonitorDrainSource(liveStepMonitor),
       const AdpBleSource(),
     ];
+    HealthForegroundServiceCoordinator? healthForegroundRef;
     final backgroundCollector = BackgroundCollector(
       sources: ingestionSources,
       normalizer: stepNormalizer,
@@ -135,6 +136,7 @@ class AppDependencies {
       notificationService: notificationService,
       notificationPermissionGranted:
           notificationService.hasNotificationPermission,
+      isUserFacingAppActive: () => healthForegroundRef?.isUiActive ?? true,
     );
     final capabilityEvaluator = buildCapabilityEvaluator(
       notificationGranted: notificationService.hasNotificationPermission,
@@ -155,6 +157,7 @@ class AppDependencies {
         }
       },
     );
+    healthForegroundRef = healthForeground;
     healthForeground.registerPlatformHandlers();
     final dataLifecycleService = DataLifecycleService(
       session: databaseSession,

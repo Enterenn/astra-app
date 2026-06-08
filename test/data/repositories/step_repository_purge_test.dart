@@ -59,6 +59,10 @@ void main() {
         'value': '2026-06-02',
       });
       await db.insert('user_preferences', {
+        'key': kGoalNotificationShownDateKey,
+        'value': '2026-06-02',
+      });
+      await db.insert('user_preferences', {
         'key': kIngestionCollectLockKey,
         'value': 'locked',
       });
@@ -116,6 +120,7 @@ void main() {
         isEmpty,
       );
       expect(prefs.containsKey(kCelebrationShownDateKey), isFalse);
+      expect(prefs.containsKey(kGoalNotificationShownDateKey), isFalse);
       expect(prefs.containsKey(kIngestionCollectLockKey), isFalse);
       expect(prefs.containsKey(kLastDatabaseOptimizedAtKey), isFalse);
     });

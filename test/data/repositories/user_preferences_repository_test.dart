@@ -124,6 +124,21 @@ void main() {
       expect(await repository.getCelebrationShownDate(), '2026-06-02');
     });
 
+    test('goal notification shown date is independent from celebration', () async {
+      await repository.setCelebrationShownDate('2026-06-02');
+      expect(await repository.tryClaimGoalNotificationShownDate('2026-06-02'), isTrue);
+      expect(await repository.getGoalNotificationShownDate(), '2026-06-02');
+      expect(await repository.getCelebrationShownDate(), '2026-06-02');
+    });
+
+    test('clearGoalNotificationShownDateIfMatches only clears matching day', () async {
+      await repository.setGoalNotificationShownDate('2026-06-02');
+      await repository.clearGoalNotificationShownDateIfMatches('2026-06-01');
+      expect(await repository.getGoalNotificationShownDate(), '2026-06-02');
+      await repository.clearGoalNotificationShownDateIfMatches('2026-06-02');
+      expect(await repository.getGoalNotificationShownDate(), isNull);
+    });
+
     test('display name is null when unset', () async {
       expect(await repository.getDisplayName(), isNull);
     });

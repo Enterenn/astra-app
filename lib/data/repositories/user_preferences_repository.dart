@@ -168,6 +168,48 @@ class UserPreferencesRepository {
     await _writeValue(kCelebrationShownDateKey, localDayIso);
   }
 
+  /// Local calendar day when the goal local notification was last shown (FR-25).
+  Future<String?> getGoalNotificationShownDate() async {
+    return _readValue(kGoalNotificationShownDateKey);
+  }
+
+  Future<void> setGoalNotificationShownDate(String localDayIso) async {
+    await _writeValue(kGoalNotificationShownDateKey, localDayIso);
+  }
+
+  /// Clears notification dedup when [showGoalReached] fails after an optimistic claim.
+  Future<void> clearGoalNotificationShownDateIfMatches(String localDayIso) async {
+    final current = await getGoalNotificationShownDate();
+    if (current == localDayIso) {
+      await _deleteValue(kGoalNotificationShownDateKey);
+    }
+  }
+
+  /// Atomically records [localDayIso] for goal notification dedup (separate from celebration).
+  Future<bool> tryClaimGoalNotificationShownDate(String localDayIso) async {
+    return _session.withRetry(
+      (db) => db.transaction((txn) async {
+        final rows = await txn.query(
+          'user_preferences',
+          columns: ['value'],
+          where: 'key = ?',
+          whereArgs: [kGoalNotificationShownDateKey],
+          limit: 1,
+        );
+        final current = rows.isEmpty ? null : rows.first['value'] as String?;
+        if (current == localDayIso) {
+          return false;
+        }
+        await txn.insert(
+          'user_preferences',
+          {'key': kGoalNotificationShownDateKey, 'value': localDayIso},
+          conflictAlgorithm: ConflictAlgorithm.replace,
+        );
+        return true;
+      }),
+    );
+  }
+
   /// Last step count displayed on Today for the given local day, or null when unset.
   Future<int?> getLastDisplayedSteps(String localDayIso) async {
     final storedDay = await _readValue(kLastDisplayedStepsLocalDayKey);
@@ -212,8 +254,8 @@ class UserPreferencesRepository {
 
   /// Atomically records [localDayIso] when not already set for that day.
   ///
-  /// Returns `true` when this caller claimed the day (notification or
-  /// celebration may proceed). Returns `false` when today was already claimed.
+  /// Returns `true` when this caller claimed the day (celebration may proceed).
+  /// Returns `false` when today was already claimed.
   Future<bool> tryClaimCelebrationShownDate(String localDayIso) async {
     return _session.withRetry(
       (db) => db.transaction((txn) async {

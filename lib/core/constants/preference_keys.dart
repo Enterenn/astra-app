@@ -5,6 +5,7 @@ const kAccentPresetKey = 'accent_preset';
 const kDefaultAccentPresetStorage = 'orange';
 const kOnboardingCompleteKey = 'onboarding_complete';
 const kCelebrationShownDateKey = 'celebration_shown_date';
+const kGoalNotificationShownDateKey = 'goal_notification_shown_date';
 const kLastDisplayedStepsKey = 'last_displayed_steps';
 const kLastDisplayedStepsLocalDayKey = 'last_displayed_steps_local_day';
 const kIngestionCollectLockKey = 'ingestion_collect_lock';

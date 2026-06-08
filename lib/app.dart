@@ -143,9 +143,9 @@ class _AstraAppState extends State<AstraApp> with WidgetsBindingObserver {
       livePipelineLog('app', 'cold start START', details: {'elapsedMs': 0});
     }
     _foregroundBackfill = widget.enableLiveStepPipeline
-        ? _runPersistCycle(enableGoalNotification: true)
+        ? _runPersistCycle(enableGoalNotification: false)
         : widget.deps.backgroundCollector.collectOnce(
-            enableGoalNotification: true,
+            enableGoalNotification: false,
           );
   }
 

@@ -47,6 +47,7 @@ void main() {
         final key = row['key'] as String;
         if (key.startsWith('ingestion_baseline/') ||
             key == kCelebrationShownDateKey ||
+            key == kGoalNotificationShownDateKey ||
             key == kIngestionCollectLockKey) {
           await db.delete(
             'user_preferences',
@@ -289,7 +290,7 @@ void main() {
     });
 
     test(
-      'notifies once and writes celebration pref when goal met with permission',
+      'notifies once and writes notification pref when goal met with permission',
       () async {
         var showCount = 0;
         final notificationService = NotificationService(
@@ -298,6 +299,7 @@ void main() {
             showCount += 1;
           },
         );
+        await userPreferences.setGoalNotificationsEnabled(true);
         await userPreferences.setDailyStepGoal(5000);
         await repository.upsertIngestionBucket(
           _todayBucket(
@@ -333,21 +335,54 @@ void main() {
 
         expect(showCount, 1);
         expect(
-          await userPreferences.getCelebrationShownDate(),
+          await userPreferences.getGoalNotificationShownDate(),
           formatLocalDayIso(clock.snapshot()),
         );
+        expect(await userPreferences.getCelebrationShownDate(), isNull);
       },
     );
 
-    test('skips notification when celebration pref already set for today', () async {
+    test('still notifies when celebration pref already set for today', () async {
+      var showCount = 0;
+      final notificationService = NotificationService(
+        permissionChecker: () async => PermissionStatus.granted,
+        goalNotificationPresenter: ({required id, required title, body}) async {
+          showCount += 1;
+        },
+      );
+      await userPreferences.setGoalNotificationsEnabled(true);
+      await userPreferences.setDailyStepGoal(100);
+      await userPreferences.setCelebrationShownDate(
+        formatLocalDayIso(clock.snapshot()),
+      );
+      await repository.upsertIngestionBucket(_todayBucket(value: 500));
+      final collector = BackgroundCollector(
+        sources: [_FakeStepSource(const [])],
+        normalizer: normalizer,
+        repository: repository,
+        baselineRepository: baselineRepository,
+        userPreferences: userPreferences,
+        clock: clock,
+        notificationService: notificationService,
+        notificationPermissionGranted: () async => true,
+        sourceTimeout: const Duration(milliseconds: 10),
+      );
+
+      await collector.collectOnce(enableGoalNotification: true);
+
+      expect(showCount, 1);
+    });
+
+    test('skips notification when notification pref already set for today', () async {
       var showCount = 0;
       final notificationService = NotificationService(
         goalNotificationPresenter: ({required id, required title, body}) async {
           showCount += 1;
         },
       );
+      await userPreferences.setGoalNotificationsEnabled(true);
       await userPreferences.setDailyStepGoal(100);
-      await userPreferences.setCelebrationShownDate(
+      await userPreferences.setGoalNotificationShownDate(
         formatLocalDayIso(clock.snapshot()),
       );
       await repository.upsertIngestionBucket(_todayBucket(value: 500));
@@ -368,6 +403,89 @@ void main() {
       expect(showCount, 0);
     });
 
+    test('skips notification when user is on the app (foreground)', () async {
+      var showCount = 0;
+      final notificationService = NotificationService(
+        permissionChecker: () async => PermissionStatus.granted,
+        goalNotificationPresenter: ({required id, required title, body}) async {
+          showCount += 1;
+        },
+      );
+      await userPreferences.setGoalNotificationsEnabled(true);
+      await userPreferences.setDailyStepGoal(100);
+      await repository.upsertIngestionBucket(_todayBucket(value: 500));
+      final collector = BackgroundCollector(
+        sources: [_FakeStepSource(const [])],
+        normalizer: normalizer,
+        repository: repository,
+        baselineRepository: baselineRepository,
+        userPreferences: userPreferences,
+        clock: clock,
+        notificationService: notificationService,
+        notificationPermissionGranted: () async => true,
+        isUserFacingAppActive: () => true,
+        sourceTimeout: const Duration(milliseconds: 10),
+      );
+
+      await collector.collectOnce(enableGoalNotification: true);
+
+      expect(showCount, 0);
+    });
+
+    test('skips notification when goal notifications disabled in prefs', () async {
+      var showCount = 0;
+      final notificationService = NotificationService(
+        goalNotificationPresenter: ({required id, required title, body}) async {
+          showCount += 1;
+        },
+      );
+      await userPreferences.setGoalNotificationsEnabled(false);
+      await userPreferences.setDailyStepGoal(100);
+      await repository.upsertIngestionBucket(_todayBucket(value: 500));
+      final collector = BackgroundCollector(
+        sources: [_FakeStepSource(const [])],
+        normalizer: normalizer,
+        repository: repository,
+        baselineRepository: baselineRepository,
+        userPreferences: userPreferences,
+        clock: clock,
+        notificationService: notificationService,
+        notificationPermissionGranted: () async => true,
+        sourceTimeout: const Duration(milliseconds: 10),
+      );
+
+      await collector.collectOnce(enableGoalNotification: true);
+
+      expect(showCount, 0);
+    });
+
+    test('rolls back notification pref when show fails', () async {
+      final notificationService = NotificationService(
+        permissionChecker: () async => PermissionStatus.granted,
+        goalNotificationPresenter: ({required id, required title, body}) async {
+          throw StateError('presenter failed');
+        },
+      );
+      await userPreferences.setGoalNotificationsEnabled(true);
+      await userPreferences.setDailyStepGoal(100);
+      await repository.upsertIngestionBucket(_todayBucket(value: 500));
+      final collector = BackgroundCollector(
+        sources: [_FakeStepSource(const [])],
+        normalizer: normalizer,
+        repository: repository,
+        baselineRepository: baselineRepository,
+        userPreferences: userPreferences,
+        clock: clock,
+        notificationService: notificationService,
+        notificationPermissionGranted: () async => true,
+        sourceTimeout: const Duration(milliseconds: 10),
+      );
+
+      await collector.collectOnce(enableGoalNotification: true);
+
+      expect(await userPreferences.getGoalNotificationShownDate(), isNull);
+    });
+
     test('skips notification when permission denied', () async {
       var showCount = 0;
       final notificationService = NotificationService(
@@ -375,6 +493,7 @@ void main() {
           showCount += 1;
         },
       );
+      await userPreferences.setGoalNotificationsEnabled(true);
       await userPreferences.setDailyStepGoal(100);
       await repository.upsertIngestionBucket(_todayBucket(value: 500));
       final collector = BackgroundCollector(
@@ -392,7 +511,7 @@ void main() {
       await collector.collectOnce(enableGoalNotification: true);
 
       expect(showCount, 0);
-      expect(await userPreferences.getCelebrationShownDate(), isNull);
+      expect(await userPreferences.getGoalNotificationShownDate(), isNull);
     });
 
     test('does not evaluate goal notification when flag is false', () async {
@@ -476,6 +595,7 @@ void main() {
           showCount += 1;
         },
       );
+      await userPreferences.setGoalNotificationsEnabled(true);
       await userPreferences.setDailyStepGoal(100);
       await repository.upsertIngestionBucket(_todayBucket(value: 500));
       final collector = BackgroundCollector(
@@ -494,7 +614,7 @@ void main() {
 
       expect(showCount, 1);
       expect(
-        await userPreferences.getCelebrationShownDate(),
+        await userPreferences.getGoalNotificationShownDate(),
         formatLocalDayIso(clock.snapshot()),
       );
     });
@@ -509,6 +629,7 @@ void main() {
             order.add('notify');
           },
         );
+        await userPreferences.setGoalNotificationsEnabled(true);
         await userPreferences.setDailyStepGoal(5000);
         await repository.upsertIngestionBucket(
           _todayBucket(

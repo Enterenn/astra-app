@@ -96,6 +96,7 @@ void main() {
       addTearDown(uiDb.close);
       final userPreferences = UserPreferencesRepository(uiDb);
       await userPreferences.setDailyStepGoal(5000);
+      await userPreferences.setGoalNotificationsEnabled(true);
       final repository = StepRepository(db: uiDb, clock: clock);
       await repository.upsertIngestionBucket(
         NormalizedStepBucket(
@@ -135,9 +136,10 @@ void main() {
       expect(success, isTrue);
       expect(showCount, 1);
       expect(
-        await verifyPrefs.getCelebrationShownDate(),
+        await verifyPrefs.getGoalNotificationShownDate(),
         formatLocalDayIso(clock.snapshot()),
       );
+      expect(await verifyPrefs.getCelebrationShownDate(), isNull);
     });
 
     test(
@@ -183,6 +185,7 @@ void main() {
         addTearDown(uiDb.close);
         final userPreferences = UserPreferencesRepository(uiDb);
         await userPreferences.setDailyStepGoal(5000);
+        await userPreferences.setGoalNotificationsEnabled(true);
         final repository = StepRepository(db: uiDb, clock: clock);
         await repository.upsertIngestionBucket(
           NormalizedStepBucket(
@@ -220,7 +223,7 @@ void main() {
         final verifyPrefs = UserPreferencesRepository(verifyDb);
 
         expect(success, isTrue);
-        expect(await verifyPrefs.getCelebrationShownDate(), isNull);
+        expect(await verifyPrefs.getGoalNotificationShownDate(), isNull);
       },
     );
 

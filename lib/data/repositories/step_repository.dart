@@ -513,6 +513,7 @@ class StepRepository {
         await IngestionBaselineRepository.clearAllBaselines(txn);
         for (final key in [
           kCelebrationShownDateKey,
+          kGoalNotificationShownDateKey,
           kIngestionCollectLockKey,
           kLastDatabaseOptimizedAtKey,
         ]) {

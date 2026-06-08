@@ -13,8 +13,7 @@ void main() {
         },
       );
 
-      await service.showGoalReached();
-
+      expect(await service.showGoalReached(), isFalse);
       expect(showCount, 0);
     });
 
@@ -29,8 +28,7 @@ void main() {
         },
       );
 
-      await service.showGoalReached(stepsToday: 8500);
-
+      expect(await service.showGoalReached(stepsToday: 8500), isTrue);
       expect(shownTitle, NotificationService.goalReachedTitle);
       expect(shownBody, '8500 steps today');
     });

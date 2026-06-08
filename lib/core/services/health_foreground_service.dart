@@ -44,6 +44,9 @@ class HealthForegroundServiceCoordinator {
   bool _uiActive = true;
   bool _channelHandlerRegistered = false;
 
+  /// `true` while the user can see the app (foreground). Goal notifications are suppressed.
+  bool get isUiActive => _uiActive;
+
   /// Registers native → Dart collection invocations (idempotent).
   void registerPlatformHandlers() {
     if (_channelHandlerRegistered || !_isAndroidPlatform()) {
