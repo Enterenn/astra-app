@@ -15,16 +15,19 @@ ChartBenchmarkWidgetPump createOverlayStepBarChartPump(BuildContext context) {
     required List<ChartDayAggregate> points7d,
     required List<ChartDayAggregate> points30d,
     required int dailyGoal,
+    required Map<String, int> goalsByDay,
   }) async {
     await _pumpChartOverlay(
       overlay,
       points: points7d,
       dailyGoal: dailyGoal,
+      goalsByDay: goalsByDay,
     );
     await _pumpChartOverlay(
       overlay,
       points: points30d,
       dailyGoal: dailyGoal,
+      goalsByDay: goalsByDay,
     );
   };
 }
@@ -33,6 +36,7 @@ Future<void> _pumpChartOverlay(
   OverlayState overlay, {
   required List<ChartDayAggregate> points,
   required int dailyGoal,
+  required Map<String, int> goalsByDay,
 }) async {
   late OverlayEntry entry;
   entry = OverlayEntry(
@@ -43,6 +47,7 @@ Future<void> _pumpChartOverlay(
         child: StepBarChart(
           points: points,
           dailyGoal: dailyGoal,
+          goalsByDay: goalsByDay,
           status: HistoryStatus.ready,
         ),
       ),

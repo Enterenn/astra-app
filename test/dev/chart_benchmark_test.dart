@@ -152,11 +152,13 @@ void main() {
           required points7d,
           required points30d,
           required dailyGoal,
+          required goalsByDay,
         }) async {
           pumpInvoked = true;
           expect(points7d, hasLength(7));
           expect(points30d, hasLength(30));
           expect(dailyGoal, greaterThan(0));
+          expect(goalsByDay, isNotEmpty);
         },
       );
 
@@ -178,6 +180,7 @@ void main() {
         points7d: points7d,
         points30d: points7d,
         dailyGoal: 8000,
+        goalsByDay: const {'2026-06-02': 8000},
       );
 
       expect(tester.takeException(), isNull);

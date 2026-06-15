@@ -1,5 +1,6 @@
 import 'package:astra_app/core/constants/preference_keys.dart';
 import 'package:astra_app/core/database/app_database.dart';
+import 'package:astra_app/core/time/time_provider.dart';
 import 'package:astra_app/data/models/chart_day_aggregate.dart';
 import 'package:astra_app/data/datasources/data_ingestion_source.dart';
 import 'package:astra_app/data/models/normalized_step_bucket.dart';
@@ -21,6 +22,9 @@ class _ChartAggregateSpyRepository implements StepRepository {
   int chartAggregateCallCount = 0;
 
   @override
+  TimeProvider get clock => _delegate.clock;
+
+  @override
   Future<List<ChartDayAggregate>> getChartDailyAggregates({
     required int days,
   }) async {
@@ -39,6 +43,9 @@ class _ThrowingChartRepository implements StepRepository {
 
   final StepRepository _fallback;
   int callCount = 0;
+
+  @override
+  TimeProvider get clock => _fallback.clock;
 
   @override
   Future<List<ChartDayAggregate>> getChartDailyAggregates({
@@ -84,11 +91,11 @@ void main() {
 
     setUp(() async {
       db = await openAstraDatabase(databasePath: inMemoryDatabasePath);
-      userPreferences = UserPreferencesRepository(db);
       clock = FakeTimeProvider(
         fixedNowUtc: DateTime.utc(2026, 6, 2, 12),
         zoneOffset: const Duration(hours: 2),
       );
+      userPreferences = UserPreferencesRepository(db, clock: clock);
       stepRepository = StepRepository(db: db, clock: clock);
     });
 
@@ -284,6 +291,70 @@ void main() {
       expect(spy.chartAggregateCallCount, 1);
       expect(cubit.state.dailyGoal, 12_000);
       expect(cubit.state.status, HistoryStatus.ready);
+      cubit.close();
+    });
+
+    test('refresh resolves goalsByDay for chart window', () async {
+      await db.insert('daily_goal_effective', {
+        'effective_from_local_day': '2026-05-20',
+        'goal': 8000,
+      });
+      await db.insert('daily_goal_effective', {
+        'effective_from_local_day': '2026-06-01',
+        'goal': 10000,
+      });
+      for (var dayOffset = 0; dayOffset < 7; dayOffset++) {
+        await stepRepository.upsertIngestionBucket(
+          _bucket(
+            startTimeUtc: DateTime.utc(2026, 6, 2 - dayOffset, 10),
+            value: 5000,
+            zoneOffset: '+02:00',
+          ),
+        );
+      }
+      final cubit = buildCubit();
+
+      await cubit.refresh();
+
+      expect(cubit.state.goalsByDay['2026-05-27'], 8000);
+      expect(cubit.state.goalsByDay['2026-06-01'], 10_000);
+      expect(cubit.state.goalsByDay['2026-06-02'], 10_000);
+      cubit.close();
+    });
+
+    test('refreshGoal updates goalsByDay without re-querying steps', () async {
+      await db.insert('daily_goal_effective', {
+        'effective_from_local_day': '2026-06-01',
+        'goal': 8000,
+      });
+      await stepRepository.upsertIngestionBucket(
+        _bucket(
+          startTimeUtc: DateTime.utc(2026, 6, 1, 10),
+          value: 5000,
+          zoneOffset: '+02:00',
+        ),
+      );
+      await stepRepository.upsertIngestionBucket(
+        _bucket(
+          startTimeUtc: DateTime.utc(2026, 6, 2, 10),
+          value: 5000,
+          zoneOffset: '+02:00',
+        ),
+      );
+      final spy = _ChartAggregateSpyRepository(stepRepository);
+      final cubit = buildCubit(repository: spy);
+
+      await cubit.refresh();
+      expect(cubit.state.goalsByDay['2026-06-01'], 8000);
+      expect(cubit.state.goalsByDay['2026-06-02'], 8000);
+
+      await userPreferences.setDailyStepGoal(12_000);
+      await cubit.refreshGoal();
+
+      expect(spy.chartAggregateCallCount, 1);
+      expect(cubit.state.dailyGoal, 12_000);
+      expect(cubit.state.goalsByDay['2026-06-02'], 12_000);
+      expect(cubit.state.goalsByDay['2026-06-01'], 8000);
       cubit.close();
     });
 

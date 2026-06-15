@@ -15,8 +15,14 @@ ChartBenchmarkWidgetPump createTestStepBarChartPump(WidgetTester tester) {
     required List<ChartDayAggregate> points7d,
     required List<ChartDayAggregate> points30d,
     required int dailyGoal,
+    required Map<String, int> goalsByDay,
   }) async {
-    await _pumpReadyChart(tester, points: points7d, dailyGoal: dailyGoal);
+    await _pumpReadyChart(
+      tester,
+      points: points7d,
+      dailyGoal: dailyGoal,
+      goalsByDay: goalsByDay,
+    );
     assert(points30d.isNotEmpty);
   };
 }
@@ -25,6 +31,7 @@ Future<void> _pumpReadyChart(
   WidgetTester tester, {
   required List<ChartDayAggregate> points,
   required int dailyGoal,
+  required Map<String, int> goalsByDay,
 }) async {
   await tester.pumpWidget(
     MaterialApp(
@@ -35,6 +42,7 @@ Future<void> _pumpReadyChart(
           child: StepBarChart(
             points: points,
             dailyGoal: dailyGoal,
+            goalsByDay: goalsByDay,
             status: HistoryStatus.ready,
           ),
         ),

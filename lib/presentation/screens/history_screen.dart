@@ -63,6 +63,7 @@ class HistoryScreen extends StatelessWidget {
                         key: ValueKey(state.period),
                         points: state.chartPoints,
                         dailyGoal: state.dailyGoal,
+                        goalsByDay: state.goalsByDay,
                         status: state.status,
                       ),
                     ),

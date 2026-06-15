@@ -1,6 +1,7 @@
 import 'package:flutter/foundation.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 
+import '../../core/time/local_day_formatter.dart';
 import '../../data/models/chart_day_aggregate.dart';
 import '../../data/repositories/step_repository.dart';
 import '../../data/repositories/user_preferences_repository.dart';
@@ -16,6 +17,7 @@ class HistoryCubit extends Cubit<HistoryState> {
   final UserPreferencesRepository userPreferences;
 
   List<ChartDayAggregate> _cachedAggregates30d = const [];
+  Map<String, int> _cachedGoalsByDay = const {};
   Future<void>? _refreshInFlight;
 
   Future<void> refresh({bool silent = true}) async {
@@ -35,7 +37,7 @@ class HistoryCubit extends Cubit<HistoryState> {
     }
   }
 
-  /// Re-reads daily goal from preferences and updates the current state without
+  /// Re-reads daily goals from preferences and updates the current state without
   /// hitting the step repository (mirrors [TodayCubit.refreshMetadata] scope).
   Future<void> refreshGoal() async {
     if (isClosed || state.status == HistoryStatus.loading) {
@@ -43,13 +45,18 @@ class HistoryCubit extends Cubit<HistoryState> {
     }
 
     try {
-      final goal = await userPreferences.getDailyStepGoal();
+      final goalsByDay = await _resolveGoalsForAggregates(_cachedAggregates30d);
       if (isClosed) {
         return;
       }
-      _emitWithGoal(goal);
+      _cachedGoalsByDay = goalsByDay;
+      final todayGoal = await _resolveTodayGoal();
+      if (isClosed) {
+        return;
+      }
+      _emitWithGoals(todayGoal: todayGoal, goalsByDay: goalsByDay);
     } catch (error, stackTrace) {
-      // Keep last known goal on preference read failure.
+      // Keep last known goals on preference read failure.
       if (kDebugMode) {
         debugPrint('HistoryCubit.refreshGoal failed: $error');
         debugPrintStack(stackTrace: stackTrace);
@@ -68,7 +75,13 @@ class HistoryCubit extends Cubit<HistoryState> {
     }
 
     if (state.status == HistoryStatus.empty) {
-      emit(HistoryState.empty(period: period, dailyGoal: state.dailyGoal));
+      emit(
+        HistoryState.empty(
+          period: period,
+          dailyGoal: state.dailyGoal,
+          goalsByDay: state.goalsByDay,
+        ),
+      );
       return;
     }
 
@@ -81,17 +94,22 @@ class HistoryCubit extends Cubit<HistoryState> {
     }
 
     try {
-      final results = await Future.wait<Object?>([
-        stepRepository.getChartDailyAggregates(days: 30),
-        userPreferences.getDailyStepGoal(),
-      ]);
+      final aggregates = await stepRepository.getChartDailyAggregates(days: 30);
       if (isClosed) {
         return;
       }
 
-      final aggregates = results[0]! as List<ChartDayAggregate>;
-      final goal = results[1]! as int;
+      final goalsByDay = await _resolveGoalsForAggregates(aggregates);
+      if (isClosed) {
+        return;
+      }
+
       _cachedAggregates30d = aggregates;
+      _cachedGoalsByDay = goalsByDay;
+      final todayGoal = await _resolveTodayGoal();
+      if (isClosed) {
+        return;
+      }
 
       final totalSteps = aggregates.fold<int>(
         0,
@@ -101,7 +119,8 @@ class HistoryCubit extends Cubit<HistoryState> {
         emit(
           HistoryState.empty(
             period: state.period,
-            dailyGoal: goal,
+            dailyGoal: todayGoal,
+            goalsByDay: goalsByDay,
           ),
         );
         return;
@@ -109,7 +128,8 @@ class HistoryCubit extends Cubit<HistoryState> {
 
       _emitReady(
         period: _resolveDisplayPeriod(state.period),
-        dailyGoal: goal,
+        dailyGoal: todayGoal,
+        goalsByDay: goalsByDay,
         aggregates: aggregates,
       );
     } catch (error, stackTrace) {
@@ -138,24 +158,39 @@ class HistoryCubit extends Cubit<HistoryState> {
       HistoryState.empty(
         period: state.period,
         dailyGoal: state.dailyGoal,
+        goalsByDay: state.goalsByDay,
       ),
     );
   }
 
-  void _emitWithGoal(int goal) {
+  void _emitWithGoals({
+    required int todayGoal,
+    required Map<String, int> goalsByDay,
+  }) {
     switch (state.status) {
       case HistoryStatus.loading:
         return;
       case HistoryStatus.empty:
-        emit(HistoryState.empty(period: state.period, dailyGoal: goal));
+        emit(
+          HistoryState.empty(
+            period: state.period,
+            dailyGoal: todayGoal,
+            goalsByDay: goalsByDay,
+          ),
+        );
       case HistoryStatus.ready:
-        _emitReady(period: state.period, dailyGoal: goal);
+        _emitReady(
+          period: state.period,
+          dailyGoal: todayGoal,
+          goalsByDay: goalsByDay,
+        );
     }
   }
 
   void _emitReady({
     required HistoryPeriod period,
     int? dailyGoal,
+    Map<String, int>? goalsByDay,
     List<ChartDayAggregate>? aggregates,
   }) {
     final source = aggregates ?? _cachedAggregates30d;
@@ -164,9 +199,33 @@ class HistoryCubit extends Cubit<HistoryState> {
         period: period,
         chartPoints: _sliceForPeriod(period),
         dailyGoal: dailyGoal ?? state.dailyGoal,
+        goalsByDay: goalsByDay ?? _cachedGoalsByDay,
         trend: _computeTrend(source),
       ),
     );
+  }
+
+  Future<int> _resolveTodayGoal() async {
+    final todayIso = formatLocalDayIso(stepRepository.clock.snapshot());
+    return userPreferences.getGoalForLocalDay(todayIso);
+  }
+
+  Future<Map<String, int>> _resolveGoalsForAggregates(
+    List<ChartDayAggregate> aggregates,
+  ) async {
+    final distinctIsos = {
+      for (final aggregate in aggregates)
+        localDayIsoFromDateOnly(aggregate.localDay),
+    }.toList(growable: false);
+    if (distinctIsos.isEmpty) {
+      return const {};
+    }
+
+    final goals = await Future.wait<int>([
+      for (final iso in distinctIsos)
+        userPreferences.getGoalForLocalDay(iso),
+    ]);
+    return Map.fromIterables(distinctIsos, goals);
   }
 
   /// When 7d is selected but the last 7 days have no steps while older days do,

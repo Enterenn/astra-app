@@ -42,17 +42,17 @@ So that week dots, charts, and notifications stay truthful after I change my goa
   - [x] Add `today_cubit_test` case: seed journal rows Mon=8000, Thu=10000 with steps on Mon/Wed/Thu; assert `goalMet` respects per-day goals after mid-week change.
   - [x] **Stop → review brief → wait for Baptiste OK → commit**
 
-- [ ] **Sub-task B — History chart per-day goals** (AC: #2)
-  - [ ] Extend `HistoryState` with `Map<String, int> goalsByDay` (key = `YYYY-MM-DD`, value = resolved goal). Keep `dailyGoal` as **today's resolved goal** for empty-state fallback and `refreshGoal` compatibility — or derive today from map; do not break `HistoryState.empty` / `ready` factories without updating call sites.
-  - [ ] In `HistoryCubit._refreshImpl`: after loading aggregates, resolve goals in parallel (`Future.wait` per distinct `localDayIsoFromDateOnly(aggregate.localDay)`).
-  - [ ] Update `refreshGoal` to re-resolve goals for `_cachedAggregates30d` (not only today's scalar).
-  - [ ] Update `StepBarChart` / `_ReadyChart`:
+- [x] **Sub-task B — History chart per-day goals** (AC: #2)
+  - [x] Extend `HistoryState` with `Map<String, int> goalsByDay` (key = `YYYY-MM-DD`, value = resolved goal). Keep `dailyGoal` as **today's resolved goal** for empty-state fallback and `refreshGoal` compatibility — or derive today from map; do not break `HistoryState.empty` / `ready` factories without updating call sites.
+  - [x] In `HistoryCubit._refreshImpl`: after loading aggregates, resolve goals in parallel (`Future.wait` per distinct `localDayIsoFromDateOnly(aggregate.localDay)`).
+  - [x] Update `refreshGoal` to re-resolve goals for `_cachedAggregates30d` (not only today's scalar).
+  - [x] Update `StepBarChart` / `_ReadyChart`:
     - Per-bar `_barColor` uses that point's resolved goal.
     - `yMax` / `safeYMax` uses `max(maxSteps, max(resolvedGoals))`.
     - Horizontal dashed goal line: when **all visible goals are equal**, keep single `HorizontalLine` (current UX). When goals differ, **omit** the global line (per-bar coloring carries semantics); Epic 12.4 adds stepped dashed line polish.
-  - [ ] Update `history_screen.dart`, `chart_benchmark.dart`, `chart_benchmark_render_pump.dart`, and widget tests.
-  - [ ] Add `history_cubit_test` + `step_bar_chart_test` coverage for mixed goals across chart window.
-  - [ ] **Stop → review brief → wait for Baptiste OK → commit**
+  - [x] Update `history_screen.dart`, `chart_benchmark.dart`, `chart_benchmark_render_pump.dart`, and widget tests.
+  - [x] Add `history_cubit_test` + `step_bar_chart_test` coverage for mixed goals across chart window.
+  - [x] **Stop → review brief → wait for Baptiste OK → commit**
 
 - [ ] **Sub-task C — BackgroundCollector notification** (AC: #3)
   - [ ] In `maybeNotifyGoalReachedIfGoalMet`, replace `getDailyStepGoal()` with `getGoalForLocalDay(todayIso)` (`todayIso` already computed on line 167).
@@ -275,13 +275,25 @@ Recent Epic 8 commits touched only migrations, repository, DI, tests — **zero 
 ### Completion Notes List
 
 - Sub-task A (2026-06-15): `TodayCubit` week strip and ring/celebration now use `getGoalForLocalDay` per local day; added `localDayIsoFromDateOnly` helper; 46/46 `today_cubit_test` pass.
+- Sub-task B (2026-06-15): `HistoryState.goalsByDay` + per-bar chart semantics; goal line omitted when goals differ; 36/36 history/chart/benchmark tests pass.
 
 ### File List
 
 - `lib/core/time/local_day_formatter.dart`
 - `lib/presentation/cubits/today_cubit.dart`
 - `test/presentation/cubits/today_cubit_test.dart`
+- `lib/presentation/cubits/history_state.dart`
+- `lib/presentation/cubits/history_cubit.dart`
+- `lib/presentation/widgets/step_bar_chart.dart`
+- `lib/presentation/screens/history_screen.dart`
+- `lib/dev/chart_benchmark.dart`
+- `lib/dev/chart_benchmark_render_pump.dart`
+- `test/dev/chart_benchmark_pump.dart`
+- `test/dev/chart_benchmark_test.dart`
+- `test/presentation/cubits/history_cubit_test.dart`
+- `test/presentation/widgets/step_bar_chart_test.dart`
 
 ## Change Log
 
 - 2026-06-15: Sub-task A — TodayCubit per-day goal resolution for week strip and ring (committed).
+- 2026-06-15: Sub-task B — History chart per-day goals and refreshGoal map update (committed).

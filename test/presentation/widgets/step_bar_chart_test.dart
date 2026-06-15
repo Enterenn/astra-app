@@ -13,6 +13,7 @@ void main() {
       required HistoryStatus status,
       List<ChartDayAggregate> points = const [],
       int dailyGoal = 8000,
+      Map<String, int> goalsByDay = const {},
       double width = 320,
     }) async {
       await tester.pumpWidget(
@@ -25,6 +26,7 @@ void main() {
               child: StepBarChart(
                 points: points,
                 dailyGoal: dailyGoal,
+                goalsByDay: goalsByDay,
                 status: status,
               ),
             ),
@@ -50,6 +52,7 @@ void main() {
               child: StepBarChart(
                 points: [],
                 dailyGoal: 8000,
+                goalsByDay: {},
                 status: HistoryStatus.loading,
               ),
             ),
@@ -138,6 +141,62 @@ void main() {
       expect(find.text('3/5'), findsOneWidget);
       expect(find.text('8/5'), findsOneWidget);
       expect(find.text('1/6'), findsOneWidget);
+    });
+
+    testWidgets('omits goal line when visible goals differ', (tester) async {
+      final points = [
+        ChartDayAggregate(
+          localDay: DateTime.utc(2026, 6, 8),
+          totalSteps: 9000,
+        ),
+        ChartDayAggregate(
+          localDay: DateTime.utc(2026, 6, 9),
+          totalSteps: 5000,
+        ),
+      ];
+
+      await pumpChart(
+        tester,
+        status: HistoryStatus.ready,
+        points: points,
+        dailyGoal: 10000,
+        goalsByDay: const {
+          '2026-06-08': 8000,
+          '2026-06-09': 10000,
+        },
+      );
+
+      final barChart = tester.widget<BarChart>(find.byType(BarChart));
+      expect(barChart.data.extraLinesData.horizontalLines, isEmpty);
+    });
+
+    testWidgets('colors bars against per-day resolved goals', (tester) async {
+      final points = [
+        ChartDayAggregate(
+          localDay: DateTime.utc(2026, 6, 8),
+          totalSteps: 8500,
+        ),
+        ChartDayAggregate(
+          localDay: DateTime.utc(2026, 6, 9),
+          totalSteps: 5000,
+        ),
+      ];
+
+      await pumpChart(
+        tester,
+        status: HistoryStatus.ready,
+        points: points,
+        dailyGoal: 10000,
+        goalsByDay: const {
+          '2026-06-08': 8000,
+          '2026-06-09': 10000,
+        },
+      );
+
+      final barChart = tester.widget<BarChart>(find.byType(BarChart));
+      final firstBar = barChart.data.barGroups.first.barRods.first.color;
+      final secondBar = barChart.data.barGroups.last.barRods.first.color;
+      expect(firstBar, isNot(equals(secondBar)));
     });
   });
 }

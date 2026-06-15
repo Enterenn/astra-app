@@ -4,6 +4,7 @@ import 'package:flutter/material.dart';
 import '../../core/constants/astra_colors.dart';
 import '../../core/constants/astra_spacing.dart';
 import '../../core/constants/astra_typography.dart';
+import '../../core/time/local_day_formatter.dart';
 import '../../data/models/chart_day_aggregate.dart';
 import '../cubits/history_state.dart';
 
@@ -11,6 +12,7 @@ class StepBarChart extends StatelessWidget {
   const StepBarChart({
     required this.points,
     required this.dailyGoal,
+    required this.goalsByDay,
     required this.status,
     super.key,
   });
@@ -20,6 +22,7 @@ class StepBarChart extends StatelessWidget {
 
   final List<ChartDayAggregate> points;
   final int dailyGoal;
+  final Map<String, int> goalsByDay;
   final HistoryStatus status;
 
   @override
@@ -43,6 +46,7 @@ class StepBarChart extends StatelessWidget {
               HistoryStatus.ready => _ReadyChart(
                 points: points,
                 dailyGoal: dailyGoal,
+                goalsByDay: goalsByDay,
                 colors: colors,
               ),
             },
@@ -114,11 +118,13 @@ class _ReadyChart extends StatelessWidget {
   const _ReadyChart({
     required this.points,
     required this.dailyGoal,
+    required this.goalsByDay,
     required this.colors,
   });
 
   final List<ChartDayAggregate> points;
   final int dailyGoal;
+  final Map<String, int> goalsByDay;
   final AstraColors colors;
 
   static const _kBelowGoalBarAlpha = 0.66;
@@ -138,16 +144,25 @@ class _ReadyChart extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final resolvedGoals = [
+      for (final point in points) _goalForPoint(point),
+    ];
     final maxSteps = points.fold<int>(
       0,
       (max, entry) => entry.totalSteps > max ? entry.totalSteps : max,
     );
-    final yMax = (maxSteps > dailyGoal ? maxSteps : dailyGoal).toDouble();
+    final maxGoal = resolvedGoals.isEmpty
+        ? dailyGoal
+        : resolvedGoals.reduce((a, b) => a > b ? a : b);
+    final yMax = (maxSteps > maxGoal ? maxSteps : maxGoal).toDouble();
     final safeYMax = (yMax <= 0
             ? dailyGoal.toDouble().clamp(1, double.infinity)
             : yMax)
         .toDouble();
     final chartMaxY = safeYMax * 1.05;
+    final allGoalsEqual = resolvedGoals.isNotEmpty &&
+        resolvedGoals.every((goal) => goal == resolvedGoals.first);
+    final showGoalLine = allGoalsEqual && resolvedGoals.first > 0;
 
     return ExcludeSemantics(
       child: Padding(
@@ -234,14 +249,16 @@ class _ReadyChart extends StatelessWidget {
                   ),
                 ),
                 extraLinesData: ExtraLinesData(
-                  horizontalLines: [
-                    HorizontalLine(
-                      y: dailyGoal.toDouble(),
-                      color: colors.dataGoalLine,
-                      strokeWidth: 1.5,
-                      dashArray: const [6, 4],
-                    ),
-                  ],
+                  horizontalLines: showGoalLine
+                      ? [
+                          HorizontalLine(
+                            y: resolvedGoals.first.toDouble(),
+                            color: colors.dataGoalLine,
+                            strokeWidth: 1.5,
+                            dashArray: const [6, 4],
+                          ),
+                        ]
+                      : const [],
                 ),
                 barGroups: [
                   for (var i = 0; i < points.length; i++)
@@ -253,7 +270,7 @@ class _ReadyChart extends StatelessWidget {
                           color: _barColor(
                             colors: colors,
                             steps: points[i].totalSteps,
-                            dailyGoal: dailyGoal,
+                            dailyGoal: resolvedGoals[i],
                           ),
                           width: barWidth,
                           borderRadius: const BorderRadius.vertical(
@@ -269,6 +286,11 @@ class _ReadyChart extends StatelessWidget {
         ),
       ),
     );
+  }
+
+  int _goalForPoint(ChartDayAggregate point) {
+    return goalsByDay[localDayIsoFromDateOnly(point.localDay)] ??
+        dailyGoal;
   }
 
   static double _resolveBarWidth(double chartWidth, int pointCount) {

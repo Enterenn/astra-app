@@ -61,6 +61,7 @@ typedef ChartBenchmarkWidgetPump = Future<void> Function({
   required List<ChartDayAggregate> points7d,
   required List<ChartDayAggregate> points30d,
   required int dailyGoal,
+  required Map<String, int> goalsByDay,
 });
 
 /// Runs KPI-01 chart query + toggle/render benchmark in debug builds only.
@@ -233,6 +234,7 @@ Future<void> benchmarkToggleRender({
   }
 
   final dailyGoal = cubit.state.dailyGoal;
+  final goalsByDay = cubit.state.goalsByDay;
 
   cubit.selectPeriod(HistoryPeriod.days7);
   final points7d = List<ChartDayAggregate>.from(cubit.state.chartPoints);
@@ -245,6 +247,7 @@ Future<void> benchmarkToggleRender({
       points7d: points7d,
       points30d: points30d,
       dailyGoal: dailyGoal,
+      goalsByDay: goalsByDay,
     );
   }
 }
