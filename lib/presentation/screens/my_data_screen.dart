@@ -31,11 +31,7 @@ class MyDataScreen extends StatelessWidget {
   Widget build(BuildContext context) {
     final colors = context.astraColors;
 
-    return ColoredBox(
-      color: colors.bgBase,
-      child: SafeArea(
-        bottom: false,
-        child: MultiBlocListener(
+    final content = MultiBlocListener(
           listeners: [
             BlocListener<MyDataCubit, MyDataState>(
               listenWhen: (previous, current) =>
@@ -80,8 +76,13 @@ class MyDataScreen extends StatelessWidget {
             ),
           ],
           child: _MyDataScreenBody(showInlineTitle: showInlineTitle),
-        ),
-      ),
+        );
+
+    return ColoredBox(
+      color: colors.bgBase,
+      child: showInlineTitle
+          ? SafeArea(bottom: false, child: content)
+          : content,
     );
   }
 }
@@ -104,24 +105,22 @@ class _MyDataScreenBody extends StatelessWidget {
         AstraSpacing.kBottomNavBarHeight +
         AstraSpacing.kSpaceMd;
 
-    return Semantics(
-      label: MyDataScreen._kScreenTitle,
-      child: SingleChildScrollView(
-        padding: EdgeInsets.fromLTRB(
-          horizontalPadding,
-          AstraSpacing.kSpaceSm,
-          horizontalPadding,
-          bottomScrollPadding,
-        ),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.stretch,
-          children: [
-            if (showInlineTitle) ...[
-              Text(
-                MyDataScreen._kScreenTitle,
-                style: AstraTypography.screenTitleFor(colors),
-              ),
-            ],
+    final scrollView = SingleChildScrollView(
+      padding: EdgeInsets.fromLTRB(
+        horizontalPadding,
+        AstraSpacing.kSpaceSm,
+        horizontalPadding,
+        bottomScrollPadding,
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: [
+          if (showInlineTitle) ...[
+            Text(
+              MyDataScreen._kScreenTitle,
+              style: AstraTypography.screenTitleFor(colors),
+            ),
+          ],
           if (state.isStale) ...[
             const SizedBox(height: AstraSpacing.kSpaceMd),
             StatusBanner(
@@ -237,7 +236,15 @@ class _MyDataScreenBody extends StatelessWidget {
           ),
         ],
       ),
-      ),
+    );
+
+    if (!showInlineTitle) {
+      return scrollView;
+    }
+
+    return Semantics(
+      label: MyDataScreen._kScreenTitle,
+      child: scrollView,
     );
   }
 }

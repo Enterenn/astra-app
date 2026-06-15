@@ -69,6 +69,7 @@ class _AppScaffoldState extends State<AppScaffold> {
   late final ProfileCubit _profileCubit;
   late final List<Widget> _tabScreens;
   final _menuNavigatorKey = GlobalKey<NavigatorState>();
+  MenuHubDestination? _menuStackTopDestination;
 
   @override
   void initState() {
@@ -226,12 +227,18 @@ class _AppScaffoldState extends State<AppScaffold> {
     if (navigator == null) {
       return;
     }
+    if (_menuStackTopDestination == destination) {
+      return;
+    }
 
+    _menuStackTopDestination = destination;
+    final Future<void> pushFuture;
     switch (destination) {
       case MenuHubDestination.profile:
         unawaited(_profileCubit.refresh());
-        navigator.push<void>(
+        pushFuture = navigator.push<void>(
           MaterialPageRoute<void>(
+            settings: const RouteSettings(name: 'menu/profile'),
             builder: (context) => BlocProvider.value(
               value: _profileCubit,
               child: const SecondaryScreenShell(
@@ -243,8 +250,9 @@ class _AppScaffoldState extends State<AppScaffold> {
         );
       case MenuHubDestination.data:
         unawaited(_myDataCubit.refresh());
-        navigator.push<void>(
+        pushFuture = navigator.push<void>(
           MaterialPageRoute<void>(
+            settings: const RouteSettings(name: 'menu/data'),
             builder: (context) => BlocProvider.value(
               value: _myDataCubit,
               child: const SecondaryScreenShell(
@@ -255,18 +263,28 @@ class _AppScaffoldState extends State<AppScaffold> {
           ),
         );
       case MenuHubDestination.settings:
-        navigator.push<void>(
+        pushFuture = navigator.push<void>(
           MaterialPageRoute<void>(
+            settings: const RouteSettings(name: 'menu/settings'),
             builder: (context) => const SettingsScreen(),
           ),
         );
       case MenuHubDestination.about:
-        navigator.push<void>(
+        pushFuture = navigator.push<void>(
           MaterialPageRoute<void>(
+            settings: const RouteSettings(name: 'menu/about'),
             builder: (context) => const AboutScreen(),
           ),
         );
     }
+
+    unawaited(
+      pushFuture.whenComplete(() {
+        if (mounted && _menuStackTopDestination == destination) {
+          _menuStackTopDestination = null;
+        }
+      }),
+    );
   }
 
   @override

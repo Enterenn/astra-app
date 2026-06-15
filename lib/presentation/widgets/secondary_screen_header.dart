@@ -36,7 +36,9 @@ class SecondaryScreenHeader extends StatelessWidget {
             ),
           ),
           const SizedBox(width: AstraSpacing.kSpaceXs),
-          Text(title, style: AstraTypography.screenTitleFor(colors)),
+          Expanded(
+            child: Text(title, style: AstraTypography.screenTitleFor(colors)),
+          ),
         ],
       ),
     );

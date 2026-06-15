@@ -32,35 +32,36 @@ class ProfileScreen extends StatelessWidget {
   Widget build(BuildContext context) {
     final colors = context.astraColors;
 
+    final content = BlocBuilder<ProfileCubit, ProfileState>(
+      builder: (context, state) {
+        if (state.status == ProfileStatus.loading) {
+          return const Center(child: CircularProgressIndicator());
+        }
+
+        if (state.status == ProfileStatus.error) {
+          return Center(
+            child: Padding(
+              padding: const EdgeInsets.all(
+                AstraSpacing.kScreenHorizontalPadding,
+              ),
+              child: Text(
+                state.errorMessage ?? 'Could not load profile',
+                style: AstraTypography.body(context),
+                textAlign: TextAlign.center,
+              ),
+            ),
+          );
+        }
+
+        return _ProfileScreenBody(showInlineTitle: showInlineTitle);
+      },
+    );
+
     return ColoredBox(
       color: colors.bgBase,
-      child: SafeArea(
-        bottom: false,
-        child: BlocBuilder<ProfileCubit, ProfileState>(
-          builder: (context, state) {
-            if (state.status == ProfileStatus.loading) {
-              return const Center(child: CircularProgressIndicator());
-            }
-
-            if (state.status == ProfileStatus.error) {
-              return Center(
-                child: Padding(
-                  padding: const EdgeInsets.all(
-                    AstraSpacing.kScreenHorizontalPadding,
-                  ),
-                  child: Text(
-                    state.errorMessage ?? 'Could not load profile',
-                    style: AstraTypography.body(context),
-                    textAlign: TextAlign.center,
-                  ),
-                ),
-              );
-            }
-
-            return _ProfileScreenBody(showInlineTitle: showInlineTitle);
-          },
-        ),
-      ),
+      child: showInlineTitle
+          ? SafeArea(bottom: false, child: content)
+          : content,
     );
   }
 }
@@ -131,26 +132,24 @@ class _ProfileScreenBody extends StatelessWidget {
       }
     }
 
-    return Semantics(
-      label: ProfileScreen._kScreenTitle,
-      child: SingleChildScrollView(
-        padding: EdgeInsets.fromLTRB(
-          horizontalPadding,
-          AstraSpacing.kSpaceSm,
-          horizontalPadding,
-          bottomScrollPadding,
-        ),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.stretch,
-          children: [
-            if (showInlineTitle) ...[
-              Text(
-                ProfileScreen._kScreenTitle,
-                style: AstraTypography.screenTitleFor(colors),
-              ),
-              const SizedBox(height: AstraSpacing.kSpaceMd),
-            ],
-            SectionCard(
+    final scrollView = SingleChildScrollView(
+      padding: EdgeInsets.fromLTRB(
+        horizontalPadding,
+        AstraSpacing.kSpaceSm,
+        horizontalPadding,
+        bottomScrollPadding,
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: [
+          if (showInlineTitle) ...[
+            Text(
+              ProfileScreen._kScreenTitle,
+              style: AstraTypography.screenTitleFor(colors),
+            ),
+            const SizedBox(height: AstraSpacing.kSpaceMd),
+          ],
+          SectionCard(
               headline: 'Informations',
               child: Column(
                 children: [
@@ -238,7 +237,15 @@ class _ProfileScreenBody extends StatelessWidget {
             const _ProfileVersionFooter(),
           ],
         ),
-      ),
+    );
+
+    if (!showInlineTitle) {
+      return scrollView;
+    }
+
+    return Semantics(
+      label: ProfileScreen._kScreenTitle,
+      child: scrollView,
     );
   }
 }

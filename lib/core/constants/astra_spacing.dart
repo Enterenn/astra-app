@@ -18,6 +18,9 @@ abstract final class AstraSpacing {
   /// Minimum touch target for interactive controls.
   static const double kMinTouchTarget = kSpace2xl;
 
+  /// Horizontal inset inside [IconButton] (aligns arrow with screen padding).
+  static const double kIconButtonHorizontalInset = 12;
+
   // Corner radius
   static const double kRadiusSm = 8;
   static const double kRadiusMd = 12;

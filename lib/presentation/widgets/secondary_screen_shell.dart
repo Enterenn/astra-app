@@ -29,7 +29,7 @@ class SecondaryScreenShell extends StatelessWidget {
           children: [
             Padding(
               padding: EdgeInsets.fromLTRB(
-                horizontalPadding - 12,
+                horizontalPadding - AstraSpacing.kIconButtonHorizontalInset,
                 AstraSpacing.kSpaceSm,
                 horizontalPadding,
                 0,
