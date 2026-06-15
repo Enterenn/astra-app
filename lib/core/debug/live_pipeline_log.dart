@@ -6,10 +6,10 @@ import 'package:flutter/foundation.dart';
 /// Filter terminal output with: `[ASTRA:LIVE]`
 const kLivePipelineLogTag = '[ASTRA:LIVE]';
 
-/// Override at build time: `--dart-define=ASTRA_LIVE_LOG=false`
+/// Override at build time: `--dart-define=ASTRA_LIVE_LOG=true`
 const bool _kLiveLogDefine = bool.fromEnvironment(
   'ASTRA_LIVE_LOG',
-  defaultValue: true,
+  defaultValue: false,
 );
 
 /// Test hook: force logging off without kDebugMode.
