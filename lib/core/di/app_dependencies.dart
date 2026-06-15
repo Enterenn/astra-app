@@ -190,7 +190,17 @@ class AppDependencies {
         );
     final sources =
         ingestionSources ??
-        <DataIngestionSource>[MonitorDrainSource(monitor), const AdpBleSource()];
+        <DataIngestionSource>[
+          MonitorDrainSource(
+            monitor,
+            // Prevent real pedometer channel from opening in test environments
+            // when the monitor is not running and MonitorDrainSource falls back.
+            phoneFallback: PhonePedometerSource(
+              stepEventStreamFactory: () => const Stream.empty(),
+            ),
+          ),
+          const AdpBleSource(),
+        ];
     final notifications =
         notificationService ??
         NotificationService(

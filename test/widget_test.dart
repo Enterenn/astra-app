@@ -2,6 +2,7 @@ import 'package:astra_app/app.dart';
 import 'package:astra_app/core/database/app_database.dart';
 import 'package:astra_app/core/di/app_dependencies.dart';
 import 'package:astra_app/data/datasources/data_ingestion_source.dart';
+import 'package:astra_app/presentation/widgets/goal_ring.dart';
 import 'package:astra_app/data/models/step_reading.dart';
 import 'package:astra_app/data/repositories/step_repository.dart';
 import 'package:astra_app/data/repositories/user_preferences_repository.dart';
@@ -70,6 +71,9 @@ void main() {
     tearDownAll(() async {
       await db.close();
     });
+
+    setUp(() => GoalRing.disableStepPersistence = true);
+    tearDown(() => GoalRing.disableStepPersistence = false);
 
     testWidgets('shows AppBottomNav and switches four tabs', (
       WidgetTester tester,
