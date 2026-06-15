@@ -104,6 +104,42 @@ void main() {
 
       expect(result, 180);
     });
+
+    testWidgets('returns -1 when ft+in fields cleared on Save', (tester) async {
+      int? result;
+      await tester.pumpWidget(
+        MaterialApp(
+          theme: buildAstraLightTheme(),
+          home: Builder(
+            builder: (context) {
+              return Scaffold(
+                body: ElevatedButton(
+                  onPressed: () async {
+                    result = await showHeightEditorSheet(
+                      context,
+                      currentHeightCm: 180,
+                      heightUnit: HeightDisplayUnit.ftIn,
+                    );
+                  },
+                  child: const Text('Open'),
+                ),
+              );
+            },
+          ),
+        ),
+      );
+
+      await tester.tap(find.text('Open'));
+      await tester.pumpAndSettle();
+      final fields = find.byType(TextField);
+      await tester.enterText(fields.at(0), '');
+      await tester.enterText(fields.at(1), '');
+      await tester.pump();
+      await tester.tap(find.text('Save'));
+      await tester.pumpAndSettle();
+
+      expect(result, -1);
+    });
   });
 
   group('showWeightEditorSheet', () {
@@ -168,6 +204,106 @@ void main() {
       await tester.pumpAndSettle();
 
       expect(result, 72.5);
+    });
+
+    testWidgets('accepts displayed min lb boundary and returns kg', (tester) async {
+      double? result;
+      await tester.pumpWidget(
+        MaterialApp(
+          theme: buildAstraLightTheme(),
+          home: Builder(
+            builder: (context) {
+              return Scaffold(
+                body: ElevatedButton(
+                  onPressed: () async {
+                    result = await showWeightEditorSheet(
+                      context,
+                      weightUnit: WeightDisplayUnit.lb,
+                    );
+                  },
+                  child: const Text('Open'),
+                ),
+              );
+            },
+          ),
+        ),
+      );
+
+      await tester.tap(find.text('Open'));
+      await tester.pumpAndSettle();
+      await tester.enterText(find.byType(TextField), '66.1');
+      await tester.pump();
+      await tester.tap(find.text('Save'));
+      await tester.pumpAndSettle();
+
+      expect(result, 30.0);
+    });
+
+    testWidgets('accepts displayed max lb boundary and returns kg', (tester) async {
+      double? result;
+      await tester.pumpWidget(
+        MaterialApp(
+          theme: buildAstraLightTheme(),
+          home: Builder(
+            builder: (context) {
+              return Scaffold(
+                body: ElevatedButton(
+                  onPressed: () async {
+                    result = await showWeightEditorSheet(
+                      context,
+                      weightUnit: WeightDisplayUnit.lb,
+                    );
+                  },
+                  child: const Text('Open'),
+                ),
+              );
+            },
+          ),
+        ),
+      );
+
+      await tester.tap(find.text('Open'));
+      await tester.pumpAndSettle();
+      await tester.enterText(find.byType(TextField), '661.4');
+      await tester.pump();
+      await tester.tap(find.text('Save'));
+      await tester.pumpAndSettle();
+
+      expect(result, 300.0);
+    });
+
+    testWidgets('returns -1.0 when lb field cleared on Save', (tester) async {
+      double? result;
+      await tester.pumpWidget(
+        MaterialApp(
+          theme: buildAstraLightTheme(),
+          home: Builder(
+            builder: (context) {
+              return Scaffold(
+                body: ElevatedButton(
+                  onPressed: () async {
+                    result = await showWeightEditorSheet(
+                      context,
+                      currentWeightKg: 72.5,
+                      weightUnit: WeightDisplayUnit.lb,
+                    );
+                  },
+                  child: const Text('Open'),
+                ),
+              );
+            },
+          ),
+        ),
+      );
+
+      await tester.tap(find.text('Open'));
+      await tester.pumpAndSettle();
+      await tester.enterText(find.byType(TextField), '');
+      await tester.pump();
+      await tester.tap(find.text('Save'));
+      await tester.pumpAndSettle();
+
+      expect(result, -1.0);
     });
   });
 }

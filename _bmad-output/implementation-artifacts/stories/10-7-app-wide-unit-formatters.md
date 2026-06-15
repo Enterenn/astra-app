@@ -1,6 +1,6 @@
 # Story 10.7: App-Wide Unit Formatters
 
-Status: review
+Status: done
 
 <!-- Note: Validation is optional. Run validate-create-story for quality check before dev-story. -->
 
@@ -331,3 +331,4 @@ Composer
 
 - 2026-06-16: Story 10.7 created — completes unit formatter rollout (editors + inverse conversion); display wiring from 10.6 documented as pre-done; ready for dev.
 - 2026-06-16: Story 10.7 implemented — inverse conversion helpers, unit-aware height/weight editors, Profile wiring, tests extended; ready for review.
+- 2026-06-16: Code review fixes — lb validation via canonical kg, imperial height error copy, boundary/clear editor tests; story done.

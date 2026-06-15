@@ -47,9 +47,11 @@ class _WeightEditorSheetBodyState extends State<_WeightEditorSheetBody> {
 
   bool get _isLb => widget.weightUnit == WeightDisplayUnit.lb;
 
-  double get _minDisplay => _isLb ? weightKgToDisplayLb(kMinWeightKg) : kMinWeightKg;
-
-  double get _maxDisplay => _isLb ? weightKgToDisplayLb(kMaxWeightKg) : kMaxWeightKg;
+  String get _lbRangeMessage {
+    final minLb = weightKgToDisplayLb(kMinWeightKg);
+    final maxLb = weightKgToDisplayLb(kMaxWeightKg);
+    return 'Weight must be between ${minLb.toStringAsFixed(1)} and ${maxLb.toStringAsFixed(1)} lb';
+  }
 
   @override
   void initState() {
@@ -100,18 +102,20 @@ class _WeightEditorSheetBodyState extends State<_WeightEditorSheetBody> {
       return 'Enter a valid weight';
     }
     final rounded = (parsed * 10).round() / 10;
-    if (rounded < _minDisplay || rounded > _maxDisplay) {
-      if (_isLb) {
-        return 'Weight must be between ${_minDisplay.toStringAsFixed(1)} and ${_maxDisplay.toStringAsFixed(1)} lb';
-      }
-      return 'Weight must be between ${kMinWeightKg.toInt()} and ${kMaxWeightKg.toInt()} kg';
-    }
     final decimalPart = trimmed.contains('.') || trimmed.contains(',');
     if (decimalPart) {
       final parts = trimmed.replaceAll(',', '.').split('.');
       if (parts.length > 1 && parts[1].length > 1) {
         return 'Use at most one decimal place';
       }
+    }
+    if (_isLb) {
+      final kg = displayLbToWeightKg(rounded);
+      if (kg < kMinWeightKg || kg > kMaxWeightKg) {
+        return _lbRangeMessage;
+      }
+    } else if (rounded < kMinWeightKg || rounded > kMaxWeightKg) {
+      return 'Weight must be between ${kMinWeightKg.toInt()} and ${kMaxWeightKg.toInt()} kg';
     }
     return null;
   }
@@ -127,7 +131,14 @@ class _WeightEditorSheetBodyState extends State<_WeightEditorSheetBody> {
     }
     final rounded = (parsed * 10).round() / 10;
     if (_isLb) {
-      return displayLbToWeightKg(rounded);
+      final kg = displayLbToWeightKg(rounded);
+      if (kg < kMinWeightKg || kg > kMaxWeightKg) {
+        return null;
+      }
+      return kg;
+    }
+    if (rounded < kMinWeightKg || rounded > kMaxWeightKg) {
+      return null;
     }
     return rounded;
   }

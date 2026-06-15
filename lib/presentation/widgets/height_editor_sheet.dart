@@ -49,6 +49,13 @@ class _HeightEditorSheetBodyState extends State<_HeightEditorSheetBody> {
 
   bool get _isFtIn => widget.heightUnit == HeightDisplayUnit.ftIn;
 
+  String get _ftInRangeMessage {
+    final min = heightCmToFtIn(kMinHeightCm);
+    final max = heightCmToFtIn(kMaxHeightCm);
+    return 'Height must be between ${min.feet} ft ${min.inches} in '
+        'and ${max.feet} ft ${max.inches} in';
+  }
+
   @override
   void initState() {
     super.initState();
@@ -127,7 +134,7 @@ class _HeightEditorSheetBodyState extends State<_HeightEditorSheetBody> {
     }
     final heightCm = heightFtInToCm(feet: feet, inches: inches);
     if (heightCm == null) {
-      return 'Height must be between $kMinHeightCm and $kMaxHeightCm cm';
+      return _ftInRangeMessage;
     }
     return null;
   }
@@ -219,6 +226,7 @@ class _HeightEditorSheetBodyState extends State<_HeightEditorSheetBody> {
                   decoration: profileSheetFieldDecoration(
                     colors: colors,
                     labelText: 'Inches',
+                    errorText: _errorText,
                   ),
                 ),
               ] else
