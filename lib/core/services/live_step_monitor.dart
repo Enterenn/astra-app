@@ -29,7 +29,7 @@ class LiveStepMonitor {
     this.incrementCalculator = const StepIncrementCalculator(),
     PhoneStepEventStreamFactory? stepEventStreamFactory,
     this.emitThrottle = const Duration(milliseconds: 500),
-    this.maxBufferedReadings = 200,
+    this.maxBufferedReadings = 250,
     this.activityIdleFlushDelay = kActivityIdleFlushDelay,
     this.onActivityIdle,
     this.onLocalDayBoundary,
