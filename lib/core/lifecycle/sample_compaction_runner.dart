@@ -49,7 +49,11 @@ class TransactionCompactionWriter implements CompactionWriter {
 
   @override
   Future<void> insertCompactedSample(TimeseriesSampleModel sample) {
-    return _txn.insert('timeseries_samples', sample.toMap());
+    return _txn.insert(
+      'timeseries_samples',
+      sample.toMap(),
+      conflictAlgorithm: ConflictAlgorithm.ignore,
+    );
   }
 
   @override
