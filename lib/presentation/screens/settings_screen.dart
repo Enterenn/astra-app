@@ -75,7 +75,7 @@ Future<void> _pickDistanceUnit(
     labelFor: (unit) => unit.displayLabel,
     selected: selected,
   );
-  if (picked == null || !context.mounted) {
+  if (picked == null || picked == selected || !context.mounted) {
     return;
   }
   final saved = await unitsCubit.setDistanceUnit(picked);
@@ -98,7 +98,7 @@ Future<void> _pickWeightUnit(
     labelFor: (unit) => unit.displayLabel,
     selected: selected,
   );
-  if (picked == null || !context.mounted) {
+  if (picked == null || picked == selected || !context.mounted) {
     return;
   }
   final saved = await unitsCubit.setWeightUnit(picked);
@@ -121,7 +121,7 @@ Future<void> _pickHeightUnit(
     labelFor: (unit) => unit.displayLabel,
     selected: selected,
   );
-  if (picked == null || !context.mounted) {
+  if (picked == null || picked == selected || !context.mounted) {
     return;
   }
   final saved = await unitsCubit.setHeightUnit(picked);

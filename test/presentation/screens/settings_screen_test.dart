@@ -1,6 +1,5 @@
 import 'package:astra_app/core/constants/astra_accent_preset.dart';
 import 'package:astra_app/core/constants/astra_theme.dart';
-import 'package:astra_app/core/constants/display_unit_preferences.dart';
 import 'package:astra_app/core/database/app_database.dart';
 import 'package:astra_app/core/services/notification_service.dart';
 import 'package:astra_app/data/repositories/user_preferences_repository.dart';
@@ -141,11 +140,8 @@ void main() {
       expect(headlines, ['Units', 'Notifications', 'Theme']);
     });
 
-    testWidgets('selecting Imperial distance updates row label', (
-      tester,
-    ) async {
-      // Covered by unit_option_picker_sheet_test + units_cubit_test.
-    }, skip: 'Flaky modal bottom-sheet interaction in widget harness');
+    // Tap→sheet integration: covered by unit_option_picker_sheet_test + units_cubit_test.
+    // (Flaky modal bottom-sheet in widget harness — no dedicated test here.)
 
     testWidgets('shows Notifications and Theme cards with controls', (
       tester,

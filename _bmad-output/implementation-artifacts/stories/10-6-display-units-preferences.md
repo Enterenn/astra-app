@@ -1,6 +1,6 @@
 # Story 10.6: Display Units Preferences
 
-Status: review
+Status: done
 
 <!-- Mockup ref: Settings-light (2026-06-15) — Units card is the **first** SectionCard (above Notifications, then Theme). Row layout: label left, current value + chevron right (single line). Display conversion app-wide deferred to 10.7. -->
 
@@ -344,3 +344,4 @@ Follow patterns: minimal diff, sub-task commits with review gates, extend existi
 
 - 2026-06-16: Story 10.6 created — Units persistence + Settings UI; UnitsCubit at app root; mockup card order (Units first); display formatters deferred to 10.7.
 - 2026-06-16: Story 10.6 implemented — Settings Units card, UnitsCubit, display formatters on Today/Profile; ready for review.
+- 2026-06-16: Code review fixes — snackbar no-op guard, settings test compile fix, imperial profile test runAsync; story done.

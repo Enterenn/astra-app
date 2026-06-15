@@ -295,8 +295,10 @@ void main() {
     });
 
     testWidgets('formats height and weight in imperial units', (tester) async {
-      await unitsCubit.setWeightUnit(WeightDisplayUnit.lb);
-      await unitsCubit.setHeightUnit(HeightDisplayUnit.ftIn);
+      await tester.runAsync(() async {
+        await unitsCubit.setWeightUnit(WeightDisplayUnit.lb);
+        await unitsCubit.setHeightUnit(HeightDisplayUnit.ftIn);
+      });
 
       final cubit = _SeededProfileCubit(
         userPreferences: userPreferences,
