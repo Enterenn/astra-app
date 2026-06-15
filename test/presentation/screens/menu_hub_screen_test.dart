@@ -60,7 +60,7 @@ void main() {
       );
     });
 
-    testWidgets('row taps do not crash when navigation is deferred', (
+    testWidgets('row taps do not crash when callback is omitted', (
       tester,
     ) async {
       await pumpMenuHub(tester);

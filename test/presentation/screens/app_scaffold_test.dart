@@ -308,5 +308,131 @@ void main() {
 
       await _disposeScaffold(tester);
     });
+
+    Future<void> openMenuTab(WidgetTester tester) async {
+      await tester.tap(find.byIcon(PhosphorIconsRegular.list));
+      await tester.pump();
+      await tester.runAsync(() async {
+        await Future<void>.delayed(const Duration(milliseconds: 50));
+      });
+      await tester.pump();
+    }
+
+    testWidgets('Menu pushes Profile with header and pops back to hub', (
+      tester,
+    ) async {
+      await _pumpAppScaffold(
+        tester,
+        AppScaffold(
+          deps: deps,
+          createTodayCubit: _testTodayCubit,
+          createHistoryCubit: _testHistoryCubit,
+        ),
+        userPreferences: deps.userPreferences,
+      );
+
+      await openMenuTab(tester);
+
+      await tester.tap(find.text('Profile'));
+      await tester.pump();
+      await tester.runAsync(() async {
+        await Future<void>.delayed(const Duration(milliseconds: 150));
+      });
+      await tester.pump();
+
+      expect(find.text('Profile'), findsWidgets);
+      expect(find.text('My Profile'), findsNothing);
+      expect(find.text('Informations'), findsWidgets);
+      expect(find.byIcon(PhosphorIconsRegular.arrowLeft), findsOneWidget);
+      expect(find.byIcon(PhosphorIconsFill.list), findsOneWidget);
+
+      await tester.tap(find.byTooltip('Back'));
+      await tester.pump();
+      await tester.runAsync(() async {
+        await Future<void>.delayed(const Duration(milliseconds: 50));
+      });
+      await tester.pump();
+
+      expect(find.text('Menu'), findsOneWidget);
+      expect(find.text('Profile'), findsOneWidget);
+      expect(find.text('Informations'), findsOneWidget);
+
+      await _disposeScaffold(tester);
+    });
+
+    testWidgets('Menu pushes Data with header and pops back to hub', (
+      tester,
+    ) async {
+      await _pumpAppScaffold(
+        tester,
+        AppScaffold(
+          deps: deps,
+          createTodayCubit: _testTodayCubit,
+          createHistoryCubit: _testHistoryCubit,
+        ),
+        userPreferences: deps.userPreferences,
+      );
+
+      await openMenuTab(tester);
+
+      await tester.tap(find.text('Data'));
+      await tester.pump();
+      await tester.runAsync(() async {
+        await Future<void>.delayed(const Duration(milliseconds: 150));
+      });
+      await tester.pump();
+
+      expect(find.text('Data'), findsWidgets);
+      expect(find.text('My Data'), findsNothing);
+      expect(find.text('Storage on this device'), findsOneWidget);
+      expect(find.byIcon(PhosphorIconsRegular.arrowLeft), findsOneWidget);
+
+      await tester.tap(find.byTooltip('Back'));
+      await tester.pump();
+      await tester.runAsync(() async {
+        await Future<void>.delayed(const Duration(milliseconds: 50));
+      });
+      await tester.pump();
+
+      expect(find.text('Menu'), findsOneWidget);
+      expect(find.text('Data'), findsOneWidget);
+
+      await _disposeScaffold(tester);
+    });
+
+    testWidgets('Menu pushes Settings and About stubs with headers', (
+      tester,
+    ) async {
+      await _pumpAppScaffold(
+        tester,
+        AppScaffold(
+          deps: deps,
+          createTodayCubit: _testTodayCubit,
+          createHistoryCubit: _testHistoryCubit,
+        ),
+        userPreferences: deps.userPreferences,
+      );
+
+      await openMenuTab(tester);
+
+      for (final destination in ['Settings', 'About']) {
+        await tester.tap(find.text(destination));
+        await tester.pump();
+
+        expect(find.text(destination), findsWidgets);
+        expect(find.byIcon(PhosphorIconsRegular.arrowLeft), findsOneWidget);
+
+        await tester.tap(find.byTooltip('Back'));
+        await tester.pump();
+        await tester.runAsync(() async {
+          await Future<void>.delayed(const Duration(milliseconds: 50));
+        });
+        await tester.pump();
+
+        expect(find.text('Menu'), findsOneWidget);
+      }
+
+      await _disposeScaffold(tester);
+    });
   });
 }
