@@ -131,9 +131,11 @@ void main() {
       expect(find.text('Informations'), findsOneWidget);
       expect(find.byType(SectionCard), findsOneWidget);
       expect(find.text('Display name'), findsOneWidget);
+      expect(find.text('Alex'), findsOneWidget);
       expect(find.text('Height'), findsOneWidget);
       expect(find.text('Weight'), findsOneWidget);
       expect(find.text('Age'), findsNothing);
+      expect(find.textContaining('ASTRA v'), findsNothing);
       expect(find.text('Notifications'), findsNothing);
       expect(find.text('Appearance'), findsNothing);
       expect(find.text('Receive Goal notifications'), findsNothing);
@@ -177,6 +179,62 @@ void main() {
       await _pumpProfileScreen(tester, profileCubit: cubit);
 
       expect(find.text('Not set'), findsNWidgets(3));
+    });
+
+    testWidgets('shows loading indicator while profile is loading', (
+      tester,
+    ) async {
+      final cubit = _SeededProfileCubit(
+        userPreferences: userPreferences,
+        notificationService: NotificationService(
+          permissionChecker: () async => PermissionStatus.granted,
+        ),
+        seededState: const ProfileState.loading(),
+      );
+      addTearDown(cubit.close);
+
+      await _pumpProfileScreen(tester, profileCubit: cubit);
+
+      expect(find.byType(CircularProgressIndicator), findsOneWidget);
+      expect(find.text('Informations'), findsNothing);
+    });
+
+    testWidgets('shows error message when profile fails to load', (
+      tester,
+    ) async {
+      final cubit = _SeededProfileCubit(
+        userPreferences: userPreferences,
+        notificationService: NotificationService(
+          permissionChecker: () async => PermissionStatus.granted,
+        ),
+        seededState: const ProfileState(
+          status: ProfileStatus.error,
+          errorMessage: 'Network failed',
+        ),
+      );
+      addTearDown(cubit.close);
+
+      await _pumpProfileScreen(tester, profileCubit: cubit);
+
+      expect(find.text('Network failed'), findsOneWidget);
+      expect(find.text('Informations'), findsNothing);
+    });
+
+    testWidgets('shows default error message when errorMessage is null', (
+      tester,
+    ) async {
+      final cubit = _SeededProfileCubit(
+        userPreferences: userPreferences,
+        notificationService: NotificationService(
+          permissionChecker: () async => PermissionStatus.granted,
+        ),
+        seededState: const ProfileState(status: ProfileStatus.error),
+      );
+      addTearDown(cubit.close);
+
+      await _pumpProfileScreen(tester, profileCubit: cubit);
+
+      expect(find.text('Could not load profile'), findsOneWidget);
     });
 
     testWidgets('formats height and weight values', (tester) async {

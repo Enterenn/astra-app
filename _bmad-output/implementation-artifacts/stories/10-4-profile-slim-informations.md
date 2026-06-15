@@ -1,6 +1,6 @@
 # Story 10.4: Profile Slim Informations
 
-Status: review
+Status: done
 
 <!-- Mockup ref: Profil-light (2026-06-15) — body shows **Informations** card only. Notifications, Appearance, and version footer move to Settings (10.5) and About (10.8). Dark theme: no mockup-specific behavior — reuse existing `context.astraColors` / theme tokens. -->
 

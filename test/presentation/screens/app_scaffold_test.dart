@@ -11,8 +11,10 @@ import 'package:astra_app/presentation/cubits/today_cubit.dart';
 import 'package:astra_app/presentation/cubits/today_state.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:astra_app/presentation/screens/app_scaffold.dart';
+import 'package:astra_app/presentation/widgets/accent_preset_selector.dart';
 import 'package:astra_app/presentation/widgets/app_bottom_nav.dart';
 import 'package:astra_app/presentation/widgets/goal_ring.dart';
+import 'package:astra_app/presentation/widgets/theme_selector.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:phosphoricons_flutter/phosphoricons_flutter.dart';
@@ -346,6 +348,10 @@ void main() {
       expect(find.text('Notifications'), findsNothing);
       expect(find.text('Appearance'), findsNothing);
       expect(find.text('Receive Goal notifications'), findsNothing);
+      expect(find.textContaining('ASTRA v'), findsNothing);
+      expect(find.byType(Switch), findsNothing);
+      expect(find.byType(ThemeSelector), findsNothing);
+      expect(find.byType(AccentPresetSelector), findsNothing);
       expect(find.byIcon(PhosphorIconsRegular.arrowLeft), findsOneWidget);
       expect(find.byIcon(PhosphorIconsFill.list), findsOneWidget);
 
