@@ -185,6 +185,14 @@ void main() {
         await tester.pump();
 
         expect(find.text('Menu'), findsOneWidget);
+        expect(find.text('Informations'), findsOneWidget);
+        expect(find.text('Other'), findsOneWidget);
+        expect(find.text('Profile'), findsOneWidget);
+        expect(find.text('Data'), findsOneWidget);
+        expect(find.text('Settings'), findsOneWidget);
+        expect(find.text('About'), findsOneWidget);
+        expect(find.text('Achievements'), findsNothing);
+        expect(find.text('Help'), findsNothing);
         expect(find.text('Storage on this device'), findsNothing);
         expect(find.byIcon(PhosphorIconsFill.list), findsOneWidget);
 

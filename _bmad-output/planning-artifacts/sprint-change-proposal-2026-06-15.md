@@ -84,7 +84,7 @@ After Phase 0 beta readiness (Epic 7 **done**), Baptiste identified a **critical
 |-------|----------|
 | Goal change timing | **Immediate** on current local day; past days **frozen** |
 | Pre-migration users | **None** — clean v3 migration; seed one effective row for today |
-| Menu pattern | **Full-screen list** (mockup title **My Data** = menu hub, not Data screen) |
+| Menu pattern | **Full-screen list**; screen title **Menu** (mockup showed "My Data" — superseded; sovereignty screen stays **My Data** until 10.8) |
 | Achievements / Help | **Out of sprint** — no menu rows until future epic |
 | Units (Settings) | **Editable** display prefs app-wide (distance, weight, height); canonical storage stays metric |
 | Trends kcal average | **Bucket-based** per day via `DerivedActivityMetrics` (consistent with Steps) |

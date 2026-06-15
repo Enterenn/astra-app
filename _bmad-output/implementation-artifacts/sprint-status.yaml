@@ -1,6 +1,6 @@
 # generated: 2026-05-25
-# last_updated: 2026-06-15 (Story 10.1 done)
-# NEXT: Epic 10 Story 10.2 — Menu hub full-screen list
+# last_updated: 2026-06-15 (Story 10.2 done)
+# NEXT: Epic 10 Story 10.3 — secondary-screen Navigator stack
 # Ref: planning-artifacts/sprint-change-proposal-2026-06-15.md
 # project: astra-app
 # project_key: NOKEY
@@ -146,7 +146,7 @@ development_status:
 
   epic-10: in-progress
   10-1-three-tab-bottom-navigation: done
-  10-2-menu-hub-full-screen-list: backlog
+  10-2-menu-hub-full-screen-list: done
   10-3-secondary-screen-navigator-stack: backlog
   10-4-profile-slim-informations: backlog
   10-5-settings-appearance-and-notifications: backlog

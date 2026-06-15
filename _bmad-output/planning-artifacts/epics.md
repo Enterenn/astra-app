@@ -2386,7 +2386,7 @@ So that I can reach secondary screens from one place.
 
 **Given** MENU tab selected
 **When** screen renders
-**Then** title reads **My Data** (menu hub — not the Data sovereignty screen)
+**Then** title reads **Menu** (menu hub — aligns with MENU tab; not the Data sovereignty screen)
 **And** section **Informations** lists: **Profile**, **Data** (chevron rows)
 **And** section **Other** lists: **Settings**, **About**
 **And** **Achievements** and **Help** rows are **absent** (deferred backlog)
