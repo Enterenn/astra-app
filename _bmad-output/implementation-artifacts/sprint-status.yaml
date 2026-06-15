@@ -1,7 +1,7 @@
 # generated: 2026-05-25
-# last_updated: 2026-06-08 (Phase 0 closed — Epic 7 done, Story 7.3 done)
-# NEXT: optional epic-7-retrospective · post-close: FUNC-12 · REL-03 GIF · CI flake hotfix
-# Ref: planning-artifacts/sprint-change-proposal-2026-06-04.md
+# last_updated: 2026-06-15 (Story 8.1 ready-for-dev)
+# NEXT: Epic 8 Story 8.1 — daily goal history schema
+# Ref: planning-artifacts/sprint-change-proposal-2026-06-15.md
 # project: astra-app
 # project_key: NOKEY
 # tracking_system: file-system
@@ -36,6 +36,13 @@
 # - Developer typically creates next story after previous one is 'done' to incorporate learnings
 # - Dev moves story to 'review', then runs code-review (fresh context, different LLM recommended)
 #
+# VERSIONING (mandatory at each epic close — stay on 0.x.y, no 1.0.0):
+# - Fix epics (8, 9): patch+1, build+1  → e.g. 0.2.0+2 → 0.2.1+3 → 0.2.2+4
+# - Feature epics (10–12): minor+1, patch=0, build+1 → 0.3.0+5 … 0.5.0+7
+# - Epic 10: one moyen bump when full epic done (nav + surfaces + units; not per sub-story)
+# - Update pubspec.yaml + README.md project status row before marking epic done
+# - Ref: sprint-change-proposal-2026-06-15.md · docs/project-context.md · .cursor/rules/app-versioning.mdc
+#
 # EPIC TITLES (human-readable):
 #   epic-1: Trust Onboarding & App Shell
 #   epic-2: Passive Step Tracking & Today Dashboard
@@ -44,11 +51,16 @@
 #   epic-5: Design Polish & Visual Cohesion (Figma shell)
 #   epic-6: Derived Activity Metrics
 #   epic-7: OSS Credibility & Beta Readiness
+#   epic-8: Goal Time Semantics
+#   epic-9: Android FGS Notification
+#   epic-10: App Shell, Navigation & Settings Surfaces
+#   epic-11: Steps Dashboard
+#   epic-12: Trends Analytics
 #
 # NAVIGATION: _bmad-output/README.md
 
 generated: 2026-05-25
-last_updated: 2026-06-08
+last_updated: 2026-06-15
 project: astra-app
 project_key: NOKEY
 tracking_system: file-system
@@ -121,3 +133,37 @@ development_status:
   7-2-release-manifest-hardening-and-privacy-audit: done
   7-3-beta-acceptance-checklist: done
   epic-7-retrospective: optional
+
+  epic-8: in-progress
+  8-1-daily-goal-history-schema-and-repository: in-progress
+  8-2-goal-history-consumer-migration: backlog
+  epic-8-retrospective: optional
+
+  epic-9: backlog
+  9-1-android-fgs-notification-visibility: backlog
+  epic-9-retrospective: optional
+
+  epic-10: backlog
+  10-1-three-tab-bottom-navigation: backlog
+  10-2-menu-hub-full-screen-list: backlog
+  10-3-secondary-screen-navigator-stack: backlog
+  10-4-profile-slim-informations: backlog
+  10-5-settings-appearance-and-notifications: backlog
+  10-6-display-units-preferences: backlog
+  10-7-app-wide-unit-formatters: backlog
+  10-8-data-and-about-screens: backlog
+  epic-10-retrospective: optional
+
+  epic-11: backlog
+  11-1-steps-screen-layout-week-first: backlog
+  11-2-day-picker-and-selected-day-state: backlog
+  11-3-selected-day-indicators-and-live-guards: backlog
+  11-4-week-trophy-and-historical-goal-dots: backlog
+  epic-11-retrospective: optional
+
+  epic-12: backlog
+  12-1-trends-average-stats-cards: backlog
+  12-2-trends-peak-day-card: backlog
+  12-3-trends-twelve-month-monthly-chart: backlog
+  12-4-trends-historical-goal-line: backlog
+  epic-12-retrospective: optional

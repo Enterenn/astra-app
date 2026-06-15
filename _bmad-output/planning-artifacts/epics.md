@@ -26,6 +26,8 @@ This document provides the complete epic and story breakdown for astra-app, deco
 
 **Scope amendment (user-confirmed, 2026-06-04 — Epic 6 metrics):** Profil stores `height_cm` + `weight_kg` only (no age, no sex/gender). Derived metrics: distance from stride (height × 0.414 or 0.76 m default); walking time from active buckets; kcal = MET 3.5 × weight (70 kg default) × duration. See FR-33.
 
+**Scope amendment (user-confirmed, 2026-06-15 — Epic merge):** Former **Epic 13** merged into **Epic 10** (App Shell, Navigation & Settings Surfaces). One **moyen** version bump at Epic 10 close. Tranche is now **Epics 8–12** (5 epics, 18 stories).
+
 ## Development Workflow (all stories)
 
 Every sub-task follows **review before commit**. See [`docs/project-context.md`](../../docs/project-context.md).
@@ -38,6 +40,23 @@ Every sub-task follows **review before commit**. See [`docs/project-context.md`]
 | 4 | Agent | Commit only after explicit approval — **one commit per sub-task** |
 
 This gate is mandatory for Phase 0 unless Baptiste explicitly waives it for a given step.
+
+## Versioning (all stories — Epics 8–12)
+
+Every completed **work phase** (epic close, or standalone story) must bump the app version in `pubspec.yaml` and `README.md` before the phase is marked done.
+
+**Pre-1.0:** Remain on **`0.x.y`** — do not ship **`1.0.0`** until public launch.
+
+| Phase type | Semver | `+build` | Use when |
+|------------|--------|----------|----------|
+| **Fix / mineur** | `patch+1` | always `+1` | Bug fix, hotfix, no new user-facing capability (Epics **8**, **9**) |
+| **Moyen** | `minor+1`, `patch=0` | always `+1` | New feature, UX tranche, new screens or nav (Epics **10**, **11**, **12**) |
+
+**Epics 8–12:** bump at **each epic close**. Projected path from current `0.2.0+2`: Epic 8 → `0.2.1+3` · Epic 9 → `0.2.2+4` · Epic 10 (nav + menu + Profile/Settings/Data/Units/About) → `0.3.0+5` · Epic 11 → `0.4.0+6` · Epic 12 → `0.5.0+7`.
+
+**Epic 10 note:** Nav-only stories (10.1–10.3) do not get a separate patch bump — they ship inside Epic 10; **one moyen bump** when the full epic closes (shell + secondary surfaces + units).
+
+Source: `planning-artifacts/sprint-change-proposal-2026-06-15.md` · `docs/project-context.md` § Versioning.
 
 ## Requirements Inventory
 
@@ -2219,4 +2238,510 @@ So that Phase 0 exit criteria are objectively verifiable before sharing the OSS 
 **Given** install size check
 **When** release APK built
 **Then** artifact size is <50MB (NFR2, SM-6)
+
+---
+
+## Epic 8: Goal Time Semantics
+
+Daily step goals are effective-dated; changing a goal updates today immediately and never retroactively alters past days.
+
+**Depends on:** Epics 1–7 done. **Blocks:** Epic 11, Epic 12 (goal line / week dots).
+
+### Story 8.1: Daily Goal History Schema and Repository
+
+As a **user**,
+I want my daily step goal changes recorded with an effective date,
+So that historical days keep the goal that applied when I walked them.
+
+**Acceptance Criteria:**
+
+**Given** fresh install or upgrade from DB v2
+**When** migration v3 runs
+**Then** table `daily_goal_effective (effective_from_local_day TEXT PRIMARY KEY, goal INTEGER NOT NULL CHECK (goal > 0))` exists
+**And** one seed row is inserted for today's local day with the current `daily_step_goal` preference value (default 8000 if unset)
+
+**Given** `UserPreferencesRepository.getGoalForLocalDay(localDay)`
+**When** called for any local calendar day
+**Then** returns the `goal` from the latest row where `effective_from_local_day ≤ localDay` (ISO date string)
+**And** falls back to `kDefaultStepGoal` when no row applies
+
+**Given** `UserPreferencesRepository.setDailyStepGoal(goal)` with valid positive integer
+**When** today's local day already has a row in `daily_goal_effective`
+**Then** that row is **updated** to the new goal
+**When** today has no row yet
+**Then** a row is **inserted** with `effective_from_local_day = today`
+**And** `user_preferences.daily_step_goal` cache is kept in sync
+
+**Given** unit tests in `test/data/repositories/user_preferences_repository_test.dart` (or dedicated goal history test)
+**When** run
+**Then** cover: seed on migration, same-day update, new-day insert, resolution for past/future days, invalid goal rejected
+
+**Mockup ref:** N/A (data layer).
+
+---
+
+### Story 8.2: Goal History Consumer Migration
+
+As a **user**,
+I want every goal comparison in the app to use the goal that applied on that day,
+So that week dots, charts, and notifications stay truthful after I change my goal.
+
+**Acceptance Criteria:**
+
+**Given** goal was 8000 Mon–Wed and user changes to 10000 on Thu
+**When** `TodayCubit._loadWeekDays` runs
+**Then** Mon–Wed `goalMet` uses 8000; Thu+ uses 10000 (Thu change is immediate on current day)
+
+**Given** `HistoryCubit` renders bar chart
+**When** goal reference line is drawn
+**Then** each bar day uses `getGoalForLocalDay(thatDay)` — not a single global goal
+
+**Given** `BackgroundCollector.maybeNotifyGoalReachedIfGoalMet`
+**When** evaluating today's steps
+**Then** uses `getGoalForLocalDay(today)` only
+
+**Given** in-app goal celebration on Today/Steps
+**When** steps cross threshold
+**Then** threshold is today's resolved goal from history API
+
+**Given** existing step-ingestion and FGS tests
+**When** this story ships
+**Then** `background_collector_test`, `today_cubit_test`, chart tests pass with no changes to ingest write path
+
+**Depends on:** Story 8.1.
+
+---
+
+## Epic 9: Android FGS Notification
+
+Reduce intrusive visibility of the health foreground service notification without breaking background step collection.
+
+**Depends on:** Epics 1–7 done. **Parallel with:** Epic 10.
+
+### Story 9.1: Android FGS Notification Visibility
+
+As a **user**,
+I want the step-tracking notification to be as discreet as Android allows,
+So that passive tracking feels honest but not nagging.
+
+**Acceptance Criteria:**
+
+**Given** `HealthStepForegroundService` is running on Android
+**When** the foreground notification is displayed
+**Then** channel importance is minimized (`IMPORTANCE_MIN` or lowest compatible with FGS health on target SDK)
+**And** notification uses `PRIORITY_MIN` / low visibility flags, `setShowBadge(false)`, `setOnlyAlertOnce(true)`
+**And** copy remains honest (not disguised as sync/backup) — title/body may be shortened vs current
+
+**Given** FGS health collection loop
+**When** this story ships
+**Then** `COLLECTION_INTERVAL_MS` and Dart collection bridge unchanged
+**And** `test/core/services/fgs_step_collection_test.dart` and `health_foreground_notification_test.dart` pass (updated expectations if copy/channel change)
+
+**Given** manual test on physical Android device
+**When** app backgrounded with activity permission granted
+**Then** steps still accumulate within expected WM/FGS interval
+
+**Mockup ref:** N/A (system notification).
+
+---
+
+## Epic 10: App Shell, Navigation & Settings Surfaces
+
+Replace four-tab navigation with three tabs, menu hub, secondary screens (Profile, Data, Settings, About), Profile/Settings split, and display Units — **presentation layer only**; no change to step ingestion core.
+
+**Depends on:** Epics 1–7 done. **Parallel with:** Epic 9 after Epic 8. **Version bump:** **moyen** once when entire epic closes (merged former Epic 13).
+
+### Story 10.1: Three-Tab Bottom Navigation
+
+As a **user**,
+I want a simpler bottom bar with Steps, Trends, and Menu,
+So that primary actions stay visible and secondary screens don't clutter the bar.
+
+**Acceptance Criteria:**
+
+**Given** authenticated onboarding complete user on main shell
+**When** bottom navigation renders
+**Then** exactly **three** tabs display: **STEPS**, **TRENDS**, **MENU** (Phosphor icons per mockup)
+**And** DATA and PROFILE tabs are removed from `AppBottomNav`
+
+**Given** tab labels
+**When** compared to mockup
+**Then** STEPS replaces TODAY; TRENDS unchanged; MENU uses hamburger/list icon
+
+**Given** `AppScaffold` `IndexedStack`
+**When** refactored
+**Then** primary tabs index 0 = Steps screen, 1 = Trends, 2 = Menu hub (stub acceptable until 10.2)
+
+**Mockup ref:** Steps / Trends / Menu bottom bar (`Today-light`, `History-light`, `Menu-light`).
+
+---
+
+### Story 10.2: Menu Hub Full-Screen List
+
+As a **user**,
+I want a menu page listing Profile, Data, Settings, and About,
+So that I can reach secondary screens from one place.
+
+**Acceptance Criteria:**
+
+**Given** MENU tab selected
+**When** screen renders
+**Then** title reads **My Data** (menu hub — not the Data sovereignty screen)
+**And** section **Informations** lists: **Profile**, **Data** (chevron rows)
+**And** section **Other** lists: **Settings**, **About**
+**And** **Achievements** and **Help** rows are **absent** (deferred backlog)
+
+**Given** list row tap
+**When** user selects an item
+**Then** navigation pushes the target screen (implementation in 10.3)
+
+**Mockup ref:** `Menu-light`.
+
+---
+
+### Story 10.3: Secondary Screen Navigator Stack
+
+As a **user**,
+I want back navigation from Profile, Data, Settings, and About,
+So that I return to the menu without losing my tab context.
+
+**Acceptance Criteria:**
+
+**Given** Menu hub row tap
+**When** Profile, Data, Settings, or About opens
+**Then** screen pushes on a `Navigator` stack with back arrow + screen title matching mockups
+**And** popping returns to Menu hub with MENU tab still selected
+
+**Given** `AppScaffold` lifecycle hooks (refresh on tab switch)
+**When** returning from secondary screen
+**Then** Steps/Trends cubits refresh rules remain correct (no duplicate cubit disposal)
+
+**Given** smoke tests
+**When** run
+**Then** `screen_smoke_test` covers Menu → Profile and Menu → Data navigation
+
+**Depends on:** Stories 10.1, 10.2. **Enables:** Stories 10.4–10.8.
+
+**Mockup ref:** Profile, Data, Settings, About headers with back arrow.
+
+---
+
+### Story 10.4: Profile Slim Informations
+
+As a **user**,
+I want Profile to show only my personal info,
+So that settings and appearance live in one dedicated place.
+
+**Acceptance Criteria:**
+
+**Given** Menu → Profile
+**When** screen renders
+**Then** title **Profile**, section **Informations** with rows: Display name, Height, Weight (chevron editors)
+**And** theme selector, accent presets, and goal notification toggle are **removed** from Profile
+
+**Given** existing Profile cubit editors
+**When** user edits name/height/weight
+**Then** persistence unchanged (canonical cm/kg storage)
+
+**Mockup ref:** `Profil-light`.
+
+**Depends on:** Story 10.3.
+
+---
+
+### Story 10.5: Settings Appearance and Notifications
+
+As a **user**,
+I want theme and notification controls in Settings,
+So that appearance is grouped with other app preferences.
+
+**Acceptance Criteria:**
+
+**Given** Menu → Settings
+**When** screen renders
+**Then** **Notifications** card with **Receive Goal notifications** toggle (same behavior as current Profile)
+**And** **Theme** card with System/Light/Dark segmented control + bi-tone accent preset circles (migrated from Profile)
+
+**Given** toggle/theme changes
+**When** saved
+**Then** same persistence keys and `ThemeCubit` wiring as pre-split Profile
+
+**Mockup ref:** `Settings-light`.
+
+**Depends on:** Story 10.3.
+
+---
+
+### Story 10.6: Display Units Preferences
+
+As a **user**,
+I want to choose how distance, weight, and height are displayed,
+So that the app matches my locale's conventions.
+
+**Acceptance Criteria:**
+
+**Given** Settings → Units section
+**When** screen renders
+**Then** three rows with chevron: **Distance** (Metric/Imperial), **Weight** (Kg/lb), **Height** (cm/ft+in)
+**And** current selection displayed on each row
+
+**Given** user picks a unit option
+**When** saved to `user_preferences`
+**Then** keys persist across restart (e.g. `distance_display_unit`, `weight_display_unit`, `height_display_unit`)
+**And** canonical stored values remain metric internally
+
+**Mockup ref:** `Settings-light` (Units card).
+
+**Depends on:** Story 10.5.
+
+---
+
+### Story 10.7: App-Wide Unit Formatters
+
+As a **user**,
+I want all displayed measurements to respect my unit choices,
+So that numbers feel natural everywhere.
+
+**Acceptance Criteria:**
+
+**Given** unit prefs set to Imperial / lb / ft+in
+**When** user views Steps stats row, Profile height/weight labels, and Trends kcal/distance labels where applicable
+**Then** values convert for **display only** (km→mi, kg→lb, cm→ft/in)
+**And** editors accept input in display unit and convert to canonical on save
+
+**Given** unit tests
+**When** run
+**Then** cover conversion round-trip and formatter edge cases (null profile, zero values)
+
+**Depends on:** Story 10.6.
+
+---
+
+### Story 10.8: Data and About Screens
+
+As a **user**,
+I want Data sovereignty and About info reachable from Menu,
+So that secondary tasks stay organized.
+
+**Acceptance Criteria:**
+
+**Given** Menu → Data
+**When** screen renders
+**Then** matches mockup: Background status, Footprint KPIs, Your data (Export CSV, Import CSV, Delete all local data)
+**And** reuses existing `MyDataCubit` / widgets; title **Data** with back navigation
+
+**Given** Menu → About
+**When** screen renders
+**Then** app icon placeholder, **Astra Health** title, **Version: {versionName}** from `package_info_plus` (matches `pubspec.yaml`)
+
+**Given** purge/export flows
+**When** executed from Data screen
+**Then** FR-19–FR-21 behavior unchanged; goal history table survives purge policy as defined in architecture (goal prefs preserved like FR-20 non-health prefs)
+
+**Mockup ref:** `Data-light`, `About-light`.
+
+**Depends on:** Stories 10.3, 10.4, 10.5.
+
+---
+
+## Epic 11: Steps Dashboard
+
+Rename Today to Steps, week-first layout, day selection, and historical goal-aware week strip.
+
+**Depends on:** Epic 8, Epic 10 (10.1 minimum).
+
+### Story 11.1: Steps Screen Layout Week-First
+
+As a **user**,
+I want the week summary at the top of Steps,
+So that I see weekly context before today's detail.
+
+**Acceptance Criteria:**
+
+**Given** Steps tab (index 0)
+**When** screen renders
+**Then** screen title is **Steps** (not "Today's activity")
+**And** **This week** `SectionCard` is the **first** content block below title/stale banner
+**And** goal ring + stats row appear **below** the week card
+**And** **Set goal** pill remains below the ring
+
+**Mockup ref:** `Today-light` (layout order).
+
+---
+
+### Story 11.2: Day Picker and Selected Day State
+
+As a **user**,
+I want to tap a day in the week strip to inspect that day,
+So that I can review past activity without leaving Steps.
+
+**Acceptance Criteria:**
+
+**Given** week strip rendered
+**When** user taps a day pill (past, today, or future)
+**Then** `TodayState.selectedLocalDay` updates (add field to state/cubit)
+**And** selected pill has distinct visual (mockup: filled accent for selected/today)
+**And** future days show zero/empty indicators without live overlay
+
+**Given** cold start or app resume from background
+**When** Steps tab shown
+**Then** `selectedLocalDay` defaults to **today** automatically
+
+**Given** unit tests
+**When** run
+**Then** cover day selection, default-on-resume, future-day empty state
+
+**Mockup ref:** `Today-light` (THU highlighted).
+
+---
+
+### Story 11.3: Selected Day Indicators and Live Guards
+
+As a **user**,
+I want the ring, stats, and goal to reflect the selected day,
+So that the dashboard is truthful for any day I pick.
+
+**Acceptance Criteria:**
+
+**Given** a past local day selected
+**When** Steps refreshes
+**Then** ring shows that day's step total and `getGoalForLocalDay(thatDay)`
+**And** `ActivityStatsRow` shows metrics computed from that day's steps + buckets + profile
+**And** **Set goal** still edits **current** goal (applies from today per Epic 8 rules)
+
+**Given** `selectedLocalDay == today`
+**When** live step pipeline emits
+**Then** ring/stats update live; celebration and foreground catch-up **enabled**
+
+**Given** `selectedLocalDay != today`
+**When** live step pipeline emits
+**Then** displayed steps/metrics **do not** change from live overlay; no celebration
+
+**Depends on:** Stories 8.2, 11.2.
+
+**Mockup ref:** `Today-light`.
+
+---
+
+### Story 11.4: Week Trophy and Historical Goal Dots
+
+As a **user**,
+I want a weekly score and per-day goal dots based on each day's actual goal,
+So that I see how many days I hit target this week.
+
+**Acceptance Criteria:**
+
+**Given** current calendar week Mon–Sun
+**When** week card renders
+**Then** trophy badge shows **X/7** where X = count of days (Mon–Sun) with `steps ≥ getGoalForLocalDay(day)` and day not in the future
+**And** past-day dots use historical goal resolution (Epic 8)
+
+**Given** user changes goal mid-week
+**When** week strip re-renders
+**Then** only today and future goal comparisons use new goal; past days unchanged
+
+**Mockup ref:** `Today-light` (3/7 trophy, purple dots Mon–Wed).
+
+---
+
+## Epic 12: Trends Analytics
+
+Expand Trends with summary stats, peak day, 12-month monthly chart, and per-day goal line.
+
+**Depends on:** Epic 8.
+
+### Story 12.1: Trends Average Stats Cards
+
+As a **user**,
+I want average calories and steps for my selected period,
+So that I understand typical daily activity at a glance.
+
+**Acceptance Criteria:**
+
+**Given** Trends tab with 7d or 30d toggle selected
+**When** data exists for the window
+**Then** two cards display below the chart:
+- **Average kcal burned per day** (flame icon)
+- **Average steps taken per day** (footprint icon)
+
+**Given** kcal average computation
+**When** calculated for each day in window
+**Then** uses `DerivedActivityMetrics.compute()` with that day's step total, active buckets, and current height/weight profile
+**And** window average = mean of daily kcal values (days with zero steps count as 0)
+
+**Given** period toggle change
+**When** user switches 7d ↔ 30d
+**Then** both cards recalculate for the active window
+
+**Mockup ref:** `History-light` (167 kcal / 3532 steps cards).
+
+---
+
+### Story 12.2: Trends Peak Day Card
+
+As a **user**,
+I want to see my best day in the selected period,
+So that I know my peak performance.
+
+**Acceptance Criteria:**
+
+**Given** 7d or 30d period active
+**When** at least one day in window has steps > 0
+**Then** a **Peak day** stat displays the local date label and step count of the day with maximum `totalSteps` in that window
+**And** ties break to most recent day
+
+**Given** empty window (all zero)
+**When** Trends renders
+**Then** peak day card hidden or shows em dash (consistent with empty state patterns)
+
+**Mockup ref:** Not in mockup — product spec 2026-06-15.
+
+---
+
+### Story 12.3: Trends Twelve-Month Monthly Chart
+
+As a **user**,
+I want a yearly view of my walking habit,
+So that I see long-term trends without daily noise.
+
+**Acceptance Criteria:**
+
+**Given** Trends screen
+**When** user selects **12 months** view (new period toggle or section — UX TBD in implementation; not 7d/30d bar chart)
+**Then** chart shows **12 bars** (one per calendar month) where bar height = **average daily steps** for that month (total steps in month ÷ days in month with data, or calendar days — document choice in story file)
+**And** query completes without KPI-01 regression on existing 7d/30d chart path
+
+**Given** `StepRepository`
+**When** monthly aggregation added
+**Then** uses stored samples + zone offsets; no network
+
+**Mockup ref:** Not in mockup — product spec 2026-06-15.
+
+---
+
+### Story 12.4: Trends Historical Goal Line
+
+As a **user**,
+I want the goal reference on the bar chart to reflect each day's goal,
+So that past bars are judged against the goal I had then.
+
+**Acceptance Criteria:**
+
+**Given** 7d or 30d bar chart
+**When** goal reference rendered
+**Then** each day's bar is compared to `getGoalForLocalDay(thatDay)` — dashed line may be stepped or per-bar threshold per existing chart UX
+**And** changing global goal today does not shift past days' reference
+
+**Depends on:** Story 8.2.
+
+**Mockup ref:** `History-light` (2k dashed line — per-day resolution post Epic 8).
+
+---
+
+## Future Backlog (not Epics 8–12)
+
+| Item | Notes |
+|------|-------|
+| **Achievements** | Menu row + screen — mockup TBD |
+| **Help** | Menu row + screen — mockup TBD |
 
