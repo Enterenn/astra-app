@@ -239,9 +239,11 @@ void main() {
 
     test('writes CSV file before invoking share callback', () async {
       String? sharedPath;
+      var fileExistedDuringShare = false;
       final cubit = buildCubit(
         shareCsvFile: (path, {sharePositionOrigin}) async {
           sharedPath = path;
+          fileExistedDuringShare = File(path).existsSync();
         },
       );
 
@@ -255,8 +257,11 @@ void main() {
       await cubit.exportAndShare();
 
       expect(sharedPath, isNotNull);
-      expect(File(sharedPath!).existsSync(), isTrue);
       expect(sharedPath, contains('astra-export-2026-06-03.csv'));
+      // File must exist during the share callback.
+      expect(fileExistedDuringShare, isTrue);
+      // File must be deleted after share completes to protect health data.
+      expect(File(sharedPath!).existsSync(), isFalse);
 
       await cubit.close();
     });

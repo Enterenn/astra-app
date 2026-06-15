@@ -1,3 +1,4 @@
+import 'package:flutter/foundation.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 
 import '../../data/models/chart_day_aggregate.dart';
@@ -47,8 +48,12 @@ class HistoryCubit extends Cubit<HistoryState> {
         return;
       }
       _emitWithGoal(goal);
-    } catch (_) {
+    } catch (error, stackTrace) {
       // Keep last known goal on preference read failure.
+      if (kDebugMode) {
+        debugPrint('HistoryCubit.refreshGoal failed: $error');
+        debugPrintStack(stackTrace: stackTrace);
+      }
     }
   }
 
@@ -107,7 +112,11 @@ class HistoryCubit extends Cubit<HistoryState> {
         dailyGoal: goal,
         aggregates: aggregates,
       );
-    } catch (_) {
+    } catch (error, stackTrace) {
+      if (kDebugMode) {
+        debugPrint('HistoryCubit._refreshImpl failed: $error');
+        debugPrintStack(stackTrace: stackTrace);
+      }
       if (isClosed) {
         return;
       }

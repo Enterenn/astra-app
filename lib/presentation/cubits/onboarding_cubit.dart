@@ -1,3 +1,4 @@
+import 'package:flutter/foundation.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:permission_handler/permission_handler.dart';
 
@@ -78,7 +79,11 @@ class OnboardingCubit extends Cubit<OnboardingState> {
     try {
       final status = await _requestPermission(permission);
       return _mapPermissionStatus(status);
-    } catch (_) {
+    } catch (error, stackTrace) {
+      if (kDebugMode) {
+        debugPrint('OnboardingCubit._resolvePermission failed: $error');
+        debugPrintStack(stackTrace: stackTrace);
+      }
       return PermissionRequestStatus.denied;
     }
   }

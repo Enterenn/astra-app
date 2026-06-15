@@ -592,7 +592,11 @@ class MyDataCubit extends Cubit<MyDataState> {
           nowUtc: nowUtc,
         ),
       );
-    } catch (_) {
+    } catch (error, stackTrace) {
+      if (kDebugMode) {
+        debugPrint('MyDataCubit._refreshImpl failed: $error');
+        debugPrintStack(stackTrace: stackTrace);
+      }
       if (isClosed) {
         return;
       }
@@ -610,7 +614,11 @@ class MyDataCubit extends Cubit<MyDataState> {
     var sampleCount = 0;
     try {
       sampleCount = await stepRepository.countStepSamples();
-    } catch (_) {
+    } catch (error, stackTrace) {
+      if (kDebugMode) {
+        debugPrint('MyDataCubit._recoverFromRefreshFailure countSamples failed: $error');
+        debugPrintStack(stackTrace: stackTrace);
+      }
       sampleCount = 0;
     }
 
