@@ -71,12 +71,15 @@ class AppDependencies {
     final databasePath = p.join(await getDatabasesPath(), 'astra_app.db');
     final databaseSession = AstraDatabaseSession(databasePath: databasePath);
     await databaseSession.ensureOpen();
-    final userPreferences = UserPreferencesRepository(databaseSession);
+    final timeProvider = const SystemTimeProvider();
+    final userPreferences = UserPreferencesRepository(
+      databaseSession,
+      clock: timeProvider,
+    );
     final initialTheme = await userPreferences.getThemeMode();
     final initialAccentPreset = await userPreferences.getAccentPreset();
     final initialOnboardingComplete = await userPreferences
         .getOnboardingComplete();
-    final timeProvider = const SystemTimeProvider();
     final stepRepository = StepRepository(
       session: databaseSession,
       clock: timeProvider,

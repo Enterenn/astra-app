@@ -3,6 +3,9 @@ import 'package:sqflite/sqflite.dart';
 import '../../core/constants/astra_accent_preset.dart';
 import '../../core/constants/preference_keys.dart';
 import '../../core/database/astra_database_session.dart';
+import '../../core/time/local_day_formatter.dart';
+import '../../core/time/system_time_provider.dart';
+import '../../core/time/time_provider.dart';
 import '../../core/time/timestamp_codec.dart';
 import '../../presentation/cubits/theme_state.dart';
 
@@ -11,14 +14,17 @@ class UserPreferencesRepository {
   UserPreferencesRepository(
     Object sessionOrDatabase, {
     String databasePath = inMemoryDatabasePath,
+    TimeProvider? clock,
   }) : _session = sessionOrDatabase is AstraDatabaseSession
            ? sessionOrDatabase
            : AstraDatabaseSession(
                databasePath: databasePath,
                initial: sessionOrDatabase as Database,
-             );
+             ),
+       _clock = clock ?? const SystemTimeProvider();
 
   final AstraDatabaseSession _session;
+  final TimeProvider _clock;
 
   bool get isDatabaseOpen => _session.database.isOpen;
 
@@ -31,11 +37,68 @@ class UserPreferencesRepository {
     return parsed;
   }
 
+  /// Resolves the step goal effective on [localDayIso] (`YYYY-MM-DD`).
+  ///
+  /// Returns the latest journal row where `effective_from_local_day ≤ localDayIso`,
+  /// or [kDefaultStepGoal] when no row applies.
+  Future<int> getGoalForLocalDay(String localDayIso) async {
+    return _session.withRetry((db) async {
+      final rows = await db.rawQuery(
+        '''
+        SELECT goal
+        FROM daily_goal_effective
+        WHERE effective_from_local_day <= ?
+        ORDER BY effective_from_local_day DESC
+        LIMIT 1
+        ''',
+        [localDayIso],
+      );
+      if (rows.isEmpty) {
+        return kDefaultStepGoal;
+      }
+      final raw = rows.first['goal'];
+      final goal = raw is int ? raw : (raw as num).toInt();
+      return goal > 0 ? goal : kDefaultStepGoal;
+    });
+  }
+
   Future<void> setDailyStepGoal(int goal) async {
     if (goal <= 0) {
       throw ArgumentError.value(goal, 'goal', 'must be a positive integer');
     }
-    await _writeValue(kDailyStepGoalKey, goal.toString());
+    final todayIso = formatLocalDayIso(_clock.snapshot());
+    await _session.withRetry(
+      (db) => db.transaction((txn) async {
+        final existing = await txn.query(
+          'daily_goal_effective',
+          columns: ['effective_from_local_day'],
+          where: 'effective_from_local_day = ?',
+          whereArgs: [todayIso],
+          limit: 1,
+        );
+        if (existing.isNotEmpty) {
+          await txn.update(
+            'daily_goal_effective',
+            {'goal': goal},
+            where: 'effective_from_local_day = ?',
+            whereArgs: [todayIso],
+          );
+        } else {
+          await txn.insert(
+            'daily_goal_effective',
+            {
+              'effective_from_local_day': todayIso,
+              'goal': goal,
+            },
+          );
+        }
+        await txn.insert(
+          'user_preferences',
+          {'key': kDailyStepGoalKey, 'value': goal.toString()},
+          conflictAlgorithm: ConflictAlgorithm.replace,
+        );
+      }),
+    );
   }
 
   Future<AstraThemePreference> getThemeMode() async {
