@@ -263,10 +263,14 @@ class _AppScaffoldState extends State<AppScaffold> {
           ),
         );
       case MenuHubDestination.settings:
+        unawaited(_profileCubit.refresh());
         pushFuture = navigator.push<void>(
           MaterialPageRoute<void>(
             settings: const RouteSettings(name: 'menu/settings'),
-            builder: (context) => const SettingsScreen(),
+            builder: (context) => BlocProvider.value(
+              value: _profileCubit,
+              child: const SettingsScreen(),
+            ),
           ),
         );
       case MenuHubDestination.about:
