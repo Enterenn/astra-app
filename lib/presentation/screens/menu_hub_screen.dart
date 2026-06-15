@@ -10,11 +10,18 @@ enum MenuHubDestination { profile, data, settings, about }
 
 /// Menu hub listing secondary destinations (Profile, Data, Settings, About).
 class MenuHubScreen extends StatelessWidget {
-  const MenuHubScreen({super.key});
+  const MenuHubScreen({
+    this.onDestinationSelected,
+    super.key,
+  });
+
+  final ValueChanged<MenuHubDestination>? onDestinationSelected;
 
   static const _kScreenTitle = 'Menu';
 
-  void _onDestinationSelected(MenuHubDestination destination) {}
+  void _onDestinationSelected(MenuHubDestination destination) {
+    onDestinationSelected?.call(destination);
+  }
 
   @override
   Widget build(BuildContext context) {

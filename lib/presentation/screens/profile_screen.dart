@@ -19,7 +19,12 @@ import '../widgets/theme_selector.dart';
 import '../widgets/weight_editor_sheet.dart';
 
 class ProfileScreen extends StatelessWidget {
-  const ProfileScreen({super.key});
+  const ProfileScreen({
+    this.showInlineTitle = true,
+    super.key,
+  });
+
+  final bool showInlineTitle;
 
   static const _kScreenTitle = 'My Profile';
 
@@ -52,7 +57,7 @@ class ProfileScreen extends StatelessWidget {
               );
             }
 
-            return const _ProfileScreenBody();
+            return _ProfileScreenBody(showInlineTitle: showInlineTitle);
           },
         ),
       ),
@@ -61,7 +66,9 @@ class ProfileScreen extends StatelessWidget {
 }
 
 class _ProfileScreenBody extends StatelessWidget {
-  const _ProfileScreenBody();
+  const _ProfileScreenBody({required this.showInlineTitle});
+
+  final bool showInlineTitle;
 
   @override
   Widget build(BuildContext context) {
@@ -136,11 +143,13 @@ class _ProfileScreenBody extends StatelessWidget {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
-            Text(
-              ProfileScreen._kScreenTitle,
-              style: AstraTypography.screenTitleFor(colors),
-            ),
-            const SizedBox(height: AstraSpacing.kSpaceMd),
+            if (showInlineTitle) ...[
+              Text(
+                ProfileScreen._kScreenTitle,
+                style: AstraTypography.screenTitleFor(colors),
+              ),
+              const SizedBox(height: AstraSpacing.kSpaceMd),
+            ],
             SectionCard(
               headline: 'Informations',
               child: Column(

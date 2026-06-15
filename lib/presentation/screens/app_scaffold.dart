@@ -12,8 +12,13 @@ import '../cubits/my_data_cubit.dart';
 import '../cubits/profile_cubit.dart';
 import '../cubits/today_cubit.dart';
 import '../widgets/app_bottom_nav.dart';
+import '../widgets/secondary_screen_shell.dart';
+import 'about_screen.dart';
 import 'history_screen.dart';
 import 'menu_hub_screen.dart';
+import 'my_data_screen.dart';
+import 'profile_screen.dart';
+import 'settings_screen.dart';
 import 'today_screen.dart';
 
 class AppScaffold extends StatefulWidget {
@@ -63,6 +68,7 @@ class _AppScaffoldState extends State<AppScaffold> {
   late final MyDataCubit _myDataCubit;
   late final ProfileCubit _profileCubit;
   late final List<Widget> _tabScreens;
+  final _menuNavigatorKey = GlobalKey<NavigatorState>();
 
   @override
   void initState() {
@@ -143,7 +149,14 @@ class _AppScaffoldState extends State<AppScaffold> {
         value: _historyCubit,
         child: const HistoryScreen(),
       ),
-      const MenuHubScreen(),
+      Navigator(
+        key: _menuNavigatorKey,
+        onGenerateRoute: (_) => MaterialPageRoute<void>(
+          builder: (context) => MenuHubScreen(
+            onDestinationSelected: _onMenuDestinationSelected,
+          ),
+        ),
+      ),
     ];
     widget.deps.backgroundCollector.registerOnIngestionComplete(
       _onIngestionComplete,
@@ -205,6 +218,54 @@ class _AppScaffoldState extends State<AppScaffold> {
     }
     if (openingTrends) {
       unawaited(_historyCubit.refresh());
+    }
+  }
+
+  void _onMenuDestinationSelected(MenuHubDestination destination) {
+    final navigator = _menuNavigatorKey.currentState;
+    if (navigator == null) {
+      return;
+    }
+
+    switch (destination) {
+      case MenuHubDestination.profile:
+        unawaited(_profileCubit.refresh());
+        navigator.push<void>(
+          MaterialPageRoute<void>(
+            builder: (context) => BlocProvider.value(
+              value: _profileCubit,
+              child: const SecondaryScreenShell(
+                title: 'Profile',
+                child: ProfileScreen(showInlineTitle: false),
+              ),
+            ),
+          ),
+        );
+      case MenuHubDestination.data:
+        unawaited(_myDataCubit.refresh());
+        navigator.push<void>(
+          MaterialPageRoute<void>(
+            builder: (context) => BlocProvider.value(
+              value: _myDataCubit,
+              child: const SecondaryScreenShell(
+                title: 'Data',
+                child: MyDataScreen(showInlineTitle: false),
+              ),
+            ),
+          ),
+        );
+      case MenuHubDestination.settings:
+        navigator.push<void>(
+          MaterialPageRoute<void>(
+            builder: (context) => const SettingsScreen(),
+          ),
+        );
+      case MenuHubDestination.about:
+        navigator.push<void>(
+          MaterialPageRoute<void>(
+            builder: (context) => const AboutScreen(),
+          ),
+        );
     }
   }
 

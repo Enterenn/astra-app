@@ -16,7 +16,12 @@ import '../widgets/section_card.dart';
 import '../widgets/status_banner.dart';
 
 class MyDataScreen extends StatelessWidget {
-  const MyDataScreen({super.key});
+  const MyDataScreen({
+    this.showInlineTitle = true,
+    super.key,
+  });
+
+  final bool showInlineTitle;
 
   static const _kScreenTitle = 'My Data';
   static const _kStorageIntro =
@@ -74,7 +79,7 @@ class MyDataScreen extends StatelessWidget {
               },
             ),
           ],
-          child: const _MyDataScreenBody(),
+          child: _MyDataScreenBody(showInlineTitle: showInlineTitle),
         ),
       ),
     );
@@ -82,7 +87,9 @@ class MyDataScreen extends StatelessWidget {
 }
 
 class _MyDataScreenBody extends StatelessWidget {
-  const _MyDataScreenBody();
+  const _MyDataScreenBody({required this.showInlineTitle});
+
+  final bool showInlineTitle;
 
   @override
   Widget build(BuildContext context) {
@@ -109,10 +116,12 @@ class _MyDataScreenBody extends StatelessWidget {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
-            Text(
-              MyDataScreen._kScreenTitle,
-              style: AstraTypography.screenTitleFor(colors),
-            ),
+            if (showInlineTitle) ...[
+              Text(
+                MyDataScreen._kScreenTitle,
+                style: AstraTypography.screenTitleFor(colors),
+              ),
+            ],
           if (state.isStale) ...[
             const SizedBox(height: AstraSpacing.kSpaceMd),
             StatusBanner(
