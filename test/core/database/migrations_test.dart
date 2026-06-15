@@ -311,4 +311,81 @@ void main() {
       );
     });
   });
+
+  group('migration v3 fresh install', () {
+    late Database db;
+
+    setUp(() async {
+      db = await openAstraDatabase(databasePath: inMemoryDatabasePath);
+    });
+
+    tearDown(() async {
+      await db.close();
+    });
+
+    test('creates daily_goal_effective table with seed row', () async {
+      final tables = await db.rawQuery(
+        "SELECT name FROM sqlite_master WHERE type='table' AND name = 'daily_goal_effective'",
+      );
+      expect(tables, isNotEmpty);
+
+      final rows = await db.query('daily_goal_effective');
+      expect(rows.length, 1);
+      expect(rows.single['goal'], kDefaultStepGoal);
+
+      final local = DateTime.now().toLocal();
+      final todayIso =
+          '${local.year.toString().padLeft(4, '0')}-'
+          '${local.month.toString().padLeft(2, '0')}-'
+          '${local.day.toString().padLeft(2, '0')}';
+      expect(rows.single['effective_from_local_day'], todayIso);
+    });
+  });
+
+  group('migration v2 to v3 upgrade', () {
+    test('preserves custom daily_step_goal and seeds goal history row', () async {
+      final tempDir = await Directory.systemTemp.createTemp(
+        'astra_db_v3_upgrade_test',
+      );
+      addTearDown(() async {
+        if (tempDir.existsSync()) {
+          await tempDir.delete(recursive: true);
+        }
+      });
+
+      final databasePath = p.join(tempDir.path, 'astra_app.db');
+      final v2Db = await openDatabase(
+        databasePath,
+        version: 2,
+        onCreate: (db, version) => runMigrations(db, version),
+      );
+      await v2Db.update(
+        'user_preferences',
+        {'value': '12000'},
+        where: 'key = ?',
+        whereArgs: [kDailyStepGoalKey],
+      );
+      await v2Db.close();
+
+      final upgradedDb = await openAstraDatabase(databasePath: databasePath);
+      addTearDown(() => upgradedDb.close());
+
+      final prefs = {
+        for (final row in await upgradedDb.query('user_preferences'))
+          row['key'] as String: row['value'] as String,
+      };
+      expect(prefs[kDailyStepGoalKey], '12000');
+
+      final goalRows = await upgradedDb.query('daily_goal_effective');
+      expect(goalRows.length, 1);
+      expect(goalRows.single['goal'], 12000);
+
+      final local = DateTime.now().toLocal();
+      final todayIso =
+          '${local.year.toString().padLeft(4, '0')}-'
+          '${local.month.toString().padLeft(2, '0')}-'
+          '${local.day.toString().padLeft(2, '0')}';
+      expect(goalRows.single['effective_from_local_day'], todayIso);
+    });
+  });
 }

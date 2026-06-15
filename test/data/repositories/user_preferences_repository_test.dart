@@ -7,6 +7,7 @@ import 'package:sqflite/sqflite.dart';
 import 'package:sqflite_common_ffi/sqflite_ffi.dart';
 import 'package:flutter_test/flutter_test.dart';
 
+import '../../core/time/fake_time_provider.dart';
 import '../../helpers/sqflite_test_helper.dart';
 
 void main() {
@@ -235,6 +236,83 @@ void main() {
         () => repository.setWeightKg(300.1),
         throwsA(isA<ArgumentError>()),
       );
+    });
+  });
+
+  group('UserPreferencesRepository daily goal history', () {
+    late Database db;
+    late FakeTimeProvider clock;
+    late UserPreferencesRepository repository;
+
+    setUp(() async {
+      db = await openAstraDatabase(databasePath: inMemoryDatabasePath);
+      await db.delete('daily_goal_effective');
+      clock = FakeTimeProvider(
+        fixedNowUtc: DateTime.utc(2026, 6, 11, 10),
+        zoneOffset: const Duration(hours: 2),
+      );
+      repository = UserPreferencesRepository(db, clock: clock);
+    });
+
+    tearDown(() async {
+      await db.close();
+    });
+
+    test('resolves goal from latest effective row on or before local day', () async {
+      await db.insert('daily_goal_effective', {
+        'effective_from_local_day': '2026-06-08',
+        'goal': 8000,
+      });
+      await db.insert('daily_goal_effective', {
+        'effective_from_local_day': '2026-06-11',
+        'goal': 10000,
+      });
+
+      expect(await repository.getGoalForLocalDay('2026-06-08'), 8000);
+      expect(await repository.getGoalForLocalDay('2026-06-09'), 8000);
+      expect(await repository.getGoalForLocalDay('2026-06-10'), 8000);
+      expect(await repository.getGoalForLocalDay('2026-06-11'), 10000);
+      expect(await repository.getGoalForLocalDay('2026-06-12'), 10000);
+    });
+
+    test('falls back to default goal when no row applies', () async {
+      expect(await repository.getGoalForLocalDay('2020-01-01'), kDefaultStepGoal);
+    });
+
+    test('same-day update does not create second row', () async {
+      await repository.setDailyStepGoal(9000);
+      await repository.setDailyStepGoal(9500);
+
+      final rows = await db.query('daily_goal_effective');
+      expect(rows.length, 1);
+      expect(rows.single['goal'], 9500);
+      expect(rows.single['effective_from_local_day'], '2026-06-11');
+      expect(await repository.getDailyStepGoal(), 9500);
+    });
+
+    test('new calendar day insert creates new row', () async {
+      await repository.setDailyStepGoal(8000);
+      clock.setNowUtc(DateTime.utc(2026, 6, 12, 10));
+
+      await repository.setDailyStepGoal(8000);
+
+      final rows = await db.query(
+        'daily_goal_effective',
+        orderBy: 'effective_from_local_day',
+      );
+      expect(rows.length, 2);
+      expect(rows[0]['effective_from_local_day'], '2026-06-11');
+      expect(rows[1]['effective_from_local_day'], '2026-06-12');
+      expect(rows[0]['goal'], 8000);
+      expect(rows[1]['goal'], 8000);
+    });
+
+    test('rejects non-positive goal on journal write', () async {
+      expect(
+        () => repository.setDailyStepGoal(-1),
+        throwsA(isA<ArgumentError>()),
+      );
+      expect(await db.query('daily_goal_effective'), isEmpty);
     });
   });
 }
