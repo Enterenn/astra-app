@@ -1,6 +1,6 @@
 # Story 8.2: Goal History Consumer Migration
 
-Status: review
+Status: done
 
 <!-- Note: Validation is optional. Run validate-create-story for quality check before dev-story. -->
 
@@ -307,3 +307,11 @@ Recent Epic 8 commits touched only migrations, repository, DI, tests — **zero 
 - 2026-06-15: Sub-task B — History chart per-day goals and refreshGoal map update (committed).
 - 2026-06-15: Sub-task C — BackgroundCollector goal notification via journal lookup (committed).
 - 2026-06-15: Sub-task D — Test regression fixes for per-day goal clock alignment; full suite green (committed).
+- 2026-06-15: Code review — journal-vs-cache TodayCubit tests, StepBarChart fallback to kDefaultStepGoal; Epic 8 closed at v0.2.1+3.
+
+### Review Findings
+
+- [x] [Review][Patch] Today ring journal-vs-cache regression test [`test/presentation/cubits/today_cubit_test.dart`]
+- [x] [Review][Patch] StepBarChart missing-key fallback uses kDefaultStepGoal [`lib/presentation/widgets/step_bar_chart.dart:291`]
+- [x] [Review][Defer] N+1 goal lookups in _loadWeekDays — deferred, acceptable for now
+- [x] [Review][Defer] Goal reference line hidden when goals differ — Epic 12.4

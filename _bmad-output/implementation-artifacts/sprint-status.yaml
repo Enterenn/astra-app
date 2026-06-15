@@ -1,6 +1,6 @@
 # generated: 2026-05-25
-# last_updated: 2026-06-15 (Story 8.2 ready-for-dev)
-# NEXT: Epic 8 Story 8.2 — goal history consumer migration
+# last_updated: 2026-06-15 (Epic 8 done — v0.2.1+3)
+# NEXT: Epic 9 Story 9.1 — Android FGS notification visibility
 # Ref: planning-artifacts/sprint-change-proposal-2026-06-15.md
 # project: astra-app
 # project_key: NOKEY
@@ -134,9 +134,9 @@ development_status:
   7-3-beta-acceptance-checklist: done
   epic-7-retrospective: optional
 
-  epic-8: in-progress
+  epic-8: done
   8-1-daily-goal-history-schema-and-repository: done
-  8-2-goal-history-consumer-migration: review
+  8-2-goal-history-consumer-migration: done
   epic-8-retrospective: optional
 
   epic-9: backlog

@@ -4,6 +4,7 @@ import 'package:flutter/material.dart';
 import '../../core/constants/astra_colors.dart';
 import '../../core/constants/astra_spacing.dart';
 import '../../core/constants/astra_typography.dart';
+import '../../core/constants/preference_keys.dart';
 import '../../core/time/local_day_formatter.dart';
 import '../../data/models/chart_day_aggregate.dart';
 import '../cubits/history_state.dart';
@@ -290,7 +291,7 @@ class _ReadyChart extends StatelessWidget {
 
   int _goalForPoint(ChartDayAggregate point) {
     return goalsByDay[localDayIsoFromDateOnly(point.localDay)] ??
-        dailyGoal;
+        kDefaultStepGoal;
   }
 
   static double _resolveBarWidth(double chartWidth, int pointCount) {

@@ -304,6 +304,64 @@ void main() {
       cubit.close();
     });
 
+    test('refresh uses journal-resolved goal not stale prefs cache', () async {
+      await db.insert('daily_goal_effective', {
+        'effective_from_local_day': '2026-06-02',
+        'goal': 8000,
+      });
+      await db.update(
+        'user_preferences',
+        {'value': '5000'},
+        where: 'key = ?',
+        whereArgs: [kDailyStepGoalKey],
+      );
+      await stepRepository.upsertIngestionBucket(
+        _bucket(
+          startTimeUtc: DateTime.utc(2026, 6, 2, 10),
+          value: 6000,
+          zoneOffset: '+02:00',
+        ),
+      );
+      final cubit = buildCubit();
+
+      await cubit.refresh();
+
+      expect(cubit.state.goal, 8000);
+      expect(cubit.state.status, TodayStatus.progress);
+      expect(cubit.state.showCelebration, isFalse);
+      cubit.close();
+    });
+
+    test(
+      'refresh emits goalMet when steps meet journal goal despite lower stale cache',
+      () async {
+        await db.insert('daily_goal_effective', {
+          'effective_from_local_day': '2026-06-02',
+          'goal': 8000,
+        });
+        await db.update(
+          'user_preferences',
+          {'value': '5000'},
+          where: 'key = ?',
+          whereArgs: [kDailyStepGoalKey],
+        );
+        await stepRepository.upsertIngestionBucket(
+          _bucket(
+            startTimeUtc: DateTime.utc(2026, 6, 2, 10),
+            value: 8500,
+            zoneOffset: '+02:00',
+          ),
+        );
+        final cubit = buildCubit();
+
+        await cubit.refresh();
+
+        expect(cubit.state.goal, 8000);
+        expect(cubit.state.status, TodayStatus.overflow);
+        cubit.close();
+      },
+    );
+
     test('refresh triggers celebration on overflow when pref unset', () async {
       await userPreferences.setDailyStepGoal(5000);
       await stepRepository.upsertIngestionBucket(
