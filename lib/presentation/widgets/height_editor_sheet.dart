@@ -4,60 +4,96 @@ import 'package:flutter/services.dart';
 import '../../core/constants/astra_colors.dart';
 import '../../core/constants/astra_spacing.dart';
 import '../../core/constants/astra_typography.dart';
+import '../../core/constants/display_unit_preferences.dart';
 import '../../core/constants/preference_keys.dart';
+import '../formatters/display_unit_formatter.dart';
 import 'astra_button.dart';
 import 'profile_sheet_field_decoration.dart';
 
-/// Opens a bottom sheet to edit height in centimeters.
+/// Opens a bottom sheet to edit height.
 ///
 /// Returns saved height in cm, `-1` to clear, or `null` if cancelled.
 Future<int?> showHeightEditorSheet(
   BuildContext context, {
   int? currentHeightCm,
+  HeightDisplayUnit heightUnit = HeightDisplayUnit.cm,
 }) {
   return showModalBottomSheet<int>(
     context: context,
     isScrollControlled: true,
-    builder: (sheetContext) =>
-        _HeightEditorSheetBody(currentHeightCm: currentHeightCm),
+    builder: (sheetContext) => _HeightEditorSheetBody(
+      currentHeightCm: currentHeightCm,
+      heightUnit: heightUnit,
+    ),
   );
 }
 
 class _HeightEditorSheetBody extends StatefulWidget {
-  const _HeightEditorSheetBody({this.currentHeightCm});
+  const _HeightEditorSheetBody({
+    this.currentHeightCm,
+    required this.heightUnit,
+  });
 
   final int? currentHeightCm;
+  final HeightDisplayUnit heightUnit;
 
   @override
   State<_HeightEditorSheetBody> createState() => _HeightEditorSheetBodyState();
 }
 
 class _HeightEditorSheetBodyState extends State<_HeightEditorSheetBody> {
-  late final TextEditingController _controller;
+  late final TextEditingController _cmController;
+  late final TextEditingController _feetController;
+  late final TextEditingController _inchesController;
   String? _errorText;
+
+  bool get _isFtIn => widget.heightUnit == HeightDisplayUnit.ftIn;
 
   @override
   void initState() {
     super.initState();
-    _controller = TextEditingController(
+    _cmController = TextEditingController(
       text: widget.currentHeightCm?.toString() ?? '',
     );
-    _controller.addListener(_validateInput);
+    final ftIn = widget.currentHeightCm == null
+        ? null
+        : heightCmToFtIn(widget.currentHeightCm!);
+    _feetController = TextEditingController(
+      text: ftIn?.feet.toString() ?? '',
+    );
+    _inchesController = TextEditingController(
+      text: ftIn?.inches.toString() ?? '',
+    );
+    if (_isFtIn) {
+      _feetController.addListener(_validateInput);
+      _inchesController.addListener(_validateInput);
+    } else {
+      _cmController.addListener(_validateInput);
+    }
   }
 
   @override
   void dispose() {
-    _controller.dispose();
+    _cmController.dispose();
+    _feetController.dispose();
+    _inchesController.dispose();
     super.dispose();
   }
 
   void _validateInput() {
     setState(() {
-      _errorText = _validationMessage(_controller.text);
+      _errorText = _validationMessage();
     });
   }
 
-  String? _validationMessage(String raw) {
+  String? _validationMessage() {
+    if (_isFtIn) {
+      return _validationMessageFtIn();
+    }
+    return _validationMessageCm(_cmController.text);
+  }
+
+  String? _validationMessageCm(String raw) {
     final trimmed = raw.trim();
     if (trimmed.isEmpty) {
       return null;
@@ -72,8 +108,45 @@ class _HeightEditorSheetBodyState extends State<_HeightEditorSheetBody> {
     return null;
   }
 
-  int? get _parsedHeight {
-    final trimmed = _controller.text.trim();
+  String? _validationMessageFtIn() {
+    final feetRaw = _feetController.text.trim();
+    final inchesRaw = _inchesController.text.trim();
+    if (feetRaw.isEmpty && inchesRaw.isEmpty) {
+      return null;
+    }
+    if (feetRaw.isEmpty || inchesRaw.isEmpty) {
+      return 'Enter both feet and inches';
+    }
+    final feet = int.tryParse(feetRaw);
+    final inches = int.tryParse(inchesRaw);
+    if (feet == null || inches == null) {
+      return 'Enter whole numbers for feet and inches';
+    }
+    if (inches < 0 || inches > 11) {
+      return 'Inches must be between 0 and 11';
+    }
+    final heightCm = heightFtInToCm(feet: feet, inches: inches);
+    if (heightCm == null) {
+      return 'Height must be between $kMinHeightCm and $kMaxHeightCm cm';
+    }
+    return null;
+  }
+
+  int? get _parsedHeightCm {
+    if (_isFtIn) {
+      final feetRaw = _feetController.text.trim();
+      final inchesRaw = _inchesController.text.trim();
+      if (feetRaw.isEmpty && inchesRaw.isEmpty) {
+        return null;
+      }
+      final feet = int.tryParse(feetRaw);
+      final inches = int.tryParse(inchesRaw);
+      if (feet == null || inches == null) {
+        return null;
+      }
+      return heightFtInToCm(feet: feet, inches: inches);
+    }
+    final trimmed = _cmController.text.trim();
     if (trimmed.isEmpty) {
       return null;
     }
@@ -84,7 +157,7 @@ class _HeightEditorSheetBodyState extends State<_HeightEditorSheetBody> {
     if (_errorText != null) {
       return false;
     }
-    final parsed = _parsedHeight;
+    final parsed = _parsedHeightCm;
     return parsed != widget.currentHeightCm;
   }
 
@@ -120,26 +193,55 @@ class _HeightEditorSheetBodyState extends State<_HeightEditorSheetBody> {
               const SizedBox(height: AstraSpacing.kSpaceMd),
               Text('Height', style: AstraTypography.title(context)),
               const SizedBox(height: AstraSpacing.kSpaceMd),
-              TextField(
-                controller: _controller,
-                keyboardType: TextInputType.number,
-                inputFormatters: [FilteringTextInputFormatter.digitsOnly],
-                autofocus: true,
-                style: AstraTypography.bodyFor(colors).copyWith(
-                  color: colors.textPrimary,
+              if (_isFtIn) ...[
+                TextField(
+                  controller: _feetController,
+                  keyboardType: TextInputType.number,
+                  inputFormatters: [FilteringTextInputFormatter.digitsOnly],
+                  autofocus: true,
+                  style: AstraTypography.bodyFor(colors).copyWith(
+                    color: colors.textPrimary,
+                  ),
+                  decoration: profileSheetFieldDecoration(
+                    colors: colors,
+                    labelText: 'Feet',
+                    errorText: _errorText,
+                  ),
                 ),
-                decoration: profileSheetFieldDecoration(
-                  colors: colors,
-                  labelText: 'Centimeters',
-                  errorText: _errorText,
+                const SizedBox(height: AstraSpacing.kSpaceMd),
+                TextField(
+                  controller: _inchesController,
+                  keyboardType: TextInputType.number,
+                  inputFormatters: [FilteringTextInputFormatter.digitsOnly],
+                  style: AstraTypography.bodyFor(colors).copyWith(
+                    color: colors.textPrimary,
+                  ),
+                  decoration: profileSheetFieldDecoration(
+                    colors: colors,
+                    labelText: 'Inches',
+                  ),
                 ),
-              ),
+              ] else
+                TextField(
+                  controller: _cmController,
+                  keyboardType: TextInputType.number,
+                  inputFormatters: [FilteringTextInputFormatter.digitsOnly],
+                  autofocus: true,
+                  style: AstraTypography.bodyFor(colors).copyWith(
+                    color: colors.textPrimary,
+                  ),
+                  decoration: profileSheetFieldDecoration(
+                    colors: colors,
+                    labelText: 'Centimeters',
+                    errorText: _errorText,
+                  ),
+                ),
               const SizedBox(height: AstraSpacing.kSpaceLg),
               AstraButton(
                 label: 'Save',
                 onPressed: _canSave
                     ? () {
-                        final parsed = _parsedHeight;
+                        final parsed = _parsedHeightCm;
                         Navigator.of(context).pop(parsed ?? -1);
                       }
                     : null,
