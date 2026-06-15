@@ -159,7 +159,7 @@ void main() {
       expect(find.text('Phone sensor'), findsNothing);
     });
 
-    testWidgets('does not show stale banner when data is stale', (tester) async {
+    testWidgets('shows stale banner when data is stale', (tester) async {
       final cubit = buildCubit(
         TodayState.fromData(
           steps: 1200,
@@ -172,8 +172,8 @@ void main() {
 
       await pumpScreen(tester, cubit);
 
-      expect(find.byType(StatusBanner), findsNothing);
-      expect(find.textContaining('Steps may be delayed'), findsNothing);
+      expect(find.byType(StatusBanner), findsOneWidget);
+      expect(find.textContaining('Steps may be delayed'), findsOneWidget);
     });
 
     testWidgets('shows three main cards', (tester) async {

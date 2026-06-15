@@ -15,6 +15,7 @@ import '../widgets/goal_editor_sheet.dart';
 import '../widgets/astra_pressable.dart';
 import '../widgets/goal_ring.dart';
 import '../widgets/section_card.dart';
+import '../widgets/status_banner.dart';
 import '../widgets/week_progress_row.dart';
 
 class TodayScreen extends StatelessWidget {
@@ -54,6 +55,12 @@ class TodayScreen extends StatelessWidget {
                       _kScreenTitle,
                       style: AstraTypography.screenTitleFor(colors),
                     ),
+                    if (state.isStale) ...[
+                      const SizedBox(height: AstraSpacing.kSpaceMd),
+                      const StatusBanner(
+                        variant: StatusBannerVariant.staleCompact,
+                      ),
+                    ],
                     const SizedBox(height: AstraSpacing.kSpaceMd),
                     _GoalRingCard(state: state),
                     if (state.status == TodayStatus.noPermission) ...[
