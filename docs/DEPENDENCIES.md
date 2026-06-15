@@ -30,15 +30,17 @@ Phase 0 step collection declares only local device-health/background permissions
 
 - `INTERNET` is intentionally absent from the release manifest.
 
-### Health foreground service (Story 2.8)
+### Health foreground service (Story 2.8, notification tuning Story 9.1)
 
 | Component | Role |
 |-----------|------|
 | `HealthStepForegroundService` (Kotlin) | Android `foregroundServiceType="health"` service; `ServiceCompat.startForeground` with `FOREGROUND_SERVICE_TYPE_HEALTH` on API 34+ |
-| Notification channel `astra_health_tracking` (id `100`) | Honest ongoing copy: "Step tracking active", distinct from goal channel `astra_goal_reached` (id `1`) |
+| Notification channel `astra_health_tracking` (id `100`) | Honest ongoing copy: title **"Tracking steps"**, body **"Background step count on this device."** — distinct from goal channel `astra_goal_reached` (id `1`) |
 | `HealthForegroundServiceCoordinator` (Dart) | Method channel `com.astraapp.astra_app/health_foreground`; starts/stops FGS on app pause/resume |
-| `runFgsStepCollectionCycle` | Periodic `BackgroundCollector.collectOnce` every 5 minutes while FGS runs (same bootstrap as WorkManager) |
+| `runFgsStepCollectionCycle` | Periodic `BackgroundCollector.collectOnce` every 60s while FGS runs (same bootstrap as WorkManager) |
 
+- **Visibility (Story 9.1):** Channel `IMPORTANCE_LOW` (FGS floor — not `IMPORTANCE_MIN`, which triggers an extra system battery warning). Quiet channel flags: no vibration, lights, or sound. Builder: `PRIORITY_LOW`, `setSilent(true)`, `VISIBILITY_SECRET`, `setOnlyAlertOnce(true)`, `setShowBadge(false)`.
+- **Channel persistence:** Once `createNotificationChannel()` runs, Android stores user overrides in system settings. Re-running with the same channel id does **not** reset importance/sound on existing installs — QA on fresh install or cleared notification settings.
 - WorkManager remains registered as fallback orchestrator (architecture D-04).
 - No `dataSync` foreground service type.
 
