@@ -4,29 +4,38 @@ import 'package:flutter/services.dart';
 import '../../core/constants/astra_colors.dart';
 import '../../core/constants/astra_spacing.dart';
 import '../../core/constants/astra_typography.dart';
+import '../../core/constants/display_unit_preferences.dart';
 import '../../core/constants/preference_keys.dart';
+import '../formatters/display_unit_formatter.dart';
 import 'astra_button.dart';
 import 'profile_sheet_field_decoration.dart';
 
-/// Opens a bottom sheet to edit weight in kilograms.
+/// Opens a bottom sheet to edit weight.
 ///
 /// Returns saved weight in kg, `-1.0` to clear, or `null` if cancelled.
 Future<double?> showWeightEditorSheet(
   BuildContext context, {
   double? currentWeightKg,
+  WeightDisplayUnit weightUnit = WeightDisplayUnit.kg,
 }) {
   return showModalBottomSheet<double>(
     context: context,
     isScrollControlled: true,
-    builder: (sheetContext) =>
-        _WeightEditorSheetBody(currentWeightKg: currentWeightKg),
+    builder: (sheetContext) => _WeightEditorSheetBody(
+      currentWeightKg: currentWeightKg,
+      weightUnit: weightUnit,
+    ),
   );
 }
 
 class _WeightEditorSheetBody extends StatefulWidget {
-  const _WeightEditorSheetBody({this.currentWeightKg});
+  const _WeightEditorSheetBody({
+    this.currentWeightKg,
+    required this.weightUnit,
+  });
 
   final double? currentWeightKg;
+  final WeightDisplayUnit weightUnit;
 
   @override
   State<_WeightEditorSheetBody> createState() => _WeightEditorSheetBodyState();
@@ -36,18 +45,37 @@ class _WeightEditorSheetBodyState extends State<_WeightEditorSheetBody> {
   late final TextEditingController _controller;
   String? _errorText;
 
+  bool get _isLb => widget.weightUnit == WeightDisplayUnit.lb;
+
+  double get _minDisplay => _isLb ? weightKgToDisplayLb(kMinWeightKg) : kMinWeightKg;
+
+  double get _maxDisplay => _isLb ? weightKgToDisplayLb(kMaxWeightKg) : kMaxWeightKg;
+
   @override
   void initState() {
     super.initState();
     final initial = widget.currentWeightKg;
     _controller = TextEditingController(
-      text: initial == null
-          ? ''
-          : (initial == initial.roundToDouble()
-                ? initial.toInt().toString()
-                : initial.toStringAsFixed(1)),
+      text: _initialText(initial),
     );
     _controller.addListener(_validateInput);
+  }
+
+  String _initialText(double? weightKg) {
+    if (weightKg == null) {
+      return '';
+    }
+    if (_isLb) {
+      final lb = weightKgToDisplayLb(weightKg);
+      if (lb == lb.roundToDouble()) {
+        return lb.toInt().toString();
+      }
+      return lb.toStringAsFixed(1);
+    }
+    if (weightKg == weightKg.roundToDouble()) {
+      return weightKg.toInt().toString();
+    }
+    return weightKg.toStringAsFixed(1);
   }
 
   @override
@@ -72,7 +100,10 @@ class _WeightEditorSheetBodyState extends State<_WeightEditorSheetBody> {
       return 'Enter a valid weight';
     }
     final rounded = (parsed * 10).round() / 10;
-    if (rounded < kMinWeightKg || rounded > kMaxWeightKg) {
+    if (rounded < _minDisplay || rounded > _maxDisplay) {
+      if (_isLb) {
+        return 'Weight must be between ${_minDisplay.toStringAsFixed(1)} and ${_maxDisplay.toStringAsFixed(1)} lb';
+      }
       return 'Weight must be between ${kMinWeightKg.toInt()} and ${kMaxWeightKg.toInt()} kg';
     }
     final decimalPart = trimmed.contains('.') || trimmed.contains(',');
@@ -85,7 +116,7 @@ class _WeightEditorSheetBodyState extends State<_WeightEditorSheetBody> {
     return null;
   }
 
-  double? get _parsedWeight {
+  double? get _parsedWeightKg {
     final trimmed = _controller.text.trim();
     if (trimmed.isEmpty) {
       return null;
@@ -94,14 +125,18 @@ class _WeightEditorSheetBodyState extends State<_WeightEditorSheetBody> {
     if (parsed == null) {
       return null;
     }
-    return (parsed * 10).round() / 10;
+    final rounded = (parsed * 10).round() / 10;
+    if (_isLb) {
+      return displayLbToWeightKg(rounded);
+    }
+    return rounded;
   }
 
   bool get _canSave {
     if (_errorText != null) {
       return false;
     }
-    final parsed = _parsedWeight;
+    final parsed = _parsedWeightKg;
     return parsed != widget.currentWeightKg;
   }
 
@@ -151,7 +186,7 @@ class _WeightEditorSheetBodyState extends State<_WeightEditorSheetBody> {
                 ),
                 decoration: profileSheetFieldDecoration(
                   colors: colors,
-                  labelText: 'Kilograms',
+                  labelText: _isLb ? 'Pounds' : 'Kilograms',
                   errorText: _errorText,
                 ),
               ),
@@ -160,7 +195,7 @@ class _WeightEditorSheetBodyState extends State<_WeightEditorSheetBody> {
                 label: 'Save',
                 onPressed: _canSave
                     ? () {
-                        final parsed = _parsedWeight;
+                        final parsed = _parsedWeightKg;
                         Navigator.of(context).pop(parsed ?? -1.0);
                       }
                     : null,
