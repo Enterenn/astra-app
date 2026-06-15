@@ -563,6 +563,7 @@ class MyDataCubit extends Cubit<MyDataState> {
         stepRepository.getFootprint(databasePath: databasePath),
         stepRepository.getLastIngestionUtc(),
         _activityPermissionGranted(),
+        userPreferences.getLastDatabaseOptimizedAt(),
       ]);
 
       if (isClosed) {
@@ -572,6 +573,7 @@ class MyDataCubit extends Cubit<MyDataState> {
       final footprint = results[0]! as DatabaseFootprint;
       final lastIngestionUtc = results[1] as DateTime?;
       final activityGranted = results[2]! as bool;
+      final lastOptimizedUtc = results[3] as DateTime?;
       final nowUtc = clock.nowUtc();
 
       if (isClosed) {
@@ -581,6 +583,7 @@ class MyDataCubit extends Cubit<MyDataState> {
       _emitReadySnapshot(
         sampleCount: footprint.sampleCount,
         fileSizeBytes: footprint.fileSizeBytes,
+        lastOptimizedUtc: lastOptimizedUtc,
         lastIngestionUtc: lastIngestionUtc,
         backgroundStatus: _deriveBackgroundStatus(
           activityGranted: activityGranted,
