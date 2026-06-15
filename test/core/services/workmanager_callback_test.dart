@@ -94,7 +94,7 @@ void main() {
 
       final uiDb = await openAstraDatabase(databasePath: databasePath);
       addTearDown(uiDb.close);
-      final userPreferences = UserPreferencesRepository(uiDb);
+      final userPreferences = UserPreferencesRepository(uiDb, clock: clock);
       await userPreferences.setDailyStepGoal(5000);
       await userPreferences.setGoalNotificationsEnabled(true);
       final repository = StepRepository(db: uiDb, clock: clock);
@@ -183,7 +183,7 @@ void main() {
 
         final uiDb = await openAstraDatabase(databasePath: databasePath);
         addTearDown(uiDb.close);
-        final userPreferences = UserPreferencesRepository(uiDb);
+        final userPreferences = UserPreferencesRepository(uiDb, clock: clock);
         await userPreferences.setDailyStepGoal(5000);
         await userPreferences.setGoalNotificationsEnabled(true);
         final repository = StepRepository(db: uiDb, clock: clock);

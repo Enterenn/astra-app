@@ -19,6 +19,7 @@ import 'package:phosphoricons_flutter/phosphoricons_flutter.dart';
 import 'package:sqflite/sqflite.dart';
 
 import '../../helpers/sqflite_test_helper.dart';
+import '../../core/time/fake_time_provider.dart';
 
 TodayCubit _testTodayCubit(AppDependencies deps) {
   return TodayCubit(
@@ -92,18 +93,20 @@ Future<void> _pumpAppScaffold(
   });
 }
 
+Future<void> _awaitHistoryRefresh(WidgetTester tester) async {
+  await tester.runAsync(() async {
+    await Future<void>.delayed(const Duration(milliseconds: 150));
+  });
+  await tester.pump();
+}
+
 Future<void> _disposeScaffold(WidgetTester tester) async {
   await tester.runAsync(() async {
     await tester.pumpWidget(const SizedBox.shrink());
     await tester.pump();
-  });
-}
-
-Future<void> _awaitHistoryRefresh(WidgetTester tester) async {
-  await tester.runAsync(() async {
     await Future<void>.delayed(const Duration(milliseconds: 50));
+    await tester.pump();
   });
-  await tester.pump();
 }
 
 void main() {
@@ -125,11 +128,16 @@ void main() {
 
     setUpAll(() async {
       db = await openAstraDatabase(databasePath: inMemoryDatabasePath);
-      final userPreferences = UserPreferencesRepository(db);
+      final clock = FakeTimeProvider(
+        fixedNowUtc: DateTime.utc(2026, 6, 3, 12),
+        zoneOffset: const Duration(hours: 2),
+      );
+      final userPreferences = UserPreferencesRepository(db, clock: clock);
       await userPreferences.setOnboardingComplete(true);
       deps = await AppDependencies.test(
         db: db,
         userPreferences: userPreferences,
+        timeProvider: clock,
       );
     });
 

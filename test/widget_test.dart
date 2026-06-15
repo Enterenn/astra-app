@@ -57,14 +57,20 @@ void main() {
   group('AstraApp navigation shell', () {
     late Database db;
     late AppDependencies deps;
+    late FakeTimeProvider clock;
 
     setUpAll(() async {
       db = await openAstraDatabase(databasePath: inMemoryDatabasePath);
-      final userPreferences = UserPreferencesRepository(db);
+      clock = FakeTimeProvider(
+        fixedNowUtc: DateTime.utc(2026, 6, 3, 12),
+        zoneOffset: const Duration(hours: 2),
+      );
+      final userPreferences = UserPreferencesRepository(db, clock: clock);
       await userPreferences.setOnboardingComplete(true);
       deps = await AppDependencies.test(
         db: db,
         userPreferences: userPreferences,
+        timeProvider: clock,
       );
     });
 
@@ -105,20 +111,22 @@ void main() {
 
       await tester.tap(find.byIcon(PhosphorIconsRegular.chartBar));
       await tester.pump();
+      const emptyHistoryCopy =
+          'No history yet. Walk a bit — data stays on this device.';
       await tester.runAsync(() async {
-        await Future<void>.delayed(const Duration(milliseconds: 50));
+        for (var attempt = 0; attempt < 50; attempt++) {
+          await Future<void>.delayed(const Duration(milliseconds: 20));
+          await tester.pump(const Duration(milliseconds: 20));
+          if (find.text(emptyHistoryCopy).evaluate().isNotEmpty) {
+            return;
+          }
+        }
       });
-      await tester.pump(const Duration(milliseconds: 200));
 
       expect(find.text('Trends'), findsWidgets);
       expect(find.text('7 days'), findsOneWidget);
       expect(find.text('30 days'), findsOneWidget);
-      expect(
-        find.text(
-          'No history yet. Walk a bit — data stays on this device.',
-        ),
-        findsOneWidget,
-      );
+      expect(find.text(emptyHistoryCopy), findsOneWidget);
 
       await tester.tap(find.byIcon(PhosphorIconsRegular.database));
       await tester.pump();

@@ -136,7 +136,7 @@ development_status:
 
   epic-8: in-progress
   8-1-daily-goal-history-schema-and-repository: done
-  8-2-goal-history-consumer-migration: in-progress
+  8-2-goal-history-consumer-migration: review
   epic-8-retrospective: optional
 
   epic-9: backlog
