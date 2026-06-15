@@ -81,7 +81,7 @@ void main() {
     setUp(() => GoalRing.disableStepPersistence = true);
     tearDown(() => GoalRing.disableStepPersistence = false);
 
-    testWidgets('shows AppBottomNav and switches four tabs', (
+    testWidgets('shows AppBottomNav and switches three tabs', (
       WidgetTester tester,
     ) async {
       await tester.runAsync(() async {
@@ -99,10 +99,12 @@ void main() {
       });
 
       expect(find.byType(AppBottomNav), findsOneWidget);
-      expect(find.text('TODAY'), findsOneWidget);
+      expect(find.text('STEPS'), findsOneWidget);
       expect(find.text('TRENDS'), findsOneWidget);
-      expect(find.text('DATA'), findsOneWidget);
-      expect(find.text('PROFILE'), findsOneWidget);
+      expect(find.text('MENU'), findsOneWidget);
+      expect(find.text('TODAY'), findsNothing);
+      expect(find.text('DATA'), findsNothing);
+      expect(find.text('PROFILE'), findsNothing);
 
       expect(
         find.text('Steps'),
@@ -128,14 +130,16 @@ void main() {
       expect(find.text('30 days'), findsOneWidget);
       expect(find.text(emptyHistoryCopy), findsOneWidget);
 
-      await tester.tap(find.byIcon(PhosphorIconsRegular.database));
+      await tester.tap(find.byIcon(PhosphorIconsRegular.list));
       await tester.pump();
       await tester.runAsync(() async {
         await Future<void>.delayed(const Duration(milliseconds: 50));
       });
       await tester.pump(const Duration(milliseconds: 200));
 
-      expect(find.text('Storage on this device'), findsOneWidget);
+      expect(find.text('Menu'), findsOneWidget);
+      expect(find.text('Storage on this device'), findsNothing);
+      expect(find.byIcon(PhosphorIconsFill.list), findsOneWidget);
 
       await tester.runAsync(() async {
         await tester.pumpWidget(const SizedBox.shrink());

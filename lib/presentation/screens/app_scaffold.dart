@@ -13,8 +13,7 @@ import '../cubits/profile_cubit.dart';
 import '../cubits/today_cubit.dart';
 import '../widgets/app_bottom_nav.dart';
 import 'history_screen.dart';
-import 'my_data_screen.dart';
-import 'profile_screen.dart';
+import 'menu_hub_screen.dart';
 import 'today_screen.dart';
 
 class AppScaffold extends StatefulWidget {
@@ -144,14 +143,7 @@ class _AppScaffoldState extends State<AppScaffold> {
         value: _historyCubit,
         child: const HistoryScreen(),
       ),
-      BlocProvider.value(
-        value: _myDataCubit,
-        child: const MyDataScreen(),
-      ),
-      BlocProvider.value(
-        value: _profileCubit,
-        child: const ProfileScreen(),
-      ),
+      const MenuHubScreen(),
     ];
     widget.deps.backgroundCollector.registerOnIngestionComplete(
       _onIngestionComplete,
@@ -204,8 +196,6 @@ class _AppScaffoldState extends State<AppScaffold> {
   void _onDestinationSelected(int index) {
     final returningToToday = index == 0 && _selectedIndex != 0;
     final openingTrends = index == 1 && _selectedIndex != 1;
-    final openingData = index == 2 && _selectedIndex != 2;
-    final openingProfile = index == 3 && _selectedIndex != 3;
     setState(() {
       _selectedIndex = index;
     });
@@ -215,12 +205,6 @@ class _AppScaffoldState extends State<AppScaffold> {
     }
     if (openingTrends) {
       unawaited(_historyCubit.refresh());
-    }
-    if (openingData) {
-      unawaited(_myDataCubit.refresh());
-    }
-    if (openingProfile) {
-      unawaited(_profileCubit.refresh());
     }
   }
 
@@ -237,7 +221,6 @@ class _AppScaffoldState extends State<AppScaffold> {
         index: _selectedIndex,
         children: _tabScreens,
       ),
-      // Floating pill colors use accentPrimary until Story 5.8 preset wiring.
       bottomNavigationBar: AppBottomNav(
         selectedIndex: _selectedIndex,
         onSelected: _onDestinationSelected,

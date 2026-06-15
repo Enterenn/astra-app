@@ -162,10 +162,12 @@ void main() {
         expect(find.text('Steps'), findsOneWidget);
         expect(find.text('Phone sensor'), findsNothing);
 
-        expect(find.text('TODAY'), findsOneWidget);
+        expect(find.text('STEPS'), findsOneWidget);
         expect(find.text('TRENDS'), findsOneWidget);
-        expect(find.text('DATA'), findsOneWidget);
-        expect(find.text('PROFILE'), findsOneWidget);
+        expect(find.text('MENU'), findsOneWidget);
+        expect(find.text('TODAY'), findsNothing);
+        expect(find.text('DATA'), findsNothing);
+        expect(find.text('PROFILE'), findsNothing);
 
         await tester.tap(find.byIcon(PhosphorIconsRegular.chartBar));
         await tester.pump();
@@ -175,26 +177,16 @@ void main() {
         expect(find.text('7 days'), findsOneWidget);
         expect(find.text('30 days'), findsOneWidget);
 
-        await tester.tap(find.byIcon(PhosphorIconsRegular.database));
+        await tester.tap(find.byIcon(PhosphorIconsRegular.list));
         await tester.pump();
         await tester.runAsync(() async {
           await Future<void>.delayed(const Duration(milliseconds: 50));
         });
         await tester.pump();
 
-        expect(find.text('Storage on this device'), findsOneWidget);
-
-        await tester.tap(find.byIcon(PhosphorIconsRegular.user));
-        await tester.pump();
-        await tester.runAsync(() async {
-          await Future<void>.delayed(const Duration(milliseconds: 50));
-        });
-        await tester.pump();
-
-        // Verify the Profile tab is active (nav icon switched to filled).
-        // ProfileCubit.refresh() completes asynchronously via SQLite; ready-state
-        // content assertions (My Profile, sections) are covered by profile_screen_test.dart.
-        expect(find.byIcon(PhosphorIconsFill.user), findsOneWidget);
+        expect(find.text('Menu'), findsOneWidget);
+        expect(find.text('Storage on this device'), findsNothing);
+        expect(find.byIcon(PhosphorIconsFill.list), findsOneWidget);
 
         await _disposeScaffold(tester);
       },
@@ -300,6 +292,11 @@ void main() {
 
       final pillBox = tester.getSize(find.byWidget(pill));
       expect(pillBox.height, AstraSpacing.kBottomNavBarHeight);
+      final expectedPillWidth =
+          AstraSpacing.kBottomNavHorizontalPadding * 2 +
+          AstraSpacing.kBottomNavItemSize * 3 +
+          AstraSpacing.kBottomNavItemGap * 2;
+      expect(pillBox.width, expectedPillWidth);
 
       await _disposeScaffold(tester);
     });

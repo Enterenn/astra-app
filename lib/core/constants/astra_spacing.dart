@@ -28,6 +28,9 @@ abstract final class AstraSpacing {
   static const double kBottomNavBarHeight = 72;
   static const double kBottomNavHorizontalPadding = 24;
 
+  /// Gap between adjacent tab items inside the floating pill.
+  static const double kBottomNavItemGap = kSpaceLg;
+
   /// Offset from bottom safe area to the floating pill (Figma).
   static const double kBottomNavBottomOffset = kSpaceMd;
 

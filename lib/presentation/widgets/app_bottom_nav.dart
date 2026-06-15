@@ -7,7 +7,7 @@ import '../../core/constants/astra_spacing.dart';
 import '../../core/constants/astra_typography.dart';
 import 'astra_pressable.dart';
 
-/// Four-tab floating pill navigation (UX §2.1, Story 5.7).
+/// Three-tab floating pill navigation (UX §2.1, Story 5.7 / 10.1).
 class AppBottomNav extends StatelessWidget {
   const AppBottomNav({
     required this.selectedIndex,
@@ -20,7 +20,7 @@ class AppBottomNav extends StatelessWidget {
 
   static const _tabs = <_NavTab>[
     _NavTab(
-      label: 'TODAY',
+      label: 'STEPS',
       regularIcon: PhosphorIconsRegular.sneakerMove,
       fillIcon: PhosphorIconsFill.sneakerMove,
     ),
@@ -30,14 +30,9 @@ class AppBottomNav extends StatelessWidget {
       fillIcon: PhosphorIconsFill.chartBar,
     ),
     _NavTab(
-      label: 'DATA',
-      regularIcon: PhosphorIconsRegular.database,
-      fillIcon: PhosphorIconsFill.database,
-    ),
-    _NavTab(
-      label: 'PROFILE',
-      regularIcon: PhosphorIconsRegular.user,
-      fillIcon: PhosphorIconsFill.user,
+      label: 'MENU',
+      regularIcon: PhosphorIconsRegular.list,
+      fillIcon: PhosphorIconsFill.list,
     ),
   ];
 
@@ -52,35 +47,43 @@ class AppBottomNav extends StatelessWidget {
       top: false,
       child: Padding(
         padding: const EdgeInsets.only(
-          left: AstraSpacing.kScreenHorizontalPadding,
-          right: AstraSpacing.kScreenHorizontalPadding,
           bottom: AstraSpacing.kBottomNavBottomOffset,
         ),
-        child: Material(
-          color: Colors.transparent,
-          child: DecoratedBox(
-            decoration: BoxDecoration(
-              color: colors.accentPrimary,
-              borderRadius: BorderRadius.circular(AstraSpacing.kRadiusFull),
-            ),
-            child: SizedBox(
-              height: AstraSpacing.kBottomNavBarHeight,
-              child: Padding(
-                padding: const EdgeInsets.symmetric(
-                  horizontal: AstraSpacing.kBottomNavHorizontalPadding,
+        child: SizedBox(
+          height: AstraSpacing.kBottomNavBarHeight,
+          width: double.infinity,
+          child: Center(
+            child: Material(
+              color: Colors.transparent,
+              child: DecoratedBox(
+                decoration: BoxDecoration(
+                  color: colors.accentPrimary,
+                  borderRadius: BorderRadius.circular(AstraSpacing.kRadiusFull),
                 ),
-                child: Row(
-                  children: [
-                    for (var i = 0; i < _tabs.length; i++)
-                      Expanded(
-                        child: _NavItem(
-                          tab: _tabs[i],
-                          selected: selectedIndex == i,
-                          squircleFill: squircleFill,
-                          onTap: () => onSelected(i),
-                        ),
-                      ),
-                  ],
+                child: SizedBox(
+                  height: AstraSpacing.kBottomNavBarHeight,
+                  child: Padding(
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: AstraSpacing.kBottomNavHorizontalPadding,
+                    ),
+                    child: Row(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        for (var i = 0; i < _tabs.length; i++) ...[
+                          if (i > 0)
+                            const SizedBox(
+                              width: AstraSpacing.kBottomNavItemGap,
+                            ),
+                          _NavItem(
+                            tab: _tabs[i],
+                            selected: selectedIndex == i,
+                            squircleFill: squircleFill,
+                            onTap: () => onSelected(i),
+                          ),
+                        ],
+                      ],
+                    ),
+                  ),
                 ),
               ),
             ),
@@ -183,7 +186,7 @@ class _NavItem extends StatelessWidget {
           borderRadius: BorderRadius.circular(AstraSpacing.kRadiusFull),
           child: SizedBox(
             height: AstraSpacing.kBottomNavItemSize,
-            width: double.infinity,
+            width: AstraSpacing.kBottomNavItemSize,
             child: Center(child: squircleChild),
           ),
         ),
