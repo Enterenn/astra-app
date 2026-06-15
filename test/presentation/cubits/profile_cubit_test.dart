@@ -24,12 +24,17 @@ void main() {
     late NotificationService notificationService;
     var permissionRequestCount = 0;
 
+    // Simulates OS permission: starts denied, flips to granted after request.
+    var permissionGrantedByOs = false;
+
     setUp(() async {
       db = await openAstraDatabase(databasePath: inMemoryDatabasePath);
       userPreferences = UserPreferencesRepository(db);
       permissionRequestCount = 0;
+      permissionGrantedByOs = false;
       notificationService = NotificationService(
-        permissionChecker: () async => PermissionStatus.denied,
+        permissionChecker: () async =>
+            permissionGrantedByOs ? PermissionStatus.granted : PermissionStatus.denied,
       );
     });
 
@@ -45,6 +50,7 @@ void main() {
         notificationService: notificationService,
         permissionRequester: (permission) async {
           permissionRequestCount++;
+          permissionGrantedByOs = true;
           return PermissionStatus.granted;
         },
         postDisplayNameUpdate: postDisplayNameUpdate,
@@ -170,18 +176,43 @@ void main() {
       await cubit.close();
     });
 
-    test('re-requests OS permission each time notifications are enabled', () async {
+    test('does not re-request OS permission when already granted', () async {
       final cubit = buildCubit();
       await cubit.refresh();
 
+      // First enable: permission denied → triggers request → granted.
       expect(await cubit.setGoalNotificationsEnabled(true), isTrue);
       expect(permissionRequestCount, 1);
 
       expect(await cubit.setGoalNotificationsEnabled(false), isTrue);
       expect(permissionRequestCount, 1);
 
+      // Second enable: permission already granted → no new request.
       expect(await cubit.setGoalNotificationsEnabled(true), isTrue);
-      expect(permissionRequestCount, 2);
+      expect(permissionRequestCount, 1);
+
+      await cubit.close();
+    });
+
+    test('enabling goal notifications returns false when permission permanently denied', () async {
+      final cubit = ProfileCubit(
+        userPreferences: userPreferences,
+        notificationService: NotificationService(
+          permissionChecker: () async => PermissionStatus.denied,
+        ),
+        permissionRequester: (permission) async {
+          permissionRequestCount++;
+          return PermissionStatus.denied;
+        },
+      );
+      await cubit.refresh();
+
+      final saved = await cubit.setGoalNotificationsEnabled(true);
+
+      expect(saved, isFalse);
+      expect(permissionRequestCount, 1);
+      expect(await userPreferences.getGoalNotificationsEnabled(), isFalse);
+      expect(cubit.state.goalNotificationsEnabled, isFalse);
 
       await cubit.close();
     });

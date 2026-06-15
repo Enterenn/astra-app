@@ -228,6 +228,14 @@ class ProfileCubit extends Cubit<ProfileState> {
           debugPrintStack(stackTrace: stackTrace);
         }
       }
+      // Re-check after the OS dialog: permission may still be denied.
+      if (!await notificationService.hasNotificationPermission()) {
+        return false;
+      }
+    }
+
+    if (isClosed) {
+      return false;
     }
 
     try {
