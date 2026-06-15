@@ -1,6 +1,6 @@
 # Story 10.8: Data and About Screens
 
-Status: review
+Status: done
 
 <!-- Note: Validation is optional. Run validate-create-story for quality check before dev-story. -->
 
@@ -379,3 +379,4 @@ Composer (Cursor)
 
 - 2026-06-16: Story 10.8 created — restores Epic 10 Data mockup (Background/Footprint/Your data), recreates deleted BackgroundStatusCard, full About with package_info; reverses 5.10 interim layout; ready for dev.
 - 2026-06-16: Story 10.8 implemented — three-card Data layout, BackgroundStatusCard, FootprintKpiRow KPIs, About screen body, tests; status → review.
+- 2026-06-16: Code review fixes — `lastOptimizedUtc` clears after purge; About `PackageInfo` cache; Epic 10 close `0.3.0+5`.

@@ -14,15 +14,18 @@ class AboutScreen extends StatelessWidget {
     super.key,
   });
 
-  /// Injectable for tests; production uses [PackageInfo.fromPlatform].
+  /// Injectable for tests; production uses [_defaultPackageInfoFuture].
   final Future<PackageInfo>? packageInfoFuture;
+
+  static final Future<PackageInfo> _defaultPackageInfoFuture =
+      PackageInfo.fromPlatform();
 
   @override
   Widget build(BuildContext context) {
     return SecondaryScreenShell(
       title: 'About',
       child: _AboutBody(
-        packageInfoFuture: packageInfoFuture ?? PackageInfo.fromPlatform(),
+        packageInfoFuture: packageInfoFuture ?? _defaultPackageInfoFuture,
       ),
     );
   }

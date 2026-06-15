@@ -1,6 +1,6 @@
 # generated: 2026-05-25
-# last_updated: 2026-06-16 (Story 10.8 → review)
-# NEXT: dev-story 10.8 — Data and About screens
+# last_updated: 2026-06-16 (Epic 10 close — 0.3.0+5)
+# NEXT: epic-9 story 9-1 review or epic-11 planning
 # Ref: planning-artifacts/sprint-change-proposal-2026-06-15.md
 # project: astra-app
 # project_key: NOKEY
@@ -144,7 +144,7 @@ development_status:
   9-1-android-fgs-notification-visibility: review
   epic-9-retrospective: optional
 
-  epic-10: in-progress
+  epic-10: done
   10-1-three-tab-bottom-navigation: done
   10-2-menu-hub-full-screen-list: done
   10-3-secondary-screen-navigator-stack: done
@@ -152,7 +152,7 @@ development_status:
   10-5-settings-appearance-and-notifications: done
   10-6-display-units-preferences: done
   10-7-app-wide-unit-formatters: done
-  10-8-data-and-about-screens: review
+  10-8-data-and-about-screens: done
   epic-10-retrospective: optional
 
   epic-11: backlog

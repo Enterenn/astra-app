@@ -637,7 +637,7 @@ class MyDataCubit extends Cubit<MyDataState> {
   void _emitReadySnapshot({
     required int sampleCount,
     required int fileSizeBytes,
-    DateTime? lastOptimizedUtc,
+    Object? lastOptimizedUtc = _unsetLastOptimized,
     DateTime? lastIngestionUtc,
     required BackgroundCollectionStatus backgroundStatus,
     int? dailyStepGoal,
@@ -647,7 +647,9 @@ class MyDataCubit extends Cubit<MyDataState> {
       MyDataState.ready(
         sampleCount: sampleCount,
         fileSizeBytes: fileSizeBytes,
-        lastOptimizedUtc: lastOptimizedUtc ?? state.lastOptimizedUtc,
+        lastOptimizedUtc: lastOptimizedUtc == _unsetLastOptimized
+            ? state.lastOptimizedUtc
+            : lastOptimizedUtc as DateTime?,
         lastIngestionUtc: lastIngestionUtc,
         backgroundStatus: backgroundStatus,
         isIos: _isIos,
@@ -690,3 +692,5 @@ class MyDataCubit extends Cubit<MyDataState> {
     return BackgroundCollectionStatus.healthy;
   }
 }
+
+const _unsetLastOptimized = Object();

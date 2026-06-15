@@ -69,12 +69,31 @@ void main() {
         clock: clock,
         databasePath: inMemoryDatabasePath,
         isIos: false,
+        activityPermissionGranted: () async => true,
         postPurgeRefresh: postPurgeRefresh,
         shareCsvFile: shareCsvFile ?? (_, {sharePositionOrigin}) async {},
         saveCsvFile: saveCsvFile ?? ((_) async => false),
         tempDirectoryProvider: () async => tempDir.path,
       );
     }
+
+    test('deleteConfirmed clears lastOptimizedUtc after purge', () async {
+      await userPreferences.setLastDatabaseOptimizedAt(
+        DateTime.utc(2026, 6, 1),
+      );
+      final cubit = buildCubit();
+      addTearDown(cubit.close);
+
+      await cubit.refresh();
+      expect(cubit.state.lastOptimizedUtc, isNotNull);
+
+      await cubit.confirmAndPurge(
+        confirmedAction: PurgeConfirmAction.deleteConfirmed,
+      );
+
+      expect(cubit.state.lastOptimizedUtc, isNull);
+      expect(cubit.state.sampleCount, 0);
+    });
 
     test('deleteConfirmed purges, refreshes, and sets success flag', () async {
       var refreshCalled = false;
