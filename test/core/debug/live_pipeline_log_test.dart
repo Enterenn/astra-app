@@ -5,11 +5,13 @@ import 'package:flutter_test/flutter_test.dart';
 void main() {
   setUp(() {
     resetLivePipelineLogThrottleForTests();
+    livePipelineLogForceEnabled = true;
     livePipelineLogForceDisabled = false;
     debugPrint = (String? message, {int? wrapWidth}) {};
   });
 
   tearDown(() {
+    livePipelineLogForceEnabled = false;
     livePipelineLogForceDisabled = false;
     resetLivePipelineLogThrottleForTests();
   });

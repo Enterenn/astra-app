@@ -12,12 +12,17 @@ const bool _kLiveLogDefine = bool.fromEnvironment(
   defaultValue: false,
 );
 
-/// Test hook: force logging off without kDebugMode.
+/// Test hook: force logging off regardless of kDebugMode and ASTRA_LIVE_LOG.
 @visibleForTesting
 bool livePipelineLogForceDisabled = false;
 
+/// Test hook: force logging on regardless of ASTRA_LIVE_LOG dart-define.
+@visibleForTesting
+bool livePipelineLogForceEnabled = false;
+
 bool get livePipelineLogEnabled =>
-    kDebugMode && _kLiveLogDefine && !livePipelineLogForceDisabled;
+    (kDebugMode && _kLiveLogDefine || livePipelineLogForceEnabled) &&
+    !livePipelineLogForceDisabled;
 
 final Map<String, DateTime> _lastLoggedAt = {};
 
