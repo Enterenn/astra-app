@@ -1,7 +1,7 @@
 name: astra_app
 description: ASTRA — local-first health hub
 publish_to: 'none'
-version: 0.2.1+3
+version: 0.2.2+4
 
 environment:
   sdk: ^3.12.0
