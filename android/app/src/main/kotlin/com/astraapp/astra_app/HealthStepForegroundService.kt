@@ -71,6 +71,9 @@ class HealthStepForegroundService : Service() {
         ).apply {
             description = CHANNEL_DESCRIPTION
             setShowBadge(false)
+            enableVibration(false)
+            enableLights(false)
+            setSound(null, null)
         }
         manager.createNotificationChannel(channel)
     }
@@ -82,6 +85,8 @@ class HealthStepForegroundService : Service() {
             .setSmallIcon(R.mipmap.ic_launcher)
             .setOngoing(true)
             .setOnlyAlertOnce(true)
+            .setSilent(true)
+            .setVisibility(NotificationCompat.VISIBILITY_SECRET)
             .setPriority(NotificationCompat.PRIORITY_LOW)
             .setCategory(NotificationCompat.CATEGORY_SERVICE)
             .build()
@@ -112,9 +117,9 @@ class HealthStepForegroundService : Service() {
         const val CHANNEL_NAME = "Step tracking"
         const val CHANNEL_DESCRIPTION = "Ongoing step tracking while the app is in the background"
         const val NOTIFICATION_ID = 100
-        const val NOTIFICATION_TITLE = "Step tracking active"
+        const val NOTIFICATION_TITLE = "Tracking steps"
         const val NOTIFICATION_BODY =
-            "Counting steps in the background on this device."
+            "Background step count on this device."
 
         // 60s — timely goal notification when walking in background (FR-25).
         private const val COLLECTION_INTERVAL_MS = 60L * 1000L
