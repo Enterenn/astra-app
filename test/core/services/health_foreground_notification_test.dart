@@ -16,10 +16,10 @@ void main() {
     });
 
     test('copy is honest health tracking without sync or coach language', () {
-      expect(HealthForegroundNotification.title, 'Step tracking active');
+      expect(HealthForegroundNotification.title, 'Tracking steps');
       expect(
         HealthForegroundNotification.body,
-        'Counting steps in the background on this device.',
+        'Background step count on this device.',
       );
 
       final combined =

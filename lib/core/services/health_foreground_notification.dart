@@ -8,7 +8,7 @@ class HealthForegroundNotification {
   static const String channelName = 'Step tracking';
   static const int notificationId = 100;
 
-  static const String title = 'Step tracking active';
+  static const String title = 'Tracking steps';
   static const String body =
-      'Counting steps in the background on this device.';
+      'Background step count on this device.';
 }
