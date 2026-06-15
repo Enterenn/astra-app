@@ -1,7 +1,7 @@
 // User-facing display unit preferences (Story 10.6).
 //
 // Canonical body values (`height_cm`, `weight_kg`) and internal distance math
-// stay metric — these enums control labels only until Story 10.7 formatters.
+// stay metric — these enums control display labels and editor input modes.
 
 enum DistanceDisplayUnit {
   metric,
