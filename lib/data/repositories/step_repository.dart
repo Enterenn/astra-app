@@ -107,7 +107,9 @@ class StepRepository {
       ),
     );
 
-    var total = 0;
+    // Accumulate per resolution; use finest tier only to prevent
+    // double-counting when mixed-resolution rows exist (e.g. bad import).
+    final byResolution = <String, int>{};
     for (final row in rows) {
       final sample = TimeseriesSampleModel.fromMap(row);
       final rowLocalDay = LocalDayCalculator.localDay(
@@ -115,11 +117,15 @@ class StepRepository {
         zoneOffset: sample.zoneOffset,
       );
       if (rowLocalDay == bounds.referenceToday) {
-        total += sample.value.toInt();
+        byResolution.update(
+          sample.resolution,
+          (v) => v + sample.value.toInt(),
+          ifAbsent: () => sample.value.toInt(),
+        );
       }
     }
 
-    return total;
+    return _finestResolutionTotal(byResolution);
   }
 
   /// Returns today's 5-minute step buckets with positive values for activity metrics.
@@ -157,6 +163,24 @@ class StepRepository {
     }
 
     return buckets;
+  }
+
+  /// Returns the total steps for the finest resolution present in [byResolution].
+  ///
+  /// Resolution priority (finest first): 5min → hourly → daily.
+  /// Prevents double-counting when mixed-resolution rows exist for the same period.
+  static int _finestResolutionTotal(Map<String, int> byResolution) {
+    for (final resolution in const [
+      kFiveMinuteResolution,
+      kHourlyResolution,
+      kDailyResolution,
+    ]) {
+      final total = byResolution[resolution];
+      if (total != null) {
+        return total;
+      }
+    }
+    return 0;
   }
 
   /// Conservative UTC window for today's rows before per-row [zone_offset] filtering.
@@ -208,7 +232,9 @@ class StepRepository {
       ),
     );
 
-    final totals = <DateTime, int>{};
+    // Accumulate per (day, resolution) then use finest tier per day to prevent
+    // double-counting when mixed-resolution rows exist (e.g. bad import).
+    final byDayAndResolution = <DateTime, Map<String, int>>{};
     for (final row in rows) {
       final sample = TimeseriesSampleModel.fromMap(row);
       final rowLocalDay = LocalDayCalculator.localDay(
@@ -219,14 +245,23 @@ class StepRepository {
           rowLocalDay.isAfter(referenceToday)) {
         continue;
       }
-      totals[rowLocalDay] = (totals[rowLocalDay] ?? 0) + sample.value.toInt();
+      byDayAndResolution
+          .putIfAbsent(rowLocalDay, () => {})
+          .update(
+            sample.resolution,
+            (v) => v + sample.value.toInt(),
+            ifAbsent: () => sample.value.toInt(),
+          );
     }
 
     final results = <ChartDayAggregate>[];
     for (var i = 0; i < days; i++) {
       final day = referenceToday.subtract(Duration(days: i));
       results.add(
-        ChartDayAggregate(localDay: day, totalSteps: totals[day] ?? 0),
+        ChartDayAggregate(
+          localDay: day,
+          totalSteps: _finestResolutionTotal(byDayAndResolution[day] ?? {}),
+        ),
       );
     }
     return results;

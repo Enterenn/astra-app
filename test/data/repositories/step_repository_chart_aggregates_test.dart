@@ -2,6 +2,7 @@ import 'package:astra_app/core/database/app_database.dart';
 import 'package:astra_app/data/datasources/data_ingestion_source.dart';
 import 'package:astra_app/data/models/chart_day_aggregate.dart';
 import 'package:astra_app/data/models/normalized_step_bucket.dart';
+import 'package:astra_app/data/models/timeseries_sample_model.dart';
 import 'package:astra_app/data/repositories/step_repository.dart';
 import 'package:astra_app/dev/data_inject_service.dart';
 import 'package:astra_app/dev/lifecycle_simulator.dart';
@@ -188,6 +189,50 @@ void main() {
         throwsA(isA<ArgumentError>()),
       );
     });
+
+    test(
+      'uses finest resolution when mixed-resolution rows exist for the same day',
+      () async {
+        // 5min rows totalling 200 for 2026-06-01 (yesterday in window)
+        await repository.upsertIngestionBucket(
+          _bucket(
+            startTimeUtc: DateTime.utc(2026, 6, 1, 8),
+            value: 120,
+            zoneOffset: '+02:00',
+          ),
+        );
+        await repository.upsertIngestionBucket(
+          _bucket(
+            startTimeUtc: DateTime.utc(2026, 6, 1, 9),
+            value: 80,
+            zoneOffset: '+02:00',
+          ),
+        );
+        // Simulate a malformed import: hourly row for the same day (500).
+        await repository.insertDevSamplesBatch([
+          TimeseriesSampleModel(
+            id: 'bad-import-hourly',
+            startTimeUtc: DateTime.utc(2026, 6, 1, 8),
+            endTimeUtc: DateTime.utc(2026, 6, 1, 9),
+            type: 'steps',
+            value: 500,
+            unit: 'steps',
+            resolution: '1hour',
+            provider: kInternalPhoneProvider,
+            deviceId: kSmartphoneDeviceId,
+            zoneOffset: '+02:00',
+          ),
+        ]);
+
+        final sevenDay = await repository.getChartDailyAggregates(days: 7);
+        final june1 = sevenDay.firstWhere(
+          (e) => e.localDay == DateTime.utc(2026, 6, 1),
+        );
+
+        // Must return 200 (5min total), not 700 (5min + hourly).
+        expect(june1.totalSteps, 200);
+      },
+    );
   });
 }
 

@@ -167,6 +167,52 @@ void main() {
 
       expect(await repository.getTodaySteps(), 42);
     });
+
+    test(
+      'uses finest resolution when mixed-resolution rows exist for the same day',
+      () async {
+        final repository = StepRepository(
+          db: db,
+          clock: FakeTimeProvider(
+            fixedNowUtc: DateTime.utc(2026, 6, 2, 10),
+            zoneOffset: const Duration(hours: 2),
+          ),
+        );
+        // 5min rows: 150 total
+        await repository.upsertIngestionBucket(
+          _bucket(
+            startTimeUtc: DateTime.utc(2026, 6, 2, 6),
+            value: 100,
+            zoneOffset: '+02:00',
+          ),
+        );
+        await repository.upsertIngestionBucket(
+          _bucket(
+            startTimeUtc: DateTime.utc(2026, 6, 2, 7),
+            value: 50,
+            zoneOffset: '+02:00',
+          ),
+        );
+        // Simulate a malformed import: an hourly row covering the same day (300).
+        await repository.insertDevSamplesBatch([
+          TimeseriesSampleModel(
+            id: 'bad-import-hourly',
+            startTimeUtc: DateTime.utc(2026, 6, 2, 6),
+            endTimeUtc: DateTime.utc(2026, 6, 2, 7),
+            type: 'steps',
+            value: 300,
+            unit: 'steps',
+            resolution: '1hour',
+            provider: kInternalPhoneProvider,
+            deviceId: kSmartphoneDeviceId,
+            zoneOffset: '+02:00',
+          ),
+        ]);
+
+        // Must return 150 (5min), not 450 (5min + hourly).
+        expect(await repository.getTodaySteps(), 150);
+      },
+    );
   });
 }
 
