@@ -1,6 +1,7 @@
 import 'package:sqflite/sqflite.dart';
 
 import '../../core/constants/astra_accent_preset.dart';
+import '../../core/constants/display_unit_preferences.dart';
 import '../../core/constants/preference_keys.dart';
 import '../../core/database/astra_database_session.dart';
 import '../../core/time/local_day_formatter.dart';
@@ -204,6 +205,33 @@ class UserPreferencesRepository {
       kGoalNotificationsEnabledKey,
       enabled ? 'true' : 'false',
     );
+  }
+
+  Future<DistanceDisplayUnit> getDistanceDisplayUnit() async {
+    final value = await _readValue(kDistanceDisplayUnitKey);
+    return parseDistanceDisplayUnit(value);
+  }
+
+  Future<void> setDistanceDisplayUnit(DistanceDisplayUnit unit) async {
+    await _writeValue(kDistanceDisplayUnitKey, unit.storageValue);
+  }
+
+  Future<WeightDisplayUnit> getWeightDisplayUnit() async {
+    final value = await _readValue(kWeightDisplayUnitKey);
+    return parseWeightDisplayUnit(value);
+  }
+
+  Future<void> setWeightDisplayUnit(WeightDisplayUnit unit) async {
+    await _writeValue(kWeightDisplayUnitKey, unit.storageValue);
+  }
+
+  Future<HeightDisplayUnit> getHeightDisplayUnit() async {
+    final value = await _readValue(kHeightDisplayUnitKey);
+    return parseHeightDisplayUnit(value);
+  }
+
+  Future<void> setHeightDisplayUnit(HeightDisplayUnit unit) async {
+    await _writeValue(kHeightDisplayUnitKey, unit.storageValue);
   }
 
   Future<void> setDisplayName(String? name) async {

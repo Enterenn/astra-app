@@ -12,6 +12,7 @@ import '../../data/repositories/ingestion_baseline_repository.dart';
 import '../../data/repositories/step_repository.dart';
 import '../../data/repositories/user_preferences_repository.dart';
 import '../../core/constants/astra_accent_preset.dart';
+import '../../core/constants/display_unit_preferences.dart';
 import '../../presentation/cubits/theme_state.dart';
 import '../database/astra_database_session.dart';
 import '../permissions/activity_permission_resolver.dart';
@@ -30,6 +31,9 @@ class AppDependencies {
     required this.userPreferences,
     required this.initialTheme,
     required this.initialAccentPreset,
+    required this.initialDistanceUnit,
+    required this.initialWeightUnit,
+    required this.initialHeightUnit,
     required this.initialOnboardingComplete,
     required this.timeProvider,
     required this.ingestionSources,
@@ -48,6 +52,9 @@ class AppDependencies {
   final UserPreferencesRepository userPreferences;
   final AstraThemePreference initialTheme;
   final AstraAccentPreset initialAccentPreset;
+  final DistanceDisplayUnit initialDistanceUnit;
+  final WeightDisplayUnit initialWeightUnit;
+  final HeightDisplayUnit initialHeightUnit;
   final bool initialOnboardingComplete;
   final TimeProvider timeProvider;
   final List<DataIngestionSource> ingestionSources;
@@ -78,6 +85,9 @@ class AppDependencies {
     );
     final initialTheme = await userPreferences.getThemeMode();
     final initialAccentPreset = await userPreferences.getAccentPreset();
+    final initialDistanceUnit = await userPreferences.getDistanceDisplayUnit();
+    final initialWeightUnit = await userPreferences.getWeightDisplayUnit();
+    final initialHeightUnit = await userPreferences.getHeightDisplayUnit();
     final initialOnboardingComplete = await userPreferences
         .getOnboardingComplete();
     final stepRepository = StepRepository(
@@ -138,6 +148,9 @@ class AppDependencies {
       userPreferences: userPreferences,
       initialTheme: initialTheme,
       initialAccentPreset: initialAccentPreset,
+      initialDistanceUnit: initialDistanceUnit,
+      initialWeightUnit: initialWeightUnit,
+      initialHeightUnit: initialHeightUnit,
       initialOnboardingComplete: initialOnboardingComplete,
       timeProvider: timeProvider,
       ingestionSources: ingestionSources,
@@ -171,6 +184,9 @@ class AppDependencies {
   }) async {
     final initialTheme = await userPreferences.getThemeMode();
     final initialAccentPreset = await userPreferences.getAccentPreset();
+    final initialDistanceUnit = await userPreferences.getDistanceDisplayUnit();
+    final initialWeightUnit = await userPreferences.getWeightDisplayUnit();
+    final initialHeightUnit = await userPreferences.getHeightDisplayUnit();
     final onboardingComplete =
         initialOnboardingComplete ??
         await userPreferences.getOnboardingComplete();
@@ -245,6 +261,9 @@ class AppDependencies {
       userPreferences: userPreferences,
       initialTheme: initialTheme,
       initialAccentPreset: initialAccentPreset,
+      initialDistanceUnit: initialDistanceUnit,
+      initialWeightUnit: initialWeightUnit,
+      initialHeightUnit: initialHeightUnit,
       initialOnboardingComplete: onboardingComplete,
       timeProvider: clock,
       ingestionSources: sources,

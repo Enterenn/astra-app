@@ -8,6 +8,7 @@ import 'package:astra_app/presentation/cubits/history_cubit.dart';
 import 'package:astra_app/presentation/cubits/history_state.dart';
 import 'package:astra_app/presentation/cubits/today_cubit.dart';
 import 'package:astra_app/presentation/cubits/today_state.dart';
+import 'package:astra_app/presentation/cubits/units_cubit.dart';
 import 'package:astra_app/presentation/models/week_day_status.dart';
 import 'package:astra_app/presentation/screens/history_screen.dart';
 import 'package:astra_app/presentation/screens/today_screen.dart';
@@ -61,6 +62,7 @@ void main() {
     late UserPreferencesRepository userPreferences;
     late StepRepository stepRepository;
     late FakeTimeProvider clock;
+    late UnitsCubit unitsCubit;
 
     setUp(() async {
       GoalRing.disableStepPersistence = true;
@@ -71,10 +73,12 @@ void main() {
       db = await openAstraDatabase(databasePath: inMemoryDatabasePath);
       userPreferences = UserPreferencesRepository(db);
       stepRepository = StepRepository(db: db, clock: clock);
+      unitsCubit = UnitsCubit(userPreferences: userPreferences);
     });
 
     tearDown(() async {
       GoalRing.disableStepPersistence = false;
+      await unitsCubit.close();
       await db.close();
     });
 
@@ -107,8 +111,11 @@ void main() {
       TodayCubit cubit, {
       bool disableAnimations = true,
     }) async {
-      final screen = BlocProvider<TodayCubit>.value(
-        value: cubit,
+      final screen = MultiBlocProvider(
+        providers: [
+          BlocProvider<TodayCubit>.value(value: cubit),
+          BlocProvider<UnitsCubit>.value(value: unitsCubit),
+        ],
         child: const TodayScreen(),
       );
       await tester.pumpWidget(

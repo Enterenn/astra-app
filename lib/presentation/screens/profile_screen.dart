@@ -6,6 +6,9 @@ import '../../core/constants/astra_spacing.dart';
 import '../../core/constants/astra_typography.dart';
 import '../cubits/profile_cubit.dart';
 import '../cubits/profile_state.dart';
+import '../cubits/units_cubit.dart';
+import '../cubits/units_state.dart';
+import '../formatters/display_unit_formatter.dart';
 import '../widgets/display_name_editor_row.dart';
 import '../widgets/display_name_editor_sheet.dart';
 import '../widgets/height_editor_sheet.dart';
@@ -146,23 +149,33 @@ class _ProfileScreenBody extends StatelessWidget {
           ],
           SectionCard(
             headline: 'Informations',
-            child: Column(
-              children: [
-                DisplayNameEditorRow(
-                  displayName: profileState.displayName,
-                  onTap: editDisplayName,
-                ),
-                ProfileInfoRow(
-                  label: 'Height',
-                  valueLabel: formatHeightCm(profileState.heightCm),
-                  onTap: editHeight,
-                ),
-                ProfileInfoRow(
-                  label: 'Weight',
-                  valueLabel: formatWeightKg(profileState.weightKg),
-                  onTap: editWeight,
-                ),
-              ],
+            child: BlocBuilder<UnitsCubit, UnitsState>(
+              builder: (context, unitsState) {
+                return Column(
+                  children: [
+                    DisplayNameEditorRow(
+                      displayName: profileState.displayName,
+                      onTap: editDisplayName,
+                    ),
+                    ProfileInfoRow(
+                      label: 'Height',
+                      valueLabel: formatDisplayHeight(
+                        profileState.heightCm,
+                        unitsState.heightUnit,
+                      ),
+                      onTap: editHeight,
+                    ),
+                    ProfileInfoRow(
+                      label: 'Weight',
+                      valueLabel: formatDisplayWeight(
+                        profileState.weightKg,
+                        unitsState.weightUnit,
+                      ),
+                      onTap: editWeight,
+                    ),
+                  ],
+                );
+              },
             ),
           ),
         ],

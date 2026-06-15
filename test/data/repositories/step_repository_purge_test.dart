@@ -82,6 +82,9 @@ void main() {
         kHeightCmKey: '180',
         kWeightKgKey: '72.5',
         kGoalNotificationsEnabledKey: 'true',
+        kDistanceDisplayUnitKey: 'imperial',
+        kWeightDisplayUnitKey: 'lb',
+        kHeightDisplayUnitKey: 'ft_in',
       }.entries) {
         await db.insert(
           'user_preferences',
@@ -115,6 +118,9 @@ void main() {
       expect(prefs[kHeightCmKey], '180');
       expect(prefs[kWeightKgKey], '72.5');
       expect(prefs[kGoalNotificationsEnabledKey], 'true');
+      expect(prefs[kDistanceDisplayUnitKey], 'imperial');
+      expect(prefs[kWeightDisplayUnitKey], 'lb');
+      expect(prefs[kHeightDisplayUnitKey], 'ft_in');
       expect(
         prefs.keys.where((k) => k.startsWith('ingestion_baseline/')),
         isEmpty,

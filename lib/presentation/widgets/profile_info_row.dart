@@ -5,6 +5,9 @@ import '../../core/constants/astra_colors.dart';
 import '../../core/constants/astra_spacing.dart';
 import '../../core/constants/astra_typography.dart';
 
+import '../../core/constants/display_unit_preferences.dart';
+import '../formatters/display_unit_formatter.dart';
+
 /// Tappable profile field row (label, value, chevron).
 class ProfileInfoRow extends StatelessWidget {
   const ProfileInfoRow({
@@ -73,19 +76,8 @@ class ProfileInfoRow extends StatelessWidget {
   }
 }
 
-String formatHeightCm(int? heightCm) {
-  if (heightCm == null) {
-    return 'Not set';
-  }
-  return '$heightCm cm';
-}
+String formatHeightCm(int? heightCm) =>
+    formatDisplayHeight(heightCm, HeightDisplayUnit.cm);
 
-String formatWeightKg(double? weightKg) {
-  if (weightKg == null) {
-    return 'Not set';
-  }
-  if (weightKg == weightKg.roundToDouble()) {
-    return '${weightKg.toInt()} kg';
-  }
-  return '${weightKg.toStringAsFixed(1)} kg';
-}
+String formatWeightKg(double? weightKg) =>
+    formatDisplayWeight(weightKg, WeightDisplayUnit.kg);

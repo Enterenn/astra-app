@@ -9,6 +9,7 @@ import 'package:astra_app/presentation/cubits/theme_cubit.dart';
 import 'package:astra_app/presentation/cubits/theme_state.dart';
 import 'package:astra_app/presentation/cubits/today_cubit.dart';
 import 'package:astra_app/presentation/cubits/today_state.dart';
+import 'package:astra_app/presentation/cubits/units_cubit.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:astra_app/presentation/screens/app_scaffold.dart';
 import 'package:astra_app/presentation/widgets/accent_preset_selector.dart';
@@ -82,11 +83,18 @@ Future<void> _pumpAppScaffold(
         theme: buildAstraLightTheme(),
         home: MediaQuery(
           data: MediaQueryData(disableAnimations: disableAnimations),
-          child: BlocProvider(
-            create: (_) => ThemeCubit(
-              userPreferences: userPreferences,
-              initialPreference: AstraThemePreference.system,
-            ),
+          child: MultiBlocProvider(
+            providers: [
+              BlocProvider(
+                create: (_) => ThemeCubit(
+                  userPreferences: userPreferences,
+                  initialPreference: AstraThemePreference.system,
+                ),
+              ),
+              BlocProvider(
+                create: (_) => UnitsCubit(userPreferences: userPreferences),
+              ),
+            ],
             child: scaffold,
           ),
         ),
@@ -410,7 +418,7 @@ void main() {
       await _disposeScaffold(tester);
     });
 
-    testWidgets('Menu pushes Settings with Notifications and Theme cards', (
+    testWidgets('Menu pushes Settings with Units, Notifications, and Theme cards', (
       tester,
     ) async {
       await _pumpAppScaffold(
@@ -445,6 +453,9 @@ void main() {
       );
 
       expect(find.text('Settings'), findsWidgets);
+      expect(find.text('Units'), findsOneWidget);
+      expect(find.text('Distance'), findsOneWidget);
+      expect(find.text('Metric'), findsOneWidget);
       expect(find.text('Notifications'), findsOneWidget);
       expect(find.text('Theme'), findsOneWidget);
       expect(find.text('Receive Goal notifications'), findsOneWidget);

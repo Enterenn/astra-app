@@ -14,6 +14,13 @@ const kDisplayNameKey = 'display_name';
 const kHeightCmKey = 'height_cm';
 const kWeightKgKey = 'weight_kg';
 const kGoalNotificationsEnabledKey = 'goal_notifications_enabled';
+const kDistanceDisplayUnitKey = 'distance_display_unit';
+const kWeightDisplayUnitKey = 'weight_display_unit';
+const kHeightDisplayUnitKey = 'height_display_unit';
+
+const kDefaultDistanceDisplayUnit = 'metric';
+const kDefaultWeightDisplayUnit = 'kg';
+const kDefaultHeightDisplayUnit = 'cm';
 
 const kDefaultStepGoal = 8000;
 const kMinHeightCm = 100;

@@ -1,22 +1,31 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:phosphoricons_flutter/phosphoricons_flutter.dart';
 
+import '../../core/constants/display_unit_preferences.dart';
 import '../../core/constants/astra_colors.dart';
 import '../../core/constants/astra_spacing.dart';
 import '../../core/constants/astra_typography.dart';
 import '../cubits/today_state.dart';
+import '../cubits/units_cubit.dart';
+import '../cubits/units_state.dart';
 import '../formatters/activity_metrics_formatter.dart';
+import '../formatters/display_unit_formatter.dart';
 
-/// Three-column activity stats (kcal, km, walking duration).
+/// Three-column activity stats (kcal, km/mi, walking duration).
 class ActivityStatsRow extends StatelessWidget {
   const ActivityStatsRow({
     super.key,
     required this.status,
     required this.metrics,
+    this.distanceDisplayUnit,
   });
 
   final TodayStatus status;
   final ActivityMetricsSnapshot metrics;
+
+  /// When set, skips [UnitsCubit] lookup (useful in widget tests).
+  final DistanceDisplayUnit? distanceDisplayUnit;
 
   static const _kLoadingPlaceholder = '—';
   static const _kZeroKcal = '0';
@@ -25,8 +34,20 @@ class ActivityStatsRow extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    if (distanceDisplayUnit != null) {
+      return _buildRow(context, distanceDisplayUnit!);
+    }
+
+    return BlocBuilder<UnitsCubit, UnitsState>(
+      builder: (context, unitsState) =>
+          _buildRow(context, unitsState.distanceUnit),
+    );
+  }
+
+  Widget _buildRow(BuildContext context, DistanceDisplayUnit distanceUnit) {
     final colors = context.astraColors;
-    final (kcal, km, duration) = _formattedValues();
+    final (kcal, distanceValue, distanceLabel, duration) =
+        _formattedValues(distanceUnit);
 
     return IntrinsicHeight(
       child: Row(
@@ -44,8 +65,8 @@ class ActivityStatsRow extends StatelessWidget {
           Expanded(
             child: _StatColumn(
               icon: PhosphorIconsRegular.mapPin,
-              value: km,
-              label: 'Km',
+              value: distanceValue,
+              label: distanceLabel,
               colors: colors,
             ),
           ),
@@ -63,16 +84,29 @@ class ActivityStatsRow extends StatelessWidget {
     );
   }
 
-  (String, String, String) _formattedValues() {
+  (String, String, String, String) _formattedValues(
+    DistanceDisplayUnit distanceUnit,
+  ) {
     if (status == TodayStatus.loading) {
-      return (_kLoadingPlaceholder, _kLoadingPlaceholder, _kLoadingPlaceholder);
+      return (
+        _kLoadingPlaceholder,
+        _kLoadingPlaceholder,
+        displayDistanceUnitLabel(distanceUnit),
+        _kLoadingPlaceholder,
+      );
     }
     if (status == TodayStatus.noPermission) {
-      return (_kZeroKcal, _kZeroKm, _kZeroDuration);
+      return (
+        _kZeroKcal,
+        _kZeroKm,
+        displayDistanceUnitLabel(distanceUnit),
+        _kZeroDuration,
+      );
     }
     return (
       formatKcal(metrics.kcal),
-      formatDistanceKm(metrics.distanceKm),
+      formatDisplayDistanceValue(metrics.distanceKm, distanceUnit),
+      displayDistanceUnitLabel(distanceUnit),
       formatWalkingDuration(metrics.walkingDuration),
     );
   }

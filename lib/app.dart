@@ -15,6 +15,7 @@ import 'data/repositories/user_preferences_repository.dart';
 import 'presentation/cubits/onboarding_cubit.dart';
 import 'presentation/cubits/theme_cubit.dart';
 import 'presentation/cubits/theme_state.dart';
+import 'presentation/cubits/units_cubit.dart';
 import 'presentation/cubits/history_cubit.dart';
 import 'presentation/cubits/my_data_cubit.dart';
 import 'presentation/cubits/today_cubit.dart';
@@ -869,12 +870,24 @@ class _AstraAppState extends State<AstraApp> with WidgetsBindingObserver {
 
   @override
   Widget build(BuildContext context) {
-    return BlocProvider(
-      create: (_) => ThemeCubit(
-        userPreferences: widget.deps.userPreferences,
-        initialPreference: widget.deps.initialTheme,
-        initialAccentPreset: widget.deps.initialAccentPreset,
-      ),
+    return MultiBlocProvider(
+      providers: [
+        BlocProvider(
+          create: (_) => ThemeCubit(
+            userPreferences: widget.deps.userPreferences,
+            initialPreference: widget.deps.initialTheme,
+            initialAccentPreset: widget.deps.initialAccentPreset,
+          ),
+        ),
+        BlocProvider(
+          create: (_) => UnitsCubit(
+            userPreferences: widget.deps.userPreferences,
+            initialDistanceUnit: widget.deps.initialDistanceUnit,
+            initialWeightUnit: widget.deps.initialWeightUnit,
+            initialHeightUnit: widget.deps.initialHeightUnit,
+          ),
+        ),
+      ],
       child: BlocBuilder<ThemeCubit, ThemeState>(
         builder: (context, themeState) {
           return MaterialApp(

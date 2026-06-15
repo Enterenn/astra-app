@@ -1,3 +1,4 @@
+import 'package:astra_app/core/constants/display_unit_preferences.dart';
 import 'package:astra_app/core/constants/astra_theme.dart';
 import 'package:astra_app/presentation/cubits/today_state.dart';
 import 'package:astra_app/presentation/widgets/activity_stats_row.dart';
@@ -11,12 +12,17 @@ void main() {
     required ThemeData theme,
     required TodayStatus status,
     ActivityMetricsSnapshot metrics = ActivityMetricsSnapshot.zero,
+    DistanceDisplayUnit distanceDisplayUnit = DistanceDisplayUnit.metric,
   }) async {
     await tester.pumpWidget(
       MaterialApp(
         theme: theme,
         home: Scaffold(
-          body: ActivityStatsRow(status: status, metrics: metrics),
+          body: ActivityStatsRow(
+            status: status,
+            metrics: metrics,
+            distanceDisplayUnit: distanceDisplayUnit,
+          ),
         ),
       ),
     );
@@ -45,7 +51,9 @@ void main() {
     expect(find.text('00:00:00'), findsOneWidget);
   });
 
-  testWidgets('shows formatted metrics with accent primary dividers', (tester) async {
+  testWidgets('shows formatted metrics with accent primary dividers', (
+    tester,
+  ) async {
     await pumpRow(
       tester,
       theme: buildAstraLightTheme(),
@@ -96,5 +104,25 @@ void main() {
 
     expect(find.byType(ActivityStatsRow), findsOneWidget);
     expect(find.text('00:37:20'), findsOneWidget);
+  });
+
+  testWidgets('shows imperial distance when distanceDisplayUnit is imperial', (
+    tester,
+  ) async {
+    await pumpRow(
+      tester,
+      theme: buildAstraLightTheme(),
+      status: TodayStatus.progress,
+      metrics: const ActivityMetricsSnapshot(
+        distanceKm: 10,
+        walkingDuration: Duration.zero,
+        kcal: 0,
+      ),
+      distanceDisplayUnit: DistanceDisplayUnit.imperial,
+    );
+
+    expect(find.text('6.2'), findsOneWidget);
+    expect(find.text('Mi'), findsOneWidget);
+    expect(find.text('Km'), findsNothing);
   });
 }

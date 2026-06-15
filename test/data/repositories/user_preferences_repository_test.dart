@@ -1,4 +1,5 @@
 import 'package:astra_app/core/constants/astra_accent_preset.dart';
+import 'package:astra_app/core/constants/display_unit_preferences.dart';
 import 'package:astra_app/core/constants/preference_keys.dart';
 import 'package:astra_app/core/database/app_database.dart';
 import 'package:astra_app/data/repositories/user_preferences_repository.dart';
@@ -337,6 +338,79 @@ void main() {
         throwsA(isA<ArgumentError>()),
       );
       expect(await db.query('daily_goal_effective'), isEmpty);
+    });
+
+    test('defaults display units when absent', () async {
+      expect(
+        await repository.getDistanceDisplayUnit(),
+        DistanceDisplayUnit.metric,
+      );
+      expect(await repository.getWeightDisplayUnit(), WeightDisplayUnit.kg);
+      expect(await repository.getHeightDisplayUnit(), HeightDisplayUnit.cm);
+    });
+
+    test('round-trips distance display unit', () async {
+      await repository.setDistanceDisplayUnit(DistanceDisplayUnit.imperial);
+      expect(
+        await repository.getDistanceDisplayUnit(),
+        DistanceDisplayUnit.imperial,
+      );
+
+      final rows = await db.query(
+        'user_preferences',
+        where: 'key = ?',
+        whereArgs: [kDistanceDisplayUnitKey],
+      );
+      expect(rows.single['value'], 'imperial');
+    });
+
+    test('round-trips weight display unit', () async {
+      await repository.setWeightDisplayUnit(WeightDisplayUnit.lb);
+      expect(await repository.getWeightDisplayUnit(), WeightDisplayUnit.lb);
+
+      final rows = await db.query(
+        'user_preferences',
+        where: 'key = ?',
+        whereArgs: [kWeightDisplayUnitKey],
+      );
+      expect(rows.single['value'], 'lb');
+    });
+
+    test('round-trips height display unit', () async {
+      await repository.setHeightDisplayUnit(HeightDisplayUnit.ftIn);
+      expect(await repository.getHeightDisplayUnit(), HeightDisplayUnit.ftIn);
+
+      final rows = await db.query(
+        'user_preferences',
+        where: 'key = ?',
+        whereArgs: [kHeightDisplayUnitKey],
+      );
+      expect(rows.single['value'], 'ft_in');
+    });
+
+    test('falls back to metric defaults for invalid stored display units', () async {
+      await db.insert(
+        'user_preferences',
+        {'key': kDistanceDisplayUnitKey, 'value': 'yards'},
+        conflictAlgorithm: ConflictAlgorithm.replace,
+      );
+      await db.insert(
+        'user_preferences',
+        {'key': kWeightDisplayUnitKey, 'value': 'stone'},
+        conflictAlgorithm: ConflictAlgorithm.replace,
+      );
+      await db.insert(
+        'user_preferences',
+        {'key': kHeightDisplayUnitKey, 'value': 'meters'},
+        conflictAlgorithm: ConflictAlgorithm.replace,
+      );
+
+      expect(
+        await repository.getDistanceDisplayUnit(),
+        DistanceDisplayUnit.metric,
+      );
+      expect(await repository.getWeightDisplayUnit(), WeightDisplayUnit.kg);
+      expect(await repository.getHeightDisplayUnit(), HeightDisplayUnit.cm);
     });
   });
 }

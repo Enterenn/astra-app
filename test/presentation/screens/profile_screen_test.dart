@@ -4,8 +4,10 @@ import 'package:astra_app/core/database/app_database.dart';
 import 'package:astra_app/core/services/notification_service.dart';
 import 'package:astra_app/data/repositories/user_preferences_repository.dart';
 import 'package:permission_handler/permission_handler.dart';
+import 'package:astra_app/core/constants/display_unit_preferences.dart';
 import 'package:astra_app/presentation/cubits/profile_cubit.dart';
 import 'package:astra_app/presentation/cubits/profile_state.dart';
+import 'package:astra_app/presentation/cubits/units_cubit.dart';
 import 'package:astra_app/presentation/screens/profile_screen.dart';
 import 'package:astra_app/presentation/widgets/accent_preset_selector.dart';
 import 'package:astra_app/presentation/widgets/section_card.dart';
@@ -40,6 +42,7 @@ class _SeededProfileCubit extends ProfileCubit {
 Future<void> _pumpProfileScreen(
   WidgetTester tester, {
   required ProfileCubit profileCubit,
+  required UnitsCubit unitsCubit,
   bool showInlineTitle = false,
   bool disableAnimations = true,
 }) async {
@@ -49,8 +52,11 @@ Future<void> _pumpProfileScreen(
       home: MediaQuery(
         data: MediaQueryData(disableAnimations: disableAnimations),
         child: Scaffold(
-          body: BlocProvider<ProfileCubit>.value(
-            value: profileCubit,
+          body: MultiBlocProvider(
+            providers: [
+              BlocProvider<ProfileCubit>.value(value: profileCubit),
+              BlocProvider<UnitsCubit>.value(value: unitsCubit),
+            ],
             child: ProfileScreen(showInlineTitle: showInlineTitle),
           ),
         ),
@@ -68,13 +74,16 @@ void main() {
   group('ProfileScreen', () {
     late Database db;
     late UserPreferencesRepository userPreferences;
+    late UnitsCubit unitsCubit;
 
     setUp(() async {
       db = await openAstraDatabase(databasePath: inMemoryDatabasePath);
       userPreferences = UserPreferencesRepository(db);
+      unitsCubit = UnitsCubit(userPreferences: userPreferences);
     });
 
     tearDown(() async {
+      await unitsCubit.close();
       await db.close();
     });
 
@@ -90,7 +99,11 @@ void main() {
       );
       addTearDown(cubit.close);
 
-      await _pumpProfileScreen(tester, profileCubit: cubit);
+      await _pumpProfileScreen(
+        tester,
+        profileCubit: cubit,
+        unitsCubit: unitsCubit,
+      );
 
       expect(
         find.descendant(
@@ -124,7 +137,11 @@ void main() {
       );
       addTearDown(cubit.close);
 
-      await _pumpProfileScreen(tester, profileCubit: cubit);
+      await _pumpProfileScreen(
+        tester,
+        profileCubit: cubit,
+        unitsCubit: unitsCubit,
+      );
 
       expect(find.text('Profile'), findsNothing);
       expect(find.text('My Profile'), findsNothing);
@@ -159,6 +176,7 @@ void main() {
       await _pumpProfileScreen(
         tester,
         profileCubit: cubit,
+        unitsCubit: unitsCubit,
         showInlineTitle: true,
       );
 
@@ -176,7 +194,11 @@ void main() {
       );
       addTearDown(cubit.close);
 
-      await _pumpProfileScreen(tester, profileCubit: cubit);
+      await _pumpProfileScreen(
+        tester,
+        profileCubit: cubit,
+        unitsCubit: unitsCubit,
+      );
 
       expect(find.text('Not set'), findsNWidgets(3));
     });
@@ -193,7 +215,11 @@ void main() {
       );
       addTearDown(cubit.close);
 
-      await _pumpProfileScreen(tester, profileCubit: cubit);
+      await _pumpProfileScreen(
+        tester,
+        profileCubit: cubit,
+        unitsCubit: unitsCubit,
+      );
 
       expect(find.byType(CircularProgressIndicator), findsOneWidget);
       expect(find.text('Informations'), findsNothing);
@@ -214,7 +240,11 @@ void main() {
       );
       addTearDown(cubit.close);
 
-      await _pumpProfileScreen(tester, profileCubit: cubit);
+      await _pumpProfileScreen(
+        tester,
+        profileCubit: cubit,
+        unitsCubit: unitsCubit,
+      );
 
       expect(find.text('Network failed'), findsOneWidget);
       expect(find.text('Informations'), findsNothing);
@@ -232,7 +262,11 @@ void main() {
       );
       addTearDown(cubit.close);
 
-      await _pumpProfileScreen(tester, profileCubit: cubit);
+      await _pumpProfileScreen(
+        tester,
+        profileCubit: cubit,
+        unitsCubit: unitsCubit,
+      );
 
       expect(find.text('Could not load profile'), findsOneWidget);
     });
@@ -250,10 +284,42 @@ void main() {
       );
       addTearDown(cubit.close);
 
-      await _pumpProfileScreen(tester, profileCubit: cubit);
+      await _pumpProfileScreen(
+        tester,
+        profileCubit: cubit,
+        unitsCubit: unitsCubit,
+      );
 
       expect(find.text('180 cm'), findsOneWidget);
       expect(find.text('72.5 kg'), findsOneWidget);
+    });
+
+    testWidgets('formats height and weight in imperial units', (tester) async {
+      await unitsCubit.setWeightUnit(WeightDisplayUnit.lb);
+      await unitsCubit.setHeightUnit(HeightDisplayUnit.ftIn);
+
+      final cubit = _SeededProfileCubit(
+        userPreferences: userPreferences,
+        notificationService: NotificationService(
+          permissionChecker: () async => PermissionStatus.granted,
+        ),
+        seededState: ProfileState.ready(
+          heightCm: 180,
+          weightKg: 72.5,
+        ),
+      );
+      addTearDown(cubit.close);
+
+      await _pumpProfileScreen(
+        tester,
+        profileCubit: cubit,
+        unitsCubit: unitsCubit,
+      );
+
+      expect(find.text('5 ft 11 in'), findsOneWidget);
+      expect(find.text('159.8 lb'), findsOneWidget);
+      expect(find.text('180 cm'), findsNothing);
+      expect(find.text('72.5 kg'), findsNothing);
     });
   });
 }
