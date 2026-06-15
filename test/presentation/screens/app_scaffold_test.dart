@@ -14,6 +14,7 @@ import 'package:astra_app/presentation/screens/app_scaffold.dart';
 import 'package:astra_app/presentation/widgets/accent_preset_selector.dart';
 import 'package:astra_app/presentation/widgets/app_bottom_nav.dart';
 import 'package:astra_app/presentation/widgets/goal_ring.dart';
+import 'package:astra_app/presentation/widgets/menu_nav_row.dart';
 import 'package:astra_app/presentation/widgets/theme_selector.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
@@ -409,7 +410,7 @@ void main() {
       await _disposeScaffold(tester);
     });
 
-    testWidgets('Menu pushes Settings and About stubs with headers', (
+    testWidgets('Menu pushes Settings with Notifications and Theme cards', (
       tester,
     ) async {
       await _pumpAppScaffold(
@@ -424,22 +425,66 @@ void main() {
 
       await openMenuTab(tester);
 
-      for (final destination in ['Settings', 'About']) {
-        await tester.tap(find.text(destination));
-        await tester.pump();
-
-        expect(find.text(destination), findsWidgets);
-        expect(find.byIcon(PhosphorIconsRegular.arrowLeft), findsOneWidget);
-
-        await tester.tap(find.byTooltip('Back'));
-        await tester.pump();
+      await tester.tap(find.widgetWithText(MenuNavRow, 'Settings'));
+      await tester.pump();
+      for (var attempt = 0; attempt < 20; attempt++) {
         await tester.runAsync(() async {
           await Future<void>.delayed(const Duration(milliseconds: 50));
         });
         await tester.pump();
-
-        expect(find.text('Menu'), findsOneWidget);
+        if (find.text('Receive Goal notifications').evaluate().isNotEmpty) {
+          break;
+        }
       }
+
+      expect(find.text('Settings'), findsWidgets);
+      expect(find.text('Notifications'), findsOneWidget);
+      expect(find.text('Theme'), findsOneWidget);
+      expect(find.text('Receive Goal notifications'), findsOneWidget);
+      expect(find.byType(Switch), findsOneWidget);
+      expect(find.byType(ThemeSelector), findsOneWidget);
+      expect(find.byType(AccentPresetSelector), findsOneWidget);
+      expect(find.byIcon(PhosphorIconsRegular.arrowLeft), findsOneWidget);
+
+      await tester.tap(find.byTooltip('Back'));
+      await tester.pump();
+      await tester.runAsync(() async {
+        await Future<void>.delayed(const Duration(milliseconds: 50));
+      });
+      await tester.pump();
+
+      expect(find.text('Menu'), findsOneWidget);
+
+      await _disposeScaffold(tester);
+    });
+
+    testWidgets('Menu pushes About stub with header', (tester) async {
+      await _pumpAppScaffold(
+        tester,
+        AppScaffold(
+          deps: deps,
+          createTodayCubit: _testTodayCubit,
+          createHistoryCubit: _testHistoryCubit,
+        ),
+        userPreferences: deps.userPreferences,
+      );
+
+      await openMenuTab(tester);
+
+      await tester.tap(find.text('About'));
+      await tester.pump();
+
+      expect(find.text('About'), findsWidgets);
+      expect(find.byIcon(PhosphorIconsRegular.arrowLeft), findsOneWidget);
+
+      await tester.tap(find.byTooltip('Back'));
+      await tester.pump();
+      await tester.runAsync(() async {
+        await Future<void>.delayed(const Duration(milliseconds: 50));
+      });
+      await tester.pump();
+
+      expect(find.text('Menu'), findsOneWidget);
 
       await _disposeScaffold(tester);
     });
