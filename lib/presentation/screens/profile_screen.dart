@@ -97,9 +97,11 @@ class _ProfileScreenBody extends StatelessWidget {
     }
 
     Future<void> editHeight() async {
+      final unitsState = context.read<UnitsCubit>().state;
       final result = await showHeightEditorSheet(
         context,
         currentHeightCm: profileState.heightCm,
+        heightUnit: unitsState.heightUnit,
       );
       if (result == null || !context.mounted) {
         return;
@@ -114,9 +116,11 @@ class _ProfileScreenBody extends StatelessWidget {
     }
 
     Future<void> editWeight() async {
+      final unitsState = context.read<UnitsCubit>().state;
       final result = await showWeightEditorSheet(
         context,
         currentWeightKg: profileState.weightKg,
+        weightUnit: unitsState.weightUnit,
       );
       if (result == null || !context.mounted) {
         return;
