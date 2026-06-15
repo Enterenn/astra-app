@@ -54,10 +54,10 @@ So that week dots, charts, and notifications stay truthful after I change my goa
   - [x] Add `history_cubit_test` + `step_bar_chart_test` coverage for mixed goals across chart window.
   - [x] **Stop → review brief → wait for Baptiste OK → commit**
 
-- [ ] **Sub-task C — BackgroundCollector notification** (AC: #3)
-  - [ ] In `maybeNotifyGoalReachedIfGoalMet`, replace `getDailyStepGoal()` with `getGoalForLocalDay(todayIso)` (`todayIso` already computed on line 167).
-  - [ ] Add/adjust `background_collector_test` asserting notification uses journal-resolved goal (e.g. set journal row ≠ prefs cache edge — optional if sync invariant holds).
-  - [ ] **Stop → review brief → wait for Baptiste OK → commit**
+- [x] **Sub-task C — BackgroundCollector notification** (AC: #3)
+  - [x] In `maybeNotifyGoalReachedIfGoalMet`, replace `getDailyStepGoal()` with `getGoalForLocalDay(todayIso)` (`todayIso` already computed on line 167).
+  - [x] Add/adjust `background_collector_test` asserting notification uses journal-resolved goal (e.g. set journal row ≠ prefs cache edge — optional if sync invariant holds).
+  - [x] **Stop → review brief → wait for Baptiste OK → commit**
 
 - [ ] **Sub-task D — Verification** (AC: #5)
   - [ ] `flutter analyze`
@@ -276,6 +276,7 @@ Recent Epic 8 commits touched only migrations, repository, DI, tests — **zero 
 
 - Sub-task A (2026-06-15): `TodayCubit` week strip and ring/celebration now use `getGoalForLocalDay` per local day; added `localDayIsoFromDateOnly` helper; 46/46 `today_cubit_test` pass.
 - Sub-task B (2026-06-15): `HistoryState.goalsByDay` + per-bar chart semantics; goal line omitted when goals differ; 36/36 history/chart/benchmark tests pass.
+- Sub-task C (2026-06-15): `BackgroundCollector` notification uses `getGoalForLocalDay(todayIso)`; journal vs stale cache test; 21/21 `background_collector_test` pass.
 
 ### File List
 
@@ -292,8 +293,11 @@ Recent Epic 8 commits touched only migrations, repository, DI, tests — **zero 
 - `test/dev/chart_benchmark_test.dart`
 - `test/presentation/cubits/history_cubit_test.dart`
 - `test/presentation/widgets/step_bar_chart_test.dart`
+- `lib/core/services/background_collector.dart`
+- `test/core/services/background_collector_test.dart`
 
 ## Change Log
 
 - 2026-06-15: Sub-task A — TodayCubit per-day goal resolution for week strip and ring (committed).
 - 2026-06-15: Sub-task B — History chart per-day goals and refreshGoal map update (committed).
+- 2026-06-15: Sub-task C — BackgroundCollector goal notification via journal lookup (committed).

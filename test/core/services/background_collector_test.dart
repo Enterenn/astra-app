@@ -40,7 +40,7 @@ void main() {
       repository = StepRepository(db: db, clock: clock);
       normalizer = StepNormalizer(clock: clock);
       baselineRepository = IngestionBaselineRepository(db);
-      userPreferences = UserPreferencesRepository(db);
+      userPreferences = UserPreferencesRepository(db, clock: clock);
       await db.delete('timeseries_samples');
       final prefRows = await db.query('user_preferences');
       for (final row in prefRows) {
@@ -617,6 +617,43 @@ void main() {
         await userPreferences.getGoalNotificationShownDate(),
         formatLocalDayIso(clock.snapshot()),
       );
+    });
+
+    test('uses journal-resolved goal not stale prefs cache', () async {
+      var showCount = 0;
+      final notificationService = NotificationService(
+        permissionChecker: () async => PermissionStatus.granted,
+        goalNotificationPresenter: ({required id, required title, body}) async {
+          showCount += 1;
+        },
+      );
+      await userPreferences.setGoalNotificationsEnabled(true);
+      await db.insert('daily_goal_effective', {
+        'effective_from_local_day': '2026-06-02',
+        'goal': 8000,
+      });
+      await db.update(
+        'user_preferences',
+        {'value': '5000'},
+        where: 'key = ?',
+        whereArgs: [kDailyStepGoalKey],
+      );
+      await repository.upsertIngestionBucket(_todayBucket(value: 6000));
+      final collector = BackgroundCollector(
+        sources: [_FakeStepSource(const [])],
+        normalizer: normalizer,
+        repository: repository,
+        baselineRepository: baselineRepository,
+        userPreferences: userPreferences,
+        clock: clock,
+        notificationService: notificationService,
+        notificationPermissionGranted: () async => true,
+        sourceTimeout: const Duration(milliseconds: 10),
+      );
+
+      await collector.collectOnce(enableGoalNotification: true);
+
+      expect(showCount, 0);
     });
 
     test(

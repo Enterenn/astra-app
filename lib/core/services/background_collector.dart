@@ -166,7 +166,7 @@ class BackgroundCollector {
 
     final todayIso = formatLocalDayIso(time.snapshot());
 
-    final goal = await prefs.getDailyStepGoal();
+    final goal = await prefs.getGoalForLocalDay(todayIso);
     if (goal <= 0) {
       return;
     }
