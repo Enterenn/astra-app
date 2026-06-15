@@ -631,7 +631,7 @@ class MyDataCubit extends Cubit<MyDataState> {
       fileSizeBytes: 0,
       backgroundStatus: _isIos
           ? BackgroundCollectionStatus.iosBackfill
-          : BackgroundCollectionStatus.healthy,
+          : BackgroundCollectionStatus.stale,
     );
   }
 

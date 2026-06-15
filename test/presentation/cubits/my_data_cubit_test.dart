@@ -185,7 +185,7 @@ void main() {
       cubit.close();
     });
 
-    test('refresh emits ready defaults when first load fails', () async {
+    test('refresh emits stale (not healthy) when first load fails', () async {
       final failingRepository = _ThrowingFootprintRepository(
         db: db,
         clock: clock,
@@ -212,7 +212,8 @@ void main() {
 
       expect(cubit.state.status, MyDataStatus.ready);
       expect(cubit.state.sampleCount, 0);
-      expect(cubit.state.backgroundStatus, BackgroundCollectionStatus.healthy);
+      // Fallback must signal degraded state (stale), not healthy.
+      expect(cubit.state.backgroundStatus, BackgroundCollectionStatus.stale);
       cubit.close();
     });
 
