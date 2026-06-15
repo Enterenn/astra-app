@@ -1,6 +1,6 @@
 # generated: 2026-05-25
-# last_updated: 2026-06-15 (Story 10.4 done)
-# NEXT: Epic 10 Story 10.5 — settings appearance and notifications
+# last_updated: 2026-06-15 (Story 10.5 review)
+# NEXT: dev-story 10.5 — settings appearance and notifications
 # Ref: planning-artifacts/sprint-change-proposal-2026-06-15.md
 # project: astra-app
 # project_key: NOKEY
@@ -60,7 +60,7 @@
 # NAVIGATION: _bmad-output/README.md
 
 generated: 2026-05-25
-last_updated: 2026-06-15 (Story 10.4 done)
+last_updated: 2026-06-15 (Story 10.5 ready-for-dev)
 # Story 9.1 context file: stories/9-1-android-fgs-notification-visibility.md
 project: astra-app
 project_key: NOKEY
@@ -149,7 +149,7 @@ development_status:
   10-2-menu-hub-full-screen-list: done
   10-3-secondary-screen-navigator-stack: done
   10-4-profile-slim-informations: done
-  10-5-settings-appearance-and-notifications: backlog
+  10-5-settings-appearance-and-notifications: review
   10-6-display-units-preferences: backlog
   10-7-app-wide-unit-formatters: backlog
   10-8-data-and-about-screens: backlog
