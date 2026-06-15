@@ -275,20 +275,26 @@ class MyDataCubit extends Cubit<MyDataState> {
       final filePath = await stepRepository.exportCsv(
         outputDirectory: tempDirectory,
       );
-      var savedOnDevice = false;
       try {
-        savedOnDevice = await _saveCsvFile(filePath);
-      } catch (saveError, saveStack) {
-        if (kDebugMode) {
-          debugPrint('MyDataCubit.saveCsvFile failed: $saveError');
-          debugPrintStack(stackTrace: saveStack);
+        var savedOnDevice = false;
+        try {
+          savedOnDevice = await _saveCsvFile(filePath);
+        } catch (saveError, saveStack) {
+          if (kDebugMode) {
+            debugPrint('MyDataCubit.saveCsvFile failed: $saveError');
+            debugPrintStack(stackTrace: saveStack);
+          }
         }
-      }
-      if (!savedOnDevice && !isClosed) {
-        await _shareCsvFile(
-          filePath,
-          sharePositionOrigin: sharePositionOrigin,
-        );
+        if (!savedOnDevice && !isClosed) {
+          await _shareCsvFile(
+            filePath,
+            sharePositionOrigin: sharePositionOrigin,
+          );
+        }
+      } finally {
+        try {
+          await File(filePath).delete();
+        } catch (_) {}
       }
 
       if (isClosed) {
