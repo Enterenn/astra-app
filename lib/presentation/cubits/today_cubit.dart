@@ -243,7 +243,7 @@ class TodayCubit extends Cubit<TodayState> {
 
     var goal = state.goal;
     if (state.status == TodayStatus.loading) {
-      goal = await userPreferences.getDailyStepGoal();
+      goal = await _resolveTodayGoal();
       if (isClosed) {
         return;
       }
@@ -332,15 +332,9 @@ class TodayCubit extends Cubit<TodayState> {
     if (isClosed) {
       return;
     }
-    final goalForWeek = state.status == TodayStatus.loading
-        ? await userPreferences.getDailyStepGoal()
-        : state.goal;
-    if (isClosed) {
-      return;
-    }
 
     if (!granted) {
-      final weekDays = await _loadWeekDays(goal: goalForWeek);
+      final weekDays = await _loadWeekDays();
       if (isClosed) {
         return;
       }
@@ -355,7 +349,7 @@ class TodayCubit extends Cubit<TodayState> {
     }
 
     final results = await Future.wait<Object?>([
-      userPreferences.getDailyStepGoal(),
+      _resolveTodayGoal(),
       stepRepository.getLastIngestionUtc(),
       stepRepository.getTodayActiveBuckets(),
       userPreferences.getHeightCm(),
@@ -376,7 +370,7 @@ class TodayCubit extends Cubit<TodayState> {
       isIos: _isIos,
     );
 
-    final weekDays = await _loadWeekDays(goal: goal);
+    final weekDays = await _loadWeekDays();
     if (isClosed) {
       return;
     }
@@ -415,11 +409,7 @@ class TodayCubit extends Cubit<TodayState> {
       return;
     }
     if (!granted) {
-      final goal = await userPreferences.getDailyStepGoal();
-      if (isClosed) {
-        return;
-      }
-      final weekDays = await _loadWeekDays(goal: goal);
+      final weekDays = await _loadWeekDays();
       if (isClosed) {
         return;
       }
@@ -435,7 +425,7 @@ class TodayCubit extends Cubit<TodayState> {
 
     final results = await Future.wait<Object?>([
       stepRepository.getTodaySteps(),
-      userPreferences.getDailyStepGoal(),
+      _resolveTodayGoal(),
       stepRepository.getLastIngestionUtc(),
       stepRepository.getTodayActiveBuckets(),
       userPreferences.getHeightCm(),
@@ -461,7 +451,7 @@ class TodayCubit extends Cubit<TodayState> {
       isIos: _isIos,
     );
 
-    final weekDays = await _loadWeekDays(goal: goal);
+    final weekDays = await _loadWeekDays();
     if (isClosed) {
       return;
     }
@@ -504,7 +494,7 @@ class TodayCubit extends Cubit<TodayState> {
 
     var goal = state.goal;
     if (state.status == TodayStatus.loading) {
-      goal = await userPreferences.getDailyStepGoal();
+      goal = await _resolveTodayGoal();
       if (isClosed) {
         return;
       }
@@ -534,7 +524,12 @@ class TodayCubit extends Cubit<TodayState> {
     }
   }
 
-  Future<List<WeekDayStatus>> _loadWeekDays({required int goal}) async {
+  Future<int> _resolveTodayGoal() async {
+    final todayIso = formatLocalDayIso(clock.snapshot());
+    return userPreferences.getGoalForLocalDay(todayIso);
+  }
+
+  Future<List<WeekDayStatus>> _loadWeekDays() async {
     final timeSnapshot = clock.snapshot();
     final zoneOffset = TimestampCodec.formatZoneOffset(timeSnapshot.zoneOffset);
     final referenceToday = LocalDayCalculator.localDay(
@@ -549,15 +544,21 @@ class TodayCubit extends Cubit<TodayState> {
         aggregate.localDay: aggregate.totalSteps,
     };
 
-    return [
+    final goals = await Future.wait<int>([
       for (final day in weekDayKeys)
+        userPreferences.getGoalForLocalDay(localDayIsoFromDateOnly(day)),
+    ]);
+
+    return [
+      for (var i = 0; i < weekDayKeys.length; i++)
         WeekDayStatus(
-          localDay: day,
-          weekdayLabel: CalendarWeek.weekdayLabelFor(day),
-          dayNumber: day.day,
-          isToday: day == referenceToday,
-          isFuture: day.isAfter(referenceToday),
-          goalMet: goal > 0 && (stepsByDay[day] ?? 0) >= goal,
+          localDay: weekDayKeys[i],
+          weekdayLabel: CalendarWeek.weekdayLabelFor(weekDayKeys[i]),
+          dayNumber: weekDayKeys[i].day,
+          isToday: weekDayKeys[i] == referenceToday,
+          isFuture: weekDayKeys[i].isAfter(referenceToday),
+          goalMet:
+              goals[i] > 0 && (stepsByDay[weekDayKeys[i]] ?? 0) >= goals[i],
         ),
     ];
   }

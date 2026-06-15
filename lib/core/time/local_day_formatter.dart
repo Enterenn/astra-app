@@ -14,3 +14,10 @@ String formatLocalDayIso(TimeSnapshot snapshot) {
   String two(int n) => n.toString().padLeft(2, '0');
   return '${localDay.year}-${two(localDay.month)}-${two(localDay.day)}';
 }
+
+/// Formats a date-only local day (e.g. from [CalendarWeek] or chart aggregates)
+/// as `YYYY-MM-DD`, matching [formatLocalDayIso] keys.
+String localDayIsoFromDateOnly(DateTime localDay) {
+  String two(int n) => n.toString().padLeft(2, '0');
+  return '${localDay.year}-${two(localDay.month)}-${two(localDay.day)}';
+}

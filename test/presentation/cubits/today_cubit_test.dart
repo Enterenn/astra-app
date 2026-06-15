@@ -31,11 +31,11 @@ void main() {
 
     setUp(() async {
       db = await openAstraDatabase(databasePath: inMemoryDatabasePath);
-      userPreferences = UserPreferencesRepository(db);
       clock = FakeTimeProvider(
         fixedNowUtc: DateTime.utc(2026, 6, 2, 12),
         zoneOffset: const Duration(hours: 2),
       );
+      userPreferences = UserPreferencesRepository(db, clock: clock);
       stepRepository = StepRepository(db: db, clock: clock);
     });
 
@@ -703,7 +703,10 @@ void main() {
       });
 
       test('marks past day goalMet when steps meet daily goal', () async {
-        await userPreferences.setDailyStepGoal(5000);
+        await db.insert('daily_goal_effective', {
+          'effective_from_local_day': '2026-06-01',
+          'goal': 5000,
+        });
         await stepRepository.upsertIngestionBucket(
           _bucket(
             startTimeUtc: DateTime.utc(2026, 6, 1, 10),
@@ -732,6 +735,58 @@ void main() {
 
         expect(cubit.state.status, TodayStatus.noPermission);
         expect(cubit.state.weekDays, hasLength(7));
+        cubit.close();
+      });
+
+      test('goalMet respects per-day goals after mid-week change', () async {
+        await db.insert('daily_goal_effective', {
+          'effective_from_local_day': '2026-06-08',
+          'goal': 8000,
+        });
+        await db.insert('daily_goal_effective', {
+          'effective_from_local_day': '2026-06-11',
+          'goal': 10000,
+        });
+        clock.setNowUtc(DateTime.utc(2026, 6, 11, 12));
+        await stepRepository.upsertIngestionBucket(
+          _bucket(
+            startTimeUtc: DateTime.utc(2026, 6, 8, 10),
+            value: 8500,
+            zoneOffset: '+02:00',
+          ),
+        );
+        await stepRepository.upsertIngestionBucket(
+          _bucket(
+            startTimeUtc: DateTime.utc(2026, 6, 10, 10),
+            value: 8500,
+            zoneOffset: '+02:00',
+          ),
+        );
+        await stepRepository.upsertIngestionBucket(
+          _bucket(
+            startTimeUtc: DateTime.utc(2026, 6, 11, 10),
+            value: 5000,
+            zoneOffset: '+02:00',
+          ),
+        );
+        final cubit = buildCubit();
+
+        await cubit.refresh();
+
+        final monday = cubit.state.weekDays.singleWhere(
+          (day) => day.weekdayLabel == 'MON',
+        );
+        final wednesday = cubit.state.weekDays.singleWhere(
+          (day) => day.weekdayLabel == 'WED',
+        );
+        final thursday = cubit.state.weekDays.singleWhere(
+          (day) => day.weekdayLabel == 'THU',
+        );
+        expect(monday.goalMet, isTrue);
+        expect(wednesday.goalMet, isTrue);
+        expect(thursday.goalMet, isFalse);
+        expect(thursday.isToday, isTrue);
+        expect(cubit.state.goal, 10000);
         cubit.close();
       });
     });
