@@ -35,7 +35,7 @@ Phase 0 step collection declares only local device-health/background permissions
 | Component | Role |
 |-----------|------|
 | `HealthStepForegroundService` (Kotlin) | Android `foregroundServiceType="health"` service; `ServiceCompat.startForeground` with `FOREGROUND_SERVICE_TYPE_HEALTH` on API 34+ |
-| Notification channel `astra_health_tracking` (id `100`) | Honest ongoing copy: title **"Tracking steps"**, body **"Background step count on this device."** — distinct from goal channel `astra_goal_reached` (id `1`) |
+| Notification channel `astra_health_tracking` (id `100`) | Honest ongoing copy: title **"Tracking steps"**, body **"Background step count on this device."**, channel description **"Background step tracking on this device."** — distinct from goal channel `astra_goal_reached` (id `1`) |
 | `HealthForegroundServiceCoordinator` (Dart) | Method channel `com.astraapp.astra_app/health_foreground`; starts/stops FGS on app pause/resume |
 | `runFgsStepCollectionCycle` | Periodic `BackgroundCollector.collectOnce` every 60s while FGS runs (same bootstrap as WorkManager) |
 

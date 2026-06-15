@@ -115,7 +115,7 @@ class HealthStepForegroundService : Service() {
 
         const val CHANNEL_ID = "astra_health_tracking"
         const val CHANNEL_NAME = "Step tracking"
-        const val CHANNEL_DESCRIPTION = "Ongoing step tracking while the app is in the background"
+        const val CHANNEL_DESCRIPTION = "Background step tracking on this device."
         const val NOTIFICATION_ID = 100
         const val NOTIFICATION_TITLE = "Tracking steps"
         const val NOTIFICATION_BODY =
