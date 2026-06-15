@@ -2,7 +2,7 @@ import 'package:sqflite/sqflite.dart';
 
 import '../constants/preference_keys.dart';
 
-const kDbVersion = 2;
+const kDbVersion = 3;
 
 /// Runs migrations from [fromVersion] (exclusive) up to [targetVersion].
 Future<void> runMigrations(
@@ -16,6 +16,8 @@ Future<void> runMigrations(
         await onCreateV1(db);
       case 2:
         await onCreateV2(db);
+      case 3:
+        await onCreateV3(db);
       default:
         break;
     }
@@ -86,4 +88,44 @@ Future<void> onCreateV2(Database db) async {
         resolution
       )
   ''');
+}
+
+/// Migration v3: effective-dated daily goal history journal.
+Future<void> onCreateV3(Database db) async {
+  await db.execute('''
+    CREATE TABLE IF NOT EXISTS daily_goal_effective (
+      effective_from_local_day TEXT PRIMARY KEY,
+      goal INTEGER NOT NULL CHECK (goal > 0)
+    )
+  ''');
+
+  final prefRows = await db.query(
+    'user_preferences',
+    columns: ['value'],
+    where: 'key = ?',
+    whereArgs: [kDailyStepGoalKey],
+    limit: 1,
+  );
+
+  final parsedGoal = prefRows.isEmpty
+      ? kDefaultStepGoal
+      : int.tryParse(prefRows.first['value'] as String) ?? kDefaultStepGoal;
+  final goal = parsedGoal > 0 ? parsedGoal : kDefaultStepGoal;
+
+  // One-time upgrade path: device-local calendar day (no injected clock).
+  final now = DateTime.now();
+  final local = now.toLocal();
+  final todayIso =
+      '${local.year.toString().padLeft(4, '0')}-'
+      '${local.month.toString().padLeft(2, '0')}-'
+      '${local.day.toString().padLeft(2, '0')}';
+
+  await db.insert(
+    'daily_goal_effective',
+    {
+      'effective_from_local_day': todayIso,
+      'goal': goal,
+    },
+    conflictAlgorithm: ConflictAlgorithm.ignore,
+  );
 }
