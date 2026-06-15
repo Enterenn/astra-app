@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:permission_handler/permission_handler.dart';
 
 import '../../core/constants/astra_colors.dart';
 import '../../core/constants/astra_spacing.dart';
@@ -7,6 +8,7 @@ import '../../core/constants/astra_typography.dart';
 import '../cubits/my_data_cubit.dart';
 import '../cubits/my_data_state.dart';
 import '../utils/share_position_origin.dart';
+import '../widgets/background_status_card.dart';
 import '../widgets/confirm_dialog.dart';
 import '../widgets/data_export_button.dart';
 import '../widgets/data_import_button.dart';
@@ -24,8 +26,6 @@ class MyDataScreen extends StatelessWidget {
   final bool showInlineTitle;
 
   static const _kScreenTitle = 'My Data';
-  static const _kStorageIntro =
-      'Everything stays on your phone. You choose when to back up or delete.';
 
   @override
   Widget build(BuildContext context) {
@@ -104,6 +104,7 @@ class _MyDataScreenBody extends StatelessWidget {
         AstraSpacing.kBottomNavBottomOffset +
         AstraSpacing.kBottomNavBarHeight +
         AstraSpacing.kSpaceMd;
+    final nowUtc = cubit.clock.nowUtc();
 
     final scrollView = SingleChildScrollView(
       padding: EdgeInsets.fromLTRB(
@@ -119,13 +120,6 @@ class _MyDataScreenBody extends StatelessWidget {
             Text(
               MyDataScreen._kScreenTitle,
               style: AstraTypography.screenTitleFor(colors),
-            ),
-          ],
-          if (state.isStale) ...[
-            const SizedBox(height: AstraSpacing.kSpaceMd),
-            StatusBanner(
-              variant: StatusBannerVariant.staleFull,
-              isIos: state.isIos,
             ),
           ],
           if (state.exportErrorMessage != null) ...[
@@ -163,28 +157,40 @@ class _MyDataScreenBody extends StatelessWidget {
               ),
             ),
           ],
+          if (state.isStale) ...[
+            const SizedBox(height: AstraSpacing.kSpaceMd),
+            StatusBanner(
+              variant: StatusBannerVariant.staleFull,
+              isIos: state.isIos,
+            ),
+          ],
           const SizedBox(height: AstraSpacing.kSpaceMd),
           SectionCard(
-            headline: 'Storage on this device',
+            headline: 'Background',
             child: state.status == MyDataStatus.loading
                 ? const _SectionLoadingIndicator()
-                : Column(
-                    crossAxisAlignment: CrossAxisAlignment.stretch,
-                    children: [
-                      Text(
-                        MyDataScreen._kStorageIntro,
-                        style: AstraTypography.captionFor(colors),
-                      ),
-                      const SizedBox(height: AstraSpacing.kSpaceMd),
-                      FootprintKpiRow(
-                        fileSizeBytes: state.fileSizeBytes,
-                      ),
-                    ],
+                : BackgroundStatusCard(
+                    status: state.backgroundStatus,
+                    lastIngestionUtc: state.lastIngestionUtc,
+                    nowUtc: nowUtc,
+                    onOpenSettings: () => openAppSettings(),
                   ),
           ),
           const SizedBox(height: AstraSpacing.kSpaceMd),
           SectionCard(
-            headline: 'Backup & restore',
+            headline: 'Footprint',
+            child: state.status == MyDataStatus.loading
+                ? const _SectionLoadingIndicator()
+                : FootprintKpiRow(
+                    sampleCount: state.sampleCount,
+                    fileSizeBytes: state.fileSizeBytes,
+                    lastOptimizedUtc: state.lastOptimizedUtc,
+                    nowUtc: nowUtc,
+                  ),
+          ),
+          const SizedBox(height: AstraSpacing.kSpaceMd),
+          SectionCard(
+            headline: 'Your data',
             child: state.status == MyDataStatus.loading
                 ? const _SectionLoadingIndicator()
                 : Column(
