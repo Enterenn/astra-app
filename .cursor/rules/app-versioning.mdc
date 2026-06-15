@@ -1,0 +1,37 @@
+---
+description: Bump app version at end of each work phase (hotfix, mineur, moyen, majeur)
+alwaysApply: true
+---
+
+# App versioning
+
+**Source of truth:** `pubspec.yaml` → `version: major.minor.patch+build`
+
+Flutter propagates to Android `versionName` / `versionCode` — do not edit Gradle manually.
+
+## When to bump
+
+At the **end of each work phase** (story, audit batch, hotfix sprint), bump version before closing the phase.
+
+| Phase | Semver | Build (`+n`) |
+|-------|--------|--------------|
+| **Hotfix** | `patch+1` | always `+1` |
+| **Mineur** (fixes only, no new feature) | `patch+1` | always `+1` |
+| **Moyen** (new feature, story tranche, UX change) | `minor+1`, reset `patch` to `0` | always `+1` |
+| **Majeur** (breaking change, launch) | `major+1`, reset `minor` and `patch` to `0` | always `+1` |
+
+Pre-1.0: reserve `1.0.0` for public launch; use `0.x.y` until then.
+
+## Files to update
+
+1. `pubspec.yaml` — `version:` line
+2. `README.md` — Project status version row
+
+Do **not** rewrite historical rows in `docs/BETA_CHECKLIST.md`.
+
+## Verify
+
+- Profile footer reads built manifest via `package_info_plus` (no code change needed)
+- Release: `aapt dump badging app-release.apk` must show matching `versionName` / `versionCode`
+
+Full policy: `docs/project-context.md` § Versioning.
