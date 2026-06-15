@@ -199,5 +199,29 @@ void main() {
       expect(find.text('Network failed'), findsOneWidget);
       expect(find.text('Notifications'), findsNothing);
     });
+
+    testWidgets('switch reflects profile notification preference', (
+      tester,
+    ) async {
+      final profileCubit = _SeededProfileCubit(
+        userPreferences: userPreferences,
+        notificationService: NotificationService(
+          permissionChecker: () async => PermissionStatus.granted,
+        ),
+        seededState: ProfileState.ready(goalNotificationsEnabled: true),
+      );
+      addTearDown(profileCubit.close);
+
+      final themeCubit = ThemeCubit(userPreferences: userPreferences);
+      addTearDown(themeCubit.close);
+
+      await _pumpSettingsScreen(
+        tester,
+        profileCubit: profileCubit,
+        themeCubit: themeCubit,
+      );
+
+      expect(tester.widget<Switch>(find.byType(Switch)).value, isTrue);
+    });
   });
 }

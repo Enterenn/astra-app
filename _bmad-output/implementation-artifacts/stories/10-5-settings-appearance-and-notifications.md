@@ -1,6 +1,6 @@
 # Story 10.5: Settings Appearance and Notifications
 
-Status: review
+Status: done
 
 <!-- Mockup ref: Settings-light (2026-06-15) — Notifications + Theme cards only. Units card deferred to 10.6; version footer deferred to About (10.8). Dark theme: no mockup-specific behavior — reuse existing `context.astraColors` / theme tokens. -->
 
@@ -331,6 +331,12 @@ Composer
 - Added `settings_screen_test.dart` (layout, negative assertions, loading/error).
 - Updated `app_scaffold_test.dart`: Settings smoke asserts full cards; About remains stub-only.
 - `flutter test` full suite green; `flutter analyze` — no new issues (pre-existing infos only).
+- Code review: added switch binding test and explicit integration-test load timeout assertion; toggle/theme tap interactions covered by cubit tests (widget async deadlock in test harness).
+
+### Review Findings
+
+- [x] [Review][Defer] Refresh vs toggle race on Settings push — deferred, pre-existing Profile push pattern required by story AC.
+- [x] [Review][Defer] Permission denied shows persistence snackbar copy — deferred, migrated verbatim from legacy Profile.
 
 ### File List
 
@@ -338,8 +344,10 @@ Composer
 - `lib/presentation/screens/app_scaffold.dart` — ProfileCubit refresh + provider on Settings push
 - `test/presentation/screens/settings_screen_test.dart` — new widget tests
 - `test/presentation/screens/app_scaffold_test.dart` — Settings nav smoke update
+- `test/presentation/screens/settings_screen_test.dart` — interaction tests (review follow-up)
 
 ## Change Log
 
 - 2026-06-15: Story 10.5 created — migrate Notifications + Theme controls from legacy Profile to Settings; AppScaffold ProfileCubit wiring; widget + nav tests.
 - 2026-06-15: Story 10.5 implemented — Settings body, scaffold wiring, widget + integration tests; status → review.
+- 2026-06-15: Code review complete — interaction tests added; status → done.

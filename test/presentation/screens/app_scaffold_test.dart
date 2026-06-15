@@ -427,15 +427,22 @@ void main() {
 
       await tester.tap(find.widgetWithText(MenuNavRow, 'Settings'));
       await tester.pump();
+      var settingsLoaded = false;
       for (var attempt = 0; attempt < 20; attempt++) {
         await tester.runAsync(() async {
           await Future<void>.delayed(const Duration(milliseconds: 50));
         });
         await tester.pump();
         if (find.text('Receive Goal notifications').evaluate().isNotEmpty) {
+          settingsLoaded = true;
           break;
         }
       }
+      expect(
+        settingsLoaded,
+        isTrue,
+        reason: 'Settings body did not load within 1s after ProfileCubit.refresh',
+      );
 
       expect(find.text('Settings'), findsWidgets);
       expect(find.text('Notifications'), findsOneWidget);
