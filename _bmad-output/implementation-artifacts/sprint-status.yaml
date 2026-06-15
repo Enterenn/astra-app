@@ -1,6 +1,6 @@
 # generated: 2026-05-25
-# last_updated: 2026-06-15 (Story 10.3 done)
-# NEXT: Epic 10 Story 10.4 — profile slim informations
+# last_updated: 2026-06-15 (Story 10.4 ready-for-dev)
+# NEXT: Epic 10 Story 10.4 — dev-story (profile slim informations)
 # Ref: planning-artifacts/sprint-change-proposal-2026-06-15.md
 # project: astra-app
 # project_key: NOKEY
@@ -60,7 +60,7 @@
 # NAVIGATION: _bmad-output/README.md
 
 generated: 2026-05-25
-last_updated: 2026-06-15
+last_updated: 2026-06-15 (Story 10.4 review)
 # Story 9.1 context file: stories/9-1-android-fgs-notification-visibility.md
 project: astra-app
 project_key: NOKEY
@@ -148,7 +148,7 @@ development_status:
   10-1-three-tab-bottom-navigation: done
   10-2-menu-hub-full-screen-list: done
   10-3-secondary-screen-navigator-stack: done
-  10-4-profile-slim-informations: backlog
+  10-4-profile-slim-informations: review
   10-5-settings-appearance-and-notifications: backlog
   10-6-display-units-preferences: backlog
   10-7-app-wide-unit-formatters: backlog

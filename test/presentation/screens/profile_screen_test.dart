@@ -6,48 +6,16 @@ import 'package:astra_app/data/repositories/user_preferences_repository.dart';
 import 'package:permission_handler/permission_handler.dart';
 import 'package:astra_app/presentation/cubits/profile_cubit.dart';
 import 'package:astra_app/presentation/cubits/profile_state.dart';
-import 'package:astra_app/presentation/cubits/theme_cubit.dart';
-import 'package:astra_app/presentation/cubits/theme_state.dart';
 import 'package:astra_app/presentation/screens/profile_screen.dart';
 import 'package:astra_app/presentation/widgets/accent_preset_selector.dart';
+import 'package:astra_app/presentation/widgets/section_card.dart';
 import 'package:astra_app/presentation/widgets/theme_selector.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:flutter_test/flutter_test.dart';
-import 'package:package_info_plus/package_info_plus.dart';
 import 'package:sqflite/sqflite.dart';
 
 import '../../helpers/sqflite_test_helper.dart';
-
-class _RecordingProfileCubit extends ProfileCubit {
-  _RecordingProfileCubit({
-    required super.userPreferences,
-    required super.notificationService,
-    required ProfileState seededState,
-  }) : _seededState = seededState {
-    emit(seededState);
-  }
-
-  final ProfileState _seededState;
-  var setGoalNotificationsEnabledCalls = 0;
-  bool? lastEnabledArg;
-
-  @override
-  Future<void> refresh() async {
-    if (isClosed) {
-      return;
-    }
-    emit(_seededState);
-  }
-
-  @override
-  Future<bool> setGoalNotificationsEnabled(bool enabled) async {
-    setGoalNotificationsEnabledCalls++;
-    lastEnabledArg = enabled;
-    emit(_seededState.copyWith(goalNotificationsEnabled: enabled));
-    return true;
-  }
-}
 
 class _SeededProfileCubit extends ProfileCubit {
   _SeededProfileCubit({
@@ -72,28 +40,18 @@ class _SeededProfileCubit extends ProfileCubit {
 Future<void> _pumpProfileScreen(
   WidgetTester tester, {
   required ProfileCubit profileCubit,
-  AstraThemePreference themePreference = AstraThemePreference.system,
-  AstraAccentPreset accentPreset = AstraAccentPreset.orange,
+  bool showInlineTitle = false,
   bool disableAnimations = true,
 }) async {
   await tester.pumpWidget(
     MaterialApp(
-      theme: buildAstraLightTheme(preset: accentPreset),
+      theme: buildAstraLightTheme(preset: AstraAccentPreset.orange),
       home: MediaQuery(
         data: MediaQueryData(disableAnimations: disableAnimations),
         child: Scaffold(
-          body: MultiBlocProvider(
-            providers: [
-              BlocProvider<ProfileCubit>.value(value: profileCubit),
-              BlocProvider(
-                create: (_) => ThemeCubit(
-                  userPreferences: profileCubit.userPreferences,
-                  initialPreference: themePreference,
-                  initialAccentPreset: accentPreset,
-                ),
-              ),
-            ],
-            child: const ProfileScreen(),
+          body: BlocProvider<ProfileCubit>.value(
+            value: profileCubit,
+            child: ProfileScreen(showInlineTitle: showInlineTitle),
           ),
         ),
       ),
@@ -102,21 +60,9 @@ Future<void> _pumpProfileScreen(
   await tester.pump();
 }
 
-Future<void> _pumpAsync(WidgetTester tester) async {
-  await tester.pump();
-  await tester.pump(const Duration(milliseconds: 100));
-}
-
 void main() {
   setUpAll(() async {
     await setUpSqfliteFfi();
-    PackageInfo.setMockInitialValues(
-      appName: 'ASTRA',
-      packageName: 'com.astraapp',
-      version: '0.1.0',
-      buildNumber: '1',
-      buildSignature: '',
-    );
   });
 
   group('ProfileScreen', () {
@@ -162,7 +108,7 @@ void main() {
       );
     });
 
-    testWidgets('shows title and three section cards without Age row', (
+    testWidgets('shows slim Informations section only in embedded mode', (
       WidgetTester tester,
     ) async {
       final cubit = _SeededProfileCubit(
@@ -174,25 +120,48 @@ void main() {
           displayName: 'Alex',
           heightCm: 180,
           weightKg: 72.5,
-          goalNotificationsEnabled: true,
         ),
       );
+      addTearDown(cubit.close);
 
       await _pumpProfileScreen(tester, profileCubit: cubit);
 
-      expect(find.text('My Profile'), findsOneWidget);
+      expect(find.text('Profile'), findsNothing);
+      expect(find.text('My Profile'), findsNothing);
       expect(find.text('Informations'), findsOneWidget);
-      expect(find.text('Notifications'), findsOneWidget);
-      expect(find.text('Appearance'), findsOneWidget);
+      expect(find.byType(SectionCard), findsOneWidget);
       expect(find.text('Display name'), findsOneWidget);
       expect(find.text('Height'), findsOneWidget);
       expect(find.text('Weight'), findsOneWidget);
       expect(find.text('Age'), findsNothing);
-      expect(find.text('Receive Goal notifications'), findsOneWidget);
-      expect(find.byType(ThemeSelector), findsOneWidget);
-      expect(find.byType(AccentPresetSelector), findsOneWidget);
+      expect(find.text('Notifications'), findsNothing);
+      expect(find.text('Appearance'), findsNothing);
+      expect(find.text('Receive Goal notifications'), findsNothing);
+      expect(find.byType(Switch), findsNothing);
+      expect(find.byType(ThemeSelector), findsNothing);
+      expect(find.byType(AccentPresetSelector), findsNothing);
+    });
 
-      await cubit.close();
+    testWidgets('shows inline Profile title when showInlineTitle is true', (
+      tester,
+    ) async {
+      final cubit = _SeededProfileCubit(
+        userPreferences: userPreferences,
+        notificationService: NotificationService(
+          permissionChecker: () async => PermissionStatus.granted,
+        ),
+        seededState: ProfileState.ready(),
+      );
+      addTearDown(cubit.close);
+
+      await _pumpProfileScreen(
+        tester,
+        profileCubit: cubit,
+        showInlineTitle: true,
+      );
+
+      expect(find.text('Profile'), findsOneWidget);
+      expect(find.text('My Profile'), findsNothing);
     });
 
     testWidgets('shows Not set for empty profile values', (tester) async {
@@ -203,12 +172,11 @@ void main() {
         ),
         seededState: ProfileState.ready(),
       );
+      addTearDown(cubit.close);
 
       await _pumpProfileScreen(tester, profileCubit: cubit);
 
       expect(find.text('Not set'), findsNWidgets(3));
-
-      await cubit.close();
     });
 
     testWidgets('formats height and weight values', (tester) async {
@@ -222,54 +190,12 @@ void main() {
           weightKg: 72.5,
         ),
       );
+      addTearDown(cubit.close);
 
       await _pumpProfileScreen(tester, profileCubit: cubit);
 
       expect(find.text('180 cm'), findsOneWidget);
       expect(find.text('72.5 kg'), findsOneWidget);
-
-      await cubit.close();
-    });
-
-    testWidgets('notification switch calls cubit enable when toggled on', (
-      tester,
-    ) async {
-      final cubit = _RecordingProfileCubit(
-        userPreferences: userPreferences,
-        notificationService: NotificationService(
-          permissionChecker: () async => PermissionStatus.granted,
-        ),
-        seededState: ProfileState.ready(goalNotificationsEnabled: false),
-      );
-      addTearDown(cubit.close);
-
-      await _pumpProfileScreen(tester, profileCubit: cubit);
-
-      expect(find.byType(Switch), findsOneWidget);
-      expect(tester.widget<Switch>(find.byType(Switch)).value, isFalse);
-
-      await tester.tap(find.byType(Switch));
-      await _pumpAsync(tester);
-
-      expect(cubit.setGoalNotificationsEnabledCalls, 1);
-      expect(cubit.lastEnabledArg, isTrue);
-      expect(cubit.state.goalNotificationsEnabled, isTrue);
-    });
-
-    testWidgets('shows muted version footer from package info', (tester) async {
-      final cubit = _SeededProfileCubit(
-        userPreferences: userPreferences,
-        notificationService: NotificationService(
-          permissionChecker: () async => PermissionStatus.granted,
-        ),
-        seededState: ProfileState.ready(),
-      );
-      addTearDown(cubit.close);
-
-      await _pumpProfileScreen(tester, profileCubit: cubit);
-      await tester.pumpAndSettle();
-
-      expect(find.text('ASTRA v0.1.0 (1)'), findsOneWidget);
     });
   });
 }

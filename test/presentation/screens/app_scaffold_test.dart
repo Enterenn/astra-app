@@ -343,6 +343,9 @@ void main() {
       expect(find.text('Profile'), findsWidgets);
       expect(find.text('My Profile'), findsNothing);
       expect(find.text('Informations'), findsWidgets);
+      expect(find.text('Notifications'), findsNothing);
+      expect(find.text('Appearance'), findsNothing);
+      expect(find.text('Receive Goal notifications'), findsNothing);
       expect(find.byIcon(PhosphorIconsRegular.arrowLeft), findsOneWidget);
       expect(find.byIcon(PhosphorIconsFill.list), findsOneWidget);
 
