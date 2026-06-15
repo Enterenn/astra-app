@@ -8,7 +8,7 @@ Permission resolveActivityPermission() {
   return Platform.isIOS ? Permission.sensors : Permission.activityRecognition;
 }
 
-/// Canonical activity gate for FGS, Today, and [BackgroundHealthCapabilityEvaluator].
+/// Canonical activity gate for FGS and Today screens.
 Future<bool> isActivityRecognitionGranted() async {
   final permission = resolveActivityPermission();
   final status = await permission.status;

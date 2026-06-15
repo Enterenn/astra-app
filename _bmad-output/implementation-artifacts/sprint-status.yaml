@@ -113,7 +113,7 @@ development_status:
   6-3-activity-idle-persist-flush: done  # universal: flush after step-stream idle
   6-4-screen-lock-pedometer-freeze: done  # keep monitor alive on lock; resume drain + clamp stale prefs
   6-5-idle-flush-bucket-merge: done  # hotfix: additive upsert + baseline-gated drain
-  6-6-midnight-day-rollover-flush: in-review
+  6-6-midnight-day-rollover-flush: done
   epic-6-retrospective: optional
 
   epic-7: done

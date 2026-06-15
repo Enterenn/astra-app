@@ -1,5 +1,3 @@
-import 'dart:io';
-
 import 'package:flutter/foundation.dart';
 import 'package:path/path.dart' as p;
 import 'package:permission_handler/permission_handler.dart';
@@ -17,12 +15,9 @@ import '../../core/constants/astra_accent_preset.dart';
 import '../../presentation/cubits/theme_state.dart';
 import '../database/astra_database_session.dart';
 import '../permissions/activity_permission_resolver.dart';
-import '../services/android_platform_capability_probe.dart';
 import '../services/background_collector.dart';
 import '../services/data_lifecycle_service.dart';
-import '../services/background_health_capability_evaluator.dart';
 import '../services/health_foreground_service.dart';
-import '../services/platform_capability_probe.dart';
 import '../services/live_step_monitor.dart';
 import '../services/notification_service.dart';
 import '../time/system_time_provider.dart';
@@ -44,7 +39,6 @@ class AppDependencies {
     required this.notificationService,
     required this.liveStepMonitor,
     required this.activityPermissionGranted,
-    required this.backgroundHealthCapabilityEvaluator,
     required this.healthForegroundCoordinator,
     required this.dataLifecycleService,
     required this.databaseSession,
@@ -63,7 +57,6 @@ class AppDependencies {
   final NotificationService notificationService;
   final LiveStepMonitor liveStepMonitor;
   final ActivityPermissionChecker activityPermissionGranted;
-  final BackgroundHealthCapabilityEvaluator backgroundHealthCapabilityEvaluator;
   final HealthForegroundServiceCoordinator healthForegroundCoordinator;
   final DataLifecycleService dataLifecycleService;
   final AstraDatabaseSession databaseSession;
@@ -71,32 +64,6 @@ class AppDependencies {
 
   static Future<bool> resolveActivityRecognitionGranted() =>
       isActivityRecognitionGranted();
-
-  static BackgroundHealthCapabilityEvaluator buildCapabilityEvaluator({
-    Future<bool> Function()? activityRecognitionGranted,
-    required Future<bool> Function() notificationGranted,
-    PlatformCapabilityProbe? platformProbe,
-    bool Function()? isAndroidPlatform,
-  }) {
-    return BackgroundHealthCapabilityEvaluator(
-      activityRecognitionGranted:
-          activityRecognitionGranted ?? resolveActivityRecognitionGranted,
-      notificationGranted: notificationGranted,
-      platformProbe:
-          platformProbe ??
-          _defaultPlatformProbe(isAndroidPlatform: isAndroidPlatform),
-      isAndroidPlatform: isAndroidPlatform ?? () => Platform.isAndroid,
-    );
-  }
-
-  static PlatformCapabilityProbe _defaultPlatformProbe({
-    bool Function()? isAndroidPlatform,
-  }) {
-    final isAndroid = isAndroidPlatform ?? () => Platform.isAndroid;
-    return isAndroid()
-        ? AndroidPlatformCapabilityProbe(isAndroidPlatform: isAndroid)
-        : const NoopPlatformCapabilityProbe();
-  }
 
   static Future<AppDependencies> create({
     required NotificationService notificationService,
@@ -138,9 +105,6 @@ class AppDependencies {
           notificationService.hasNotificationPermission,
       isUserFacingAppActive: () => healthForegroundRef?.isUiActive ?? true,
     );
-    final capabilityEvaluator = buildCapabilityEvaluator(
-      notificationGranted: notificationService.hasNotificationPermission,
-    );
     final healthForeground = HealthForegroundServiceCoordinator(
       activityPermissionGranted: resolveActivityRecognitionGranted,
       // Reuse the UI [Database] — opening/closing a second connection on the same
@@ -180,7 +144,6 @@ class AppDependencies {
       notificationService: notificationService,
       liveStepMonitor: liveStepMonitor,
       activityPermissionGranted: resolveActivityRecognitionGranted,
-      backgroundHealthCapabilityEvaluator: capabilityEvaluator,
       healthForegroundCoordinator: healthForeground,
       dataLifecycleService: dataLifecycleService,
       databaseSession: databaseSession,
@@ -199,12 +162,9 @@ class AppDependencies {
     Future<bool> Function()? notificationPermissionGranted,
     LiveStepMonitor? liveStepMonitor,
     ActivityPermissionChecker? activityPermissionGranted,
-    BackgroundHealthCapabilityEvaluator? backgroundHealthCapabilityEvaluator,
-    PlatformCapabilityProbe? platformCapabilityProbe,
     HealthForegroundServiceCoordinator? healthForegroundCoordinator,
     DataLifecycleService? dataLifecycleService,
     String? databasePath,
-    bool Function()? isAndroidPlatform,
   }) async {
     final initialTheme = await userPreferences.getThemeMode();
     final initialAccentPreset = await userPreferences.getAccentPreset();
@@ -243,14 +203,6 @@ class AppDependencies {
         notifications.hasNotificationPermission;
     final activityCheck =
         activityPermissionGranted ?? () async => true;
-    final capabilityEvaluator =
-        backgroundHealthCapabilityEvaluator ??
-        buildCapabilityEvaluator(
-          activityRecognitionGranted: activityCheck,
-          notificationGranted: notificationCheck,
-          platformProbe: platformCapabilityProbe,
-          isAndroidPlatform: isAndroidPlatform,
-        );
     final permissionCheck = activityCheck;
     final healthForeground =
         healthForegroundCoordinator ??
@@ -289,7 +241,6 @@ class AppDependencies {
       notificationService: notifications,
       liveStepMonitor: monitor,
       activityPermissionGranted: permissionCheck,
-      backgroundHealthCapabilityEvaluator: capabilityEvaluator,
       healthForegroundCoordinator: healthForeground,
       dataLifecycleService: lifecycleService,
       databaseSession: databaseSession,

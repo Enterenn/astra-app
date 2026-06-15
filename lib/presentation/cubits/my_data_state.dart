@@ -1,5 +1,4 @@
 import '../../core/constants/preference_keys.dart';
-import '../../core/health/background_health_capability_snapshot.dart';
 
 enum MyDataStatus { loading, ready }
 
@@ -18,7 +17,6 @@ class MyDataState {
     this.lastOptimizedUtc,
     this.lastIngestionUtc,
     this.backgroundStatus = BackgroundCollectionStatus.healthy,
-    this.capabilitySnapshot,
     this.isIos = false,
     this.isExporting = false,
     this.exportErrorMessage,
@@ -38,7 +36,6 @@ class MyDataState {
   final DateTime? lastOptimizedUtc;
   final DateTime? lastIngestionUtc;
   final BackgroundCollectionStatus backgroundStatus;
-  final BackgroundHealthCapabilitySnapshot? capabilitySnapshot;
   final bool isIos;
   final bool isExporting;
   final String? exportErrorMessage;
@@ -61,7 +58,6 @@ class MyDataState {
     DateTime? lastOptimizedUtc,
     DateTime? lastIngestionUtc,
     required BackgroundCollectionStatus backgroundStatus,
-    BackgroundHealthCapabilitySnapshot? capabilitySnapshot,
     required bool isIos,
     int dailyStepGoal = kDefaultStepGoal,
     String? displayName,
@@ -73,7 +69,6 @@ class MyDataState {
       lastOptimizedUtc: lastOptimizedUtc,
       lastIngestionUtc: lastIngestionUtc,
       backgroundStatus: backgroundStatus,
-      capabilitySnapshot: capabilitySnapshot,
       isIos: isIos,
       dailyStepGoal: dailyStepGoal,
       displayName: displayName,
@@ -89,7 +84,6 @@ class MyDataState {
     DateTime? lastOptimizedUtc,
     DateTime? lastIngestionUtc,
     BackgroundCollectionStatus? backgroundStatus,
-    BackgroundHealthCapabilitySnapshot? capabilitySnapshot,
     bool? isIos,
     bool? isExporting,
     Object? exportErrorMessage = _unset,
@@ -109,7 +103,6 @@ class MyDataState {
       lastOptimizedUtc: lastOptimizedUtc ?? this.lastOptimizedUtc,
       lastIngestionUtc: lastIngestionUtc ?? this.lastIngestionUtc,
       backgroundStatus: backgroundStatus ?? this.backgroundStatus,
-      capabilitySnapshot: capabilitySnapshot ?? this.capabilitySnapshot,
       isIos: isIos ?? this.isIos,
       isExporting: isExporting ?? this.isExporting,
       exportErrorMessage: exportErrorMessage == _unset

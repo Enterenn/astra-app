@@ -42,7 +42,6 @@ MyDataCubit _testMyDataCubit(AppDependencies deps) {
   return MyDataCubit(
     stepRepository: deps.stepRepository,
     userPreferences: deps.userPreferences,
-    capabilityEvaluator: deps.backgroundHealthCapabilityEvaluator,
     clock: deps.timeProvider,
     databasePath: deps.databasePath,
     activityPermissionGranted: () async => true,

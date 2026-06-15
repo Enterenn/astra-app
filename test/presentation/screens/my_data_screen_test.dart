@@ -1,7 +1,5 @@
 import 'package:astra_app/core/constants/astra_theme.dart';
 import 'package:astra_app/core/database/app_database.dart';
-import 'package:astra_app/core/health/background_health_capability_snapshot.dart';
-import 'package:astra_app/core/services/background_health_capability_evaluator.dart';
 import 'package:astra_app/data/repositories/step_repository.dart';
 import 'package:astra_app/data/repositories/user_preferences_repository.dart';
 import 'package:astra_app/presentation/cubits/my_data_cubit.dart';
@@ -22,32 +20,11 @@ import 'package:sqflite/sqflite.dart';
 import '../../core/time/fake_time_provider.dart';
 import '../../helpers/sqflite_test_helper.dart';
 
-class _FixedCapabilityEvaluator extends BackgroundHealthCapabilityEvaluator {
-  _FixedCapabilityEvaluator()
-    : super(
-        activityRecognitionGranted: () async => true,
-        notificationGranted: () async => true,
-        isAndroidPlatform: () => true,
-      );
-
-  @override
-  Future<BackgroundHealthCapabilitySnapshot> evaluate() async {
-    return const BackgroundHealthCapabilitySnapshot(
-      activityRecognitionGranted: true,
-      notificationGranted: true,
-      batteryOptimizationExempt: true,
-      fgsHealthDeclared: true,
-      likelyOemBatteryDeferral: false,
-    );
-  }
-}
-
 /// Widget tests seed UI state directly — no async refresh / DB reads (see app_scaffold_test).
 class _SeededMyDataCubit extends MyDataCubit {
   _SeededMyDataCubit({
     required super.stepRepository,
     required super.userPreferences,
-    required super.capabilityEvaluator,
     required super.clock,
     required super.databasePath,
     required MyDataState seededState,
@@ -122,7 +99,6 @@ void main() {
     return _SeededMyDataCubit(
       stepRepository: stepRepository,
       userPreferences: userPreferences,
-      capabilityEvaluator: _FixedCapabilityEvaluator(),
       clock: clock,
       databasePath: inMemoryDatabasePath,
       seededState: state,
@@ -311,7 +287,6 @@ void main() {
       final cubit = _RetryExportMyDataCubit(
         stepRepository: stepRepository,
         userPreferences: userPreferences,
-        capabilityEvaluator: _FixedCapabilityEvaluator(),
         clock: clock,
         databasePath: inMemoryDatabasePath,
       );
@@ -336,7 +311,6 @@ void main() {
       final cubit = _RetryImportMyDataCubit(
         stepRepository: stepRepository,
         userPreferences: userPreferences,
-        capabilityEvaluator: _FixedCapabilityEvaluator(),
         clock: clock,
         databasePath: inMemoryDatabasePath,
       );
@@ -402,7 +376,6 @@ void main() {
       final cubit = _RetryPurgeMyDataCubit(
         stepRepository: stepRepository,
         userPreferences: userPreferences,
-        capabilityEvaluator: _FixedCapabilityEvaluator(),
         clock: clock,
         databasePath: inMemoryDatabasePath,
       );
@@ -429,7 +402,6 @@ void main() {
       final cubit = _DialogPurgeFlowMyDataCubit(
         stepRepository: stepRepository,
         userPreferences: userPreferences,
-        capabilityEvaluator: _FixedCapabilityEvaluator(),
         clock: clock,
         databasePath: inMemoryDatabasePath,
       );
@@ -465,7 +437,6 @@ class _RetryImportMyDataCubit extends _SeededMyDataCubit {
   _RetryImportMyDataCubit({
     required super.stepRepository,
     required super.userPreferences,
-    required super.capabilityEvaluator,
     required super.clock,
     required super.databasePath,
   }) : super(
@@ -491,7 +462,6 @@ class _RetryExportMyDataCubit extends _SeededMyDataCubit {
   _RetryExportMyDataCubit({
     required super.stepRepository,
     required super.userPreferences,
-    required super.capabilityEvaluator,
     required super.clock,
     required super.databasePath,
   }) : super(
@@ -517,7 +487,6 @@ class _DialogPurgeFlowMyDataCubit extends _SeededMyDataCubit {
   _DialogPurgeFlowMyDataCubit({
     required super.stepRepository,
     required super.userPreferences,
-    required super.capabilityEvaluator,
     required super.clock,
     required super.databasePath,
   }) : super(seededState: _readyState());
@@ -546,7 +515,6 @@ class _RetryPurgeMyDataCubit extends _SeededMyDataCubit {
   _RetryPurgeMyDataCubit({
     required super.stepRepository,
     required super.userPreferences,
-    required super.capabilityEvaluator,
     required super.clock,
     required super.databasePath,
   }) : super(

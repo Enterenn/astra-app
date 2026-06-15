@@ -1,6 +1,4 @@
 import 'package:astra_app/core/database/app_database.dart';
-import 'package:astra_app/core/health/background_health_capability_snapshot.dart';
-import 'package:astra_app/core/services/background_health_capability_evaluator.dart';
 import 'package:astra_app/data/datasources/data_ingestion_source.dart';
 import 'package:astra_app/data/models/database_footprint.dart';
 import 'package:astra_app/data/models/normalized_step_bucket.dart';
@@ -13,20 +11,6 @@ import 'package:sqflite/sqflite.dart';
 
 import '../../core/time/fake_time_provider.dart';
 import '../../helpers/sqflite_test_helper.dart';
-
-class _FixedCapabilityEvaluator extends BackgroundHealthCapabilityEvaluator {
-  _FixedCapabilityEvaluator(this._snapshot)
-    : super(
-        activityRecognitionGranted: () async => _snapshot.activityRecognitionGranted,
-        notificationGranted: () async => _snapshot.notificationGranted,
-        isAndroidPlatform: () => true,
-      );
-
-  final BackgroundHealthCapabilitySnapshot _snapshot;
-
-  @override
-  Future<BackgroundHealthCapabilitySnapshot> evaluate() async => _snapshot;
-}
 
 void main() {
   setUpAll(() async {
@@ -54,23 +38,12 @@ void main() {
     });
 
     MyDataCubit buildCubit({
-      BackgroundHealthCapabilitySnapshot? snapshot,
       Future<bool> Function()? activityPermissionGranted,
       bool isIos = false,
     }) {
       return MyDataCubit(
         stepRepository: stepRepository,
         userPreferences: userPreferences,
-        capabilityEvaluator: _FixedCapabilityEvaluator(
-          snapshot ??
-              const BackgroundHealthCapabilitySnapshot(
-                activityRecognitionGranted: true,
-                notificationGranted: true,
-                batteryOptimizationExempt: true,
-                fgsHealthDeclared: true,
-                likelyOemBatteryDeferral: false,
-              ),
-        ),
         clock: clock,
         databasePath: inMemoryDatabasePath,
         activityPermissionGranted:
@@ -194,15 +167,6 @@ void main() {
         stepRepository: failingRepository,
         userPreferences: userPreferences,
         activityPermissionGranted: () async => true,
-        capabilityEvaluator: _FixedCapabilityEvaluator(
-          const BackgroundHealthCapabilitySnapshot(
-            activityRecognitionGranted: true,
-            notificationGranted: true,
-            batteryOptimizationExempt: true,
-            fgsHealthDeclared: true,
-            likelyOemBatteryDeferral: false,
-          ),
-        ),
         clock: clock,
         databasePath: inMemoryDatabasePath,
         isIos: false,
@@ -229,15 +193,6 @@ void main() {
         stepRepository: flakyRepository,
         userPreferences: userPreferences,
         activityPermissionGranted: () async => true,
-        capabilityEvaluator: _FixedCapabilityEvaluator(
-          const BackgroundHealthCapabilitySnapshot(
-            activityRecognitionGranted: true,
-            notificationGranted: true,
-            batteryOptimizationExempt: true,
-            fgsHealthDeclared: true,
-            likelyOemBatteryDeferral: false,
-          ),
-        ),
         clock: clock,
         databasePath: inMemoryDatabasePath,
         isIos: false,

@@ -91,7 +91,6 @@ class _AppScaffoldState extends State<AppScaffold> {
         MyDataCubit(
           stepRepository: widget.deps.stepRepository,
           userPreferences: widget.deps.userPreferences,
-          capabilityEvaluator: widget.deps.backgroundHealthCapabilityEvaluator,
           clock: widget.deps.timeProvider,
           databasePath: widget.deps.databasePath,
           activityPermissionGranted: widget.deps.activityPermissionGranted,

@@ -1,6 +1,4 @@
 import 'package:astra_app/core/database/app_database.dart';
-import 'package:astra_app/core/health/background_health_capability_snapshot.dart';
-import 'package:astra_app/core/services/background_health_capability_evaluator.dart';
 import 'package:astra_app/data/repositories/step_repository.dart';
 import 'package:astra_app/data/repositories/user_preferences_repository.dart';
 import 'package:astra_app/presentation/cubits/my_data_cubit.dart';
@@ -11,26 +9,6 @@ import 'dart:io';
 
 import '../../core/time/fake_time_provider.dart';
 import '../../helpers/sqflite_test_helper.dart';
-
-class _FixedCapabilityEvaluator extends BackgroundHealthCapabilityEvaluator {
-  _FixedCapabilityEvaluator()
-    : super(
-        activityRecognitionGranted: () async => true,
-        notificationGranted: () async => true,
-        isAndroidPlatform: () => true,
-      );
-
-  @override
-  Future<BackgroundHealthCapabilitySnapshot> evaluate() async {
-    return const BackgroundHealthCapabilitySnapshot(
-      activityRecognitionGranted: true,
-      notificationGranted: true,
-      batteryOptimizationExempt: true,
-      fgsHealthDeclared: true,
-      likelyOemBatteryDeferral: false,
-    );
-  }
-}
 
 class _TrackingStepRepository extends StepRepository {
   _TrackingStepRepository({required super.db, required super.clock});
@@ -88,7 +66,6 @@ void main() {
       return MyDataCubit(
         stepRepository: stepRepository,
         userPreferences: userPreferences,
-        capabilityEvaluator: _FixedCapabilityEvaluator(),
         clock: clock,
         databasePath: inMemoryDatabasePath,
         isIos: false,
@@ -204,7 +181,6 @@ void main() {
       final cubit = MyDataCubit(
         stepRepository: failingRepository,
         userPreferences: userPreferences,
-        capabilityEvaluator: _FixedCapabilityEvaluator(),
         clock: clock,
         databasePath: inMemoryDatabasePath,
         isIos: false,

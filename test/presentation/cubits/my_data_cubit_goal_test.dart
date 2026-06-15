@@ -1,7 +1,5 @@
 import 'package:astra_app/core/constants/preference_keys.dart';
 import 'package:astra_app/core/database/app_database.dart';
-import 'package:astra_app/core/health/background_health_capability_snapshot.dart';
-import 'package:astra_app/core/services/background_health_capability_evaluator.dart';
 import 'package:astra_app/data/repositories/step_repository.dart';
 import 'package:astra_app/data/repositories/user_preferences_repository.dart';
 import 'package:astra_app/presentation/cubits/my_data_cubit.dart';
@@ -11,31 +9,6 @@ import 'package:sqflite/sqflite.dart';
 
 import '../../core/time/fake_time_provider.dart';
 import '../../helpers/sqflite_test_helper.dart';
-
-class _FixedCapabilityEvaluator extends BackgroundHealthCapabilityEvaluator {
-  _FixedCapabilityEvaluator({this.evaluateDelay = Duration.zero})
-    : super(
-        activityRecognitionGranted: () async => true,
-        notificationGranted: () async => true,
-        isAndroidPlatform: () => true,
-      );
-
-  final Duration evaluateDelay;
-
-  @override
-  Future<BackgroundHealthCapabilitySnapshot> evaluate() async {
-    if (evaluateDelay > Duration.zero) {
-      await Future<void>.delayed(evaluateDelay);
-    }
-    return const BackgroundHealthCapabilitySnapshot(
-      activityRecognitionGranted: true,
-      notificationGranted: true,
-      batteryOptimizationExempt: true,
-      fgsHealthDeclared: true,
-      likelyOemBatteryDeferral: false,
-    );
-  }
-}
 
 void main() {
   setUpAll(() async {
@@ -64,13 +37,10 @@ void main() {
 
     MyDataCubit buildCubit({
       PostGoalUpdateCallback? postGoalUpdate,
-      BackgroundHealthCapabilityEvaluator? capabilityEvaluator,
     }) {
       return MyDataCubit(
         stepRepository: stepRepository,
         userPreferences: userPreferences,
-        capabilityEvaluator:
-            capabilityEvaluator ?? _FixedCapabilityEvaluator(),
         clock: clock,
         databasePath: inMemoryDatabasePath,
         activityPermissionGranted: () async => true,
@@ -201,11 +171,7 @@ void main() {
     });
 
     test('refresh completing after goal save keeps new dailyStepGoal', () async {
-      final cubit = buildCubit(
-        capabilityEvaluator: _FixedCapabilityEvaluator(
-          evaluateDelay: const Duration(milliseconds: 80),
-        ),
-      );
+      final cubit = buildCubit();
       addTearDown(cubit.close);
 
       await cubit.refresh();

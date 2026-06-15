@@ -9,13 +9,11 @@ import 'package:file_picker/file_picker.dart';
 import 'package:path_provider/path_provider.dart';
 import 'package:share_plus/share_plus.dart';
 
-import '../../core/health/background_health_capability_snapshot.dart';
 import '../../core/validation/step_goal_validator.dart';
 import '../../data/csv/import_validation_exception.dart';
 import '../../core/health/stale_data_evaluator.dart';
 import '../../core/permissions/activity_permission_resolver.dart'
     show isActivityRecognitionGranted;
-import '../../core/services/background_health_capability_evaluator.dart';
 import '../../core/time/time_provider.dart';
 import '../../data/csv/timeseries_csv_codec.dart';
 import '../../data/models/database_footprint.dart';
@@ -43,7 +41,6 @@ class MyDataCubit extends Cubit<MyDataState> {
   MyDataCubit({
     required this.stepRepository,
     required this.userPreferences,
-    required this.capabilityEvaluator,
     required this.clock,
     required this.databasePath,
     ActivityPermissionChecker? activityPermissionGranted,
@@ -69,7 +66,6 @@ class MyDataCubit extends Cubit<MyDataState> {
 
   final StepRepository stepRepository;
   final UserPreferencesRepository userPreferences;
-  final BackgroundHealthCapabilityEvaluator capabilityEvaluator;
   final TimeProvider clock;
   final String databasePath;
   final ActivityPermissionChecker _activityPermissionGranted;
@@ -641,7 +637,6 @@ class MyDataCubit extends Cubit<MyDataState> {
     DateTime? lastOptimizedUtc,
     DateTime? lastIngestionUtc,
     required BackgroundCollectionStatus backgroundStatus,
-    BackgroundHealthCapabilitySnapshot? capabilitySnapshot,
     int? dailyStepGoal,
     String? displayName,
   }) {
@@ -652,7 +647,6 @@ class MyDataCubit extends Cubit<MyDataState> {
         lastOptimizedUtc: lastOptimizedUtc ?? state.lastOptimizedUtc,
         lastIngestionUtc: lastIngestionUtc,
         backgroundStatus: backgroundStatus,
-        capabilitySnapshot: capabilitySnapshot ?? state.capabilitySnapshot,
         isIos: _isIos,
         dailyStepGoal: dailyStepGoal ?? state.dailyStepGoal,
         displayName: displayName ?? state.displayName,
