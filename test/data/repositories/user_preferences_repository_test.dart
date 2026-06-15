@@ -7,6 +7,9 @@ import 'package:sqflite/sqflite.dart';
 import 'package:sqflite_common_ffi/sqflite_ffi.dart';
 import 'package:flutter_test/flutter_test.dart';
 
+import 'package:astra_app/core/time/local_day_formatter.dart';
+import 'package:astra_app/core/time/system_time_provider.dart';
+
 import '../../core/time/fake_time_provider.dart';
 import '../../helpers/sqflite_test_helper.dart';
 
@@ -31,6 +34,20 @@ void main() {
     test('round-trips daily step goal', () async {
       await repository.setDailyStepGoal(12000);
       expect(await repository.getDailyStepGoal(), 12000);
+
+      final todayIso = formatLocalDayIso(const SystemTimeProvider().snapshot());
+      expect(await repository.getGoalForLocalDay(todayIso), 12000);
+      final rows = await db.query('daily_goal_effective');
+      expect(rows.length, 1);
+      expect(rows.single['goal'], 12000);
+    });
+
+    test('migration seed aligns journal with prefs cache for today', () async {
+      final todayIso = formatLocalDayIso(const SystemTimeProvider().snapshot());
+      expect(
+        await repository.getGoalForLocalDay(todayIso),
+        await repository.getDailyStepGoal(),
+      );
     });
 
     test('rejects non-positive daily step goal on write', () async {
@@ -277,6 +294,13 @@ void main() {
 
     test('falls back to default goal when no row applies', () async {
       expect(await repository.getGoalForLocalDay('2020-01-01'), kDefaultStepGoal);
+    });
+
+    test('getGoalForLocalDay for today matches getDailyStepGoal after write', () async {
+      await repository.setDailyStepGoal(8800);
+      final todayIso = formatLocalDayIso(clock.snapshot());
+      expect(await repository.getGoalForLocalDay(todayIso), 8800);
+      expect(await repository.getDailyStepGoal(), 8800);
     });
 
     test('same-day update does not create second row', () async {

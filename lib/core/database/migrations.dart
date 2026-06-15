@@ -1,6 +1,8 @@
 import 'package:sqflite/sqflite.dart';
 
 import '../constants/preference_keys.dart';
+import '../time/local_day_formatter.dart';
+import '../time/time_provider.dart';
 
 const kDbVersion = 3;
 
@@ -114,11 +116,9 @@ Future<void> onCreateV3(Database db) async {
 
   // One-time upgrade path: device-local calendar day (no injected clock).
   final now = DateTime.now();
-  final local = now.toLocal();
-  final todayIso =
-      '${local.year.toString().padLeft(4, '0')}-'
-      '${local.month.toString().padLeft(2, '0')}-'
-      '${local.day.toString().padLeft(2, '0')}';
+  final todayIso = formatLocalDayIso(
+    TimeSnapshot(nowUtc: now.toUtc(), zoneOffset: now.timeZoneOffset),
+  );
 
   await db.insert(
     'daily_goal_effective',
