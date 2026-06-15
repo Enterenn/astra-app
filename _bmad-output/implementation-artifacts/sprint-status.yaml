@@ -1,6 +1,6 @@
 # generated: 2026-05-25
-# last_updated: 2026-06-16 (Story 10.7 created)
-# NEXT: dev-story 10.7 — app-wide unit formatters
+# last_updated: 2026-06-16 (Story 10.8 → review)
+# NEXT: dev-story 10.8 — Data and About screens
 # Ref: planning-artifacts/sprint-change-proposal-2026-06-15.md
 # project: astra-app
 # project_key: NOKEY
@@ -60,7 +60,7 @@
 # NAVIGATION: _bmad-output/README.md
 
 generated: 2026-05-25
-last_updated: 2026-06-16 (Story 10.7 created)
+last_updated: 2026-06-16 (Story 10.8 created)
 # Story 9.1 context file: stories/9-1-android-fgs-notification-visibility.md
 project: astra-app
 project_key: NOKEY
@@ -152,7 +152,7 @@ development_status:
   10-5-settings-appearance-and-notifications: done
   10-6-display-units-preferences: done
   10-7-app-wide-unit-formatters: done
-  10-8-data-and-about-screens: backlog
+  10-8-data-and-about-screens: review
   epic-10-retrospective: optional
 
   epic-11: backlog

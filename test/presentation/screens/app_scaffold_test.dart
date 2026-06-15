@@ -18,6 +18,7 @@ import 'package:astra_app/presentation/widgets/goal_ring.dart';
 import 'package:astra_app/presentation/widgets/menu_nav_row.dart';
 import 'package:astra_app/presentation/widgets/theme_selector.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:phosphoricons_flutter/phosphoricons_flutter.dart';
 import 'package:sqflite/sqflite.dart';
@@ -120,9 +121,25 @@ Future<void> _disposeScaffold(WidgetTester tester) async {
   });
 }
 
+const _packageInfoChannel =
+    MethodChannel('dev.fluttercommunity.plus/package_info');
+
 void main() {
   setUpAll(() async {
     await setUpSqfliteFfi();
+    TestDefaultBinaryMessengerBinding.instance.defaultBinaryMessenger
+        .setMockMethodCallHandler(_packageInfoChannel, (call) async {
+      if (call.method == 'getAll') {
+        return <String, dynamic>{
+          'appName': 'astra_app',
+          'packageName': 'com.astra.health',
+          'version': '0.2.2',
+          'buildNumber': '5',
+          'buildSignature': '',
+        };
+      }
+      return null;
+    });
   });
 
   group('AppScaffold', () {
@@ -205,6 +222,7 @@ void main() {
         expect(find.text('Achievements'), findsNothing);
         expect(find.text('Help'), findsNothing);
         expect(find.text('Storage on this device'), findsNothing);
+        expect(find.text('Background'), findsNothing);
         expect(find.byIcon(PhosphorIconsFill.list), findsOneWidget);
 
         await _disposeScaffold(tester);
@@ -402,7 +420,9 @@ void main() {
 
       expect(find.text('Data'), findsWidgets);
       expect(find.text('My Data'), findsNothing);
-      expect(find.text('Storage on this device'), findsOneWidget);
+      expect(find.text('Background'), findsOneWidget);
+      expect(find.text('Footprint'), findsOneWidget);
+      expect(find.text('Your data'), findsOneWidget);
       expect(find.byIcon(PhosphorIconsRegular.arrowLeft), findsOneWidget);
 
       await tester.tap(find.byTooltip('Back'));
@@ -476,7 +496,7 @@ void main() {
       await _disposeScaffold(tester);
     });
 
-    testWidgets('Menu pushes About stub with header', (tester) async {
+    testWidgets('Menu pushes About with header and body content', (tester) async {
       await _pumpAppScaffold(
         tester,
         AppScaffold(
@@ -491,8 +511,14 @@ void main() {
 
       await tester.tap(find.text('About'));
       await tester.pump();
+      await tester.runAsync(() async {
+        await Future<void>.delayed(const Duration(milliseconds: 150));
+      });
+      await tester.pump();
 
       expect(find.text('About'), findsWidgets);
+      expect(find.text('Astra Health'), findsOneWidget);
+      expect(find.text('Version: 0.2.2'), findsOneWidget);
       expect(find.byIcon(PhosphorIconsRegular.arrowLeft), findsOneWidget);
 
       await tester.tap(find.byTooltip('Back'));

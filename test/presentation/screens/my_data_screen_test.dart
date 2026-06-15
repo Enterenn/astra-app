@@ -6,6 +6,7 @@ import 'package:astra_app/presentation/cubits/my_data_cubit.dart';
 import 'package:astra_app/presentation/cubits/my_data_state.dart';
 import 'package:astra_app/presentation/screens/my_data_screen.dart';
 import 'package:astra_app/presentation/widgets/confirm_dialog.dart';
+import 'package:astra_app/presentation/widgets/background_status_card.dart';
 import 'package:astra_app/presentation/widgets/data_export_button.dart';
 import 'package:astra_app/presentation/widgets/data_import_button.dart';
 import 'package:astra_app/presentation/widgets/data_purge_button.dart';
@@ -53,12 +54,20 @@ MyDataState _readyState({
   String? purgeErrorMessage,
   bool purgeSuccessPending = false,
   bool isIos = false,
+  BackgroundCollectionStatus backgroundStatus =
+      BackgroundCollectionStatus.healthy,
+  DateTime? lastIngestionUtc,
+  DateTime? lastOptimizedUtc,
+  int sampleCount = 10,
+  int fileSizeBytes = 1024,
 }) {
   return MyDataState(
     status: MyDataStatus.ready,
-    sampleCount: 10,
-    fileSizeBytes: 1024,
-    backgroundStatus: BackgroundCollectionStatus.healthy,
+    sampleCount: sampleCount,
+    fileSizeBytes: fileSizeBytes,
+    lastOptimizedUtc: lastOptimizedUtc,
+    lastIngestionUtc: lastIngestionUtc,
+    backgroundStatus: backgroundStatus,
     isIos: isIos,
     isExporting: isExporting,
     exportErrorMessage: exportErrorMessage,
@@ -134,7 +143,7 @@ void main() {
   }
 
   group('MyDataScreen layout', () {
-    testWidgets('shows My Data title and two sections only', (
+    testWidgets('shows My Data title and three mockup sections', (
       tester,
     ) async {
       final cubit = buildSeededCubit(_readyState());
@@ -143,8 +152,11 @@ void main() {
       await pumpScreen(tester, cubit: cubit);
 
       expect(find.text('My Data'), findsOneWidget);
-      expect(find.text('Storage on this device'), findsOneWidget);
-      expect(find.text('Backup & restore'), findsOneWidget);
+      expect(find.text('Background'), findsOneWidget);
+      expect(find.text('Footprint'), findsOneWidget);
+      expect(find.text('Your data'), findsOneWidget);
+      expect(find.text('Storage on this device'), findsNothing);
+      expect(find.text('Backup & restore'), findsNothing);
       expect(find.text('Step tracking'), findsNothing);
 
       expect(find.byType(ThemeSelector), findsNothing);
@@ -173,7 +185,7 @@ void main() {
       );
     });
 
-    testWidgets('sections appear in Storage → Backup order', (
+    testWidgets('sections appear in Background → Footprint → Your data order', (
       tester,
     ) async {
       final cubit = buildSeededCubit(_readyState());
@@ -181,27 +193,73 @@ void main() {
 
       await pumpScreen(tester, cubit: cubit);
 
-      final storageY =
-          tester.getTopLeft(find.text('Storage on this device')).dy;
-      final backupY = tester.getTopLeft(find.text('Backup & restore')).dy;
+      final backgroundY = tester.getTopLeft(find.text('Background')).dy;
+      final footprintY = tester.getTopLeft(find.text('Footprint')).dy;
+      final yourDataY = tester.getTopLeft(find.text('Your data')).dy;
 
-      expect(storageY < backupY, isTrue);
+      expect(backgroundY < footprintY, isTrue);
+      expect(footprintY < yourDataY, isTrue);
     });
-  });
 
-  group('MyDataScreen sovereignty flows', () {
-    testWidgets('shows storage intro and Export CSV button', (tester) async {
-      final cubit = buildSeededCubit(_readyState());
+    testWidgets('Background section shows healthy status card', (tester) async {
+      final cubit = buildSeededCubit(
+        _readyState(
+          lastIngestionUtc: DateTime.utc(2026, 6, 3, 11, 30),
+        ),
+      );
+      addTearDown(cubit.close);
+
+      await pumpScreen(tester, cubit: cubit);
+
+      expect(find.byType(BackgroundStatusCard), findsOneWidget);
+      expect(
+        find.textContaining('Background collection active'),
+        findsOneWidget,
+      );
+    });
+
+    testWidgets('Footprint section shows formatted sample count', (tester) async {
+      final cubit = buildSeededCubit(_readyState(sampleCount: 42));
+      addTearDown(cubit.close);
+
+      await pumpScreen(tester, cubit: cubit);
+
+      expect(find.text('42'), findsOneWidget);
+      expect(find.text('samples stored'), findsOneWidget);
+    });
+
+    testWidgets('stale state shows full stale banner above Background card', (
+      tester,
+    ) async {
+      final cubit = buildSeededCubit(
+        _readyState(
+          backgroundStatus: BackgroundCollectionStatus.stale,
+        ),
+      );
       addTearDown(cubit.close);
 
       await pumpScreen(tester, cubit: cubit);
 
       expect(
-        find.text(
-          'Everything stays on your phone. You choose when to back up or delete.',
-        ),
+        find.textContaining('No new steps in 12+ hours'),
         findsOneWidget,
       );
+
+      final bannerY = tester.getTopLeft(
+        find.textContaining('No new steps in 12+ hours'),
+      ).dy;
+      final backgroundY = tester.getTopLeft(find.text('Background')).dy;
+      expect(bannerY < backgroundY, isTrue);
+    });
+  });
+
+  group('MyDataScreen sovereignty flows', () {
+    testWidgets('shows Export CSV button in Your data section', (tester) async {
+      final cubit = buildSeededCubit(_readyState());
+      addTearDown(cubit.close);
+
+      await pumpScreen(tester, cubit: cubit);
+
       expect(find.text('Export CSV'), findsOneWidget);
       expect(find.byType(DataExportButton), findsOneWidget);
     });
@@ -329,7 +387,7 @@ void main() {
       expect(cubit.importAttempts, 1);
     });
 
-    testWidgets('shows Erase all step history purge button below import', (
+    testWidgets('shows Delete all local data purge button below import', (
       tester,
     ) async {
       final cubit = buildSeededCubit(_readyState());
@@ -337,7 +395,7 @@ void main() {
 
       await pumpScreen(tester, cubit: cubit);
 
-      expect(find.text('Erase all step history'), findsOneWidget);
+      expect(find.text('Delete all local data'), findsOneWidget);
       expect(find.byType(DataPurgeButton), findsOneWidget);
     });
 
@@ -410,11 +468,11 @@ void main() {
       await pumpScreen(tester, cubit: cubit, disableAnimations: true);
 
       await tester.scrollUntilVisible(
-        find.text('Erase all step history'),
+        find.text('Delete all local data'),
         120,
         scrollable: find.byType(Scrollable).first,
       );
-      await tester.tap(find.text('Erase all step history'));
+      await tester.tap(find.text('Delete all local data'));
       await tester.pump();
       expect(find.text('Export first'), findsOneWidget);
 
