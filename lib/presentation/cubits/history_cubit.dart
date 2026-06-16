@@ -1,6 +1,7 @@
 import 'package:flutter/foundation.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 
+import '../../core/metrics/derived_activity_metrics.dart';
 import '../../core/time/local_day_formatter.dart';
 import '../../data/models/chart_day_aggregate.dart';
 import '../../data/repositories/step_repository.dart';
@@ -17,6 +18,7 @@ class HistoryCubit extends Cubit<HistoryState> {
   final UserPreferencesRepository userPreferences;
 
   List<ChartDayAggregate> _cachedAggregates30d = const [];
+  List<TrendsDayMetrics> _cachedDayMetrics30d = const [];
   Map<String, int> _cachedGoalsByDay = const {};
   Future<void>? _refreshInFlight;
 
@@ -116,6 +118,7 @@ class HistoryCubit extends Cubit<HistoryState> {
         (sum, entry) => sum + entry.totalSteps,
       );
       if (totalSteps == 0) {
+        _cachedDayMetrics30d = const [];
         emit(
           HistoryState.empty(
             period: state.period,
@@ -123,6 +126,25 @@ class HistoryCubit extends Cubit<HistoryState> {
             goalsByDay: goalsByDay,
           ),
         );
+        return;
+      }
+
+      final profileResults = await Future.wait<Object?>([
+        userPreferences.getHeightCm(),
+        userPreferences.getWeightKg(),
+      ]);
+      if (isClosed) {
+        return;
+      }
+
+      final heightCm = profileResults[0] as int?;
+      final weightKg = profileResults[1] as double?;
+      _cachedDayMetrics30d = await _buildDayMetricsCache(
+        aggregates,
+        heightCm: heightCm,
+        weightKg: weightKg,
+      );
+      if (isClosed) {
         return;
       }
 
@@ -201,7 +223,46 @@ class HistoryCubit extends Cubit<HistoryState> {
         dailyGoal: dailyGoal ?? state.dailyGoal,
         goalsByDay: goalsByDay ?? _cachedGoalsByDay,
         trend: _computeTrend(source),
+        periodAverages: _computeAveragesForPeriod(period),
       ),
+    );
+  }
+
+  Future<List<TrendsDayMetrics>> _buildDayMetricsCache(
+    List<ChartDayAggregate> aggregates, {
+    required int? heightCm,
+    required double? weightKg,
+  }) async {
+    final bucketLists = await Future.wait(
+      aggregates.map(
+        (aggregate) =>
+            stepRepository.getActiveBucketsForLocalDay(aggregate.localDay),
+      ),
+    );
+
+    return [
+      for (var i = 0; i < aggregates.length; i++)
+        TrendsDayMetrics(
+          localDay: aggregates[i].localDay,
+          totalSteps: aggregates[i].totalSteps,
+          dailyKcal: DerivedActivityMetrics.compute(
+            displaySteps: aggregates[i].totalSteps,
+            activeBuckets: bucketLists[i],
+            heightCm: heightCm,
+            weightKg: weightKg,
+          ).kcal,
+        ),
+    ];
+  }
+
+  TrendsPeriodAverages _computeAveragesForPeriod(HistoryPeriod period) {
+    final dayCount = period.dayCount;
+    final slice = _cachedDayMetrics30d.take(dayCount);
+    final sumSteps = slice.fold<int>(0, (sum, day) => sum + day.totalSteps);
+    final sumKcal = slice.fold<int>(0, (sum, day) => sum + day.dailyKcal);
+    return TrendsPeriodAverages(
+      averageSteps: (sumSteps / dayCount).round(),
+      averageKcal: (sumKcal / dayCount).round(),
     );
   }
 
