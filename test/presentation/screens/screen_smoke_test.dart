@@ -106,6 +106,23 @@ void main() {
       ];
     }
 
+    List<WeekDayStatus> sampleWeekDaysWithTrophyScore() {
+      final reference = DateTime.utc(2026, 6, 6);
+      return [
+        for (final day in CalendarWeek.daysContaining(reference))
+          WeekDayStatus(
+            localDay: day,
+            weekdayLabel: CalendarWeek.weekdayLabelFor(day),
+            dayNumber: day.day,
+            isToday: day == reference,
+            isFuture: day.isAfter(reference),
+            goalMet: !day.isAfter(reference) &&
+                day.isBefore(reference) &&
+                day.weekday <= DateTime.wednesday,
+          ),
+      ];
+    }
+
     Future<void> pumpScreen(
       WidgetTester tester,
       TodayCubit cubit, {
@@ -252,6 +269,36 @@ void main() {
       expect(find.text('This week'), findsOneWidget);
       expect(find.byType(WeekProgressRow), findsOneWidget);
       expect(find.byType(SectionCard), findsOneWidget);
+    });
+
+    testWidgets('week card shows trophy N/7 when week data loaded', (
+      tester,
+    ) async {
+      final weekDays = sampleWeekDaysWithTrophyScore();
+      final cubit = buildCubit(
+        TodayState.fromData(
+          steps: 1200,
+          goal: 8000,
+          isStale: false,
+          weekDays: weekDays,
+        ),
+      );
+      addTearDown(cubit.close);
+
+      await pumpScreen(tester, cubit);
+
+      expect(find.text('3/7'), findsOneWidget);
+    });
+
+    testWidgets('week card omits trophy while weekDays loading', (
+      tester,
+    ) async {
+      final cubit = buildCubit(const TodayState.loading());
+      addTearDown(cubit.close);
+
+      await pumpScreen(tester, cubit);
+
+      expect(find.textContaining('/7'), findsNothing);
     });
 
     testWidgets('week pills tap updates selected day in cubit', (tester) async {
