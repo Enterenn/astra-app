@@ -6,6 +6,8 @@ import '../../core/constants/astra_spacing.dart';
 import '../../core/constants/astra_typography.dart';
 import '../../data/models/chart_month_aggregate.dart';
 import '../cubits/history_state.dart';
+import 'chart/astra_bar_chart_touch.dart';
+import 'chart/chart_axis_ticks.dart';
 import 'step_bar_chart.dart';
 
 /// Twelve-month monthly average steps chart for the Trends screen.
@@ -20,7 +22,7 @@ class TrendsMonthlyBarChart extends StatelessWidget {
   final HistoryStatus status;
 
   static String formatMonthLabel(DateTime monthStart) {
-    return _monthNames[monthStart.month - 1];
+    return monthStart.month.toString().padLeft(2, '0');
   }
 
   static const _monthNames = [
@@ -38,6 +40,21 @@ class TrendsMonthlyBarChart extends StatelessWidget {
     'Dec',
   ];
 
+  static const _tooltipMonthNames = [
+    'January',
+    'February',
+    'March',
+    'April',
+    'May',
+    'June',
+    'July',
+    'August',
+    'September',
+    'October',
+    'November',
+    'December',
+  ];
+
   /// Caption for the rolling window, e.g. `Jul 2025 – Jun 2026`.
   ///
   /// [points] must be oldest-first (same order as chart axis).
@@ -52,6 +69,10 @@ class TrendsMonthlyBarChart extends StatelessWidget {
 
   static String _formatMonthYear(DateTime monthStart) {
     return '${_monthNames[monthStart.month - 1]} ${monthStart.year}';
+  }
+
+  static String _formatTooltipMonthYear(DateTime monthStart) {
+    return '${_tooltipMonthNames[monthStart.month - 1]} ${monthStart.year}';
   }
 
   @override
@@ -141,7 +162,7 @@ class _LoadingSkeleton extends StatelessWidget {
   }
 }
 
-class _ReadyChart extends StatelessWidget {
+class _ReadyChart extends StatefulWidget {
   const _ReadyChart({
     required this.points,
     required this.colors,
@@ -150,13 +171,25 @@ class _ReadyChart extends StatelessWidget {
   final List<ChartMonthAggregate> points;
   final AstraColors colors;
 
+  @override
+  State<_ReadyChart> createState() => _ReadyChartState();
+}
+
+class _ReadyChartState extends State<_ReadyChart> {
   static const _kBelowGoalBarAlpha = 0.66;
+  static const _kSelectedBarAlpha = 0.8;
   static const _kMaxBarWidth = 12.0;
   static const _kMinBarWidth = 4.0;
   static const _kBarSlotFillRatio = 0.55;
+  static const _kLeftAxisReserved = 36.0;
+  static const _kBottomAxisReserved = 24.0;
+
+  int? _touchedIndex;
 
   @override
   Widget build(BuildContext context) {
+    final colors = widget.colors;
+    final points = widget.points;
     final maxSteps = points.fold<int>(
       0,
       (max, entry) =>
@@ -164,6 +197,8 @@ class _ReadyChart extends StatelessWidget {
     );
     final safeYMax = (maxSteps <= 0 ? 1 : maxSteps).toDouble();
     final chartMaxY = safeYMax * 1.05;
+    final yTicks = computeChartYAxisTicks(maxY: chartMaxY);
+    final yAxisInterval = chartAxisTitleInterval(yTicks);
 
     return ExcludeSemantics(
       child: Padding(
@@ -179,6 +214,28 @@ class _ReadyChart extends StatelessWidget {
               constraints.maxWidth,
               points.length,
             );
+            final barGroups = [
+              for (var i = 0; i < points.length; i++)
+                BarChartGroupData(
+                  x: i,
+                  barRods: [
+                    BarChartRodData(
+                      toY: points[i].averageDailySteps.toDouble(),
+                      color: _touchedIndex == i
+                          ? colors.accentPrimary.withValues(
+                              alpha: _kSelectedBarAlpha,
+                            )
+                          : colors.accentPrimary.withValues(
+                              alpha: _kBelowGoalBarAlpha,
+                            ),
+                      width: barWidth,
+                      borderRadius: const BorderRadius.vertical(
+                        top: Radius.circular(4),
+                      ),
+                    ),
+                  ],
+                ),
+            ];
 
             return BarChart(
               duration: Duration.zero,
@@ -188,7 +245,22 @@ class _ReadyChart extends StatelessWidget {
                 alignment: BarChartAlignment.spaceAround,
                 gridData: const FlGridData(show: false),
                 borderData: FlBorderData(show: false),
-                barTouchData: const BarTouchData(enabled: false),
+                barTouchData: buildAstraBarTouchData(
+                  colors: colors,
+                  touchedIndex: _touchedIndex,
+                  onTouchedIndexChanged: (index) {
+                    setState(() => _touchedIndex = index);
+                  },
+                  tooltipData: buildAstraBarTooltipData(
+                    colors: colors,
+                    getTooltipItem: (group, groupIndex, rod, rodIndex) {
+                      return _monthlyTooltipItem(
+                        colors: colors,
+                        point: points[groupIndex],
+                      );
+                    },
+                  ),
+                ),
                 titlesData: FlTitlesData(
                   topTitles: const AxisTitles(
                     sideTitles: SideTitles(showTitles: false),
@@ -199,20 +271,19 @@ class _ReadyChart extends StatelessWidget {
                   leftTitles: AxisTitles(
                     sideTitles: SideTitles(
                       showTitles: true,
-                      reservedSize: 36,
-                      interval: chartMaxY,
+                      reservedSize: _kLeftAxisReserved,
+                      interval: yAxisInterval,
                       getTitlesWidget: (value, meta) {
-                        if (value.abs() < 0.01) {
+                        for (final tick in yTicks) {
+                          if (!isChartAxisTickLabel(
+                            value: value,
+                            tick: tick,
+                            ticks: yTicks,
+                          )) {
+                            continue;
+                          }
                           return Text(
-                            '0',
-                            style: AstraTypography.captionFor(colors).copyWith(
-                              color: colors.textPrimary,
-                            ),
-                          );
-                        }
-                        if ((value - chartMaxY).abs() < chartMaxY * 0.001) {
-                          return Text(
-                            _formatAxisValue(safeYMax.round()),
+                            formatChartAxisValue(tick.round()),
                             style: AstraTypography.captionFor(colors).copyWith(
                               color: colors.textPrimary,
                             ),
@@ -225,7 +296,7 @@ class _ReadyChart extends StatelessWidget {
                   bottomTitles: AxisTitles(
                     sideTitles: SideTitles(
                       showTitles: true,
-                      reservedSize: 24,
+                      reservedSize: _kBottomAxisReserved,
                       getTitlesWidget: (value, meta) {
                         final index = value.toInt();
                         if (index < 0 || index >= points.length) {
@@ -247,29 +318,26 @@ class _ReadyChart extends StatelessWidget {
                     ),
                   ),
                 ),
-                barGroups: [
-                  for (var i = 0; i < points.length; i++)
-                    BarChartGroupData(
-                      x: i,
-                      barRods: [
-                        BarChartRodData(
-                          toY: points[i].averageDailySteps.toDouble(),
-                          color: colors.accentPrimary.withValues(
-                            alpha: _kBelowGoalBarAlpha,
-                          ),
-                          width: barWidth,
-                          borderRadius: const BorderRadius.vertical(
-                            top: Radius.circular(4),
-                          ),
-                        ),
-                      ],
-                    ),
-                ],
+                barGroups: withBarTouchIndicators(
+                  groups: barGroups,
+                  touchedIndex: _touchedIndex,
+                ),
               ),
             );
           },
         ),
       ),
+    );
+  }
+
+  BarTooltipItem _monthlyTooltipItem({
+    required AstraColors colors,
+    required ChartMonthAggregate point,
+  }) {
+    return BarTooltipItem(
+      '${TrendsMonthlyBarChart._formatTooltipMonthYear(point.monthStart)}\n'
+      '${point.averageDailySteps} steps/day',
+      astraBarTooltipPrimaryStyle(colors),
     );
   }
 
@@ -279,15 +347,5 @@ class _ReadyChart extends StatelessWidget {
     }
     final slotWidth = chartWidth / pointCount;
     return (slotWidth * _kBarSlotFillRatio).clamp(_kMinBarWidth, _kMaxBarWidth);
-  }
-
-  String _formatAxisValue(int value) {
-    if (value >= 1000) {
-      final thousands = value / 1000;
-      return thousands == thousands.roundToDouble()
-          ? '${thousands.toInt()}k'
-          : '${thousands.toStringAsFixed(1)}k';
-    }
-    return '$value';
   }
 }
