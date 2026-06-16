@@ -578,6 +578,108 @@ void main() {
         cubit.close();
       },
     );
+
+    test('peakDay selects day with maximum steps in 7d window', () async {
+      final stepValues = [3000, 5000, 2000, 8000, 1000, 4000, 6000];
+      for (var dayOffset = 0; dayOffset < 7; dayOffset++) {
+        await stepRepository.upsertIngestionBucket(
+          _bucket(
+            startTimeUtc: DateTime.utc(2026, 6, 2 - dayOffset, 10),
+            value: stepValues[dayOffset],
+            zoneOffset: '+02:00',
+          ),
+        );
+      }
+      final cubit = buildCubit();
+
+      await cubit.refresh();
+
+      expect(cubit.state.peakDay?.totalSteps, 8000);
+      expect(cubit.state.peakDay?.localDay, DateTime.utc(2026, 5, 30));
+      expect(cubit.state.peakDay?.dateLabel, 'SAT 30');
+      cubit.close();
+    });
+
+    test('peakDay tie-break keeps most recent day with equal max steps', () async {
+      final stepValues = [8000, 5000, 8000, 3000, 2000, 1000, 4000];
+      for (var dayOffset = 0; dayOffset < 7; dayOffset++) {
+        await stepRepository.upsertIngestionBucket(
+          _bucket(
+            startTimeUtc: DateTime.utc(2026, 6, 2 - dayOffset, 10),
+            value: stepValues[dayOffset],
+            zoneOffset: '+02:00',
+          ),
+        );
+      }
+      final cubit = buildCubit();
+
+      await cubit.refresh();
+
+      expect(cubit.state.peakDay?.totalSteps, 8000);
+      expect(cubit.state.peakDay?.localDay, DateTime.utc(2026, 6, 2));
+      cubit.close();
+    });
+
+    test(
+      'selectPeriod updates peakDay from cache without extra chart query',
+      () async {
+        for (var dayOffset = 0; dayOffset < 10; dayOffset++) {
+          await stepRepository.upsertIngestionBucket(
+            _bucket(
+              startTimeUtc: DateTime.utc(2026, 6, 2 - dayOffset, 10),
+              value: dayOffset == 9 ? 9000 : 1000,
+              zoneOffset: '+02:00',
+            ),
+          );
+        }
+        final spy = _ChartAggregateSpyRepository(stepRepository);
+        final cubit = buildCubit(repository: spy);
+
+        await cubit.refresh();
+        expect(spy.chartAggregateCallCount, 1);
+        expect(cubit.state.peakDay?.totalSteps, 1000);
+
+        cubit.selectPeriod(HistoryPeriod.days30);
+        expect(spy.chartAggregateCallCount, 1);
+        expect(cubit.state.peakDay?.totalSteps, 9000);
+        expect(cubit.state.peakDay?.dateLabel, '24/5');
+
+        cubit.selectPeriod(HistoryPeriod.days7);
+        expect(spy.chartAggregateCallCount, 1);
+        expect(cubit.state.peakDay?.totalSteps, 1000);
+        cubit.close();
+      },
+    );
+
+    test('peakDay is null when active window has no steps', () async {
+      for (var dayOffset = 14; dayOffset < 21; dayOffset++) {
+        await stepRepository.upsertIngestionBucket(
+          _bucket(
+            startTimeUtc: DateTime.utc(2026, 6, 2 - dayOffset, 10),
+            value: 3000,
+            zoneOffset: '+02:00',
+          ),
+        );
+      }
+      final cubit = buildCubit();
+
+      await cubit.refresh();
+      expect(cubit.state.period, HistoryPeriod.days30);
+      expect(cubit.state.peakDay, isNotNull);
+
+      cubit.selectPeriod(HistoryPeriod.days7);
+      expect(cubit.state.peakDay, isNull);
+      cubit.close();
+    });
+
+    test('refresh emits null peakDay when empty', () async {
+      final cubit = buildCubit();
+
+      await cubit.refresh();
+
+      expect(cubit.state.peakDay, isNull);
+      cubit.close();
+    });
   });
 }
 

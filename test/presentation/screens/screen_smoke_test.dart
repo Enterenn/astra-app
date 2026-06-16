@@ -18,6 +18,7 @@ import 'package:astra_app/presentation/widgets/goal_ring.dart';
 import 'package:astra_app/presentation/widgets/section_card.dart';
 import 'package:astra_app/presentation/widgets/status_banner.dart';
 import 'package:astra_app/presentation/widgets/trends_average_stats_row.dart';
+import 'package:astra_app/presentation/widgets/trends_peak_day_card.dart';
 import 'package:astra_app/presentation/widgets/week_progress_row.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
@@ -545,5 +546,63 @@ void main() {
         expect(find.byType(TrendsAverageStatsRow), findsNothing);
       },
     );
+
+    testWidgets('shows peak day card when ready with peakDay', (tester) async {
+      final cubit = _SeededHistoryCubit(
+        stepRepository: stepRepository,
+        userPreferences: userPreferences,
+        initial: HistoryState.ready(
+          chartPoints: [
+            ChartDayAggregate(
+              localDay: DateTime.utc(2026, 6, 3),
+              totalSteps: 8500,
+            ),
+          ],
+          dailyGoal: 8000,
+          periodAverages: const TrendsPeriodAverages(
+            averageKcal: 167,
+            averageSteps: 3532,
+          ),
+          peakDay: TrendsPeakDay(
+            localDay: DateTime.utc(2026, 6, 4),
+            totalSteps: 8500,
+            dateLabel: 'WED 4',
+          ),
+        ),
+      );
+      addTearDown(cubit.close);
+
+      await pumpScreen(tester, cubit);
+
+      expect(find.byType(TrendsPeakDayCard), findsOneWidget);
+      expect(find.text('peak day in this period'), findsOneWidget);
+      expect(find.text('8500'), findsOneWidget);
+    });
+
+    testWidgets('hides peak day card when peakDay is null', (tester) async {
+      final cubit = _SeededHistoryCubit(
+        stepRepository: stepRepository,
+        userPreferences: userPreferences,
+        initial: HistoryState.ready(
+          chartPoints: [
+            ChartDayAggregate(
+              localDay: DateTime.utc(2026, 6, 3),
+              totalSteps: 5000,
+            ),
+          ],
+          dailyGoal: 8000,
+          periodAverages: const TrendsPeriodAverages(
+            averageKcal: 167,
+            averageSteps: 3532,
+          ),
+        ),
+      );
+      addTearDown(cubit.close);
+
+      await pumpScreen(tester, cubit);
+
+      expect(find.byType(TrendsPeakDayCard), findsNothing);
+      expect(find.text('peak day in this period'), findsNothing);
+    });
   });
 }
