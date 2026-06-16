@@ -2,6 +2,7 @@ import 'package:astra_app/core/constants/preference_keys.dart';
 import 'package:astra_app/core/database/app_database.dart';
 import 'package:astra_app/core/time/time_provider.dart';
 import 'package:astra_app/data/models/chart_day_aggregate.dart';
+import 'package:astra_app/data/models/timeseries_sample_model.dart';
 import 'package:astra_app/data/datasources/data_ingestion_source.dart';
 import 'package:astra_app/data/models/normalized_step_bucket.dart';
 import 'package:astra_app/data/repositories/step_repository.dart';
@@ -33,6 +34,13 @@ class _ChartAggregateSpyRepository implements StepRepository {
   }
 
   @override
+  Future<List<TimeseriesSampleModel>> getActiveBucketsForLocalDay(
+    DateTime localDay,
+  ) {
+    return _delegate.getActiveBucketsForLocalDay(localDay);
+  }
+
+  @override
   dynamic noSuchMethod(Invocation invocation) {
     return super.noSuchMethod(invocation);
   }
@@ -56,6 +64,13 @@ class _ThrowingChartRepository implements StepRepository {
       throw StateError('database unavailable');
     }
     return _fallback.getChartDailyAggregates(days: days);
+  }
+
+  @override
+  Future<List<TimeseriesSampleModel>> getActiveBucketsForLocalDay(
+    DateTime localDay,
+  ) {
+    return _fallback.getActiveBucketsForLocalDay(localDay);
   }
 
   @override
@@ -383,6 +398,96 @@ void main() {
         cubit.close();
       },
     );
+
+    test('periodAverages reflects arithmetic mean of steps in 7d window', () async {
+      for (var dayOffset = 0; dayOffset < 7; dayOffset++) {
+        await stepRepository.upsertIngestionBucket(
+          _bucket(
+            startTimeUtc: DateTime.utc(2026, 6, 2 - dayOffset, 10),
+            value: 1000,
+            zoneOffset: '+02:00',
+          ),
+        );
+      }
+      final cubit = buildCubit();
+
+      await cubit.refresh();
+
+      expect(cubit.state.periodAverages?.averageSteps, 1000);
+      cubit.close();
+    });
+
+    test('periodAverages includes zero-step days in denominator', () async {
+      await stepRepository.upsertIngestionBucket(
+        _bucket(
+          startTimeUtc: DateTime.utc(2026, 6, 2, 10),
+          value: 7000,
+          zoneOffset: '+02:00',
+        ),
+      );
+      final cubit = buildCubit();
+
+      await cubit.refresh();
+
+      expect(cubit.state.periodAverages?.averageSteps, 1000);
+      cubit.close();
+    });
+
+    test('periodAverages kcal uses bucket-based DerivedActivityMetrics', () async {
+      await stepRepository.upsertIngestionBucket(
+        _bucket(
+          startTimeUtc: DateTime.utc(2026, 6, 2, 10),
+          value: 100,
+          zoneOffset: '+02:00',
+        ),
+      );
+      final cubit = buildCubit();
+
+      await cubit.refresh();
+
+      expect(cubit.state.periodAverages?.averageKcal, greaterThan(0));
+      cubit.close();
+    });
+
+    test(
+      'selectPeriod updates periodAverages from cache without extra chart query',
+      () async {
+        for (var dayOffset = 0; dayOffset < 10; dayOffset++) {
+          await stepRepository.upsertIngestionBucket(
+            _bucket(
+              startTimeUtc: DateTime.utc(2026, 6, 2 - dayOffset, 10),
+              value: 1000,
+              zoneOffset: '+02:00',
+            ),
+          );
+        }
+        final spy = _ChartAggregateSpyRepository(stepRepository);
+        final cubit = buildCubit(repository: spy);
+
+        await cubit.refresh();
+        expect(spy.chartAggregateCallCount, 1);
+        final average7d = cubit.state.periodAverages?.averageSteps;
+
+        cubit.selectPeriod(HistoryPeriod.days30);
+        expect(spy.chartAggregateCallCount, 1);
+        expect(cubit.state.periodAverages?.averageSteps, isNot(equals(average7d)));
+        expect(cubit.state.periodAverages?.averageSteps, 333);
+
+        cubit.selectPeriod(HistoryPeriod.days7);
+        expect(spy.chartAggregateCallCount, 1);
+        expect(cubit.state.periodAverages?.averageSteps, average7d);
+        cubit.close();
+      },
+    );
+
+    test('refresh emits null periodAverages when empty', () async {
+      final cubit = buildCubit();
+
+      await cubit.refresh();
+
+      expect(cubit.state.periodAverages, isNull);
+      cubit.close();
+    });
   });
 }
 

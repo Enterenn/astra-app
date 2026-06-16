@@ -2,6 +2,7 @@ import 'package:astra_app/core/constants/astra_spacing.dart';
 import 'package:astra_app/core/constants/astra_theme.dart';
 import 'package:astra_app/core/database/app_database.dart';
 import 'package:astra_app/core/time/calendar_week.dart';
+import 'package:astra_app/data/models/chart_day_aggregate.dart';
 import 'package:astra_app/data/repositories/step_repository.dart';
 import 'package:astra_app/data/repositories/user_preferences_repository.dart';
 import 'package:astra_app/presentation/cubits/history_cubit.dart';
@@ -16,6 +17,7 @@ import 'package:astra_app/presentation/widgets/activity_stats_row.dart';
 import 'package:astra_app/presentation/widgets/goal_ring.dart';
 import 'package:astra_app/presentation/widgets/section_card.dart';
 import 'package:astra_app/presentation/widgets/status_banner.dart';
+import 'package:astra_app/presentation/widgets/trends_average_stats_row.dart';
 import 'package:astra_app/presentation/widgets/week_progress_row.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
@@ -455,6 +457,55 @@ void main() {
       );
 
       expect((padding.padding as EdgeInsets).bottom, expectedBottom);
+    });
+
+    testWidgets('shows average stat cards when ready with periodAverages', (
+      tester,
+    ) async {
+      final cubit = _SeededHistoryCubit(
+        stepRepository: stepRepository,
+        userPreferences: userPreferences,
+        initial: HistoryState.ready(
+          chartPoints: [
+            ChartDayAggregate(
+              localDay: DateTime.utc(2026, 6, 3),
+              totalSteps: 5000,
+            ),
+          ],
+          dailyGoal: 8000,
+          periodAverages: const TrendsPeriodAverages(
+            averageKcal: 167,
+            averageSteps: 3532,
+          ),
+        ),
+      );
+      addTearDown(cubit.close);
+
+      await pumpScreen(tester, cubit);
+
+      expect(find.byType(TrendsAverageStatsRow), findsOneWidget);
+      expect(
+        find.text('average calories burned per day'),
+        findsOneWidget,
+      );
+      expect(find.text('average steps taken per day'), findsOneWidget);
+    });
+
+    testWidgets('hides average stat cards on empty state', (tester) async {
+      final cubit = _SeededHistoryCubit(
+        stepRepository: stepRepository,
+        userPreferences: userPreferences,
+        initial: HistoryState.empty(),
+      );
+      addTearDown(cubit.close);
+
+      await pumpScreen(tester, cubit);
+
+      expect(find.byType(TrendsAverageStatsRow), findsNothing);
+      expect(
+        find.text('average calories burned per day'),
+        findsNothing,
+      );
     });
   });
 }
