@@ -10,6 +10,7 @@ import '../widgets/period_toggle.dart';
 import '../widgets/step_bar_chart.dart';
 import '../widgets/trend_chip.dart';
 import '../widgets/trends_average_stats_row.dart';
+import '../widgets/trends_peak_day_card.dart';
 
 class HistoryScreen extends StatelessWidget {
   const HistoryScreen({super.key});
@@ -71,6 +72,10 @@ class HistoryScreen extends StatelessWidget {
                     if (state.periodAverages != null) ...[
                       const SizedBox(height: AstraSpacing.kSpaceMd),
                       TrendsAverageStatsRow(averages: state.periodAverages!),
+                      if (state.peakDay != null) ...[
+                        const SizedBox(height: AstraSpacing.kSpaceSm),
+                        TrendsPeakDayCard(peakDay: state.peakDay!),
+                      ],
                     ],
                     const SizedBox(height: AstraSpacing.kSpaceMd),
                   ],
