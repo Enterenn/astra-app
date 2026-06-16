@@ -917,6 +917,143 @@ void main() {
       });
     });
 
+    group('selected day display', () {
+      test('past-day select shows seeded steps and historical goal', () async {
+        await db.insert('daily_goal_effective', {
+          'effective_from_local_day': '2026-06-01',
+          'goal': 5000,
+        });
+        await stepRepository.upsertIngestionBucket(
+          _bucket(
+            startTimeUtc: DateTime.utc(2026, 6, 1, 10),
+            value: 6000,
+            zoneOffset: '+02:00',
+          ),
+        );
+        await stepRepository.upsertIngestionBucket(
+          _bucket(
+            startTimeUtc: DateTime.utc(2026, 6, 2, 10),
+            value: 1000,
+            zoneOffset: '+02:00',
+          ),
+        );
+        final cubit = buildCubit();
+        await cubit.refresh();
+        final monday = cubit.state.weekDays.first;
+
+        cubit.selectLocalDay(monday.localDay);
+        await pumpEventQueue();
+
+        expect(cubit.state.steps, 6000);
+        expect(cubit.state.goal, 5000);
+        expect(cubit.state.status, TodayStatus.overflow);
+        cubit.close();
+      });
+
+      test('live tick ignored while past day selected', () async {
+        await stepRepository.upsertIngestionBucket(
+          _bucket(
+            startTimeUtc: DateTime.utc(2026, 6, 1, 10),
+            value: 6000,
+            zoneOffset: '+02:00',
+          ),
+        );
+        await stepRepository.upsertIngestionBucket(
+          _bucket(
+            startTimeUtc: DateTime.utc(2026, 6, 2, 10),
+            value: 1000,
+            zoneOffset: '+02:00',
+          ),
+        );
+        final cubit = buildCubit();
+        await cubit.refresh();
+        final monday = cubit.state.weekDays.first;
+        cubit.selectLocalDay(monday.localDay);
+        await pumpEventQueue();
+
+        await cubit.syncSteps(5000);
+
+        expect(cubit.state.steps, 6000);
+        cubit.close();
+      });
+
+      test('today re-select applies live today truth', () async {
+        await stepRepository.upsertIngestionBucket(
+          _bucket(
+            startTimeUtc: DateTime.utc(2026, 6, 1, 10),
+            value: 6000,
+            zoneOffset: '+02:00',
+          ),
+        );
+        await stepRepository.upsertIngestionBucket(
+          _bucket(
+            startTimeUtc: DateTime.utc(2026, 6, 2, 10),
+            value: 1000,
+            zoneOffset: '+02:00',
+          ),
+        );
+        final cubit = buildCubit();
+        await cubit.refresh();
+        final monday = cubit.state.weekDays.first;
+        final today = cubit.state.weekDays.singleWhere((day) => day.isToday);
+        cubit.selectLocalDay(monday.localDay);
+        await pumpEventQueue();
+
+        await cubit.syncSteps(5000);
+        cubit.selectLocalDay(today.localDay);
+        await pumpEventQueue();
+
+        expect(cubit.state.steps, 5000);
+        cubit.close();
+      });
+
+      test('celebration blocked when past day selected even if live crosses goal',
+          () async {
+        await userPreferences.setDailyStepGoal(5000);
+        await stepRepository.upsertIngestionBucket(
+          _bucket(
+            startTimeUtc: DateTime.utc(2026, 6, 1, 10),
+            value: 6000,
+            zoneOffset: '+02:00',
+          ),
+        );
+        final cubit = buildCubit();
+        await cubit.refresh();
+        final monday = cubit.state.weekDays.first;
+        cubit.selectLocalDay(monday.localDay);
+        await pumpEventQueue();
+
+        await cubit.syncSteps(6000);
+
+        expect(cubit.state.showCelebration, isFalse);
+        cubit.close();
+      });
+
+      test('todayEditableGoal returns today goal while viewing past day', () async {
+        await db.insert('daily_goal_effective', {
+          'effective_from_local_day': '2026-06-01',
+          'goal': 5000,
+        });
+        await userPreferences.setDailyStepGoal(10000);
+        await stepRepository.upsertIngestionBucket(
+          _bucket(
+            startTimeUtc: DateTime.utc(2026, 6, 1, 10),
+            value: 6000,
+            zoneOffset: '+02:00',
+          ),
+        );
+        final cubit = buildCubit();
+        await cubit.refresh();
+        final monday = cubit.state.weekDays.first;
+        cubit.selectLocalDay(monday.localDay);
+        await pumpEventQueue();
+
+        expect(cubit.state.goal, 5000);
+        expect(await cubit.todayEditableGoal, 10000);
+        cubit.close();
+      });
+    });
+
     group('activity metrics', () {
       test('refresh computes distance kcal and duration from buckets', () async {
         await userPreferences.setHeightCm(175);
