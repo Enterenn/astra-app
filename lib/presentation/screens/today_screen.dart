@@ -121,6 +121,16 @@ class _GoalRingCard extends StatelessWidget {
   Widget build(BuildContext context) {
     final colors = context.astraColors;
     final cubit = context.read<TodayCubit>();
+    final localDayForPrefs = state.selectedLocalDay ??
+        (state.weekDays.isNotEmpty
+            ? state.weekDays.firstWhere(
+                (day) => day.isToday,
+                orElse: () => state.weekDays.first,
+              ).localDay
+            : null);
+    final localDayIsoForPrefs = localDayForPrefs == null
+        ? null
+        : localDayIsoFromDateOnly(localDayForPrefs);
 
     return ElevatedCard(
       padding: AstraSpacing.kSpaceLg,
@@ -135,15 +145,7 @@ class _GoalRingCard extends StatelessWidget {
                 : GoalRing(
                     state: state,
                     userPreferences: cubit.userPreferences,
-                    localDayIso: localDayIsoFromDateOnly(
-                      state.selectedLocalDay ??
-                          state.weekDays
-                              .firstWhere(
-                                (day) => day.isToday,
-                                orElse: () => state.weekDays.first,
-                              )
-                              .localDay,
-                    ),
+                    localDayIso: localDayIsoForPrefs,
                     onForegroundCatchUpHandled: cubit.clearForegroundCatchUp,
                   ),
           ),

@@ -167,6 +167,18 @@ void main() {
       );
     });
 
+    testWidgets(
+      'does not crash when weekDays empty during loading',
+      (tester) async {
+        final cubit = buildCubit(const TodayState.loading());
+        addTearDown(cubit.close);
+
+        await pumpScreen(tester, cubit);
+
+        expect(find.byType(GoalRing), findsOneWidget);
+      },
+    );
+
     testWidgets('week card appears above goal ring', (tester) async {
       final cubit = buildCubit(
         TodayState.fromData(
