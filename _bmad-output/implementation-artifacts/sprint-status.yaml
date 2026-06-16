@@ -1,6 +1,6 @@
 # generated: 2026-05-25
-# last_updated: 2026-06-16 (Story 11.3 review)
-# NEXT: epic-11 story 11-3 dev-story or epic-9 story 9-1 review
+# last_updated: 2026-06-16 (Story 11.4 review)
+# NEXT: epic-11 story 11-4 dev-story or epic-9 story 9-1 review
 # Ref: planning-artifacts/sprint-change-proposal-2026-06-15.md
 # project: astra-app
 # project_key: NOKEY
@@ -60,7 +60,7 @@
 # NAVIGATION: _bmad-output/README.md
 
 generated: 2026-05-25
-last_updated: 2026-06-16 (Story 11.3 review)
+last_updated: 2026-06-16 (Story 11.4 review)
 # Story 9.1 context file: stories/9-1-android-fgs-notification-visibility.md
 project: astra-app
 project_key: NOKEY
@@ -158,8 +158,8 @@ development_status:
   epic-11: in-progress
   11-1-steps-screen-layout-week-first: done
   11-2-day-picker-and-selected-day-state: done
-  11-3-selected-day-indicators-and-live-guards: review
-  11-4-week-trophy-and-historical-goal-dots: backlog
+  11-3-selected-day-indicators-and-live-guards: done
+  11-4-week-trophy-and-historical-goal-dots: review
   epic-11-retrospective: optional
 
   epic-12: backlog
