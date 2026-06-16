@@ -14,9 +14,11 @@ import '../widgets/goal_celebration.dart';
 import '../widgets/goal_editor_sheet.dart';
 import '../widgets/astra_pressable.dart';
 import '../widgets/goal_ring.dart';
+import '../models/week_day_status.dart';
 import '../widgets/section_card.dart';
 import '../widgets/status_banner.dart';
 import '../widgets/week_progress_row.dart';
+import '../widgets/week_trophy_badge.dart';
 
 class TodayScreen extends StatelessWidget {
   const TodayScreen({super.key});
@@ -64,6 +66,11 @@ class TodayScreen extends StatelessWidget {
                     const SizedBox(height: AstraSpacing.kSpaceMd),
                     SectionCard(
                       headline: 'This week',
+                      trailing: state.weekDays.isEmpty
+                          ? null
+                          : WeekTrophyBadge(
+                              goalsMetCount: countWeekGoalsMet(state.weekDays),
+                            ),
                       child: state.weekDays.isEmpty
                           ? const SizedBox(
                               height: 72,
@@ -111,6 +118,9 @@ class TodayScreen extends StatelessWidget {
     );
   }
 }
+
+int countWeekGoalsMet(List<WeekDayStatus> days) =>
+    days.where((day) => !day.isFuture && day.goalMet).length;
 
 class _GoalRingCard extends StatelessWidget {
   const _GoalRingCard({required this.state});
