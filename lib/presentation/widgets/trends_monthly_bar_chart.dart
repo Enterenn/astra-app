@@ -20,7 +20,7 @@ class TrendsMonthlyBarChart extends StatelessWidget {
   final HistoryStatus status;
 
   static String formatMonthLabel(DateTime monthStart) {
-    return monthStart.month.toString().padLeft(2, '0');
+    return _monthNames[monthStart.month - 1];
   }
 
   static const _monthNames = [

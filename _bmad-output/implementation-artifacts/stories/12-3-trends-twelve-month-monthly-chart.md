@@ -1,6 +1,6 @@
 # Story 12.3: Trends Twelve-Month Monthly Chart
 
-Status: review
+Status: done
 
 <!-- Note: Validation is optional. Run validate-create-story for quality check before dev-story. -->
 

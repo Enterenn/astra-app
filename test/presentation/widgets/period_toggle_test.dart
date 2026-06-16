@@ -65,6 +65,11 @@ void main() {
       expect(thirtyDays.label, contains('30 days'));
       expect(thirtyDays.hint, 'Chart range');
       expect(thirtyDays.flagsCollection.isSelected, Tristate.isFalse);
+
+      final twelveMonths = tester.getSemantics(find.text('12 months'));
+      expect(twelveMonths.label, contains('12 months'));
+      expect(twelveMonths.hint, 'Chart range');
+      expect(twelveMonths.flagsCollection.isSelected, Tristate.isFalse);
     });
   });
 }

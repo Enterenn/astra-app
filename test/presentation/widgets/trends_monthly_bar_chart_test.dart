@@ -70,8 +70,8 @@ void main() {
         status: HistoryStatus.ready,
       );
 
-      expect(find.text('07'), findsOneWidget);
-      expect(find.text('06'), findsOneWidget);
+      expect(find.text('Jul'), findsOneWidget);
+      expect(find.text('Jun'), findsOneWidget);
     });
 
     testWidgets('empty state shows shared history copy', (tester) async {
