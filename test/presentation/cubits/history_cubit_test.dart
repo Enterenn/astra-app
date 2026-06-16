@@ -2,6 +2,7 @@ import 'package:astra_app/core/constants/preference_keys.dart';
 import 'package:astra_app/core/database/app_database.dart';
 import 'package:astra_app/core/time/time_provider.dart';
 import 'package:astra_app/data/models/chart_day_aggregate.dart';
+import 'package:astra_app/data/models/chart_month_aggregate.dart';
 import 'package:astra_app/data/models/timeseries_sample_model.dart';
 import 'package:astra_app/data/datasources/data_ingestion_source.dart';
 import 'package:astra_app/data/models/normalized_step_bucket.dart';
@@ -21,6 +22,7 @@ class _ChartAggregateSpyRepository implements StepRepository {
 
   final StepRepository _delegate;
   int chartAggregateCallCount = 0;
+  int chartMonthlyAggregateCallCount = 0;
 
   @override
   TimeProvider get clock => _delegate.clock;
@@ -31,6 +33,14 @@ class _ChartAggregateSpyRepository implements StepRepository {
   }) async {
     chartAggregateCallCount++;
     return _delegate.getChartDailyAggregates(days: days);
+  }
+
+  @override
+  Future<List<ChartMonthAggregate>> getChartMonthlyAggregates({
+    required int months,
+  }) async {
+    chartMonthlyAggregateCallCount++;
+    return _delegate.getChartMonthlyAggregates(months: months);
   }
 
   @override
@@ -74,6 +84,13 @@ class _ThrowingChartRepository implements StepRepository {
   }
 
   @override
+  Future<List<ChartMonthAggregate>> getChartMonthlyAggregates({
+    required int months,
+  }) {
+    return _fallback.getChartMonthlyAggregates(months: months);
+  }
+
+  @override
   dynamic noSuchMethod(Invocation invocation) {
     return super.noSuchMethod(invocation);
   }
@@ -83,6 +100,13 @@ class _AlwaysThrowingChartRepository implements StepRepository {
   @override
   Future<List<ChartDayAggregate>> getChartDailyAggregates({
     required int days,
+  }) async {
+    throw StateError('database unavailable');
+  }
+
+  @override
+  Future<List<ChartMonthAggregate>> getChartMonthlyAggregates({
+    required int months,
   }) async {
     throw StateError('database unavailable');
   }
@@ -118,6 +142,13 @@ class _ThrowingBucketOnSecondRefreshRepository implements StepRepository {
       throw StateError('buckets unavailable');
     }
     return _delegate.getActiveBucketsForLocalDay(localDay);
+  }
+
+  @override
+  Future<List<ChartMonthAggregate>> getChartMonthlyAggregates({
+    required int months,
+  }) {
+    return _delegate.getChartMonthlyAggregates(months: months);
   }
 
   @override
@@ -689,6 +720,84 @@ void main() {
       expect(cubit.state.peakDay, isNull);
       cubit.close();
     });
+
+    test('refresh fetches monthly aggregates in parallel with daily', () async {
+      await DataInjectService(repository: stepRepository).inject90Days(
+        clock: clock,
+      );
+      final spy = _ChartAggregateSpyRepository(stepRepository);
+      final cubit = buildCubit(repository: spy);
+
+      await cubit.refresh();
+
+      expect(spy.chartAggregateCallCount, 1);
+      expect(spy.chartMonthlyAggregateCallCount, 1);
+      expect(cubit.state.monthlyChartPoints, isEmpty);
+      cubit.close();
+    });
+
+    test('selectPeriod months12 uses cache without extra repository calls', () async {
+      await DataInjectService(repository: stepRepository).inject90Days(
+        clock: clock,
+      );
+      final spy = _ChartAggregateSpyRepository(stepRepository);
+      final cubit = buildCubit(repository: spy);
+
+      await cubit.refresh();
+      expect(spy.chartAggregateCallCount, 1);
+      expect(spy.chartMonthlyAggregateCallCount, 1);
+
+      cubit.selectPeriod(HistoryPeriod.months12);
+      expect(spy.chartAggregateCallCount, 1);
+      expect(spy.chartMonthlyAggregateCallCount, 1);
+      expect(cubit.state.period, HistoryPeriod.months12);
+      expect(cubit.state.monthlyChartPoints, hasLength(12));
+      expect(cubit.state.chartPoints, isEmpty);
+      expect(cubit.state.trend, isNull);
+      expect(cubit.state.periodAverages, isNull);
+      expect(cubit.state.peakDay, isNull);
+
+      cubit.selectPeriod(HistoryPeriod.days7);
+      expect(spy.chartAggregateCallCount, 1);
+      expect(spy.chartMonthlyAggregateCallCount, 1);
+      cubit.close();
+    });
+
+    test('monthly chart points are oldest-first for chart axis', () async {
+      await DataInjectService(repository: stepRepository).inject90Days(
+        clock: clock,
+      );
+      final cubit = buildCubit();
+
+      await cubit.refresh();
+      cubit.selectPeriod(HistoryPeriod.months12);
+
+      final points = cubit.state.monthlyChartPoints;
+      expect(points, hasLength(12));
+      expect(points.first.monthStart.isBefore(points.last.monthStart), isTrue);
+      cubit.close();
+    });
+
+    test(
+      'refresh emits ready when 30d sum is zero but twelve-month window has steps',
+      () async {
+        await stepRepository.upsertIngestionBucket(
+          _bucket(
+            startTimeUtc: DateTime.utc(2026, 4, 15, 10),
+            value: 5000,
+            zoneOffset: '+02:00',
+          ),
+        );
+        final cubit = buildCubit();
+
+        await cubit.refresh();
+
+        expect(cubit.state.status, HistoryStatus.ready);
+        cubit.selectPeriod(HistoryPeriod.months12);
+        expect(cubit.state.monthlyChartPoints.any((m) => m.totalSteps > 0), isTrue);
+        cubit.close();
+      },
+    );
   });
 }
 

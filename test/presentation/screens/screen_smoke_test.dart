@@ -3,6 +3,7 @@ import 'package:astra_app/core/constants/astra_theme.dart';
 import 'package:astra_app/core/database/app_database.dart';
 import 'package:astra_app/core/time/calendar_week.dart';
 import 'package:astra_app/data/models/chart_day_aggregate.dart';
+import 'package:astra_app/data/models/chart_month_aggregate.dart';
 import 'package:astra_app/data/repositories/step_repository.dart';
 import 'package:astra_app/data/repositories/user_preferences_repository.dart';
 import 'package:astra_app/presentation/cubits/history_cubit.dart';
@@ -18,6 +19,7 @@ import 'package:astra_app/presentation/widgets/goal_ring.dart';
 import 'package:astra_app/presentation/widgets/section_card.dart';
 import 'package:astra_app/presentation/widgets/status_banner.dart';
 import 'package:astra_app/presentation/widgets/trends_average_stats_row.dart';
+import 'package:astra_app/presentation/widgets/trends_monthly_bar_chart.dart';
 import 'package:astra_app/presentation/widgets/trends_peak_day_card.dart';
 import 'package:astra_app/presentation/widgets/week_progress_row.dart';
 import 'package:flutter/material.dart';
@@ -643,6 +645,39 @@ void main() {
 
       expect(find.byType(TrendsPeakDayCard), findsNothing);
       expect(find.text('peak day in this period'), findsNothing);
+    });
+
+    testWidgets('12 months mode shows monthly chart and hides stats', (
+      tester,
+    ) async {
+      final monthlyPoints = List.generate(
+        12,
+        (i) => ChartMonthAggregate(
+          monthStart: DateTime.utc(2025, 7 + i, 1),
+          averageDailySteps: 2500,
+          totalSteps: 75_000,
+          dayCount: 30,
+        ),
+      );
+      final cubit = _SeededHistoryCubit(
+        stepRepository: stepRepository,
+        userPreferences: userPreferences,
+        initial: HistoryState.ready(
+          period: HistoryPeriod.months12,
+          chartPoints: const [],
+          monthlyChartPoints: monthlyPoints,
+          dailyGoal: 8000,
+        ),
+      );
+      addTearDown(cubit.close);
+
+      await pumpScreen(tester, cubit);
+
+      expect(find.byType(TrendsMonthlyBarChart), findsOneWidget);
+      expect(find.byType(TrendsAverageStatsRow), findsNothing);
+      expect(find.byType(TrendsPeakDayCard), findsNothing);
+      expect(find.text('12 months'), findsOneWidget);
+      expect(find.text('Jul 2025 – Jun 2026'), findsOneWidget);
     });
   });
 }

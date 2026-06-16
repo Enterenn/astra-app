@@ -40,6 +40,19 @@ void main() {
       expect(changed, HistoryPeriod.days30);
     });
 
+    testWidgets('tap 12 months segment fires callback', (tester) async {
+      HistoryPeriod? changed;
+      await pumpToggle(
+        tester,
+        onChanged: (period) => changed = period,
+      );
+
+      await tester.tap(find.text('12 months'));
+      await tester.pump();
+
+      expect(changed, HistoryPeriod.months12);
+    });
+
     testWidgets('semantics labels are present on each segment', (tester) async {
       await pumpToggle(tester, selected: HistoryPeriod.days7);
 

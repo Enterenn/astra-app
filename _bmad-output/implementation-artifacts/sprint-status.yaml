@@ -1,6 +1,6 @@
 # generated: 2026-05-25
-# last_updated: 2026-06-16 (Story 12-2 review)
-# NEXT: code-review 12-2-trends-peak-day-card
+# last_updated: 2026-06-16 (Story 12-3 implemented → review)
+# NEXT: dev-story 12-3-trends-twelve-month-monthly-chart
 # Ref: planning-artifacts/sprint-change-proposal-2026-06-15.md
 # project: astra-app
 # project_key: NOKEY
@@ -60,7 +60,7 @@
 # NAVIGATION: _bmad-output/README.md
 
 generated: 2026-05-25
-last_updated: 2026-06-16 (Story 12-2 review)
+last_updated: 2026-06-16 (Story 12-3 implemented → review)
 # Story 9.1 context file: stories/9-1-android-fgs-notification-visibility.md
 project: astra-app
 project_key: NOKEY
@@ -165,6 +165,6 @@ development_status:
   epic-12: in-progress
   12-1-trends-average-stats-cards: done
   12-2-trends-peak-day-card: done
-  12-3-trends-twelve-month-monthly-chart: backlog
+  12-3-trends-twelve-month-monthly-chart: review
   12-4-trends-historical-goal-line: backlog
   epic-12-retrospective: optional
