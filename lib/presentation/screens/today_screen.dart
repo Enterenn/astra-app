@@ -69,7 +69,13 @@ class TodayScreen extends StatelessWidget {
                               height: 72,
                               child: Center(child: CircularProgressIndicator()),
                             )
-                          : WeekProgressRow(days: state.weekDays),
+                          : WeekProgressRow(
+                              days: state.weekDays,
+                              selectedLocalDay:
+                                  state.selectedLocalDay ??
+                                  state.weekDays.first.localDay,
+                              onDayTap: context.read<TodayCubit>().selectLocalDay,
+                            ),
                     ),
                     const SizedBox(height: AstraSpacing.kSpaceMd),
                     _GoalRingCard(state: state),
