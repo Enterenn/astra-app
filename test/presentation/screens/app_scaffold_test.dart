@@ -188,6 +188,13 @@ void main() {
         );
 
         expect(find.text("Today's activity"), findsNothing);
+        final todayTexts = tester.widgetList<Text>(
+          find.descendant(
+            of: find.byType(TodayScreen),
+            matching: find.byType(Text),
+          ),
+        );
+        expect(todayTexts.first.data, 'Steps');
         expect(
           find.descendant(
             of: find.byType(TodayScreen),
@@ -199,7 +206,7 @@ void main() {
           ),
           findsOneWidget,
         );
-        expect(find.text('Steps'), findsWidgets);
+        expect(find.text('Steps'), findsAtLeastNWidgets(2));
         expect(find.text('Phone sensor'), findsNothing);
 
         expect(find.text('STEPS'), findsOneWidget);

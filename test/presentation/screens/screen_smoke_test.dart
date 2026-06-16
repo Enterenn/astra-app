@@ -147,6 +147,13 @@ void main() {
       await pumpScreen(tester, cubit);
 
       expect(find.text("Today's activity"), findsNothing);
+      final todayTexts = tester.widgetList<Text>(
+        find.descendant(
+          of: find.byType(TodayScreen),
+          matching: find.byType(Text),
+        ),
+      );
+      expect(todayTexts.first.data, 'Steps');
       expect(
         find.descendant(
           of: find.byType(TodayScreen),
