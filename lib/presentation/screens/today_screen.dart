@@ -135,7 +135,15 @@ class _GoalRingCard extends StatelessWidget {
                 : GoalRing(
                     state: state,
                     userPreferences: cubit.userPreferences,
-                    localDayIso: formatLocalDayIso(cubit.clock.snapshot()),
+                    localDayIso: localDayIsoFromDateOnly(
+                      state.selectedLocalDay ??
+                          state.weekDays
+                              .firstWhere(
+                                (day) => day.isToday,
+                                orElse: () => state.weekDays.first,
+                              )
+                              .localDay,
+                    ),
                     onForegroundCatchUpHandled: cubit.clearForegroundCatchUp,
                   ),
           ),
@@ -169,9 +177,13 @@ class _GoalRingCard extends StatelessWidget {
 
   Future<void> _onSetGoalTapped(BuildContext context) async {
     final cubit = context.read<TodayCubit>();
+    final currentGoal = await cubit.todayEditableGoal;
+    if (!context.mounted) {
+      return;
+    }
     final result = await showGoalEditorSheet(
       context,
-      currentGoal: state.goal,
+      currentGoal: currentGoal,
     );
     if (result == null || !context.mounted) {
       return;
