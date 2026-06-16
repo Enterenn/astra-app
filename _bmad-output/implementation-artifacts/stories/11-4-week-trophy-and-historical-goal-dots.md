@@ -1,6 +1,6 @@
 # Story 11.4: Week Trophy and Historical Goal Dots
 
-Status: review
+Status: done
 
 <!-- Note: Validation is optional. Run validate-create-story for quality check before dev-story. -->
 
@@ -338,6 +338,8 @@ Composer
 - `countWeekGoalsMet()` counts `!isFuture && goalMet` — today included when met.
 - Historical dots unchanged (Story 8.2 path verified); no cubit changes.
 - Tests: badge, section card, smoke (3/7 + loading omit), count helper, full cubit regression green (85 tests).
+- Live polish applied: `_applyLiveSteps` now patches today's `weekDays.goalMet` so trophy updates immediately when crossing the goal.
+- Added explicit AC #4 regression test: today with `goalMet=true` is counted in `X/7`.
 
 ### File List
 
@@ -355,5 +357,5 @@ Composer
 
 ## Story completion status
 
-- Status: **review**
+- Status: **done**
 - Ultimate context engine analysis completed — comprehensive developer guide created

@@ -688,12 +688,20 @@ class TodayCubit extends Cubit<TodayState> {
       }
     }
     final previous = _todaySteps ?? state.steps;
+    final weekDays = _isViewingToday()
+        ? _patchTodayGoalMetForLiveSteps(
+            state.weekDays,
+            liveSteps: steps,
+            todayGoal: goal,
+          )
+        : state.weekDays;
+
     await _applyTodaySnapshot(
       steps: steps,
       goal: goal,
       isStale: state.isStale,
       lastIngestionUtc: state.lastIngestionUtc,
-      weekDays: state.weekDays,
+      weekDays: weekDays,
       activityMetrics: _liveMetricsForSteps(steps),
       heightCm: state.heightCm,
       weightKg: state.weightKg,
@@ -715,6 +723,37 @@ class TodayCubit extends Cubit<TodayState> {
   Future<int> _resolveTodayGoal() async {
     final todayIso = formatLocalDayIso(clock.snapshot());
     return userPreferences.getGoalForLocalDay(todayIso);
+  }
+
+  List<WeekDayStatus> _patchTodayGoalMetForLiveSteps(
+    List<WeekDayStatus> weekDays, {
+    required int liveSteps,
+    required int todayGoal,
+  }) {
+    if (weekDays.isEmpty) {
+      return weekDays;
+    }
+    final todayIndex = weekDays.indexWhere((day) => day.isToday);
+    if (todayIndex == -1) {
+      return weekDays;
+    }
+    final nextGoalMet = todayGoal > 0 && liveSteps >= todayGoal;
+    final today = weekDays[todayIndex];
+    if (today.goalMet == nextGoalMet) {
+      return weekDays;
+    }
+    final updated = WeekDayStatus(
+      localDay: today.localDay,
+      weekdayLabel: today.weekdayLabel,
+      dayNumber: today.dayNumber,
+      isToday: today.isToday,
+      isFuture: today.isFuture,
+      goalMet: nextGoalMet,
+    );
+    return [
+      for (var i = 0; i < weekDays.length; i++)
+        if (i == todayIndex) updated else weekDays[i],
+    ];
   }
 
   Future<List<WeekDayStatus>> _loadWeekDays() async {

@@ -7,12 +7,13 @@ void main() {
     WeekDayStatus day({
       required bool isFuture,
       required bool goalMet,
+      bool isToday = false,
     }) {
       return WeekDayStatus(
         localDay: DateTime.utc(2026, 6, 2),
         weekdayLabel: 'MON',
         dayNumber: 2,
-        isToday: false,
+        isToday: isToday,
         isFuture: isFuture,
         goalMet: goalMet,
       );
@@ -36,6 +37,16 @@ void main() {
       ];
 
       expect(countWeekGoalsMet(days), 0);
+    });
+
+    test('counts today when today goalMet is true', () {
+      final days = [
+        day(isFuture: false, goalMet: true, isToday: true),
+        day(isFuture: false, goalMet: false),
+        day(isFuture: true, goalMet: true),
+      ];
+
+      expect(countWeekGoalsMet(days), 1);
     });
   });
 }
