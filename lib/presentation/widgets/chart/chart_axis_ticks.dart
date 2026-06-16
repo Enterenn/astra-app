@@ -43,10 +43,17 @@ List<double> computeChartYAxisTicks({
 
 /// Returns the most frequent value in [values], breaking ties toward the first.
 int mostCommonChartReferenceValue(Iterable<int> values) {
-  final counts = <int, int>{};
-  for (final value in values) {
-    counts[value] = (counts[value] ?? 0) + 1;
+  final iterator = values.iterator;
+  if (!iterator.moveNext()) {
+    return 0;
   }
+
+  final counts = <int, int>{};
+  do {
+    final value = iterator.current;
+    counts[value] = (counts[value] ?? 0) + 1;
+  } while (iterator.moveNext());
+
   return counts.entries
       .reduce(
         (best, entry) => entry.value > best.value ? entry : best,

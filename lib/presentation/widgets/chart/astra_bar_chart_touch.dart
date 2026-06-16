@@ -61,12 +61,6 @@ TextStyle astraBarTooltipPrimaryStyle(AstraColors colors) {
   );
 }
 
-TextStyle astraBarTooltipSecondaryStyle(AstraColors colors) {
-  return AstraTypography.captionFor(colors).copyWith(
-    color: colors.neutralGray,
-  );
-}
-
 List<BarChartGroupData> withBarTouchIndicators({
   required List<BarChartGroupData> groups,
   required int? touchedIndex,

@@ -93,6 +93,48 @@ void main() {
       );
     });
 
+    testWidgets('ready chart renders at least four Y-axis tick labels', (
+      tester,
+    ) async {
+      await pumpChart(
+        tester,
+        points: samplePoints(),
+        status: HistoryStatus.ready,
+      );
+
+      final barChart = tester.widget<BarChart>(find.byType(BarChart));
+      final chartMaxY = barChart.data.maxY;
+      final sideTitles = barChart.data.titlesData.leftTitles.sideTitles;
+      final ticks = computeChartYAxisTicks(maxY: chartMaxY);
+      final interval = chartAxisTitleInterval(ticks);
+
+      final renderedLabels = <String>[];
+      for (final tick in ticks) {
+        final titleWidget = sideTitles.getTitlesWidget(
+          tick,
+          TitleMeta(
+            min: 0,
+            max: chartMaxY,
+            parentAxisSize: 240,
+            axisPosition: tick,
+            appliedInterval: interval,
+            sideTitles: sideTitles,
+            formattedValue: tick.toString(),
+            axisSide: AxisSide.left,
+            rotationQuarterTurns: 0,
+          ),
+        );
+        if (titleWidget is Text &&
+            titleWidget.data != null &&
+            titleWidget.data!.isNotEmpty) {
+          renderedLabels.add(titleWidget.data!);
+        }
+      }
+
+      expect(renderedLabels.length, greaterThanOrEqualTo(4));
+      expect(renderedLabels, contains('0'));
+    });
+
     testWidgets('ready chart computes at least four Y-axis ticks', (
       tester,
     ) async {
@@ -148,7 +190,7 @@ void main() {
         updatedChart.data.barGroups.first.barRods.first,
         0,
       );
-      expect(tooltip?.text, 'June 2026\n3532 steps/day');
+      expect(tooltip?.text, 'June 2026\n3532 steps/day\n52980 total · 15 days');
     });
 
     test('formatPeriodRange returns oldest–newest month year caption', () {

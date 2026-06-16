@@ -17,6 +17,7 @@ class HistoryScreen extends StatelessWidget {
   const HistoryScreen({super.key});
 
   static const _kScreenTitle = 'Trends';
+  static const _kMonthlyChartHeight = 360.0;
 
   @override
   Widget build(BuildContext context) {
@@ -34,73 +35,79 @@ class HistoryScreen extends StatelessWidget {
           builder: (context, state) {
             return Semantics(
               label: _kScreenTitle,
-              child: Padding(
-                padding: EdgeInsets.fromLTRB(
-                  AstraSpacing.kScreenHorizontalPadding,
-                  AstraSpacing.kSpaceSm,
-                  AstraSpacing.kScreenHorizontalPadding,
-                  bottomScrollPadding,
-                ),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.stretch,
-                  children: [
-                    Text(
-                      _kScreenTitle,
-                      style: AstraTypography.screenTitleFor(colors),
-                    ),
-                    const SizedBox(height: AstraSpacing.kSpaceMd),
-                    PeriodToggle(
-                      selected: state.period,
-                      onChanged: context.read<HistoryCubit>().selectPeriod,
-                    ),
-                    if (state.period == HistoryPeriod.months12 &&
-                        state.status == HistoryStatus.ready &&
-                        state.monthlyChartPoints.isNotEmpty) ...[
-                      const SizedBox(height: AstraSpacing.kSpaceSm),
+              child: SingleChildScrollView(
+                child: Padding(
+                  padding: EdgeInsets.fromLTRB(
+                    AstraSpacing.kScreenHorizontalPadding,
+                    AstraSpacing.kSpaceSm,
+                    AstraSpacing.kScreenHorizontalPadding,
+                    bottomScrollPadding,
+                  ),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.stretch,
+                    children: [
                       Text(
-                        TrendsMonthlyBarChart.formatPeriodRange(
-                          state.monthlyChartPoints,
-                        )!,
-                        style: AstraTypography.captionFor(colors).copyWith(
-                          color: colors.neutralGray,
-                        ),
+                        _kScreenTitle,
+                        style: AstraTypography.screenTitleFor(colors),
                       ),
-                    ],
-                    if (state.trend != null &&
-                        state.period != HistoryPeriod.months12) ...[
                       const SizedBox(height: AstraSpacing.kSpaceMd),
-                      Align(
-                        alignment: Alignment.centerLeft,
-                        child: TrendChip(trend: state.trend!),
+                      PeriodToggle(
+                        selected: state.period,
+                        onChanged: context.read<HistoryCubit>().selectPeriod,
                       ),
-                    ],
-                    const SizedBox(height: AstraSpacing.kSpaceMd),
-                    Expanded(
-                      child: state.period == HistoryPeriod.months12
-                          ? TrendsMonthlyBarChart(
-                              key: const ValueKey('months12'),
-                              points: state.monthlyChartPoints,
-                              status: state.status,
-                            )
-                          : StepBarChart(
-                              key: ValueKey(state.period),
-                              points: state.chartPoints,
-                              dailyGoal: state.dailyGoal,
-                              goalsByDay: state.goalsByDay,
-                              status: state.status,
-                            ),
-                    ),
-                    if (state.period != HistoryPeriod.months12 &&
-                        state.periodAverages != null) ...[
-                      const SizedBox(height: AstraSpacing.kSpaceMd),
-                      TrendsAverageStatsRow(averages: state.periodAverages!),
-                      if (state.peakDay != null) ...[
+                      if (state.period == HistoryPeriod.months12 &&
+                          state.status == HistoryStatus.ready &&
+                          state.monthlyChartPoints.isNotEmpty) ...[
                         const SizedBox(height: AstraSpacing.kSpaceSm),
-                        TrendsPeakDayCard(peakDay: state.peakDay!),
+                        Text(
+                          TrendsMonthlyBarChart.formatPeriodRange(
+                            state.monthlyChartPoints,
+                          )!,
+                          style: AstraTypography.captionFor(colors).copyWith(
+                            color: colors.neutralGray,
+                          ),
+                        ),
+                      ],
+                      if (state.trend != null &&
+                          state.period != HistoryPeriod.months12) ...[
+                        const SizedBox(height: AstraSpacing.kSpaceMd),
+                        Align(
+                          alignment: Alignment.centerLeft,
+                          child: TrendChip(trend: state.trend!),
+                        ),
+                      ],
+                      const SizedBox(height: AstraSpacing.kSpaceMd),
+                      if (state.period == HistoryPeriod.months12) ...[
+                        SizedBox(
+                          height: _kMonthlyChartHeight,
+                          child: TrendsMonthlyBarChart(
+                            key: const ValueKey('months12'),
+                            points: state.monthlyChartPoints,
+                            status: state.status,
+                          ),
+                        ),
+                      ] else ...[
+                        SizedBox(
+                          height: StepBarChart.kDailyChartHeight,
+                          child: StepBarChart(
+                            key: ValueKey(state.period),
+                            points: state.chartPoints,
+                            dailyGoal: state.dailyGoal,
+                            goalsByDay: state.goalsByDay,
+                            status: state.status,
+                          ),
+                        ),
+                        if (state.periodAverages != null) ...[
+                          const SizedBox(height: AstraSpacing.kSpaceMd),
+                          TrendsAverageStatsRow(averages: state.periodAverages!),
+                          if (state.peakDay != null) ...[
+                            const SizedBox(height: AstraSpacing.kSpaceSm),
+                            TrendsPeakDayCard(peakDay: state.peakDay!),
+                          ],
+                        ],
                       ],
                     ],
-                    const SizedBox(height: AstraSpacing.kSpaceMd),
-                  ],
+                  ),
                 ),
               ),
             );

@@ -3,12 +3,15 @@ import 'dart:ui' as ui;
 
 import 'package:flutter/material.dart';
 
+import 'bar_chart_layout.dart';
+
 /// Dashed stepped polyline for per-day historical goals on bar charts.
 class GoalStepLinePainter extends CustomPainter {
   GoalStepLinePainter({
     required this.goals,
     required this.maxY,
     required this.barCount,
+    required this.barWidth,
     required this.color,
     this.leftReserved = 36,
     this.bottomReserved = 24,
@@ -19,6 +22,7 @@ class GoalStepLinePainter extends CustomPainter {
   final List<int> goals;
   final double maxY;
   final int barCount;
+  final double barWidth;
   final Color color;
   final double leftReserved;
   final double bottomReserved;
@@ -31,16 +35,24 @@ class GoalStepLinePainter extends CustomPainter {
       return;
     }
 
-    final plotWidth = math.max(size.width - leftReserved, 0);
-    final plotHeight = math.max(size.height - bottomReserved, 0);
+    final plotWidth = math.max(size.width - leftReserved, 0.0);
+    final plotHeight = math.max(size.height - bottomReserved, 0.0);
     if (plotWidth <= 0 || plotHeight <= 0) {
       return;
     }
 
-    final slotWidth = plotWidth / barCount;
+    final barCenters = computeSpaceAroundBarCenters(
+      viewWidth: plotWidth,
+      barCount: barCount,
+      barWidth: barWidth,
+    );
+    if (barCenters.length != goals.length) {
+      return;
+    }
+
     final path = Path();
 
-    double barCenterX(int index) => leftReserved + slotWidth * index + slotWidth / 2;
+    double barCenterX(int index) => leftReserved + barCenters[index];
 
     double goalY(int goal) => plotHeight * (1 - goal / maxY);
 
@@ -85,6 +97,7 @@ class GoalStepLinePainter extends CustomPainter {
     return oldDelegate.goals != goals ||
         oldDelegate.maxY != maxY ||
         oldDelegate.barCount != barCount ||
+        oldDelegate.barWidth != barWidth ||
         oldDelegate.color != color ||
         oldDelegate.leftReserved != leftReserved ||
         oldDelegate.bottomReserved != bottomReserved;

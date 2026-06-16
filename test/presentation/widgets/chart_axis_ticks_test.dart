@@ -22,5 +22,9 @@ void main() {
 
       expect(ticks.any((tick) => tick.round() == 8000), isTrue);
     });
+
+    test('mostCommonChartReferenceValue returns 0 for empty input', () {
+      expect(mostCommonChartReferenceValue(const []), 0);
+    });
   });
 }

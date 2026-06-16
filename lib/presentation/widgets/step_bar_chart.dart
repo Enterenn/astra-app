@@ -21,7 +21,7 @@ class StepBarChart extends StatelessWidget {
     super.key,
   });
 
-  static const _kChartMinHeight = 280.0;
+  static const kDailyChartHeight = 320.0;
 
   static const emptyCopy =
       'No history yet. Walk a bit — data stays on this device.';
@@ -35,7 +35,7 @@ class StepBarChart extends StatelessWidget {
   Widget build(BuildContext context) {
     final colors = context.astraColors;
     final chartShell = ConstrainedBox(
-      constraints: const BoxConstraints(minHeight: _kChartMinHeight),
+      constraints: const BoxConstraints(minHeight: kDailyChartHeight),
       child: DecoratedBox(
         decoration: BoxDecoration(
           color: colors.bgElevated,
@@ -61,10 +61,7 @@ class StepBarChart extends StatelessWidget {
       return chartShell;
     }
 
-    return Semantics(
-      label: 'Step history bar chart',
-      child: chartShell,
-    );
+    return Semantics(label: 'Step history bar chart', child: chartShell);
   }
 }
 
@@ -80,9 +77,9 @@ class _EmptyState extends StatelessWidget {
         padding: const EdgeInsets.all(AstraSpacing.kSpaceLg),
         child: Text(
           StepBarChart.emptyCopy,
-          style: AstraTypography.bodyFor(colors).copyWith(
-            color: colors.neutralGray,
-          ),
+          style: AstraTypography.bodyFor(
+            colors,
+          ).copyWith(color: colors.neutralGray),
           textAlign: TextAlign.center,
         ),
       ),
@@ -98,29 +95,29 @@ class _LoadingSkeleton extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Padding(
-        padding: const EdgeInsets.all(AstraSpacing.kSpaceMd),
-        child: Row(
-          crossAxisAlignment: CrossAxisAlignment.end,
-          children: [
-            for (var i = 0; i < 7; i++)
-              Expanded(
-                child: Padding(
-                  padding: const EdgeInsets.symmetric(
-                    horizontal: AstraSpacing.kSpaceXs,
-                  ),
-                  child: Container(
-                    height: 48 + (i % 3) * 24,
-                    decoration: BoxDecoration(
-                      color: colors.textMuted.withValues(alpha: 0.18),
-                      borderRadius: const BorderRadius.vertical(
-                        top: Radius.circular(4),
-                      ),
+      padding: const EdgeInsets.all(AstraSpacing.kSpaceMd),
+      child: Row(
+        crossAxisAlignment: CrossAxisAlignment.end,
+        children: [
+          for (var i = 0; i < 7; i++)
+            Expanded(
+              child: Padding(
+                padding: const EdgeInsets.symmetric(
+                  horizontal: AstraSpacing.kSpaceXs,
+                ),
+                child: Container(
+                  height: 48 + (i % 3) * 24,
+                  decoration: BoxDecoration(
+                    color: colors.textMuted.withValues(alpha: 0.18),
+                    borderRadius: const BorderRadius.vertical(
+                      top: Radius.circular(4),
                     ),
                   ),
                 ),
               ),
-          ],
-        ),
+            ),
+        ],
+      ),
     );
   }
 }
@@ -182,9 +179,7 @@ class _ReadyChartState extends State<_ReadyChart> {
   Widget build(BuildContext context) {
     final colors = widget.colors;
     final points = widget.points;
-    final resolvedGoals = [
-      for (final point in points) _goalForPoint(point),
-    ];
+    final resolvedGoals = [for (final point in points) _goalForPoint(point)];
     final maxSteps = points.fold<int>(
       0,
       (max, entry) => entry.totalSteps > max ? entry.totalSteps : max,
@@ -193,12 +188,14 @@ class _ReadyChartState extends State<_ReadyChart> {
         ? widget.dailyGoal
         : resolvedGoals.reduce((a, b) => a > b ? a : b);
     final yMax = (maxSteps > maxGoal ? maxSteps : maxGoal).toDouble();
-    final safeYMax = (yMax <= 0
-            ? widget.dailyGoal.toDouble().clamp(1, double.infinity)
-            : yMax)
-        .toDouble();
+    final safeYMax =
+        (yMax <= 0
+                ? widget.dailyGoal.toDouble().clamp(1, double.infinity)
+                : yMax)
+            .toDouble();
     final chartMaxY = safeYMax * 1.05;
-    final allGoalsEqual = resolvedGoals.isNotEmpty &&
+    final allGoalsEqual =
+        resolvedGoals.isNotEmpty &&
         resolvedGoals.every((goal) => goal == resolvedGoals.first);
     final showSingleGoalLine = allGoalsEqual && resolvedGoals.first > 0;
     final showSteppedGoalLine =
@@ -206,11 +203,13 @@ class _ReadyChartState extends State<_ReadyChart> {
     final axisReferenceGoal = resolvedGoals.isEmpty
         ? null
         : allGoalsEqual
-            ? resolvedGoals.first
-            : mostCommonChartReferenceValue(resolvedGoals);
+        ? resolvedGoals.first
+        : mostCommonChartReferenceValue(resolvedGoals);
     final yTicks = computeChartYAxisTicks(
       maxY: chartMaxY,
-      referenceValues: axisReferenceGoal == null ? const [] : [axisReferenceGoal],
+      referenceValues: axisReferenceGoal == null
+          ? const []
+          : [axisReferenceGoal],
     );
     final yAxisInterval = chartAxisTitleInterval(yTicks);
 
@@ -259,137 +258,140 @@ class _ReadyChartState extends State<_ReadyChart> {
                   ),
               ];
 
-              final chartHeight = constraints.maxHeight.isFinite &&
-                      constraints.maxHeight > 0
+              final chartHeight =
+                  constraints.maxHeight.isFinite && constraints.maxHeight > 0
                   ? constraints.maxHeight
-                  : StepBarChart._kChartMinHeight;
+                  : StepBarChart.kDailyChartHeight;
 
               return SizedBox(
                 height: chartHeight,
                 width: constraints.maxWidth,
                 child: Stack(
-                children: [
-                  BarChart(
-                    duration: Duration.zero,
-                    BarChartData(
-                      maxY: chartMaxY,
-                      minY: 0,
-                      alignment: BarChartAlignment.spaceAround,
-                      gridData: const FlGridData(show: false),
-                      borderData: FlBorderData(show: false),
-                      barTouchData: buildAstraBarTouchData(
-                        colors: colors,
-                        touchedIndex: _touchedIndex,
-                        onTouchedIndexChanged: (index) {
-                          setState(() => _touchedIndex = index);
-                        },
-                        tooltipData: buildAstraBarTooltipData(
+                  children: [
+                    BarChart(
+                      duration: Duration.zero,
+                      BarChartData(
+                        maxY: chartMaxY,
+                        minY: 0,
+                        alignment: BarChartAlignment.spaceAround,
+                        gridData: const FlGridData(show: false),
+                        borderData: FlBorderData(show: false),
+                        barTouchData: buildAstraBarTouchData(
                           colors: colors,
-                          getTooltipItem: (group, groupIndex, rod, rodIndex) {
-                            return _dailyTooltipItem(
-                              colors: colors,
-                              point: points[groupIndex],
-                              goal: resolvedGoals[groupIndex],
-                            );
+                          touchedIndex: _touchedIndex,
+                          onTouchedIndexChanged: (index) {
+                            setState(() => _touchedIndex = index);
                           },
-                        ),
-                      ),
-                      titlesData: FlTitlesData(
-                        topTitles: const AxisTitles(
-                          sideTitles: SideTitles(showTitles: false),
-                        ),
-                        rightTitles: const AxisTitles(
-                          sideTitles: SideTitles(showTitles: false),
-                        ),
-                        leftTitles: AxisTitles(
-                          sideTitles: SideTitles(
-                            showTitles: true,
-                            reservedSize: _kLeftAxisReserved,
-                            interval: yAxisInterval,
-                            getTitlesWidget: (value, meta) {
-                              for (final tick in yTicks) {
-                                if (!isChartAxisTickLabel(
-                                  value: value,
-                                  tick: tick,
-                                  ticks: yTicks,
-                                )) {
-                                  continue;
-                                }
-                                return Text(
-                                  formatChartAxisValue(tick.round()),
-                                  style: AstraTypography.captionFor(colors)
-                                      .copyWith(color: colors.textPrimary),
-                                );
-                              }
-                              return const SizedBox.shrink();
-                            },
-                          ),
-                        ),
-                        bottomTitles: AxisTitles(
-                          sideTitles: SideTitles(
-                            showTitles: true,
-                            reservedSize: _kBottomAxisReserved,
-                            getTitlesWidget: (value, meta) {
-                              final index = value.toInt();
-                              if (index < 0 || index >= points.length) {
-                                return const SizedBox.shrink();
-                              }
-                              if (points.length > 7 &&
-                                  !_shouldShowBottomLabel(
-                                    index,
-                                    points.length,
-                                  )) {
-                                return const SizedBox.shrink();
-                              }
-                              return Padding(
-                                padding: const EdgeInsets.only(
-                                  top: AstraSpacing.kSpaceXs,
-                                ),
-                                child: Text(
-                                  _formatDayLabel(points[index].localDay),
-                                  style: AstraTypography.captionFor(colors)
-                                      .copyWith(color: colors.textPrimary),
-                                ),
+                          tooltipData: buildAstraBarTooltipData(
+                            colors: colors,
+                            getTooltipItem: (group, groupIndex, rod, rodIndex) {
+                              return _dailyTooltipItem(
+                                colors: colors,
+                                point: points[groupIndex],
+                                goal: resolvedGoals[groupIndex],
                               );
                             },
                           ),
                         ),
-                      ),
-                      extraLinesData: ExtraLinesData(
-                        horizontalLines: showSingleGoalLine
-                            ? [
-                                HorizontalLine(
-                                  y: resolvedGoals.first.toDouble(),
-                                  color: colors.dataGoalLine,
-                                  strokeWidth: 1.5,
-                                  dashArray: const [6, 4],
-                                ),
-                              ]
-                            : const [],
-                      ),
-                      barGroups: withBarTouchIndicators(
-                        groups: barGroups,
-                        touchedIndex: _touchedIndex,
-                      ),
-                    ),
-                  ),
-                  if (showSteppedGoalLine)
-                    Positioned.fill(
-                      child: IgnorePointer(
-                        child: CustomPaint(
-                          painter: GoalStepLinePainter(
-                            goals: resolvedGoals,
-                            maxY: chartMaxY,
-                            barCount: points.length,
-                            color: colors.dataGoalLine,
-                            leftReserved: _kLeftAxisReserved,
-                            bottomReserved: _kBottomAxisReserved,
+                        titlesData: FlTitlesData(
+                          topTitles: const AxisTitles(
+                            sideTitles: SideTitles(showTitles: false),
                           ),
+                          rightTitles: const AxisTitles(
+                            sideTitles: SideTitles(showTitles: false),
+                          ),
+                          leftTitles: AxisTitles(
+                            sideTitles: SideTitles(
+                              showTitles: true,
+                              reservedSize: _kLeftAxisReserved,
+                              interval: yAxisInterval,
+                              getTitlesWidget: (value, meta) {
+                                for (final tick in yTicks) {
+                                  if (!isChartAxisTickLabel(
+                                    value: value,
+                                    tick: tick,
+                                    ticks: yTicks,
+                                  )) {
+                                    continue;
+                                  }
+                                  return Text(
+                                    formatChartAxisValue(tick.round()),
+                                    style: AstraTypography.captionFor(
+                                      colors,
+                                    ).copyWith(color: colors.textPrimary),
+                                  );
+                                }
+                                return const SizedBox.shrink();
+                              },
+                            ),
+                          ),
+                          bottomTitles: AxisTitles(
+                            sideTitles: SideTitles(
+                              showTitles: true,
+                              reservedSize: _kBottomAxisReserved,
+                              getTitlesWidget: (value, meta) {
+                                final index = value.toInt();
+                                if (index < 0 || index >= points.length) {
+                                  return const SizedBox.shrink();
+                                }
+                                if (points.length > 7 &&
+                                    !_shouldShowBottomLabel(
+                                      index,
+                                      points.length,
+                                    )) {
+                                  return const SizedBox.shrink();
+                                }
+                                return Padding(
+                                  padding: const EdgeInsets.only(
+                                    top: AstraSpacing.kSpaceXs,
+                                  ),
+                                  child: Text(
+                                    _formatDayLabel(points[index].localDay),
+                                    style: AstraTypography.captionFor(
+                                      colors,
+                                    ).copyWith(color: colors.textPrimary),
+                                  ),
+                                );
+                              },
+                            ),
+                          ),
+                        ),
+                        extraLinesData: ExtraLinesData(
+                          horizontalLines: showSingleGoalLine
+                              ? [
+                                  HorizontalLine(
+                                    y: resolvedGoals.first.toDouble(),
+                                    color: colors.dataGoalLine,
+                                    strokeWidth: 1.5,
+                                    dashArray: const [6, 4],
+                                  ),
+                                ]
+                              : const [],
+                        ),
+                        barGroups: withBarTouchIndicators(
+                          groups: barGroups,
+                          touchedIndex: _touchedIndex,
                         ),
                       ),
                     ),
-                ],
-              ),
+                    if (showSteppedGoalLine)
+                      Positioned.fill(
+                        child: IgnorePointer(
+                          child: CustomPaint(
+                            painter: GoalStepLinePainter(
+                              goals: resolvedGoals,
+                              maxY: chartMaxY,
+                              barCount: points.length,
+                              barWidth: barWidth,
+                              color: colors.dataGoalLine,
+                              leftReserved: _kLeftAxisReserved,
+                              bottomReserved: _kBottomAxisReserved,
+                            ),
+                          ),
+                        ),
+                      ),
+                  ],
+                ),
               );
             },
           ),
@@ -422,7 +424,22 @@ class _ReadyChartState extends State<_ReadyChart> {
     required int goal,
   }) {
     final steps = point.totalSteps;
-    return '${_formatTooltipDate(point.localDay)}, $steps of $goal steps';
+    return '${_formatTooltipDate(point.localDay)}, '
+        '$steps of $goal steps, '
+        '${_formatGoalStatus(steps: steps, goal: goal)}';
+  }
+
+  static String _formatGoalStatus({required int steps, required int goal}) {
+    if (goal <= 0) {
+      return 'no goal set';
+    }
+    if (steps > goal) {
+      return '${steps - goal} over goal';
+    }
+    if (steps < goal) {
+      return '${goal - steps} below goal';
+    }
+    return 'goal met';
   }
 
   String _formatTooltipDate(DateTime localDay) {

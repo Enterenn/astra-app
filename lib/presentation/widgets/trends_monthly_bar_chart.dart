@@ -336,7 +336,8 @@ class _ReadyChartState extends State<_ReadyChart> {
   }) {
     return BarTooltipItem(
       '${TrendsMonthlyBarChart._formatTooltipMonthYear(point.monthStart)}\n'
-      '${point.averageDailySteps} steps/day',
+      '${point.averageDailySteps} steps/day\n'
+      '${point.totalSteps} total · ${point.dayCount} days',
       astraBarTooltipPrimaryStyle(colors),
     );
   }

@@ -1,6 +1,6 @@
 # Story 12.4: Trends Historical Goal Line, Chart Readability & Bar Touch
 
-Status: review
+Status: done
 
 <!-- Note: Validation is optional. Run validate-create-story for quality check before dev-story. -->
 

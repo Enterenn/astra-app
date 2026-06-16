@@ -1,6 +1,6 @@
 # generated: 2026-05-25
-# last_updated: 2026-06-16 (Story 12-4 review)
-# NEXT: dev-story 12-4-trends-historical-goal-line
+# last_updated: 2026-06-16 (Story 12-4 done, Epic 12 done, v0.5.0+7)
+# NEXT: code-review 9-1-android-fgs-notification-visibility
 # Ref: planning-artifacts/sprint-change-proposal-2026-06-15.md
 # project: astra-app
 # project_key: NOKEY
@@ -60,7 +60,7 @@
 # NAVIGATION: _bmad-output/README.md
 
 generated: 2026-05-25
-last_updated: 2026-06-16 (Story 12-4 review)
+last_updated: 2026-06-16 (Story 12-4 done, Epic 12 done, v0.5.0+7)
 # Story 9.1 context file: stories/9-1-android-fgs-notification-visibility.md
 project: astra-app
 project_key: NOKEY
@@ -162,9 +162,9 @@ development_status:
   11-4-week-trophy-and-historical-goal-dots: done
   epic-11-retrospective: optional
 
-  epic-12: in-progress
+  epic-12: done
   12-1-trends-average-stats-cards: done
   12-2-trends-peak-day-card: done
   12-3-trends-twelve-month-monthly-chart: done
-  12-4-trends-historical-goal-line: review
+  12-4-trends-historical-goal-line: done
   epic-12-retrospective: optional

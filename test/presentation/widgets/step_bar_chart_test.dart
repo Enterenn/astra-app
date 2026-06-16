@@ -25,7 +25,7 @@ void main() {
           home: Scaffold(
             body: SizedBox(
               width: width,
-              height: 240,
+              height: StepBarChart.kDailyChartHeight,
               child: StepBarChart(
                 points: points,
                 dailyGoal: dailyGoal,
@@ -51,7 +51,7 @@ void main() {
           theme: buildAstraLightTheme(),
           home: const Scaffold(
             body: SizedBox(
-              height: 240,
+              height: StepBarChart.kDailyChartHeight,
               child: StepBarChart(
                 points: [],
                 dailyGoal: 8000,
@@ -255,6 +255,69 @@ void main() {
       expect(firstBar, isNot(equals(secondBar)));
     });
 
+    testWidgets('ready chart renders at least four Y-axis tick labels', (
+      tester,
+    ) async {
+      final points = [
+        for (var i = 0; i < 7; i++)
+          ChartDayAggregate(
+            localDay: DateTime.utc(2026, 5, 26 + i),
+            totalSteps: 6000 + i * 700,
+          ),
+      ];
+
+      await pumpChart(
+        tester,
+        status: HistoryStatus.ready,
+        points: points,
+        dailyGoal: 8000,
+        goalsByDay: const {
+          '2026-05-26': 8000,
+          '2026-05-27': 8000,
+          '2026-05-28': 8000,
+          '2026-05-29': 8000,
+          '2026-05-30': 8000,
+          '2026-05-31': 8000,
+          '2026-06-01': 8000,
+        },
+      );
+
+      final barChart = tester.widget<BarChart>(find.byType(BarChart));
+      final chartMaxY = barChart.data.maxY;
+      final sideTitles = barChart.data.titlesData.leftTitles.sideTitles;
+      final ticks = computeChartYAxisTicks(
+        maxY: chartMaxY,
+        referenceValues: const [8000],
+      );
+      final interval = chartAxisTitleInterval(ticks);
+
+      final renderedLabels = <String>[];
+      for (final tick in ticks) {
+        final titleWidget = sideTitles.getTitlesWidget(
+          tick,
+          TitleMeta(
+            min: 0,
+            max: chartMaxY,
+            parentAxisSize: 240,
+            axisPosition: tick,
+            appliedInterval: interval,
+            sideTitles: sideTitles,
+            formattedValue: tick.toString(),
+            axisSide: AxisSide.left,
+            rotationQuarterTurns: 0,
+          ),
+        );
+        if (titleWidget is Text &&
+            titleWidget.data != null &&
+            titleWidget.data!.isNotEmpty) {
+          renderedLabels.add(titleWidget.data!);
+        }
+      }
+
+      expect(renderedLabels.length, greaterThanOrEqualTo(4));
+      expect(renderedLabels, contains('0'));
+    });
+
     testWidgets('ready chart computes at least four Y-axis ticks', (
       tester,
     ) async {
@@ -368,6 +431,7 @@ void main() {
         ),
       );
       expect(semantics.label, contains('9 June'));
+      expect(semantics.label, contains('547 over goal'));
     });
 
     testWidgets('tooltip includes year when visible window spans years', (

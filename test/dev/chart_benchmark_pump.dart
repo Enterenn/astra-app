@@ -38,7 +38,7 @@ Future<void> _pumpReadyChart(
       theme: buildAstraLightTheme(),
       home: Scaffold(
         body: SizedBox(
-          height: 240,
+          height: StepBarChart.kDailyChartHeight,
           child: StepBarChart(
             points: points,
             dailyGoal: dailyGoal,
