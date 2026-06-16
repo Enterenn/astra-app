@@ -488,13 +488,15 @@ class TodayCubit extends Cubit<TodayState> {
       return;
     }
     final normalizedDay = DateTime(day.year, day.month, day.day);
+    WeekDayStatus? match;
     for (final weekDay in state.weekDays) {
       if (_isSameLocalDay(weekDay.localDay, normalizedDay)) {
-        if (weekDay.isFuture) {
-          return;
-        }
+        match = weekDay;
         break;
       }
+    }
+    if (match == null || match.isFuture) {
+      return;
     }
     _hasUserSelectedLocalDay = true;
     emit(state.copyWith(selectedLocalDay: normalizedDay));

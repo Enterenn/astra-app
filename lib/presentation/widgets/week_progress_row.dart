@@ -76,6 +76,8 @@ class _DayPill extends StatelessWidget {
 
     return Semantics(
       label: '${day.weekdayLabel} ${day.dayNumber}',
+      selected: selected,
+      button: onTap != null,
       child: Material(
         color: Colors.transparent,
         child: InkWell(

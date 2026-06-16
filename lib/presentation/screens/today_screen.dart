@@ -73,7 +73,12 @@ class TodayScreen extends StatelessWidget {
                               days: state.weekDays,
                               selectedLocalDay:
                                   state.selectedLocalDay ??
-                                  state.weekDays.first.localDay,
+                                  state.weekDays
+                                      .firstWhere(
+                                        (day) => day.isToday,
+                                        orElse: () => state.weekDays.first,
+                                      )
+                                      .localDay,
                               onDayTap: context.read<TodayCubit>().selectLocalDay,
                             ),
                     ),

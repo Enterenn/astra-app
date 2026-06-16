@@ -3,6 +3,8 @@ import 'package:astra_app/core/constants/astra_colors.dart';
 import 'package:astra_app/core/constants/astra_theme.dart';
 import 'package:astra_app/presentation/models/week_day_status.dart';
 import 'package:astra_app/presentation/widgets/week_progress_row.dart';
+import 'dart:ui' show Tristate;
+
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 
@@ -163,6 +165,21 @@ void main() {
     await tester.pump();
 
     expect(tapCount, 0);
+  });
+
+  testWidgets('selected pill exposes semantics selected state', (tester) async {
+    final selectedDay = DateTime.utc(2026, 6, 2);
+    final otherDay = DateTime.utc(2026, 6, 3);
+    await pumpRow(tester, [
+      day(localDay: selectedDay, label: 'TUE', dayNumber: 2),
+      day(localDay: otherDay, label: 'WED', dayNumber: 3, isToday: true),
+    ], selectedDay);
+
+    final selected = tester.getSemantics(find.text('2'));
+    expect(selected.flagsCollection.isSelected, Tristate.isTrue);
+
+    final unselected = tester.getSemantics(find.text('3'));
+    expect(unselected.flagsCollection.isSelected, Tristate.isFalse);
   });
 
   testWidgets('tap callback emits expected localDay', (tester) async {

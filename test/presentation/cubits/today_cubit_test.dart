@@ -779,6 +779,29 @@ void main() {
         cubit.close();
       });
 
+      test('silent refresh keeps in-session selected day', () async {
+        final cubit = buildCubit();
+        await cubit.refresh();
+        final monday = cubit.state.weekDays.first;
+        cubit.selectLocalDay(monday.localDay);
+
+        await cubit.refresh();
+
+        expect(_sameDate(cubit.state.selectedLocalDay, monday.localDay), isTrue);
+        cubit.close();
+      });
+
+      test('selectLocalDay ignores day outside current week', () async {
+        final cubit = buildCubit();
+        await cubit.refresh();
+        final today = cubit.state.weekDays.singleWhere((day) => day.isToday);
+
+        cubit.selectLocalDay(DateTime(2020, 1, 1));
+
+        expect(_sameDate(cubit.state.selectedLocalDay, today.localDay), isTrue);
+        cubit.close();
+      });
+
       test('selectLocalDay ignores future day', () async {
         final cubit = buildCubit();
         await cubit.refresh();

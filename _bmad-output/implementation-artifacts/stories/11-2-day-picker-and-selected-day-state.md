@@ -1,6 +1,6 @@
 # Story 11.2: Day Picker and Selected Day State
 
-Status: review
+Status: done
 
 <!-- Note: Validation is optional. Run validate-create-story for quality check before dev-story. -->
 
