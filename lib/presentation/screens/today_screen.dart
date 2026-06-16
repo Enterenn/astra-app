@@ -21,7 +21,7 @@ import '../widgets/week_progress_row.dart';
 class TodayScreen extends StatelessWidget {
   const TodayScreen({super.key});
 
-  static const _kScreenTitle = "Today's activity";
+  static const _kScreenTitle = 'Steps';
   static const _kSetGoalLabel = 'Set goal';
 
   @override
@@ -62,6 +62,16 @@ class TodayScreen extends StatelessWidget {
                       ),
                     ],
                     const SizedBox(height: AstraSpacing.kSpaceMd),
+                    SectionCard(
+                      headline: 'This week',
+                      child: state.weekDays.isEmpty
+                          ? const SizedBox(
+                              height: 72,
+                              child: Center(child: CircularProgressIndicator()),
+                            )
+                          : WeekProgressRow(days: state.weekDays),
+                    ),
+                    const SizedBox(height: AstraSpacing.kSpaceMd),
                     _GoalRingCard(state: state),
                     if (state.status == TodayStatus.noPermission) ...[
                       const SizedBox(height: AstraSpacing.kSpaceSm),
@@ -79,16 +89,6 @@ class TodayScreen extends StatelessWidget {
                         status: state.status,
                         metrics: state.activityMetrics,
                       ),
-                    ),
-                    const SizedBox(height: AstraSpacing.kSpaceMd),
-                    SectionCard(
-                      headline: 'This week',
-                      child: state.weekDays.isEmpty
-                          ? const SizedBox(
-                              height: 72,
-                              child: Center(child: CircularProgressIndicator()),
-                            )
-                          : WeekProgressRow(days: state.weekDays),
                     ),
                   ],
                 ),
