@@ -15,6 +15,7 @@ import '../../core/time/local_day_formatter.dart';
 import '../../core/time/time_provider.dart';
 import '../../core/time/timestamp_codec.dart';
 import '../../core/validation/step_goal_validator.dart';
+import '../../data/models/chart_day_aggregate.dart';
 import '../../data/models/timeseries_sample_model.dart';
 import '../../data/repositories/step_repository.dart';
 import '../../data/repositories/user_preferences_repository.dart';
@@ -50,6 +51,18 @@ class TodayCubit extends Cubit<TodayState> {
   String? _lastAppliedLocalDay;
   bool _pauseLiveStepApplies = false;
   bool _hasUserSelectedLocalDay = false;
+  int? _todaySteps;
+  int? _todayGoal;
+  ActivityMetricsSnapshot? _todayMetrics;
+
+  /// Today's editable goal for Set goal — independent of display [TodayState.goal]
+  /// when viewing a past day.
+  Future<int> get todayEditableGoal async {
+    if (_todayGoal != null) {
+      return _todayGoal!;
+    }
+    return _resolveTodayGoal();
+  }
 
   /// While true, live monitor events do not update [TodayState] (screen off).
   @visibleForTesting
@@ -71,7 +84,8 @@ class TodayCubit extends Cubit<TodayState> {
     if (!paused &&
         !state.foregroundCatchUp &&
         _attachedMonitor != null &&
-        state.status != TodayStatus.noPermission) {
+        state.status != TodayStatus.noPermission &&
+        _isViewingToday()) {
       unawaited(_applyLiveSteps(_attachedMonitor!.currentTodaySteps));
     }
   }
@@ -119,6 +133,10 @@ class TodayCubit extends Cubit<TodayState> {
             );
             return;
           }
+          if (!_isViewingToday()) {
+            unawaited(_applyLiveSteps(steps));
+            return;
+          }
           unawaited(_applyLiveSteps(steps));
         });
   }
@@ -134,7 +152,11 @@ class TodayCubit extends Cubit<TodayState> {
       return false;
     }
     final parsed = validation.parsedGoal!;
-    if (parsed == state.goal) {
+    final currentTodayGoal = await todayEditableGoal;
+    if (isClosed) {
+      return false;
+    }
+    if (parsed == currentTodayGoal) {
       return false;
     }
 
@@ -213,7 +235,10 @@ class TodayCubit extends Cubit<TodayState> {
     }
 
     if (foregroundCatchUp) {
-      if (steps <= state.steps) {
+      if (!_isViewingToday()) {
+        return;
+      }
+      if (steps <= (_todaySteps ?? state.steps)) {
         livePipelineLog(
           'cubit',
           'syncSteps catch-up SKIPPED (already at target)',
@@ -242,8 +267,8 @@ class TodayCubit extends Cubit<TodayState> {
       await _clampStaleLastDisplayed(steps);
     }
 
-    var goal = state.goal;
-    if (state.status == TodayStatus.loading) {
+    var goal = _todayGoal;
+    if (goal == null) {
       goal = await _resolveTodayGoal();
       if (isClosed) {
         return;
@@ -350,6 +375,8 @@ class TodayCubit extends Cubit<TodayState> {
       return;
     }
 
+    final todaySteps = _todaySteps ?? state.steps;
+
     final results = await Future.wait<Object?>([
       _resolveTodayGoal(),
       stepRepository.getLastIngestionUtc(),
@@ -379,7 +406,7 @@ class TodayCubit extends Cubit<TodayState> {
 
     final metrics = _toMetricsSnapshot(
       DerivedActivityMetrics.compute(
-        displaySteps: state.steps,
+        displaySteps: todaySteps,
         activeBuckets: buckets,
         heightCm: heightCm,
         weightKg: weightKg,
@@ -387,7 +414,7 @@ class TodayCubit extends Cubit<TodayState> {
     );
 
     await _applyTodaySnapshot(
-      steps: state.steps,
+      steps: todaySteps,
       goal: goal,
       isStale: stale,
       lastIngestionUtc: lastUtc,
@@ -396,6 +423,21 @@ class TodayCubit extends Cubit<TodayState> {
       heightCm: heightCm,
       weightKg: weightKg,
       selectedLocalDay: _resolveSelectedLocalDay(weekDays),
+    );
+
+    if (_isViewingToday()) {
+      return;
+    }
+
+    emit(
+      state.copyWith(
+        weekDays: weekDays,
+        isStale: stale,
+        lastIngestionUtc: lastUtc,
+        heightCm: heightCm,
+        weightKg: weightKg,
+        selectedLocalDay: _resolveSelectedLocalDay(weekDays),
+      ),
     );
   }
 
@@ -481,13 +523,29 @@ class TodayCubit extends Cubit<TodayState> {
       allowDecrease: allowDayDecrease,
       selectedLocalDay: _resolveSelectedLocalDay(weekDays),
     );
+
+    if (_isViewingToday()) {
+      return;
+    }
+
+    emit(
+      state.copyWith(
+        weekDays: weekDays,
+        isStale: stale,
+        lastIngestionUtc: lastUtc,
+        heightCm: heightCm,
+        weightKg: weightKg,
+        selectedLocalDay: _resolveSelectedLocalDay(weekDays),
+      ),
+    );
   }
 
   void selectLocalDay(DateTime day) {
     if (isClosed) {
       return;
     }
-    final normalizedDay = DateTime(day.year, day.month, day.day);
+    final utcDay = day.toUtc();
+    final normalizedDay = DateTime.utc(utcDay.year, utcDay.month, utcDay.day);
     WeekDayStatus? match;
     for (final weekDay in state.weekDays) {
       if (_isSameLocalDay(weekDay.localDay, normalizedDay)) {
@@ -500,6 +558,112 @@ class TodayCubit extends Cubit<TodayState> {
     }
     _hasUserSelectedLocalDay = true;
     emit(state.copyWith(selectedLocalDay: normalizedDay));
+    unawaited(_applySelectedDayDisplay());
+  }
+
+  bool _isViewingToday() {
+    final selected = state.selectedLocalDay;
+    if (selected == null) {
+      return true;
+    }
+    final today = state.weekDays.cast<WeekDayStatus?>().firstWhere(
+      (day) => day!.isToday,
+      orElse: () => null,
+    );
+    if (today == null) {
+      return true;
+    }
+    return _isSameLocalDay(today.localDay, selected);
+  }
+
+  Future<({int steps, int goal, ActivityMetricsSnapshot metrics})>
+  _loadSnapshotForLocalDay(DateTime day) async {
+    final utcDay = day.toUtc();
+    final normalizedDay = DateTime.utc(utcDay.year, utcDay.month, utcDay.day);
+    final aggregates = await stepRepository.getChartDailyAggregates(days: 7);
+    final steps = aggregates
+        .firstWhere(
+          (aggregate) => _isSameLocalDay(aggregate.localDay, normalizedDay),
+          orElse: () => ChartDayAggregate(
+            localDay: normalizedDay,
+            totalSteps: 0,
+          ),
+        )
+        .totalSteps;
+    final goal = await userPreferences.getGoalForLocalDay(
+      localDayIsoFromDateOnly(normalizedDay),
+    );
+    final buckets = await stepRepository.getActiveBucketsForLocalDay(
+      normalizedDay,
+    );
+    // Avoid extra async reads here: when height/weight are null, the metrics
+    // engine falls back to defaults.
+    final heightCm = state.heightCm;
+    final weightKg = state.weightKg;
+    final metrics = _toMetricsSnapshot(
+      DerivedActivityMetrics.compute(
+        displaySteps: steps,
+        activeBuckets: buckets,
+        heightCm: heightCm,
+        weightKg: weightKg,
+      ),
+    );
+    return (steps: steps, goal: goal, metrics: metrics);
+  }
+
+  Future<void> _applySelectedDayDisplay() async {
+    if (isClosed) {
+      return;
+    }
+    final intendedSelectedLocalDay = state.selectedLocalDay;
+    if (_isViewingToday()) {
+      final goal = _todayGoal ?? await _resolveTodayGoal();
+      if (isClosed) {
+        return;
+      }
+      await _applyTodaySnapshot(
+        steps: _todaySteps ?? state.steps,
+        goal: goal,
+        isStale: state.isStale,
+        lastIngestionUtc: state.lastIngestionUtc,
+        weekDays: state.weekDays,
+        activityMetrics:
+            _todayMetrics ??
+            _liveMetricsForSteps(_todaySteps ?? state.steps),
+        heightCm: state.heightCm,
+        weightKg: state.weightKg,
+      );
+      return;
+    }
+
+    final day = intendedSelectedLocalDay;
+    if (day == null) {
+      return;
+    }
+    final snapshot = await _loadSnapshotForLocalDay(day);
+    if (isClosed) {
+      return;
+    }
+    if (state.selectedLocalDay == null ||
+        !_isSameLocalDay(state.selectedLocalDay!, day)) {
+      // Selection changed while the async snapshot was loading.
+      return;
+    }
+    final displayState = TodayState.fromData(
+      steps: snapshot.steps,
+      goal: snapshot.goal,
+      isStale: state.isStale,
+      lastIngestionUtc: state.lastIngestionUtc,
+      weekDays: state.weekDays,
+      activityMetrics: snapshot.metrics,
+      heightCm: state.heightCm,
+      weightKg: state.weightKg,
+      showCelebration: false,
+      foregroundCatchUp: false,
+      catchUpTargetSteps: null,
+      selectedLocalDay: day,
+    );
+    emit(displayState);
   }
 
   Future<void> _applyLiveSteps(int steps) async {
@@ -516,14 +680,14 @@ class TodayCubit extends Cubit<TodayState> {
       return;
     }
 
-    var goal = state.goal;
-    if (state.status == TodayStatus.loading) {
+    var goal = _todayGoal;
+    if (goal == null) {
       goal = await _resolveTodayGoal();
       if (isClosed) {
         return;
       }
     }
-    final previous = state.steps;
+    final previous = _todaySteps ?? state.steps;
     await _applyTodaySnapshot(
       steps: steps,
       goal: goal,
@@ -534,7 +698,7 @@ class TodayCubit extends Cubit<TodayState> {
       heightCm: state.heightCm,
       weightKg: state.weightKg,
     );
-    if (steps != previous) {
+    if (_isViewingToday() && steps != previous) {
       livePipelineLog(
         'cubit',
         'applyLiveSteps',
@@ -608,13 +772,14 @@ class TodayCubit extends Cubit<TodayState> {
   }
 
   ActivityMetricsSnapshot _liveMetricsForSteps(int steps) {
+    final bucketMetrics = _todayMetrics ?? state.activityMetrics;
     return ActivityMetricsSnapshot(
       distanceKm: DerivedActivityMetrics.computeDistanceKm(
         displaySteps: steps,
         heightCm: state.heightCm,
       ),
-      walkingDuration: state.activityMetrics.walkingDuration,
-      kcal: state.activityMetrics.kcal,
+      walkingDuration: bucketMetrics.walkingDuration,
+      kcal: bucketMetrics.kcal,
     );
   }
 
@@ -648,12 +813,23 @@ class TodayCubit extends Cubit<TodayState> {
         _lastAppliedLocalDay == todayIso &&
         state.status != TodayStatus.loading &&
         state.status != TodayStatus.noPermission &&
+        _todaySteps != null &&
+        steps < _todaySteps!) {
+      effectiveSteps = _todaySteps!;
+    } else if (!allowDecrease &&
+        _lastAppliedLocalDay == todayIso &&
+        state.status != TodayStatus.loading &&
+        state.status != TodayStatus.noPermission &&
+        _isViewingToday() &&
+        _todaySteps == null &&
         steps < state.steps) {
       effectiveSteps = state.steps;
     }
     _lastAppliedLocalDay = todayIso;
+    _todaySteps = effectiveSteps;
+    _todayGoal = goal;
 
-    final baseMetrics = activityMetrics ?? state.activityMetrics;
+    final baseMetrics = activityMetrics ?? _todayMetrics ?? state.activityMetrics;
     final resolvedMetrics = ActivityMetricsSnapshot(
       distanceKm: DerivedActivityMetrics.computeDistanceKm(
         displaySteps: effectiveSteps,
@@ -662,6 +838,11 @@ class TodayCubit extends Cubit<TodayState> {
       walkingDuration: baseMetrics.walkingDuration,
       kcal: baseMetrics.kcal,
     );
+    _todayMetrics = resolvedMetrics;
+
+    if (!_isViewingToday()) {
+      return;
+    }
 
     final baseState = TodayState.fromData(
       steps: effectiveSteps,
@@ -686,16 +867,19 @@ class TodayCubit extends Cubit<TodayState> {
   DateTime _resolveSelectedLocalDay(List<WeekDayStatus> weekDays) {
     final today =
         weekDays.firstWhere((day) => day.isToday, orElse: () => weekDays.first);
-    final normalizedToday = DateTime(
-      today.localDay.year,
-      today.localDay.month,
-      today.localDay.day,
-    );
+    final normalizedToday =
+        DateTime.utc(
+          today.localDay.toUtc().year,
+          today.localDay.toUtc().month,
+          today.localDay.toUtc().day,
+        );
     if (!_hasUserSelectedLocalDay || state.selectedLocalDay == null) {
       return normalizedToday;
     }
     final selected = state.selectedLocalDay!;
-    final normalizedSelected = DateTime(selected.year, selected.month, selected.day);
+    final normalizedSelected =
+        DateTime.utc(selected.toUtc().year, selected.toUtc().month,
+            selected.toUtc().day);
     final isInCurrentWeek = weekDays.any(
       (day) => _isSameLocalDay(day.localDay, normalizedSelected),
     );
@@ -707,7 +891,9 @@ class TodayCubit extends Cubit<TodayState> {
   }
 
   bool _isSameLocalDay(DateTime a, DateTime b) {
-    return a.year == b.year && a.month == b.month && a.day == b.day;
+    final au = a.toUtc();
+    final bu = b.toUtc();
+    return au.year == bu.year && au.month == bu.month && au.day == bu.day;
   }
 
   void dismissCelebration() {
@@ -724,6 +910,9 @@ class TodayCubit extends Cubit<TodayState> {
     if (isClosed) {
       return;
     }
+    if (!_isViewingToday()) {
+      return;
+    }
     if (goal <= 0 || steps < goal) {
       emit(baseState.copyWith(showCelebration: false));
       return;
@@ -735,10 +924,16 @@ class TodayCubit extends Cubit<TodayState> {
     }
     if (!await userPreferences.tryClaimCelebrationShownDate(todayIso)) {
       // Keep an in-flight celebration alive across silent refresh / ingestion.
+      if (!_isViewingToday()) {
+        return;
+      }
       emit(baseState.copyWith(showCelebration: state.showCelebration));
       return;
     }
     if (isClosed) {
+      return;
+    }
+    if (!_isViewingToday()) {
       return;
     }
     emit(baseState.copyWith(showCelebration: true));
