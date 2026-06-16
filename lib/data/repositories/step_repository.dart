@@ -14,6 +14,7 @@ import '../../core/time/time_provider.dart';
 import '../../core/time/timestamp_codec.dart';
 import '../csv/timeseries_csv_codec.dart';
 import '../models/chart_day_aggregate.dart';
+import '../models/chart_month_aggregate.dart';
 import '../models/database_footprint.dart';
 import '../models/import_result.dart';
 import '../models/normalized_step_bucket.dart';
@@ -287,6 +288,93 @@ class StepRepository {
         ChartDayAggregate(
           localDay: day,
           totalSteps: _finestResolutionTotal(byDayAndResolution[day] ?? {}),
+        ),
+      );
+    }
+    return results;
+  }
+
+  /// Returns monthly average daily steps for the Trends twelve-month chart.
+  ///
+  /// Aggregation runs in Dart using each row's stored [TimeseriesSampleModel.zoneOffset].
+  /// Results include every calendar month in the rolling window and are sorted newest-first.
+  Future<List<ChartMonthAggregate>> getChartMonthlyAggregates({
+    required int months,
+  }) async {
+    if (months != 12) {
+      throw ArgumentError.value(months, 'months', 'Phase 0 supports 12 only');
+    }
+
+    final timeSnapshot = clock.snapshot();
+    final referenceToday = LocalDayCalculator.localDay(
+      utc: timeSnapshot.nowUtc,
+      zoneOffset: TimestampCodec.formatZoneOffset(timeSnapshot.zoneOffset),
+    );
+    final windowStart = DateTime.utc(
+      referenceToday.year,
+      referenceToday.month - (months - 1),
+      1,
+    );
+
+    final sqlLowerBoundUtc = windowStart.subtract(const Duration(days: 1));
+    final rows = await _run(
+      (db) => db.query(
+        'timeseries_samples',
+        where: 'type = ? AND start_time >= ?',
+        whereArgs: [
+          kStepSampleType,
+          TimestampCodec.formatUtc(sqlLowerBoundUtc),
+        ],
+      ),
+    );
+
+    final byDayAndResolution = <DateTime, Map<String, int>>{};
+    for (final row in rows) {
+      final sample = TimeseriesSampleModel.fromMap(row);
+      final rowLocalDay = LocalDayCalculator.localDay(
+        utc: sample.startTimeUtc,
+        zoneOffset: sample.zoneOffset,
+      );
+      if (rowLocalDay.isBefore(windowStart) ||
+          rowLocalDay.isAfter(referenceToday)) {
+        continue;
+      }
+      byDayAndResolution
+          .putIfAbsent(rowLocalDay, () => {})
+          .update(
+            sample.resolution,
+            (v) => v + sample.value.toInt(),
+            ifAbsent: () => sample.value.toInt(),
+          );
+    }
+
+    final results = <ChartMonthAggregate>[];
+    for (var monthOffset = 0; monthOffset < months; monthOffset++) {
+      final monthStart = DateTime.utc(
+        referenceToday.year,
+        referenceToday.month - monthOffset,
+        1,
+      );
+      final monthEnd = monthOffset == 0
+          ? referenceToday
+          : DateTime.utc(monthStart.year, monthStart.month + 1, 0);
+
+      var totalSteps = 0;
+      var dayCount = 0;
+      var day = monthStart;
+      while (!day.isAfter(monthEnd)) {
+        totalSteps += _finestResolutionTotal(byDayAndResolution[day] ?? {});
+        dayCount++;
+        day = day.add(const Duration(days: 1));
+      }
+
+      results.add(
+        ChartMonthAggregate(
+          monthStart: monthStart,
+          averageDailySteps:
+              dayCount > 0 ? (totalSteps / dayCount).round() : 0,
+          totalSteps: totalSteps,
+          dayCount: dayCount,
         ),
       );
     }
