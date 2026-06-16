@@ -12,6 +12,7 @@ import 'package:astra_app/presentation/cubits/today_state.dart';
 import 'package:astra_app/presentation/cubits/units_cubit.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:astra_app/presentation/screens/app_scaffold.dart';
+import 'package:astra_app/presentation/screens/today_screen.dart';
 import 'package:astra_app/presentation/widgets/accent_preset_selector.dart';
 import 'package:astra_app/presentation/widgets/app_bottom_nav.dart';
 import 'package:astra_app/presentation/widgets/goal_ring.dart';
@@ -186,8 +187,19 @@ void main() {
           userPreferences: deps.userPreferences,
         );
 
-        expect(find.text("Today's activity"), findsOneWidget);
-        expect(find.text('Steps'), findsOneWidget);
+        expect(find.text("Today's activity"), findsNothing);
+        expect(
+          find.descendant(
+            of: find.byType(TodayScreen),
+            matching: find.byWidgetPredicate(
+              (widget) =>
+                  widget is Semantics &&
+                  widget.properties.label == 'Steps',
+            ),
+          ),
+          findsOneWidget,
+        );
+        expect(find.text('Steps'), findsWidgets);
         expect(find.text('Phone sensor'), findsNothing);
 
         expect(find.text('STEPS'), findsOneWidget);
@@ -245,7 +257,17 @@ void main() {
       await tester.pump();
 
       expect(tester.takeException(), isNull);
-      expect(find.text('Steps'), findsOneWidget);
+      expect(
+        find.descendant(
+          of: find.byType(TodayScreen),
+          matching: find.byWidgetPredicate(
+            (widget) =>
+                widget is Semantics &&
+                widget.properties.label == 'Steps',
+          ),
+        ),
+        findsOneWidget,
+      );
 
       await _disposeScaffold(tester);
     });

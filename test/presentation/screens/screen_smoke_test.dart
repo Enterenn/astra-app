@@ -146,7 +146,39 @@ void main() {
 
       await pumpScreen(tester, cubit);
 
-      expect(find.text("Today's activity"), findsOneWidget);
+      expect(find.text("Today's activity"), findsNothing);
+      expect(
+        find.descendant(
+          of: find.byType(TodayScreen),
+          matching: find.byWidgetPredicate(
+            (widget) =>
+                widget is Semantics &&
+                widget.properties.label == 'Steps',
+          ),
+        ),
+        findsOneWidget,
+      );
+    });
+
+    testWidgets('week card appears above goal ring', (tester) async {
+      final cubit = buildCubit(
+        TodayState.fromData(
+          steps: 1200,
+          goal: 8000,
+          isStale: false,
+          weekDays: sampleWeekDays(),
+        ),
+      );
+      addTearDown(cubit.close);
+
+      await pumpScreen(tester, cubit);
+
+      final weekCard = find.ancestor(
+        of: find.text('This week'),
+        matching: find.byType(SectionCard),
+      );
+      final ring = find.byType(GoalRing);
+      expect(tester.getTopLeft(weekCard).dy, lessThan(tester.getTopLeft(ring).dy));
     });
 
     testWidgets('does not show greeting or source chip', (tester) async {
