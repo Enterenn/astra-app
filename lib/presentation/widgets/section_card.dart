@@ -8,11 +8,13 @@ class SectionCard extends StatelessWidget {
   const SectionCard({
     required this.headline,
     required this.child,
+    this.trailing,
     this.padding = AstraSpacing.kCardPadding,
     super.key,
   });
 
   final String headline;
+  final Widget? trailing;
   final Widget child;
   final double padding;
 
@@ -23,7 +25,15 @@ class SectionCard extends StatelessWidget {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
-          Text(headline, style: AstraTypography.headline(context)),
+          Row(
+            crossAxisAlignment: CrossAxisAlignment.center,
+            children: [
+              Expanded(
+                child: Text(headline, style: AstraTypography.headline(context)),
+              ),
+              ?trailing,
+            ],
+          ),
           const SizedBox(height: AstraSpacing.kSpaceMd),
           child,
         ],
