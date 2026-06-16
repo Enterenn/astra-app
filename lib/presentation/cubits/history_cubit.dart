@@ -5,6 +5,7 @@ import '../../core/metrics/derived_activity_metrics.dart';
 import '../../core/time/calendar_week.dart';
 import '../../core/time/local_day_formatter.dart';
 import '../../data/models/chart_day_aggregate.dart';
+import '../../data/models/chart_month_aggregate.dart';
 import '../../data/repositories/step_repository.dart';
 import '../../data/repositories/user_preferences_repository.dart';
 import 'history_state.dart';
@@ -19,6 +20,7 @@ class HistoryCubit extends Cubit<HistoryState> {
   final UserPreferencesRepository userPreferences;
 
   List<ChartDayAggregate> _cachedAggregates30d = const [];
+  List<ChartMonthAggregate> _cachedMonthlyAggregates12 = const [];
   List<TrendsDayMetrics> _cachedDayMetrics30d = const [];
   Map<String, int> _cachedGoalsByDay = const {};
   Future<void>? _refreshInFlight;
@@ -97,10 +99,16 @@ class HistoryCubit extends Cubit<HistoryState> {
     }
 
     try {
-      final aggregates = await stepRepository.getChartDailyAggregates(days: 30);
+      final fetchResults = await Future.wait<Object>([
+        stepRepository.getChartDailyAggregates(days: 30),
+        stepRepository.getChartMonthlyAggregates(months: 12),
+      ]);
       if (isClosed) {
         return;
       }
+
+      final aggregates = fetchResults[0] as List<ChartDayAggregate>;
+      final monthlyAggregates = fetchResults[1] as List<ChartMonthAggregate>;
 
       final goalsByDay = await _resolveGoalsForAggregates(aggregates);
       if (isClosed) {
@@ -116,8 +124,13 @@ class HistoryCubit extends Cubit<HistoryState> {
         0,
         (sum, entry) => sum + entry.totalSteps,
       );
-      if (totalSteps == 0) {
+      final monthlyTotalSteps = monthlyAggregates.fold<int>(
+        0,
+        (sum, entry) => sum + entry.totalSteps,
+      );
+      if (totalSteps == 0 && monthlyTotalSteps == 0) {
         _cachedAggregates30d = aggregates;
+        _cachedMonthlyAggregates12 = monthlyAggregates;
         _cachedGoalsByDay = goalsByDay;
         _cachedDayMetrics30d = const [];
         emit(
@@ -150,6 +163,7 @@ class HistoryCubit extends Cubit<HistoryState> {
       }
 
       _cachedAggregates30d = aggregates;
+      _cachedMonthlyAggregates12 = monthlyAggregates;
       _cachedGoalsByDay = goalsByDay;
       _cachedDayMetrics30d = dayMetrics;
 
@@ -220,6 +234,19 @@ class HistoryCubit extends Cubit<HistoryState> {
     Map<String, int>? goalsByDay,
     List<ChartDayAggregate>? aggregates,
   }) {
+    if (period == HistoryPeriod.months12) {
+      emit(
+        HistoryState.ready(
+          period: period,
+          chartPoints: const [],
+          monthlyChartPoints: _sliceMonthlyForChart(),
+          dailyGoal: dailyGoal ?? state.dailyGoal,
+          goalsByDay: goalsByDay ?? _cachedGoalsByDay,
+        ),
+      );
+      return;
+    }
+
     final source = aggregates ?? _cachedAggregates30d;
     emit(
       HistoryState.ready(
@@ -287,6 +314,8 @@ class HistoryCubit extends Cubit<HistoryState> {
       HistoryPeriod.days7 =>
         '${_titleCaseWeekdayLabel(localDay)} ${localDay.day}',
       HistoryPeriod.days30 => '${localDay.day}/${localDay.month}',
+      HistoryPeriod.months12 =>
+        throw StateError('peak day labels are not defined for months12'),
     };
   }
 
@@ -358,6 +387,13 @@ class HistoryCubit extends Cubit<HistoryState> {
     final count = period.dayCount;
     return _cachedAggregates30d
         .take(count)
+        .toList(growable: false)
+        .reversed
+        .toList(growable: false);
+  }
+
+  List<ChartMonthAggregate> _sliceMonthlyForChart() {
+    return _cachedMonthlyAggregates12
         .toList(growable: false)
         .reversed
         .toList(growable: false);
