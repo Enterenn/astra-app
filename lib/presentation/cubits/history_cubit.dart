@@ -106,8 +106,6 @@ class HistoryCubit extends Cubit<HistoryState> {
         return;
       }
 
-      _cachedAggregates30d = aggregates;
-      _cachedGoalsByDay = goalsByDay;
       final todayGoal = await _resolveTodayGoal();
       if (isClosed) {
         return;
@@ -118,6 +116,8 @@ class HistoryCubit extends Cubit<HistoryState> {
         (sum, entry) => sum + entry.totalSteps,
       );
       if (totalSteps == 0) {
+        _cachedAggregates30d = aggregates;
+        _cachedGoalsByDay = goalsByDay;
         _cachedDayMetrics30d = const [];
         emit(
           HistoryState.empty(
@@ -139,7 +139,7 @@ class HistoryCubit extends Cubit<HistoryState> {
 
       final heightCm = profileResults[0] as int?;
       final weightKg = profileResults[1] as double?;
-      _cachedDayMetrics30d = await _buildDayMetricsCache(
+      final dayMetrics = await _buildDayMetricsCache(
         aggregates,
         heightCm: heightCm,
         weightKg: weightKg,
@@ -147,6 +147,10 @@ class HistoryCubit extends Cubit<HistoryState> {
       if (isClosed) {
         return;
       }
+
+      _cachedAggregates30d = aggregates;
+      _cachedGoalsByDay = goalsByDay;
+      _cachedDayMetrics30d = dayMetrics;
 
       _emitReady(
         period: _resolveDisplayPeriod(state.period),
@@ -255,9 +259,12 @@ class HistoryCubit extends Cubit<HistoryState> {
     ];
   }
 
-  TrendsPeriodAverages _computeAveragesForPeriod(HistoryPeriod period) {
+  TrendsPeriodAverages? _computeAveragesForPeriod(HistoryPeriod period) {
     final dayCount = period.dayCount;
     final slice = _cachedDayMetrics30d.take(dayCount);
+    if (!slice.any((day) => day.totalSteps > 0)) {
+      return null;
+    }
     final sumSteps = slice.fold<int>(0, (sum, day) => sum + day.totalSteps);
     final sumKcal = slice.fold<int>(0, (sum, day) => sum + day.dailyKcal);
     return TrendsPeriodAverages(

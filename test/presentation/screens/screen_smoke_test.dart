@@ -507,5 +507,43 @@ void main() {
         findsNothing,
       );
     });
+
+    testWidgets('hides average stat cards on loading state', (tester) async {
+      final cubit = _SeededHistoryCubit(
+        stepRepository: stepRepository,
+        userPreferences: userPreferences,
+        initial: const HistoryState.loading(),
+      );
+      addTearDown(cubit.close);
+
+      await pumpScreen(tester, cubit);
+
+      expect(find.byType(TrendsAverageStatsRow), findsNothing);
+    });
+
+    testWidgets(
+      'hides average stat cards when ready but periodAverages is null',
+      (tester) async {
+        final cubit = _SeededHistoryCubit(
+          stepRepository: stepRepository,
+          userPreferences: userPreferences,
+          initial: HistoryState.ready(
+            chartPoints: List.generate(
+              7,
+              (i) => ChartDayAggregate(
+                localDay: DateTime.utc(2026, 6, 3 - i),
+                totalSteps: 0,
+              ),
+            ),
+            dailyGoal: 8000,
+          ),
+        );
+        addTearDown(cubit.close);
+
+        await pumpScreen(tester, cubit);
+
+        expect(find.byType(TrendsAverageStatsRow), findsNothing);
+      },
+    );
   });
 }

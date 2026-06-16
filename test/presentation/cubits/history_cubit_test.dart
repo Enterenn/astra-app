@@ -93,6 +93,39 @@ class _AlwaysThrowingChartRepository implements StepRepository {
   }
 }
 
+class _ThrowingBucketOnSecondRefreshRepository implements StepRepository {
+  _ThrowingBucketOnSecondRefreshRepository(this._delegate);
+
+  final StepRepository _delegate;
+  int refreshCount = 0;
+
+  @override
+  TimeProvider get clock => _delegate.clock;
+
+  @override
+  Future<List<ChartDayAggregate>> getChartDailyAggregates({
+    required int days,
+  }) async {
+    refreshCount++;
+    return _delegate.getChartDailyAggregates(days: days);
+  }
+
+  @override
+  Future<List<TimeseriesSampleModel>> getActiveBucketsForLocalDay(
+    DateTime localDay,
+  ) {
+    if (refreshCount > 1) {
+      throw StateError('buckets unavailable');
+    }
+    return _delegate.getActiveBucketsForLocalDay(localDay);
+  }
+
+  @override
+  dynamic noSuchMethod(Invocation invocation) {
+    return super.noSuchMethod(invocation);
+  }
+}
+
 void main() {
   setUpAll(() async {
     await setUpSqfliteFfi();
@@ -273,13 +306,45 @@ void main() {
 
       await cubit.refresh();
       expect(cubit.state.status, HistoryStatus.ready);
+      final averagesBefore = cubit.state.periodAverages;
 
       await cubit.refresh(silent: true);
 
       expect(cubit.state.status, HistoryStatus.ready);
       expect(cubit.state.chartPoints, isNotEmpty);
+      expect(cubit.state.periodAverages?.averageSteps, averagesBefore?.averageSteps);
+      expect(cubit.state.periodAverages?.averageKcal, averagesBefore?.averageKcal);
       cubit.close();
     });
+
+    test(
+      'refresh keeps chart and periodAverages consistent when bucket fetch fails',
+      () async {
+        await DataInjectService(repository: stepRepository).inject90Days(
+          clock: clock,
+        );
+        final throwing = _ThrowingBucketOnSecondRefreshRepository(stepRepository);
+        final cubit = buildCubit(repository: throwing);
+
+        await cubit.refresh();
+        expect(cubit.state.status, HistoryStatus.ready);
+        final averagesBefore = cubit.state.periodAverages;
+        expect(averagesBefore, isNotNull);
+
+        await cubit.refresh(silent: true);
+
+        expect(cubit.state.status, HistoryStatus.ready);
+        expect(
+          cubit.state.periodAverages?.averageSteps,
+          averagesBefore?.averageSteps,
+        );
+        expect(
+          cubit.state.periodAverages?.averageKcal,
+          averagesBefore?.averageKcal,
+        );
+        cubit.close();
+      },
+    );
 
     test('refresh leaves empty state when repository throws with no cache', () async {
       final cubit = buildCubit(repository: _AlwaysThrowingChartRepository());
@@ -488,6 +553,31 @@ void main() {
       expect(cubit.state.periodAverages, isNull);
       cubit.close();
     });
+
+    test(
+      'selectPeriod to 7d with zero-step window emits null periodAverages',
+      () async {
+        for (var dayOffset = 14; dayOffset < 21; dayOffset++) {
+          await stepRepository.upsertIngestionBucket(
+            _bucket(
+              startTimeUtc: DateTime.utc(2026, 6, 2 - dayOffset, 10),
+              value: 3000,
+              zoneOffset: '+02:00',
+            ),
+          );
+        }
+        final cubit = buildCubit();
+
+        await cubit.refresh();
+        expect(cubit.state.period, HistoryPeriod.days30);
+        expect(cubit.state.periodAverages, isNotNull);
+
+        cubit.selectPeriod(HistoryPeriod.days7);
+        expect(cubit.state.period, HistoryPeriod.days7);
+        expect(cubit.state.periodAverages, isNull);
+        cubit.close();
+      },
+    );
   });
 }
 

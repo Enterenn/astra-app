@@ -1,6 +1,6 @@
 # Story 12.1: Trends Average Stats Cards
 
-Status: review
+Status: done
 
 <!-- Baptiste 2026-06-16: History-light mockup re-attached — two average stat cards below bar chart (167 kcal / 3532 steps). -->
 <!-- Note: Validation is optional. Run validate-create-story for quality check before dev-story. -->
@@ -330,4 +330,5 @@ Composer
 
 ## Change Log
 
+- 2026-06-16: Code review fixes — atomic cache commit on refresh; hide averages when active window has no steps.
 - 2026-06-16: Story 12.1 — Trends average kcal/steps cards below bar chart (bucket-based kcal, cache-only period toggle).

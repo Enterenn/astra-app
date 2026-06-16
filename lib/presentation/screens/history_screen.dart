@@ -68,8 +68,7 @@ class HistoryScreen extends StatelessWidget {
                         status: state.status,
                       ),
                     ),
-                    if (state.status == HistoryStatus.ready &&
-                        state.periodAverages != null) ...[
+                    if (state.periodAverages != null) ...[
                       const SizedBox(height: AstraSpacing.kSpaceMd),
                       TrendsAverageStatsRow(averages: state.periodAverages!),
                     ],
