@@ -12,12 +12,18 @@ void main() {
   Future<void> pumpRow(
     WidgetTester tester,
     List<WeekDayStatus> days,
-  ) async {
+    DateTime selectedLocalDay, {
+    void Function(DateTime day)? onDayTap,
+  }) async {
     await tester.pumpWidget(
       MaterialApp(
         theme: buildAstraLightTheme(),
         home: Scaffold(
-          body: WeekProgressRow(days: days),
+          body: WeekProgressRow(
+            days: days,
+            selectedLocalDay: selectedLocalDay,
+            onDayTap: onDayTap ?? (_) {},
+          ),
         ),
       ),
     );
@@ -43,14 +49,15 @@ void main() {
   }
 
   testWidgets('today pill uses accent primary fill', (tester) async {
+    final selectedDay = DateTime.utc(2026, 6, 3);
     await pumpRow(tester, [
       day(
-        localDay: DateTime.utc(2026, 6, 3),
+        localDay: selectedDay,
         label: 'WED',
         dayNumber: 3,
         isToday: true,
       ),
-    ]);
+    ], selectedDay);
 
     final pill = tester.widget<Container>(
       find.descendant(
@@ -70,7 +77,7 @@ void main() {
         dayNumber: 2,
         goalMet: true,
       ),
-    ]);
+    ], DateTime.utc(2026, 6, 3));
 
     final dot = tester.widget<Container>(
       find.descendant(
@@ -96,7 +103,7 @@ void main() {
         label: 'TUE',
         dayNumber: 2,
       ),
-    ]);
+    ], DateTime.utc(2026, 6, 3));
 
     expect(
       find.byWidgetPredicate(
@@ -117,7 +124,7 @@ void main() {
         dayNumber: 4,
         isFuture: true,
       ),
-    ]);
+    ], DateTime.utc(2026, 6, 3));
 
     final dot = tester.widget<Container>(
       find.descendant(
@@ -131,5 +138,52 @@ void main() {
       ),
     );
     expect((dot.decoration! as BoxDecoration).color, colors.neutralGray);
+  });
+
+  testWidgets('future day tap does not invoke callback', (tester) async {
+    var tapCount = 0;
+    await pumpRow(
+      tester,
+      [
+        day(
+          localDay: DateTime.utc(2026, 6, 4),
+          label: 'THU',
+          dayNumber: 4,
+          isFuture: true,
+        ),
+      ],
+      DateTime.utc(2026, 6, 3),
+      onDayTap: (_) => tapCount++,
+    );
+
+    final inkWell = tester.widget<InkWell>(find.byType(InkWell));
+    expect(inkWell.onTap, isNull);
+
+    await tester.tap(find.byType(InkWell));
+    await tester.pump();
+
+    expect(tapCount, 0);
+  });
+
+  testWidgets('tap callback emits expected localDay', (tester) async {
+    DateTime? tappedDay;
+    final targetDay = DateTime.utc(2026, 6, 5);
+    await pumpRow(
+      tester,
+      [
+        day(
+          localDay: targetDay,
+          label: 'FRI',
+          dayNumber: 5,
+        ),
+      ],
+      DateTime.utc(2026, 6, 3),
+      onDayTap: (day) => tappedDay = day,
+    );
+
+    await tester.tap(find.byType(InkWell));
+    await tester.pump();
+
+    expect(tappedDay, targetDay);
   });
 }

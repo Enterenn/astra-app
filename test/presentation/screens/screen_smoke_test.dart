@@ -241,6 +241,63 @@ void main() {
       expect(find.byType(WeekProgressRow), findsOneWidget);
       expect(find.byType(SectionCard), findsOneWidget);
     });
+
+    testWidgets('week pills tap updates selected day in cubit', (tester) async {
+      final cubit = buildCubit(
+        TodayState.fromData(
+          steps: 1200,
+          goal: 8000,
+          isStale: false,
+          weekDays: sampleWeekDays(),
+          selectedLocalDay: sampleWeekDays().first.localDay,
+        ),
+      );
+      addTearDown(cubit.close);
+
+      await pumpScreen(tester, cubit);
+
+      final target = sampleWeekDays()[1];
+      await tester.tap(find.text('${target.dayNumber}').first);
+      await tester.pump();
+
+      expect(
+        cubit.state.selectedLocalDay?.year,
+        target.localDay.year,
+      );
+      expect(
+        cubit.state.selectedLocalDay?.month,
+        target.localDay.month,
+      );
+      expect(
+        cubit.state.selectedLocalDay?.day,
+        target.localDay.day,
+      );
+    });
+
+    testWidgets('future week pill tap does not change selected day', (
+      tester,
+    ) async {
+      final weekDays = sampleWeekDays();
+      final today = weekDays.singleWhere((day) => day.isToday);
+      final futureDay = weekDays.firstWhere((day) => day.isFuture);
+      final cubit = buildCubit(
+        TodayState.fromData(
+          steps: 1200,
+          goal: 8000,
+          isStale: false,
+          weekDays: weekDays,
+          selectedLocalDay: today.localDay,
+        ),
+      );
+      addTearDown(cubit.close);
+
+      await pumpScreen(tester, cubit);
+
+      await tester.tap(find.text('${futureDay.dayNumber}'));
+      await tester.pump();
+
+      expect(cubit.state.selectedLocalDay?.day, today.localDay.day);
+    });
   });
 
   group('HistoryScreen smoke', () {

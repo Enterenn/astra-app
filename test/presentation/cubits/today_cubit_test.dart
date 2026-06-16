@@ -746,6 +746,51 @@ void main() {
     });
 
     group('week strip', () {
+      test('selected day defaults to today after refresh', () async {
+        final cubit = buildCubit();
+
+        await cubit.refresh();
+
+        final today = cubit.state.weekDays.singleWhere((day) => day.isToday);
+        expect(_sameDate(cubit.state.selectedLocalDay, today.localDay), isTrue);
+        cubit.close();
+      });
+
+      test('selection changes on explicit day select', () async {
+        final cubit = buildCubit();
+        await cubit.refresh();
+        final monday = cubit.state.weekDays.first;
+
+        cubit.selectLocalDay(monday.localDay);
+
+        expect(_sameDate(cubit.state.selectedLocalDay, monday.localDay), isTrue);
+        cubit.close();
+      });
+
+      test('refreshMetadata keeps in-session selected day deterministic', () async {
+        final cubit = buildCubit();
+        await cubit.refresh();
+        final monday = cubit.state.weekDays.first;
+        cubit.selectLocalDay(monday.localDay);
+
+        await cubit.refreshMetadata();
+
+        expect(_sameDate(cubit.state.selectedLocalDay, monday.localDay), isTrue);
+        cubit.close();
+      });
+
+      test('selectLocalDay ignores future day', () async {
+        final cubit = buildCubit();
+        await cubit.refresh();
+        final today = cubit.state.weekDays.singleWhere((day) => day.isToday);
+        final futureDay = cubit.state.weekDays.firstWhere((day) => day.isFuture);
+
+        cubit.selectLocalDay(futureDay.localDay);
+
+        expect(_sameDate(cubit.state.selectedLocalDay, today.localDay), isTrue);
+        cubit.close();
+      });
+
       test('refresh loads seven calendar week days', () async {
         final cubit = buildCubit();
 
@@ -1061,3 +1106,10 @@ NormalizedStepBucket _bucket({
   deviceId: deviceId,
   zoneOffset: zoneOffset,
 );
+
+bool _sameDate(DateTime? a, DateTime b) {
+  if (a == null) {
+    return false;
+  }
+  return a.year == b.year && a.month == b.month && a.day == b.day;
+}
