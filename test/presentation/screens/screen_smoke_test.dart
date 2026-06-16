@@ -566,7 +566,7 @@ void main() {
           peakDay: TrendsPeakDay(
             localDay: DateTime.utc(2026, 6, 4),
             totalSteps: 8500,
-            dateLabel: 'WED 4',
+            dateLabel: 'Wed 4',
           ),
         ),
       );
@@ -578,6 +578,46 @@ void main() {
       expect(find.text('peak day in this period'), findsOneWidget);
       expect(find.text('8500'), findsOneWidget);
     });
+
+    testWidgets('hides peak day card on loading state', (tester) async {
+      final cubit = _SeededHistoryCubit(
+        stepRepository: stepRepository,
+        userPreferences: userPreferences,
+        initial: const HistoryState.loading(),
+      );
+      addTearDown(cubit.close);
+
+      await pumpScreen(tester, cubit);
+
+      expect(find.byType(TrendsPeakDayCard), findsNothing);
+      expect(find.text('peak day in this period'), findsNothing);
+    });
+
+    testWidgets(
+      'hides peak day card when ready but periodAverages is null',
+      (tester) async {
+        final cubit = _SeededHistoryCubit(
+          stepRepository: stepRepository,
+          userPreferences: userPreferences,
+          initial: HistoryState.ready(
+            chartPoints: List.generate(
+              7,
+              (i) => ChartDayAggregate(
+                localDay: DateTime.utc(2026, 6, 3 - i),
+                totalSteps: 0,
+              ),
+            ),
+            dailyGoal: 8000,
+          ),
+        );
+        addTearDown(cubit.close);
+
+        await pumpScreen(tester, cubit);
+
+        expect(find.byType(TrendsPeakDayCard), findsNothing);
+        expect(find.text('peak day in this period'), findsNothing);
+      },
+    );
 
     testWidgets('hides peak day card when peakDay is null', (tester) async {
       final cubit = _SeededHistoryCubit(

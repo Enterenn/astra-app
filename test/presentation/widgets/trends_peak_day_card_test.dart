@@ -27,11 +27,11 @@ void main() {
         peakDay: TrendsPeakDay(
           localDay: DateTime.utc(2026, 6, 4),
           totalSteps: 8500,
-          dateLabel: 'WED 4',
+          dateLabel: 'Wed 4',
         ),
       );
 
-      expect(find.text('WED 4'), findsOneWidget);
+      expect(find.text('Wed 4'), findsOneWidget);
       expect(find.text('8500'), findsOneWidget);
       expect(find.text('steps'), findsOneWidget);
       expect(find.text('peak day in this period'), findsOneWidget);
@@ -43,7 +43,7 @@ void main() {
         peakDay: TrendsPeakDay(
           localDay: DateTime.utc(2026, 6, 4),
           totalSteps: 5000,
-          dateLabel: 'WED 4',
+          dateLabel: 'Wed 4',
         ),
       );
 
@@ -56,7 +56,7 @@ void main() {
         peakDay: TrendsPeakDay(
           localDay: DateTime.utc(2026, 6, 4),
           totalSteps: 8500,
-          dateLabel: 'WED 4',
+          dateLabel: 'Wed 4',
         ),
       );
 
@@ -65,7 +65,7 @@ void main() {
           (widget) =>
               widget is Semantics &&
               widget.properties.label ==
-                  'Peak day WED 4 with 8500 steps in this period',
+                  'Peak day Wed 4 with 8500 steps in this period',
         ),
         findsOneWidget,
       );

@@ -285,9 +285,15 @@ class HistoryCubit extends Cubit<HistoryState> {
   String _formatPeakDayLabel(DateTime localDay, HistoryPeriod period) {
     return switch (period) {
       HistoryPeriod.days7 =>
-        '${CalendarWeek.weekdayLabelFor(localDay)} ${localDay.day}',
+        '${_titleCaseWeekdayLabel(localDay)} ${localDay.day}',
       HistoryPeriod.days30 => '${localDay.day}/${localDay.month}',
     };
+  }
+
+  /// Title-case weekday (e.g. `Sat`) to match [StepBarChart] 7d axis labels.
+  String _titleCaseWeekdayLabel(DateTime localDay) {
+    final upper = CalendarWeek.weekdayLabelFor(localDay);
+    return '${upper[0]}${upper.substring(1).toLowerCase()}';
   }
 
   TrendsPeriodAverages? _computeAveragesForPeriod(HistoryPeriod period) {

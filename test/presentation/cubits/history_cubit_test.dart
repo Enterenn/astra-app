@@ -307,6 +307,7 @@ void main() {
       await cubit.refresh();
       expect(cubit.state.status, HistoryStatus.ready);
       final averagesBefore = cubit.state.periodAverages;
+      final peakDayBefore = cubit.state.peakDay;
 
       await cubit.refresh(silent: true);
 
@@ -314,6 +315,9 @@ void main() {
       expect(cubit.state.chartPoints, isNotEmpty);
       expect(cubit.state.periodAverages?.averageSteps, averagesBefore?.averageSteps);
       expect(cubit.state.periodAverages?.averageKcal, averagesBefore?.averageKcal);
+      expect(cubit.state.peakDay?.totalSteps, peakDayBefore?.totalSteps);
+      expect(cubit.state.peakDay?.localDay, peakDayBefore?.localDay);
+      expect(cubit.state.peakDay?.dateLabel, peakDayBefore?.dateLabel);
       cubit.close();
     });
 
@@ -329,7 +333,9 @@ void main() {
         await cubit.refresh();
         expect(cubit.state.status, HistoryStatus.ready);
         final averagesBefore = cubit.state.periodAverages;
+        final peakDayBefore = cubit.state.peakDay;
         expect(averagesBefore, isNotNull);
+        expect(peakDayBefore, isNotNull);
 
         await cubit.refresh(silent: true);
 
@@ -342,6 +348,9 @@ void main() {
           cubit.state.periodAverages?.averageKcal,
           averagesBefore?.averageKcal,
         );
+        expect(cubit.state.peakDay?.totalSteps, peakDayBefore?.totalSteps);
+        expect(cubit.state.peakDay?.localDay, peakDayBefore?.localDay);
+        expect(cubit.state.peakDay?.dateLabel, peakDayBefore?.dateLabel);
         cubit.close();
       },
     );
@@ -596,7 +605,7 @@ void main() {
 
       expect(cubit.state.peakDay?.totalSteps, 8000);
       expect(cubit.state.peakDay?.localDay, DateTime.utc(2026, 5, 30));
-      expect(cubit.state.peakDay?.dateLabel, 'SAT 30');
+      expect(cubit.state.peakDay?.dateLabel, 'Sat 30');
       cubit.close();
     });
 
