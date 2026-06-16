@@ -43,6 +43,7 @@ class TodayState {
     this.weightKg,
     this.foregroundCatchUp = false,
     this.catchUpTargetSteps,
+    this.selectedLocalDay,
   });
 
   final TodayStatus status;
@@ -62,6 +63,7 @@ class TodayState {
   /// Resume target while [foregroundCatchUp] is true — [steps] stays at the
   /// last in-session value until the catch-up animation completes.
   final int? catchUpTargetSteps;
+  final DateTime? selectedLocalDay;
 
   const TodayState.loading() : this(status: TodayStatus.loading);
 
@@ -79,6 +81,7 @@ class TodayState {
     double? weightKg,
     bool foregroundCatchUp = false,
     int? catchUpTargetSteps,
+    DateTime? selectedLocalDay,
   }) {
     return TodayState(
       status: _resolveStatus(steps: steps, goal: goal),
@@ -93,6 +96,7 @@ class TodayState {
       weightKg: weightKg,
       foregroundCatchUp: foregroundCatchUp,
       catchUpTargetSteps: catchUpTargetSteps,
+      selectedLocalDay: selectedLocalDay,
     );
   }
 
@@ -109,6 +113,7 @@ class TodayState {
     Object? weightKg = _unset,
     bool? foregroundCatchUp,
     Object? catchUpTargetSteps = _unset,
+    Object? selectedLocalDay = _unset,
   }) {
     return TodayState(
       status: status ?? this.status,
@@ -125,6 +130,9 @@ class TodayState {
       catchUpTargetSteps: catchUpTargetSteps == _unset
           ? this.catchUpTargetSteps
           : catchUpTargetSteps as int?,
+      selectedLocalDay: selectedLocalDay == _unset
+          ? this.selectedLocalDay
+          : selectedLocalDay as DateTime?,
     );
   }
 

@@ -49,6 +49,7 @@ class TodayCubit extends Cubit<TodayState> {
   LiveStepMonitor? _attachedMonitor;
   String? _lastAppliedLocalDay;
   bool _pauseLiveStepApplies = false;
+  bool _hasUserSelectedLocalDay = false;
 
   /// While true, live monitor events do not update [TodayState] (screen off).
   @visibleForTesting
@@ -343,6 +344,7 @@ class TodayCubit extends Cubit<TodayState> {
           status: TodayStatus.noPermission,
           weekDays: weekDays,
           activityMetrics: ActivityMetricsSnapshot.zero,
+          selectedLocalDay: _resolveSelectedLocalDay(weekDays),
         ),
       );
       return;
@@ -393,6 +395,7 @@ class TodayCubit extends Cubit<TodayState> {
       activityMetrics: metrics,
       heightCm: heightCm,
       weightKg: weightKg,
+      selectedLocalDay: _resolveSelectedLocalDay(weekDays),
     );
   }
 
@@ -418,6 +421,7 @@ class TodayCubit extends Cubit<TodayState> {
           status: TodayStatus.noPermission,
           weekDays: weekDays,
           activityMetrics: ActivityMetricsSnapshot.zero,
+          selectedLocalDay: _resolveSelectedLocalDay(weekDays),
         ),
       );
       return;
@@ -475,7 +479,25 @@ class TodayCubit extends Cubit<TodayState> {
       heightCm: heightCm,
       weightKg: weightKg,
       allowDecrease: allowDayDecrease,
+      selectedLocalDay: _resolveSelectedLocalDay(weekDays),
     );
+  }
+
+  void selectLocalDay(DateTime day) {
+    if (isClosed) {
+      return;
+    }
+    final normalizedDay = DateTime(day.year, day.month, day.day);
+    for (final weekDay in state.weekDays) {
+      if (_isSameLocalDay(weekDay.localDay, normalizedDay)) {
+        if (weekDay.isFuture) {
+          return;
+        }
+        break;
+      }
+    }
+    _hasUserSelectedLocalDay = true;
+    emit(state.copyWith(selectedLocalDay: normalizedDay));
   }
 
   Future<void> _applyLiveSteps(int steps) async {
@@ -612,6 +634,7 @@ class TodayCubit extends Cubit<TodayState> {
     int? heightCm,
     double? weightKg,
     bool allowDecrease = false,
+    DateTime? selectedLocalDay,
   }) async {
     if (isClosed) {
       return;
@@ -649,12 +672,40 @@ class TodayCubit extends Cubit<TodayState> {
       weightKg: weightKg ?? state.weightKg,
       foregroundCatchUp: state.foregroundCatchUp,
       catchUpTargetSteps: state.catchUpTargetSteps,
+      selectedLocalDay: selectedLocalDay ?? state.selectedLocalDay,
     );
     await _maybeTriggerCelebration(
       steps: effectiveSteps,
       goal: goal,
       baseState: baseState,
     );
+  }
+
+  DateTime _resolveSelectedLocalDay(List<WeekDayStatus> weekDays) {
+    final today =
+        weekDays.firstWhere((day) => day.isToday, orElse: () => weekDays.first);
+    final normalizedToday = DateTime(
+      today.localDay.year,
+      today.localDay.month,
+      today.localDay.day,
+    );
+    if (!_hasUserSelectedLocalDay || state.selectedLocalDay == null) {
+      return normalizedToday;
+    }
+    final selected = state.selectedLocalDay!;
+    final normalizedSelected = DateTime(selected.year, selected.month, selected.day);
+    final isInCurrentWeek = weekDays.any(
+      (day) => _isSameLocalDay(day.localDay, normalizedSelected),
+    );
+    if (!isInCurrentWeek) {
+      _hasUserSelectedLocalDay = false;
+      return normalizedToday;
+    }
+    return normalizedSelected;
+  }
+
+  bool _isSameLocalDay(DateTime a, DateTime b) {
+    return a.year == b.year && a.month == b.month && a.day == b.day;
   }
 
   void dismissCelebration() {
