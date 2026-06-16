@@ -16,6 +16,7 @@ class PeriodToggle extends StatelessWidget {
   static const _options = [
     AstraSegmentOption(value: HistoryPeriod.days7, label: '7 days'),
     AstraSegmentOption(value: HistoryPeriod.days30, label: '30 days'),
+    AstraSegmentOption(value: HistoryPeriod.months12, label: '12 months'),
   ];
 
   @override
