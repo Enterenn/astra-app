@@ -135,6 +135,17 @@ class StepRepository {
   /// (40 steps) is applied in [DerivedActivityMetrics], not in SQL.
   Future<List<TimeseriesSampleModel>> getTodayActiveBuckets() async {
     final bounds = _todaySampleUtcBounds();
+    return getActiveBucketsForLocalDay(bounds.referenceToday);
+  }
+
+  /// Returns 5-minute step buckets with positive values for [localDay].
+  ///
+  /// Same SQL filters as [getTodayActiveBuckets]; per-row [LocalDayCalculator]
+  /// filter uses the **parameter** day (not clock today).
+  Future<List<TimeseriesSampleModel>> getActiveBucketsForLocalDay(
+    DateTime localDay,
+  ) async {
+    final bounds = _sampleUtcBoundsForLocalDay(localDay);
     final rows = await _run(
       (db) => db.query(
         'timeseries_samples',
@@ -157,7 +168,7 @@ class StepRepository {
         utc: sample.startTimeUtc,
         zoneOffset: sample.zoneOffset,
       );
-      if (rowLocalDay == bounds.referenceToday) {
+      if (rowLocalDay == bounds.referenceLocalDay) {
         buckets.add(sample);
       }
     }
@@ -195,10 +206,25 @@ class StepRepository {
       utc: timeSnapshot.nowUtc,
       zoneOffset: TimestampCodec.formatZoneOffset(timeSnapshot.zoneOffset),
     );
+    final bounds = _sampleUtcBoundsForLocalDay(referenceToday);
     return (
-      referenceToday: referenceToday,
-      lowerInclusive: referenceToday.subtract(const Duration(days: 1)),
-      upperExclusive: referenceToday.add(const Duration(days: 2)),
+      referenceToday: bounds.referenceLocalDay,
+      lowerInclusive: bounds.lowerInclusive,
+      upperExclusive: bounds.upperExclusive,
+    );
+  }
+
+  /// UTC query window for [localDay] before per-row [zone_offset] filtering.
+  ({DateTime referenceLocalDay, DateTime lowerInclusive, DateTime upperExclusive})
+  _sampleUtcBoundsForLocalDay(DateTime localDay) {
+    // Keep the same UTC semantics as [LocalDayCalculator.localDay], otherwise
+    // equality checks (DateTime.utc) will fail.
+    final referenceLocalDay =
+        DateTime.utc(localDay.year, localDay.month, localDay.day);
+    return (
+      referenceLocalDay: referenceLocalDay,
+      lowerInclusive: referenceLocalDay.subtract(const Duration(days: 1)),
+      upperExclusive: referenceLocalDay.add(const Duration(days: 2)),
     );
   }
 

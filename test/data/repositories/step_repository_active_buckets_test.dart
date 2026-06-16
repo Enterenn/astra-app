@@ -119,6 +119,52 @@ void main() {
       expect((await newYorkPreviousDay.getTodayActiveBuckets()).single.value, 60);
     });
   });
+
+  group('StepRepository.getActiveBucketsForLocalDay', () {
+    late Database db;
+
+    setUp(() async {
+      db = await openAstraDatabase(databasePath: inMemoryDatabasePath);
+    });
+
+    tearDown(() async {
+      await db.close();
+    });
+
+    test('returns buckets for parameter day and excludes other days', () async {
+      final writer = StepRepository(
+        db: db,
+        clock: FakeTimeProvider(
+          fixedNowUtc: DateTime.utc(2026, 6, 2, 10),
+          zoneOffset: const Duration(hours: 2),
+        ),
+      );
+      await writer.upsertIngestionBucket(
+        _bucket(
+          startTimeUtc: DateTime.utc(2026, 6, 1, 10),
+          value: 80,
+          zoneOffset: '+02:00',
+        ),
+      );
+      await writer.upsertIngestionBucket(
+        _bucket(
+          startTimeUtc: DateTime.utc(2026, 6, 2, 10),
+          value: 120,
+          zoneOffset: '+02:00',
+        ),
+      );
+
+      final monday = DateTime(2026, 6, 1);
+      final tuesday = DateTime(2026, 6, 2);
+      final mondayBuckets = await writer.getActiveBucketsForLocalDay(monday);
+      final tuesdayBuckets = await writer.getActiveBucketsForLocalDay(tuesday);
+
+      expect(mondayBuckets, hasLength(1));
+      expect(mondayBuckets.single.value, 80);
+      expect(tuesdayBuckets, hasLength(1));
+      expect(tuesdayBuckets.single.value, 120);
+    });
+  });
 }
 
 NormalizedStepBucket _bucket({
