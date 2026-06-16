@@ -9,6 +9,7 @@ import '../cubits/history_state.dart';
 import '../widgets/period_toggle.dart';
 import '../widgets/step_bar_chart.dart';
 import '../widgets/trend_chip.dart';
+import '../widgets/trends_average_stats_row.dart';
 
 class HistoryScreen extends StatelessWidget {
   const HistoryScreen({super.key});
@@ -67,6 +68,11 @@ class HistoryScreen extends StatelessWidget {
                         status: state.status,
                       ),
                     ),
+                    if (state.status == HistoryStatus.ready &&
+                        state.periodAverages != null) ...[
+                      const SizedBox(height: AstraSpacing.kSpaceMd),
+                      TrendsAverageStatsRow(averages: state.periodAverages!),
+                    ],
                     const SizedBox(height: AstraSpacing.kSpaceMd),
                   ],
                 ),
