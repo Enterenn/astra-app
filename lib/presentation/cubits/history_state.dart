@@ -28,6 +28,19 @@ class TrendsDayMetrics {
   final int dailyKcal;
 }
 
+/// Peak step day in the active 7d/30d window (label precomputed in cubit).
+class TrendsPeakDay {
+  const TrendsPeakDay({
+    required this.localDay,
+    required this.totalSteps,
+    required this.dateLabel,
+  });
+
+  final DateTime localDay;
+  final int totalSteps;
+  final String dateLabel;
+}
+
 /// Arithmetic mean kcal and steps for the active 7d/30d window.
 class TrendsPeriodAverages {
   const TrendsPeriodAverages({
@@ -60,6 +73,7 @@ class HistoryState {
     this.goalsByDay = const {},
     this.trend,
     this.periodAverages,
+    this.peakDay,
   });
 
   final HistoryStatus status;
@@ -72,6 +86,8 @@ class HistoryState {
   final TrendSnapshot? trend;
   /// Average kcal/steps for active period; null when loading or empty.
   final TrendsPeriodAverages? periodAverages;
+  /// Peak step day for active period; null when loading, empty, or zero-step window.
+  final TrendsPeakDay? peakDay;
 
   const HistoryState.loading() : this(status: HistoryStatus.loading);
 
@@ -95,6 +111,7 @@ class HistoryState {
     Map<String, int> goalsByDay = const {},
     TrendSnapshot? trend,
     TrendsPeriodAverages? periodAverages,
+    TrendsPeakDay? peakDay,
   }) {
     return HistoryState(
       status: HistoryStatus.ready,
@@ -104,6 +121,7 @@ class HistoryState {
       goalsByDay: goalsByDay,
       trend: trend,
       periodAverages: periodAverages,
+      peakDay: peakDay,
     );
   }
 
@@ -115,6 +133,7 @@ class HistoryState {
     Map<String, int>? goalsByDay,
     TrendSnapshot? trend,
     TrendsPeriodAverages? periodAverages,
+    TrendsPeakDay? peakDay,
   }) {
     return HistoryState(
       status: status ?? this.status,
@@ -124,6 +143,7 @@ class HistoryState {
       goalsByDay: goalsByDay ?? this.goalsByDay,
       trend: trend ?? this.trend,
       periodAverages: periodAverages ?? this.periodAverages,
+      peakDay: peakDay ?? this.peakDay,
     );
   }
 }

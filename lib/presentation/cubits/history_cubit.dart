@@ -2,6 +2,7 @@ import 'package:flutter/foundation.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 
 import '../../core/metrics/derived_activity_metrics.dart';
+import '../../core/time/calendar_week.dart';
 import '../../core/time/local_day_formatter.dart';
 import '../../data/models/chart_day_aggregate.dart';
 import '../../data/repositories/step_repository.dart';
@@ -228,6 +229,7 @@ class HistoryCubit extends Cubit<HistoryState> {
         goalsByDay: goalsByDay ?? _cachedGoalsByDay,
         trend: _computeTrend(source),
         periodAverages: _computeAveragesForPeriod(period),
+        peakDay: _computePeakDayForPeriod(period),
       ),
     );
   }
@@ -257,6 +259,35 @@ class HistoryCubit extends Cubit<HistoryState> {
           ).kcal,
         ),
     ];
+  }
+
+  TrendsPeakDay? _computePeakDayForPeriod(HistoryPeriod period) {
+    final slice = _cachedDayMetrics30d.take(period.dayCount);
+    TrendsDayMetrics? best;
+    for (final day in slice) {
+      if (day.totalSteps == 0) {
+        continue;
+      }
+      if (best == null || day.totalSteps > best.totalSteps) {
+        best = day;
+      }
+    }
+    if (best == null) {
+      return null;
+    }
+    return TrendsPeakDay(
+      localDay: best.localDay,
+      totalSteps: best.totalSteps,
+      dateLabel: _formatPeakDayLabel(best.localDay, period),
+    );
+  }
+
+  String _formatPeakDayLabel(DateTime localDay, HistoryPeriod period) {
+    return switch (period) {
+      HistoryPeriod.days7 =>
+        '${CalendarWeek.weekdayLabelFor(localDay)} ${localDay.day}',
+      HistoryPeriod.days30 => '${localDay.day}/${localDay.month}',
+    };
   }
 
   TrendsPeriodAverages? _computeAveragesForPeriod(HistoryPeriod period) {
