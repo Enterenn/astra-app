@@ -28,6 +28,8 @@ This document provides the complete epic and story breakdown for astra-app, deco
 
 **Scope amendment (user-confirmed, 2026-06-15 — Epic merge):** Former **Epic 13** merged into **Epic 10** (App Shell, Navigation & Settings Surfaces). One **moyen** version bump at Epic 10 close. Tranche is now **Epics 8–12** (5 epics, 18 stories).
 
+**Scope amendment (user-confirmed, 2026-06-17 — Sprint Change Proposal approved):** **Epic 13** reintroduced for **Onboarding Redesign** (intro → weight → height; activity permission on intro Continue). Supersedes Story 1.5 UX. Version bump **moyen** at Epic 13 close (`0.6.0+11`). Source: `planning-artifacts/sprint-change-proposal-2026-06-17.md`.
+
 ## Development Workflow (all stories)
 
 Every sub-task follows **review before commit**. See [`docs/project-context.md`](../../docs/project-context.md).
@@ -2738,7 +2740,112 @@ So that past bars are judged against the goal I had then.
 
 ---
 
-## Future Backlog (not Epics 8–12)
+## Epic 13: Onboarding Redesign
+
+Replace trust/permissions/goal/display-name stack with intro → weight → height flow per Figma mockups. Activity permission requested on intro **Continue** (OS dialog bridge, no dedicated permission screen). Collect optional body metrics for derived activity estimates.
+
+**Depends on:** Epics 1, 6, 10 done. **Version bump:** **moyen** once when entire epic closes (`0.6.0+11` from `0.5.2+10`).
+
+**Supersedes:** Story 1.5 presentation (persistence keys and onboarding gate pattern remain).
+
+### Story 13.1: Onboarding Shell & Intro Screen
+
+As a **user**,
+I want a clear trust-first intro before body metrics,
+So that I understand local-only tracking before granting sensor access.
+
+**Acceptance Criteria:**
+
+**Given** first launch (`onboarding_complete` false)  
+**When** onboarding renders  
+**Then** 3-segment progress bar shows step 1 active  
+**And** headline reads **Your Health. Your Phone. Period.**  
+**And** card copy matches: *Astra tracks your movement, habits, and health metrics using only your device's built-in sensors. No accounts, no cloud leakage. Your personal evolution belongs to you—and only you.*  
+**And** optional disclaimer expands/collapses without blocking Continue  
+**And** footer shows primary Continue (no Back on step 1)
+
+**Given** user taps Continue on intro  
+**When** activity permission has not been granted  
+**Then** system activity recognition dialog appears **before** weight step is shown  
+**And** flow advances to weight after dialog dismisses (grant or deny)  
+**And** Continue shows loading/disabled state while request is in flight
+
+**Mockup ref:** `onboarding-light`.
+
+---
+
+### Story 13.2: AstraHorizontalRuler Widget
+
+As a **developer**,
+I want a reusable horizontal ruler picker,
+So that weight and height onboarding (and future editors) share one interaction pattern.
+
+**Acceptance Criteria:**
+
+**Given** ruler with min/max/step configured  
+**When** user scrolls horizontally  
+**Then** centered value updates with snap-to-tick behavior  
+**And** major labels render at configured intervals  
+**And** semantics announce value + unit  
+**And** widget test covers snap and bounds
+
+**Mockup ref:** `Weight-light`, `Height-light`.
+
+---
+
+### Story 13.3: Weight & Height Onboarding Steps
+
+As a **user**,
+I want to set my weight and height with familiar unit toggles and a ruler,
+So that derived metrics are accurate from day one.
+
+**Acceptance Criteria:**
+
+**Given** weight step  
+**When** user selects kg or lb via `AstraSegmentedControl`  
+**Then** ruler range and labels update; stored value is canonical kg  
+**Given** height step  
+**When** user selects cm or inches  
+**Then** stored value is canonical cm  
+**Given** Skip on either step  
+**When** user continues  
+**Then** corresponding pref is `null`  
+**Given** Let's Go on height step  
+**When** onboarding completes  
+**Then** `onboarding_complete=true`, `daily_step_goal=8000`, metrics saved
+
+**Mockup ref:** `Weight-light`, `Height-light`.
+
+**Depends on:** Stories 13.1, 13.2.
+
+---
+
+### Story 13.4: Flow Completion & Cleanup
+
+As a **maintainer**,
+I want the old onboarding steps removed and tests updated,
+So that the codebase reflects the new 3-step flow only.
+
+**Acceptance Criteria:**
+
+**Given** user denied activity on intro Continue  
+**When** they complete weight + height and land on Steps  
+**Then** existing permission-denied / empty-state patterns apply (no second onboarding gate)  
+**Given** removed pages  
+**When** codebase is searched  
+**Then** `OnboardingPermissionsPage`, `OnboardingGoalPage`, `OnboardingDisplayNamePage` are not in active flow  
+**Given** tests  
+**When** `flutter test` runs  
+**Then** onboarding flow tests reflect 3 steps  
+**Given** beta checklist FUNC-10  
+**When** updated  
+**Then** repro: trust copy on intro → Continue → grant activity → complete onboarding
+
+**Depends on:** Story 13.3.
+
+---
+
+## Future Backlog (not Epics 8–13)
 
 | Item | Notes |
 |------|-------|

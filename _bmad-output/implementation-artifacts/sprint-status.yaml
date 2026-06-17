@@ -1,7 +1,7 @@
 # generated: 2026-05-25
-# last_updated: 2026-06-16 (Story 12-4 done, Epic 12 done, v0.5.0+7)
-# NEXT: code-review 9-1-android-fgs-notification-visibility
-# Ref: planning-artifacts/sprint-change-proposal-2026-06-15.md
+# last_updated: 2026-06-17 (Epic 13 backlog — onboarding redesign CC)
+# NEXT: code-review 9-1-android-fgs-notification-visibility OR create-story 13-1
+# Ref: planning-artifacts/sprint-change-proposal-2026-06-17.md
 # project: astra-app
 # project_key: NOKEY
 # tracking_system: file-system
@@ -56,11 +56,12 @@
 #   epic-10: App Shell, Navigation & Settings Surfaces
 #   epic-11: Steps Dashboard
 #   epic-12: Trends Analytics
+#   epic-13: Onboarding Redesign
 #
 # NAVIGATION: _bmad-output/README.md
 
 generated: 2026-05-25
-last_updated: 2026-06-16 (Story 12-4 done, Epic 12 done, v0.5.0+7)
+last_updated: 2026-06-17 (Epic 13 backlog — onboarding redesign CC)
 # Story 9.1 context file: stories/9-1-android-fgs-notification-visibility.md
 project: astra-app
 project_key: NOKEY
@@ -168,3 +169,10 @@ development_status:
   12-3-trends-twelve-month-monthly-chart: done
   12-4-trends-historical-goal-line: done
   epic-12-retrospective: optional
+
+  epic-13: backlog
+  13-1-onboarding-shell-and-intro-screen: backlog
+  13-2-astra-horizontal-ruler-widget: backlog
+  13-3-weight-and-height-onboarding-steps: backlog
+  13-4-flow-completion-and-cleanup: backlog
+  epic-13-retrospective: optional
