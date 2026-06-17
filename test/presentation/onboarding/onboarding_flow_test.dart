@@ -1,6 +1,7 @@
 import 'dart:async';
 
 import 'package:astra_app/core/constants/astra_theme.dart';
+import 'package:astra_app/core/constants/display_unit_preferences.dart';
 import 'package:astra_app/core/database/app_database.dart';
 import 'package:astra_app/core/di/app_dependencies.dart';
 import 'package:astra_app/data/repositories/user_preferences_repository.dart';
@@ -23,6 +24,26 @@ Finder _weightContinue() => find.descendant(
   of: find.byKey(const ValueKey('onboarding-step-1')),
   matching: find.text('Continue'),
 );
+
+Finder _weightSkip() => find.descendant(
+  of: find.byKey(const ValueKey('onboarding-step-1')),
+  matching: find.text('Skip'),
+);
+
+Finder _heightLetsGo() => find.descendant(
+  of: find.byKey(const ValueKey('onboarding-step-2')),
+  matching: find.text("Let's Go"),
+);
+
+Finder _heightSkip() => find.descendant(
+  of: find.byKey(const ValueKey('onboarding-step-2')),
+  matching: find.text('Skip'),
+);
+
+Future<void> _advancePastIntro(WidgetTester tester) async {
+  await tester.tap(_introContinue());
+  await tester.pumpAndSettle();
+}
 
 void main() {
   setUpAll(() async {
@@ -48,13 +69,29 @@ void main() {
       await db.close();
     });
 
-    testWidgets('shows intro headline on first step', (tester) async {
-      await tester.pumpWidget(
-        MaterialApp(
-          theme: buildAstraLightTheme(),
-          home: OnboardingFlow(deps: deps, onComplete: () {}),
+    Widget buildFlow({
+      required VoidCallback onComplete,
+      OnboardingCubit Function(UserPreferencesRepository)? createCubit,
+    }) {
+      return MaterialApp(
+        theme: buildAstraLightTheme(),
+        home: OnboardingFlow(
+          deps: deps,
+          onComplete: onComplete,
+          createCubit: createCubit,
         ),
       );
+    }
+
+    OnboardingCubit grantedCubit(UserPreferencesRepository repo) {
+      return OnboardingCubit(
+        userPreferences: repo,
+        permissionRequester: (_) async => PermissionStatus.granted,
+      );
+    }
+
+    testWidgets('shows intro headline on first step', (tester) async {
+      await tester.pumpWidget(buildFlow(onComplete: () {}));
 
       expect(
         find.text('Your Health. Your Phone. Period.').hitTestable(),
@@ -68,18 +105,14 @@ void main() {
       var permissionRequestCount = 0;
 
       await tester.pumpWidget(
-        MaterialApp(
-          theme: buildAstraLightTheme(),
-          home: OnboardingFlow(
-            deps: deps,
-            onComplete: () {},
-            createCubit: (repo) => OnboardingCubit(
-              userPreferences: repo,
-              permissionRequester: (_) async {
-                permissionRequestCount++;
-                return PermissionStatus.granted;
-              },
-            ),
+        buildFlow(
+          onComplete: () {},
+          createCubit: (repo) => OnboardingCubit(
+            userPreferences: repo,
+            permissionRequester: (_) async {
+              permissionRequestCount++;
+              return PermissionStatus.granted;
+            },
           ),
         ),
       );
@@ -90,27 +123,23 @@ void main() {
       expect(permissionRequestCount, 1);
     });
 
-    testWidgets('advances to weight placeholder after permission resolves', (
+    testWidgets('advances to weight step after permission resolves', (
       tester,
     ) async {
       await tester.pumpWidget(
-        MaterialApp(
-          theme: buildAstraLightTheme(),
-          home: OnboardingFlow(
-            deps: deps,
-            onComplete: () {},
-            createCubit: (repo) => OnboardingCubit(
-              userPreferences: repo,
-              permissionRequester: (_) async => PermissionStatus.granted,
-            ),
-          ),
+        buildFlow(
+          onComplete: () {},
+          createCubit: grantedCubit,
         ),
       );
 
-      await tester.tap(_introContinue());
-      await tester.pumpAndSettle();
+      await _advancePastIntro(tester);
 
-      expect(find.text('Weight').hitTestable(), findsOneWidget);
+      expect(
+        find.text('What is your weight?').hitTestable(),
+        findsOneWidget,
+      );
+      expect(find.text('Weight'), findsNothing);
       expect(
         find.text('Your Health. Your Phone. Period.').hitTestable(),
         findsNothing,
@@ -121,48 +150,44 @@ void main() {
       tester,
     ) async {
       await tester.pumpWidget(
-        MaterialApp(
-          theme: buildAstraLightTheme(),
-          home: OnboardingFlow(
-            deps: deps,
-            onComplete: () {},
-            createCubit: (repo) => OnboardingCubit(
-              userPreferences: repo,
-              permissionRequester: (_) async => PermissionStatus.denied,
-            ),
+        buildFlow(
+          onComplete: () {},
+          createCubit: (repo) => OnboardingCubit(
+            userPreferences: repo,
+            permissionRequester: (_) async => PermissionStatus.denied,
           ),
         ),
       );
 
-      await tester.tap(_introContinue());
-      await tester.pumpAndSettle();
+      await _advancePastIntro(tester);
 
-      expect(find.text('Weight').hitTestable(), findsOneWidget);
+      expect(
+        find.text('What is your weight?').hitTestable(),
+        findsOneWidget,
+      );
     });
 
     testWidgets('recovers Continue after permission requester throws', (
       tester,
     ) async {
       await tester.pumpWidget(
-        MaterialApp(
-          theme: buildAstraLightTheme(),
-          home: OnboardingFlow(
-            deps: deps,
-            onComplete: () {},
-            createCubit: (repo) => OnboardingCubit(
-              userPreferences: repo,
-              permissionRequester: (_) async {
-                throw Exception('platform channel failure');
-              },
-            ),
+        buildFlow(
+          onComplete: () {},
+          createCubit: (repo) => OnboardingCubit(
+            userPreferences: repo,
+            permissionRequester: (_) async {
+              throw Exception('platform channel failure');
+            },
           ),
         ),
       );
 
-      await tester.tap(_introContinue());
-      await tester.pumpAndSettle();
+      await _advancePastIntro(tester);
 
-      expect(find.text('Weight').hitTestable(), findsOneWidget);
+      expect(
+        find.text('What is your weight?').hitTestable(),
+        findsOneWidget,
+      );
 
       await tester.tap(find.byTooltip('Back'));
       await tester.pump();
@@ -183,15 +208,11 @@ void main() {
       final permissionCompleter = Completer<PermissionStatus>();
 
       await tester.pumpWidget(
-        MaterialApp(
-          theme: buildAstraLightTheme(),
-          home: OnboardingFlow(
-            deps: deps,
-            onComplete: () {},
-            createCubit: (repo) => OnboardingCubit(
-              userPreferences: repo,
-              permissionRequester: (_) => permissionCompleter.future,
-            ),
+        buildFlow(
+          onComplete: () {},
+          createCubit: (repo) => OnboardingCubit(
+            userPreferences: repo,
+            permissionRequester: (_) => permissionCompleter.future,
           ),
         ),
       );
@@ -204,28 +225,26 @@ void main() {
       permissionCompleter.complete(PermissionStatus.granted);
       await tester.pumpAndSettle();
 
-      expect(find.text('Weight').hitTestable(), findsOneWidget);
+      expect(
+        find.text('What is your weight?').hitTestable(),
+        findsOneWidget,
+      );
     });
 
     testWidgets('back navigation moves from weight to intro', (tester) async {
       await tester.pumpWidget(
-        MaterialApp(
-          theme: buildAstraLightTheme(),
-          home: OnboardingFlow(
-            deps: deps,
-            onComplete: () {},
-            createCubit: (repo) => OnboardingCubit(
-              userPreferences: repo,
-              permissionRequester: (_) async => PermissionStatus.granted,
-            ),
-          ),
+        buildFlow(
+          onComplete: () {},
+          createCubit: grantedCubit,
         ),
       );
 
-      await tester.tap(_introContinue());
-      await tester.pumpAndSettle();
+      await _advancePastIntro(tester);
 
-      expect(find.text('Weight').hitTestable(), findsOneWidget);
+      expect(
+        find.text('What is your weight?').hitTestable(),
+        findsOneWidget,
+      );
 
       await tester.tap(find.byTooltip('Back'));
       await tester.pump();
@@ -234,65 +253,151 @@ void main() {
         find.text('Your Health. Your Phone. Period.').hitTestable(),
         findsOneWidget,
       );
-      expect(find.text('Weight').hitTestable(), findsNothing);
+      expect(
+        find.text('What is your weight?').hitTestable(),
+        findsNothing,
+      );
     });
 
     testWidgets('back navigation moves from height to weight', (tester) async {
       await tester.pumpWidget(
-        MaterialApp(
-          theme: buildAstraLightTheme(),
-          home: OnboardingFlow(
-            deps: deps,
-            onComplete: () {},
-            createCubit: (repo) => OnboardingCubit(
-              userPreferences: repo,
-              permissionRequester: (_) async => PermissionStatus.granted,
-            ),
-          ),
+        buildFlow(
+          onComplete: () {},
+          createCubit: grantedCubit,
         ),
       );
 
-      await tester.tap(_introContinue());
-      await tester.pumpAndSettle();
+      await _advancePastIntro(tester);
       await tester.tap(_weightContinue());
-      await tester.pump();
+      await tester.pumpAndSettle();
 
-      expect(find.text('Height').hitTestable(), findsOneWidget);
+      expect(
+        find.text('What is your height?').hitTestable(),
+        findsOneWidget,
+      );
 
       await tester.tap(find.byTooltip('Back'));
       await tester.pump();
 
-      expect(find.text('Weight').hitTestable(), findsOneWidget);
-      expect(find.text('Height').hitTestable(), findsNothing);
+      expect(
+        find.text('What is your weight?').hitTestable(),
+        findsOneWidget,
+      );
+      expect(
+        find.text('What is your height?').hitTestable(),
+        findsNothing,
+      );
     });
 
-    testWidgets('invokes onComplete when onboarding finishes', (tester) async {
+    testWidgets('weight Continue advances to height step', (tester) async {
+      await tester.pumpWidget(buildFlow(onComplete: () {}, createCubit: grantedCubit));
+
+      await _advancePastIntro(tester);
+      await tester.tap(_weightContinue());
+      await tester.pumpAndSettle();
+
+      expect(
+        find.text('What is your height?').hitTestable(),
+        findsOneWidget,
+      );
+      expect(find.text("Let's Go").hitTestable(), findsOneWidget);
+    });
+
+    testWidgets("Let's Go completes onboarding with default metrics", (
+      tester,
+    ) async {
       var onCompleteCalled = false;
       OnboardingCubit? cubitRef;
 
       await tester.pumpWidget(
-        MaterialApp(
-          theme: buildAstraLightTheme(),
-          home: OnboardingFlow(
-            deps: deps,
-            onComplete: () => onCompleteCalled = true,
-            createCubit: (repo) {
-              cubitRef = OnboardingCubit(
-                userPreferences: repo,
-                permissionRequester: (_) async => PermissionStatus.granted,
-              );
-              return cubitRef!;
-            },
-          ),
+        buildFlow(
+          onComplete: () => onCompleteCalled = true,
+          createCubit: (repo) {
+            cubitRef = grantedCubit(repo);
+            return cubitRef!;
+          },
         ),
       );
 
-      await tester.binding.runAsync(() async {
-        await cubitRef!.completeOnboarding(goal: 8000);
+      await _advancePastIntro(tester);
+      await tester.tap(_weightContinue());
+      await tester.pump();
+
+      await tester.runAsync(() async {
+        await cubitRef!.completeWithHeight();
       });
       await tester.pump();
 
       expect(onCompleteCalled, isTrue);
+    });
+
+    testWidgets("Let's Go button is visible on height step", (
+      tester,
+    ) async {
+      await tester.pumpWidget(
+        buildFlow(
+          onComplete: () {},
+          createCubit: grantedCubit,
+        ),
+      );
+
+      await _advancePastIntro(tester);
+      await tester.tap(_weightContinue());
+      await tester.pump();
+
+      expect(
+        find.text('What is your height?').hitTestable(),
+        findsOneWidget,
+      );
+      expect(_heightLetsGo().hitTestable(), findsOneWidget);
+      expect(_heightSkip().hitTestable(), findsOneWidget);
+    });
+
+    testWidgets('Skip weight advances to height step', (tester) async {
+      await tester.pumpWidget(
+        buildFlow(
+          onComplete: () {},
+          createCubit: grantedCubit,
+        ),
+      );
+
+      await _advancePastIntro(tester);
+      await tester.tap(_weightSkip());
+      await tester.pump();
+
+      expect(
+        find.text('What is your height?').hitTestable(),
+        findsOneWidget,
+      );
+    });
+
+    testWidgets('unit toggle preserves canonical weight across kg and lb', (
+      tester,
+    ) async {
+      OnboardingCubit? cubitRef;
+
+      await tester.pumpWidget(
+        buildFlow(
+          onComplete: () {},
+          createCubit: (repo) {
+            cubitRef = grantedCubit(repo);
+            return cubitRef!;
+          },
+        ),
+      );
+
+      await _advancePastIntro(tester);
+
+      await tester.tap(find.text('lb'));
+      await tester.pumpAndSettle();
+
+      expect(find.text('154'), findsWidgets);
+
+      await tester.tap(_weightContinue());
+      await tester.pump();
+
+      expect(cubitRef!.state.weightKg, 70.0);
+      expect(cubitRef!.state.weightDisplayUnit, WeightDisplayUnit.lb);
     });
   });
 }
