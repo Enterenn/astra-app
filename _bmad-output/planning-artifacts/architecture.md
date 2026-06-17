@@ -543,7 +543,7 @@ lib/
 │   └── repositories/     # step_repository, user_preferences_repository
 ├── presentation/
 │   ├── cubits/           # today, history, my_data (or data), profile, onboarding, theme
-│   ├── onboarding/       # trust, permissions, goal pages
+│   ├── onboarding/       # intro, weight, height pages + astra_horizontal_ruler
 │   ├── screens/          # app_scaffold, today, history (trends), data_screen, profile_screen
 │   └── widgets/          # goal_ring, step_bar_chart, accent_preset_selector, week_progress_row, ...
 └── dev/                  # data_inject_service, lifecycle_simulator, chart_benchmark (kDebugMode)
@@ -799,7 +799,7 @@ astra-app/                              # Git repo root = Flutter app root (D-18
 │   │   └── repositories/               # step_repository, user_preferences_repository
 │   ├── presentation/
 │   │   ├── cubits/                     # today, history, my_data, onboarding
-│   │   ├── onboarding/                 # trust, permissions, goal pages
+│   │   ├── onboarding/                 # intro, weight, height pages + astra_horizontal_ruler
 │   │   ├── screens/                    # app_scaffold, today, history, my_data
 │   │   └── widgets/                    # goal_ring, goal_celebration, step_bar_chart, etc.
 │   └── dev/                            # data_inject_service, lifecycle_simulator, chart_benchmark (kDebugMode)
