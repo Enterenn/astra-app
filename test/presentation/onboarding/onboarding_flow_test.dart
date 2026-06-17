@@ -170,12 +170,10 @@ void main() {
     });
 
     testWidgets(
-      'denied permission on intro completes via skip and persists onboarding flag',
+      'denied permission on intro completes via UI skip and persists onboarding flag',
       (tester) async {
         var onCompleteCalled = false;
         OnboardingCubit? cubitRef;
-        var onboardingComplete = false;
-        var persistedGoal = 0;
 
         await tester.pumpWidget(
           buildFlow(
@@ -190,22 +188,33 @@ void main() {
           ),
         );
 
-        await tester.runAsync(() async {
-          await cubitRef!.requestActivityPermission();
-          cubitRef!.skipWeight();
-          await cubitRef!.skipHeight();
-          onboardingComplete = await userPreferences.getOnboardingComplete();
-          persistedGoal = await userPreferences.getDailyStepGoal();
-        });
-        await tester.pump();
+        await tester.tap(_introContinue());
+        await tester.pumpAndSettle();
 
-        expect(onCompleteCalled, isTrue);
         expect(
           cubitRef!.state.activityPermissionStatus,
           PermissionRequestStatus.denied,
         );
-        expect(onboardingComplete, isTrue);
-        expect(persistedGoal, 8000);
+
+        await tester.tap(_weightSkip());
+        await tester.pump();
+
+        expect(
+          find.text('What is your height?').hitTestable(),
+          findsOneWidget,
+        );
+
+        await tester.runAsync(() async {
+          await cubitRef!.skipHeight();
+        });
+        await tester.pump();
+
+        expect(onCompleteCalled, isTrue);
+
+        await tester.runAsync(() async {
+          expect(await userPreferences.getOnboardingComplete(), isTrue);
+          expect(await userPreferences.getDailyStepGoal(), 8000);
+        });
       },
     );
 

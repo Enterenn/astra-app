@@ -1,5 +1,5 @@
 # generated: 2026-05-25
-# last_updated: 2026-06-17 (Epic 13 done — Story 13.4)
+# last_updated: 2026-06-17 (Story 13.4 done — Epic 13 closed)
 # NEXT: dev-story 13-4-flow-completion-and-cleanup
 # Ref: planning-artifacts/sprint-change-proposal-2026-06-17.md
 # project: astra-app
@@ -61,7 +61,7 @@
 # NAVIGATION: _bmad-output/README.md
 
 generated: 2026-05-25
-last_updated: 2026-06-17 (Epic 13 done — Story 13.4)
+last_updated: 2026-06-17 (Story 13.4 done — Epic 13 closed)
 # Story 9.1 context file: stories/9-1-android-fgs-notification-visibility.md
 project: astra-app
 project_key: NOKEY
@@ -174,5 +174,5 @@ development_status:
   13-1-onboarding-shell-and-intro-screen: done
   13-2-astra-horizontal-ruler-widget: done
   13-3-weight-and-height-onboarding-steps: done
-  13-4-flow-completion-and-cleanup: review
+  13-4-flow-completion-and-cleanup: done
   epic-13-retrospective: optional

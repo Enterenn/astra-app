@@ -107,8 +107,11 @@ void main() {
       expect(find.text('PROFILE'), findsNothing);
 
       expect(
-        find.text('Steps'),
-        findsAtLeastNWidgets(1),
+        find.byWidgetPredicate(
+          (widget) =>
+              widget is Semantics && widget.properties.label == 'Steps',
+        ),
+        findsOneWidget,
       );
 
       await tester.tap(find.byIcon(PhosphorIconsRegular.chartBar));
@@ -305,13 +308,95 @@ void main() {
 
       expect(find.byType(AppBottomNav), findsOneWidget);
       expect(find.text('Your Health. Your Phone. Period.'), findsNothing);
-      expect(find.text('Steps'), findsAtLeastNWidgets(1));
+      expect(
+        find.byWidgetPredicate(
+          (widget) =>
+              widget is Semantics && widget.properties.label == 'Steps',
+        ),
+        findsOneWidget,
+      );
 
       await tester.runAsync(() async {
         await tester.pumpWidget(const SizedBox.shrink());
         await tester.pump();
       });
     });
+
+    testWidgets(
+      'denied activity permission lands on Steps empty state after onboarding',
+      (tester) async {
+        OnboardingCubit? cubitRef;
+        TodayCubit? todayCubitRef;
+
+        await tester.runAsync(() async {
+          await tester.pumpWidget(
+            AstraApp(
+              deps: incompleteDeps,
+              createTodayCubit: (deps) {
+                todayCubitRef = TodayCubit(
+                  stepRepository: deps.stepRepository,
+                  userPreferences: deps.userPreferences,
+                  clock: deps.timeProvider,
+                  activityPermissionGranted: () async => false,
+                );
+                return todayCubitRef!;
+              },
+              createHistoryCubit: _testHistoryCubit,
+              createOnboardingCubit: (repo) {
+                cubitRef = OnboardingCubit(
+                  userPreferences: repo,
+                  permissionRequester: (_) async => PermissionStatus.denied,
+                );
+                return cubitRef!;
+              },
+              enablePeriodicPersist: false,
+              enableLiveStepPipeline: false,
+            ),
+          );
+          await tester.pump();
+        });
+
+        await tester.tap(
+          find.descendant(
+            of: find.byKey(const ValueKey('onboarding-step-0')),
+            matching: find.text('Continue'),
+          ),
+        );
+        await tester.pumpAndSettle();
+
+        await tester.tap(
+          find.descendant(
+            of: find.byKey(const ValueKey('onboarding-step-1')),
+            matching: find.text('Skip'),
+          ),
+        );
+        await tester.pump();
+
+        await tester.runAsync(() async {
+          await cubitRef!.skipHeight();
+        });
+        await tester.pump();
+
+        expect(find.byType(AppBottomNav), findsOneWidget);
+        expect(find.text('Your Health. Your Phone. Period.'), findsNothing);
+
+        await tester.runAsync(() async {
+          await todayCubitRef!.refresh();
+        });
+        await tester.pump();
+
+        expect(
+          find.text('Open settings to allow step access'),
+          findsOneWidget,
+        );
+        expect(todayCubitRef!.state.status, TodayStatus.noPermission);
+
+        await tester.runAsync(() async {
+          await tester.pumpWidget(const SizedBox.shrink());
+          await tester.pump();
+        });
+      },
+    );
   });
 
   group('AstraApp foreground backfill', () {
