@@ -71,7 +71,7 @@ class _OnboardingFlowView extends StatelessWidget {
         body: SafeArea(
           child: Padding(
             padding: const EdgeInsets.symmetric(
-              horizontal: AstraSpacing.kSpace2xl,
+              horizontal: AstraSpacing.kSpaceLg,
               vertical: AstraSpacing.kSpaceLg,
             ),
             child: IndexedStack(

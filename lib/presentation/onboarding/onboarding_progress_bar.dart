@@ -15,27 +15,29 @@ class OnboardingProgressBar extends StatelessWidget {
   final int currentStep;
   final int totalSteps;
 
-  static const _segmentHeight = 4.0;
+  static const _segmentWidth = 48.0;
+  static const _segmentHeight = 5.0;
+  static const _segmentGap = AstraSpacing.kSpaceSm;
 
   @override
   Widget build(BuildContext context) {
     final colors = context.astraColors;
 
     return Row(
+      mainAxisAlignment: MainAxisAlignment.center,
       children: [
         for (var i = 0; i < totalSteps; i++) ...[
-          if (i > 0) const SizedBox(width: AstraSpacing.kSpaceSm),
-          Expanded(
-            child: AnimatedContainer(
-              duration: const Duration(milliseconds: 200),
-              curve: Curves.easeInOut,
-              height: _segmentHeight,
-              decoration: BoxDecoration(
-                color: i == currentStep
-                    ? colors.accentPrimary
-                    : colors.borderDefault.withValues(alpha: 0.4),
-                borderRadius: BorderRadius.circular(AstraSpacing.kRadiusFull),
-              ),
+          if (i > 0) const SizedBox(width: _segmentGap),
+          AnimatedContainer(
+            duration: const Duration(milliseconds: 200),
+            curve: Curves.easeInOut,
+            width: _segmentWidth,
+            height: _segmentHeight,
+            decoration: BoxDecoration(
+              color: i == currentStep
+                  ? colors.accentPrimary
+                  : colors.bgSubtle,
+              borderRadius: BorderRadius.circular(AstraSpacing.kRadiusFull),
             ),
           ),
         ],

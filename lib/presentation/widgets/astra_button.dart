@@ -63,7 +63,7 @@ class AstraButton extends StatelessWidget {
               foregroundColor: colors.accentSecondary,
               disabledForegroundColor: colors.textMuted,
               shape: RoundedRectangleBorder(
-                borderRadius: BorderRadius.circular(AstraSpacing.kRadiusSm),
+                borderRadius: BorderRadius.circular(AstraSpacing.kRadiusFull),
               ),
             ),
             child: _buildChild(labelStyle),
@@ -95,7 +95,7 @@ class AstraButton extends StatelessWidget {
               ),
               shape: WidgetStateProperty.all(
                 RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(AstraSpacing.kRadiusSm),
+                  borderRadius: BorderRadius.circular(AstraSpacing.kRadiusFull),
                 ),
               ),
             ),
@@ -108,7 +108,7 @@ class AstraButton extends StatelessWidget {
               foregroundColor: colors.neutralGray,
               disabledForegroundColor: colors.textMuted,
               shape: RoundedRectangleBorder(
-                borderRadius: BorderRadius.circular(AstraSpacing.kRadiusSm),
+                borderRadius: BorderRadius.circular(AstraSpacing.kRadiusFull),
               ),
             ),
             child: _buildChild(labelStyle),
@@ -122,7 +122,7 @@ class AstraButton extends StatelessWidget {
               foregroundColor: colors.textInverse,
               disabledForegroundColor: colors.textMuted,
               shape: RoundedRectangleBorder(
-                borderRadius: BorderRadius.circular(AstraSpacing.kRadiusSm),
+                borderRadius: BorderRadius.circular(AstraSpacing.kRadiusFull),
               ),
             ),
             child: _buildChild(labelStyle),

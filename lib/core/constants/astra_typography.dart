@@ -41,6 +41,15 @@ abstract final class AstraTypography {
     color: colors.textPrimary,
   );
 
+  /// Onboarding intro headline (Figtree 24px semibold).
+  static TextStyle onboardingIntroTitleFor(AstraColors colors) => TextStyle(
+    fontFamily: figtree,
+    fontSize: 24,
+    fontWeight: FontWeight.w600,
+    height: 1.15,
+    color: colors.textPrimary,
+  );
+
   static TextStyle headlineFor(AstraColors colors) => TextStyle(
     fontFamily: figtree,
     fontSize: 18,

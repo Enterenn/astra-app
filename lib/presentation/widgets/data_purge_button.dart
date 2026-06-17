@@ -39,7 +39,7 @@ class DataPurgeButton extends StatelessWidget {
             foregroundColor: colors.statusDanger,
             disabledForegroundColor: colors.textMuted,
             shape: RoundedRectangleBorder(
-              borderRadius: BorderRadius.circular(AstraSpacing.kRadiusSm),
+              borderRadius: BorderRadius.circular(AstraSpacing.kRadiusFull),
             ),
           ),
           child: isLoading

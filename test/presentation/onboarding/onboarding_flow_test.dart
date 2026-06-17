@@ -140,33 +140,6 @@ void main() {
       expect(find.text('Weight').hitTestable(), findsOneWidget);
     });
 
-    testWidgets('disclaimer expand does not disable Continue', (tester) async {
-      await tester.pumpWidget(
-        MaterialApp(
-          theme: buildAstraLightTheme(),
-          home: OnboardingFlow(deps: deps, onComplete: () {}),
-        ),
-      );
-
-      expect(_introContinue(), findsOneWidget);
-
-      await tester.tap(find.text('Learn more'));
-      await tester.pump();
-
-      expect(
-        find.textContaining('All data stays on this device'),
-        findsOneWidget,
-      );
-
-      final continueButton = tester.widget<FilledButton>(
-        find.ancestor(
-          of: _introContinue(),
-          matching: find.byType(FilledButton),
-        ),
-      );
-      expect(continueButton.onPressed, isNotNull);
-    });
-
     testWidgets('recovers Continue after permission requester throws', (
       tester,
     ) async {

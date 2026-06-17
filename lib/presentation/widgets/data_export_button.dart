@@ -77,7 +77,7 @@ class DataExportButton extends StatelessWidget {
             ),
             shape: WidgetStateProperty.all(
               RoundedRectangleBorder(
-                borderRadius: BorderRadius.circular(AstraSpacing.kRadiusSm),
+                borderRadius: BorderRadius.circular(AstraSpacing.kRadiusFull),
               ),
             ),
           ),
