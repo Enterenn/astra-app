@@ -1,11 +1,13 @@
 import 'dart:math' as math;
 
 import 'package:flutter/material.dart';
-import 'package:flutter/services.dart';
+import 'package:flutter/rendering.dart';
 
 import '../../core/constants/astra_colors.dart';
 import '../../core/constants/astra_spacing.dart';
 import '../../core/constants/astra_typography.dart';
+import 'animated_step_count.dart';
+import 'ruler_tick_scroll_physics.dart';
 
 typedef RulerValueFormatter = String Function(double value);
 
@@ -20,7 +22,6 @@ class AstraHorizontalRuler extends StatefulWidget {
     required this.unitLabel,
     this.majorTickEvery = 10,
     this.valueFormatter,
-    this.enableHaptics = true,
     this.sliderVerticalMargin = 0,
     this.unitLabelGap = AstraSpacing.kSpaceXs,
     this.centerIndicatorHeight = 32,
@@ -35,7 +36,6 @@ class AstraHorizontalRuler extends StatefulWidget {
   final String unitLabel;
   final double majorTickEvery;
   final RulerValueFormatter? valueFormatter;
-  final bool enableHaptics;
 
   /// Vertical inset above and below the tick band (onboarding: 48px).
   final double sliderVerticalMargin;
@@ -53,27 +53,44 @@ class AstraHorizontalRuler extends StatefulWidget {
   static const majorTickHeight = 24.0;
   static const centerIndicatorWidth = 2.0;
   static const selectedValueGap = 4.0;
-  /// Space between tick bars and major labels below.
   static const majorLabelGap = AstraSpacing.kSpaceSm;
-  /// Tick marks, label gap, and optional major labels below.
   static const rulerBandHeight =
       majorTickHeight + majorLabelGap + labelRowHeight;
   static const snapDuration = Duration(milliseconds: 200);
+  /// Matches goal-ring micro-tick duration for digit readout.
+  static const readoutMicroTickMs = 150;
+  static const indicatorPulseDuration = Duration(milliseconds: 180);
+  static const scrollingLabelOpacity = 0.45;
 
   @override
   State<AstraHorizontalRuler> createState() => _AstraHorizontalRulerState();
 }
 
-class _AstraHorizontalRulerState extends State<AstraHorizontalRuler> {
+class _AstraHorizontalRulerState extends State<AstraHorizontalRuler>
+    with TickerProviderStateMixin {
   late ScrollController _scrollController;
+  late AnimationController _pulseController;
+  late Animation<double> _pulseScale;
+  AnimationController? _readoutMicroTickController;
   late double _displayValue;
   double? _lastReportedValue;
+  int? _readoutPreviousInt;
   bool _syncingScroll = false;
+  bool _isUserDrivingScroll = false;
 
   int get _tickCount {
     if (widget.step <= 0 || widget.max < widget.min) return 1;
     return ((widget.max - widget.min) / widget.step).round() + 1;
   }
+
+  int get _centerIndex => _indexForValue(_displayValue);
+
+  int get _readoutInt => _displayValue.round();
+
+  bool get _usesDigitReadoutAnimation =>
+      widget.valueFormatter == null &&
+      widget.step >= 1 &&
+      widget.step == widget.step.roundToDouble();
 
   @override
   void initState() {
@@ -82,7 +99,25 @@ class _AstraHorizontalRulerState extends State<AstraHorizontalRuler> {
     assert(widget.max >= widget.min, 'max must be >= min');
     _displayValue = _clampToStepGrid(widget.value);
     _lastReportedValue = _displayValue;
-    _scrollController = ScrollController();
+    _scrollController = ScrollController()..addListener(_handleScrollOffsetChange);
+    _pulseController = AnimationController(
+      vsync: this,
+      duration: AstraHorizontalRuler.indicatorPulseDuration,
+    );
+    _pulseScale = TweenSequence<double>([
+      TweenSequenceItem(
+        tween: Tween(begin: 1.0, end: 1.14).chain(
+          CurveTween(curve: Curves.easeOut),
+        ),
+        weight: 55,
+      ),
+      TweenSequenceItem(
+        tween: Tween(begin: 1.14, end: 1.0).chain(
+          CurveTween(curve: Curves.easeIn),
+        ),
+        weight: 45,
+      ),
+    ]).animate(_pulseController);
     WidgetsBinding.instance.addPostFrameCallback((_) {
       if (!mounted) return;
       _syncScrollToValue(_displayValue, animate: false);
@@ -99,14 +134,73 @@ class _AstraHorizontalRulerState extends State<AstraHorizontalRuler> {
       final clamped = _clampToStepGrid(widget.value);
       _displayValue = clamped;
       _lastReportedValue = clamped;
+      _releaseReadoutMicroTick();
       _syncScrollToValue(clamped, animate: false);
     }
   }
 
   @override
   void dispose() {
+    _scrollController.removeListener(_handleScrollOffsetChange);
     _scrollController.dispose();
+    _pulseController.dispose();
+    _releaseReadoutMicroTick();
     super.dispose();
+  }
+
+  void _releaseReadoutMicroTick() {
+    _readoutMicroTickController?.dispose();
+    _readoutMicroTickController = null;
+    _readoutPreviousInt = null;
+  }
+
+  int _tickIndexFromOffset([double? offset]) {
+    if (!_scrollController.hasClients && offset == null) return 0;
+    final pixels = offset ?? _scrollController.offset;
+    return (pixels / AstraHorizontalRuler.itemExtent)
+        .round()
+        .clamp(0, _tickCount - 1);
+  }
+
+  void _runReadoutMicroTick({required int from, required int to}) {
+    if (!_usesDigitReadoutAnimation || from == to) return;
+    if (MediaQuery.disableAnimationsOf(context)) return;
+
+    _releaseReadoutMicroTick();
+    _readoutPreviousInt = from;
+    _readoutMicroTickController = AnimationController(
+      vsync: this,
+      duration: const Duration(
+        milliseconds: AstraHorizontalRuler.readoutMicroTickMs,
+      ),
+    )
+      ..addListener(() {
+        if (mounted) setState(() {});
+      })
+      ..addStatusListener((status) {
+        if (status == AnimationStatus.completed && mounted) {
+          setState(() => _readoutPreviousInt = null);
+        }
+      })
+      ..forward();
+  }
+
+  void _applyDisplayValue(
+    double value, {
+    required bool animateReadout,
+    required bool pulseIndicator,
+  }) {
+    if (!mounted || value == _displayValue) return;
+
+    final from = _readoutInt;
+    final to = value.round();
+    if (animateReadout && _usesDigitReadoutAnimation && from != to) {
+      _runReadoutMicroTick(from: from, to: to);
+    }
+    if (pulseIndicator) {
+      _pulseIndicator();
+    }
+    setState(() => _displayValue = value);
   }
 
   double _clampToStepGrid(double value) {
@@ -161,19 +255,21 @@ class _AstraHorizontalRulerState extends State<AstraHorizontalRuler> {
   void _selectValue(double value, {required bool animate}) {
     final snapped = _clampToStepGrid(value);
     if (!_scrollController.hasClients) {
-      _finalizeValueChange(snapped);
+      _finalizeValueChange(snapped, fromUserGesture: false);
       return;
     }
 
-    final targetOffset = _indexForValue(snapped) * AstraHorizontalRuler.itemExtent;
+    final targetOffset =
+        _indexForValue(snapped) * AstraHorizontalRuler.itemExtent;
     if (!animate || MediaQuery.disableAnimationsOf(context)) {
       _scrollController.jumpTo(targetOffset);
-      _finalizeValueChange(snapped);
+      _syncingScroll = false;
+      _finalizeValueChange(snapped, fromUserGesture: false);
       return;
     }
 
     if ((_scrollController.offset - targetOffset).abs() < 0.5) {
-      _finalizeValueChange(snapped);
+      _finalizeValueChange(snapped, fromUserGesture: false);
       return;
     }
 
@@ -187,7 +283,7 @@ class _AstraHorizontalRulerState extends State<AstraHorizontalRuler> {
         .whenComplete(() {
       if (!mounted) return;
       _syncingScroll = false;
-      _finalizeValueChange(snapped);
+      _finalizeValueChange(snapped, fromUserGesture: false);
     });
   }
 
@@ -215,17 +311,62 @@ class _AstraHorizontalRulerState extends State<AstraHorizontalRuler> {
     }
   }
 
-  void _updateDisplayFromScroll() {
-    if (!_scrollController.hasClients) return;
-    final index =
-        (_scrollController.offset / AstraHorizontalRuler.itemExtent).round();
+  void _handleScrollOffsetChange() {
+    if (!_scrollController.hasClients || _syncingScroll) return;
+
+    final index = _tickIndexFromOffset();
     final value = _valueForIndex(index);
-    if (value != _displayValue && mounted) {
-      setState(() => _displayValue = value);
+
+    if (value != _displayValue) {
+      _applyDisplayValue(
+        value,
+        animateReadout: true,
+        pulseIndicator: _isUserDrivingScroll,
+      );
     }
   }
 
-  void _snapToNearestTick() {
+  void _pulseIndicator() {
+    if (MediaQuery.disableAnimationsOf(context)) return;
+    _pulseController.forward(from: 0);
+  }
+
+  void _finalizeValueChange(double newValue, {required bool fromUserGesture}) {
+    if (!mounted) return;
+    if (_displayValue != newValue) {
+      _applyDisplayValue(
+        newValue,
+        animateReadout: !fromUserGesture,
+        pulseIndicator: !fromUserGesture,
+      );
+    }
+    if (_lastReportedValue != newValue) {
+      _lastReportedValue = newValue;
+      widget.onChanged(newValue);
+    }
+  }
+
+  bool _onScrollNotification(ScrollNotification notification) {
+    if (notification is UserScrollNotification &&
+        notification.direction != ScrollDirection.idle) {
+      _isUserDrivingScroll = true;
+    } else if (notification is ScrollStartNotification) {
+      if (notification.dragDetails != null) {
+        _isUserDrivingScroll = true;
+      }
+    } else if (notification is ScrollUpdateNotification) {
+      if (notification.dragDetails != null) {
+        _isUserDrivingScroll = true;
+      }
+    } else if (notification is ScrollEndNotification) {
+      final wasDriving = _isUserDrivingScroll;
+      _isUserDrivingScroll = false;
+      _snapToNearestTick(fromUserGesture: wasDriving);
+    }
+    return false;
+  }
+
+  void _snapToNearestTick({required bool fromUserGesture}) {
     if (!_scrollController.hasClients || _syncingScroll) return;
 
     final index =
@@ -240,7 +381,7 @@ class _AstraHorizontalRulerState extends State<AstraHorizontalRuler> {
       if (disableAnimations) {
         _scrollController.jumpTo(targetOffset);
         _syncingScroll = false;
-        _finalizeValueChange(newValue);
+        _finalizeValueChange(newValue, fromUserGesture: fromUserGesture);
       } else {
         _scrollController
             .animateTo(
@@ -251,37 +392,12 @@ class _AstraHorizontalRulerState extends State<AstraHorizontalRuler> {
             .whenComplete(() {
           if (!mounted) return;
           _syncingScroll = false;
-          _finalizeValueChange(newValue);
+          _finalizeValueChange(newValue, fromUserGesture: fromUserGesture);
         });
       }
     } else {
-      _finalizeValueChange(newValue);
+      _finalizeValueChange(newValue, fromUserGesture: fromUserGesture);
     }
-  }
-
-  void _finalizeValueChange(double newValue) {
-    if (!mounted) return;
-    if (_displayValue != newValue) {
-      setState(() => _displayValue = newValue);
-    }
-    if (_lastReportedValue != newValue) {
-      _lastReportedValue = newValue;
-      if (widget.enableHaptics) {
-        HapticFeedback.selectionClick();
-      }
-      widget.onChanged(newValue);
-    }
-  }
-
-  bool _onScrollNotification(ScrollNotification notification) {
-    if (notification is ScrollUpdateNotification ||
-        notification is ScrollMetricsNotification) {
-      _updateDisplayFromScroll();
-    }
-    if (notification is ScrollEndNotification) {
-      _snapToNearestTick();
-    }
-    return false;
   }
 
   bool _isMajorTick(double tickValue) {
@@ -291,6 +407,13 @@ class _AstraHorizontalRulerState extends State<AstraHorizontalRuler> {
     final majorEverySteps =
         (widget.majorTickEvery / widget.step).round().clamp(1, 999999);
     return stepsFromMin % majorEverySteps == 0;
+  }
+
+  double _tickOpacityForIndex(int index) {
+    final distance = (index - _centerIndex).abs();
+    if (distance == 0) return 1;
+    if (distance <= 2) return 0.6;
+    return 0.38;
   }
 
   static double stackHeightFor(double indicatorHeight) {
@@ -308,6 +431,48 @@ class _AstraHorizontalRulerState extends State<AstraHorizontalRuler> {
   static double get _labelsBandHeight =>
       AstraHorizontalRuler.majorLabelGap + AstraHorizontalRuler.labelRowHeight;
 
+  Widget _buildReadout(AstraColors colors) {
+    final style = AstraTypography.rulerSelectedValueFor(colors);
+
+    if (!_usesDigitReadoutAnimation ||
+        MediaQuery.disableAnimationsOf(context)) {
+      return Text(
+        _formatValue(_displayValue),
+        style: style,
+        textAlign: TextAlign.center,
+      );
+    }
+
+    return AnimatedStepCount(
+      value: _readoutInt,
+      previousValue: _readoutPreviousInt,
+      microTickProgress: _readoutMicroTickController?.value ?? 0,
+      style: style,
+    );
+  }
+
+  Widget _buildCenterIndicator(AstraColors colors, double indicatorHeight) {
+    final bar = Container(
+      width: AstraHorizontalRuler.centerIndicatorWidth,
+      height: indicatorHeight,
+      color: colors.textPrimary,
+    );
+
+    if (MediaQuery.disableAnimationsOf(context)) return bar;
+
+    return AnimatedBuilder(
+      animation: _pulseController,
+      builder: (context, child) {
+        return Transform.scale(
+          scaleX: _pulseScale.value,
+          alignment: Alignment.bottomCenter,
+          child: child,
+        );
+      },
+      child: bar,
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     final colors = context.astraColors;
@@ -319,6 +484,9 @@ class _AstraHorizontalRulerState extends State<AstraHorizontalRuler> {
     );
     final marginTop = widget.sliderVerticalMargin;
     final marginBottom = widget.sliderVerticalMargin;
+    final labelOpacity = _isUserDrivingScroll
+        ? AstraHorizontalRuler.scrollingLabelOpacity
+        : 1.0;
 
     final rulerBody = Column(
       mainAxisSize: MainAxisSize.min,
@@ -342,13 +510,20 @@ class _AstraHorizontalRulerState extends State<AstraHorizontalRuler> {
                     right: 0,
                     bottom: 0,
                     height: AstraHorizontalRuler.rulerBandHeight,
-                    child: NotificationListener<ScrollNotification>(
-                      onNotification: _onScrollNotification,
-                      child: ListView.builder(
+                    child: Listener(
+                      onPointerDown: (_) {
+                        _isUserDrivingScroll = true;
+                        if (mounted) setState(() {});
+                      },
+                      child: NotificationListener<ScrollNotification>(
+                        onNotification: _onScrollNotification,
+                        child: ListView.builder(
                         controller: _scrollController,
                         scrollDirection: Axis.horizontal,
                         clipBehavior: Clip.none,
-                        physics: const ClampingScrollPhysics(),
+                        physics: RulerTickScrollPhysics(
+                          itemExtent: AstraHorizontalRuler.itemExtent,
+                        ),
                         padding: EdgeInsets.symmetric(
                           horizontal: sidePadding,
                         ),
@@ -361,9 +536,20 @@ class _AstraHorizontalRulerState extends State<AstraHorizontalRuler> {
                             colors: colors,
                             isMajor: isMajor,
                             label: isMajor ? _formatValue(tickValue) : null,
+                            tickOpacity: _tickOpacityForIndex(index),
+                            labelOpacity: labelOpacity,
+                            onLabelTap: isMajor
+                                ? () {
+                                    _selectValue(
+                                      tickValue,
+                                      animate: true,
+                                    );
+                                  }
+                                : null,
                           );
                         },
                       ),
+                    ),
                     ),
                   ),
                   Positioned(
@@ -373,10 +559,9 @@ class _AstraHorizontalRulerState extends State<AstraHorizontalRuler> {
                     child: ExcludeSemantics(
                       child: IgnorePointer(
                         child: Center(
-                          child: Container(
-                            width: AstraHorizontalRuler.centerIndicatorWidth,
-                            height: indicatorHeight,
-                            color: colors.textPrimary,
+                          child: _buildCenterIndicator(
+                            colors,
+                            indicatorHeight,
                           ),
                         ),
                       ),
@@ -391,13 +576,7 @@ class _AstraHorizontalRulerState extends State<AstraHorizontalRuler> {
                         AstraHorizontalRuler.selectedValueGap,
                     child: ExcludeSemantics(
                       child: IgnorePointer(
-                        child: Text(
-                          _formatValue(_displayValue),
-                          style: AstraTypography.rulerSelectedValueFor(
-                            colors,
-                          ),
-                          textAlign: TextAlign.center,
-                        ),
+                        child: Center(child: _buildReadout(colors)),
                       ),
                     ),
                   ),
@@ -448,17 +627,24 @@ class _RulerTick extends StatelessWidget {
     required this.colors,
     required this.isMajor,
     this.label,
+    this.tickOpacity = 1,
+    this.labelOpacity = 1,
+    this.onLabelTap,
   });
 
   final AstraColors colors;
   final bool isMajor;
   final String? label;
+  final double tickOpacity;
+  final double labelOpacity;
+  final VoidCallback? onLabelTap;
 
   @override
   Widget build(BuildContext context) {
     final tickHeight = isMajor
         ? AstraHorizontalRuler.majorTickHeight
         : AstraHorizontalRuler.minorTickHeight;
+    final tickColor = isMajor ? colors.textPrimary : colors.borderDefault;
 
     return SizedBox(
       width: AstraHorizontalRuler.itemExtent,
@@ -470,29 +656,44 @@ class _RulerTick extends StatelessWidget {
             height: AstraHorizontalRuler.majorTickHeight,
             child: Align(
               alignment: Alignment.bottomCenter,
-              child: Container(
-                width: 1,
-                height: tickHeight,
-                color: isMajor ? colors.textPrimary : colors.borderDefault,
+              child: Opacity(
+                opacity: tickOpacity,
+                child: Container(
+                  width: 1,
+                  height: tickHeight,
+                  color: tickColor,
+                ),
               ),
             ),
           ),
           const SizedBox(height: AstraHorizontalRuler.majorLabelGap),
           SizedBox(
             height: AstraHorizontalRuler.labelRowHeight,
-            child: label != null
-                ? OverflowBox(
+            child: label == null
+                ? const SizedBox.shrink()
+                : OverflowBox(
                     maxWidth: AstraHorizontalRuler.majorLabelMaxWidth,
                     alignment: Alignment.topCenter,
-                    child: Text(
-                      label!,
-                      style: AstraTypography.captionFor(colors),
-                      textAlign: TextAlign.center,
-                      maxLines: 1,
-                      softWrap: false,
+                    child: GestureDetector(
+                      onTap: onLabelTap,
+                      behavior: HitTestBehavior.translucent,
+                      child: SizedBox(
+                        width: AstraHorizontalRuler.majorLabelMaxWidth,
+                        height: AstraHorizontalRuler.labelRowHeight,
+                        child: AnimatedOpacity(
+                          duration: const Duration(milliseconds: 120),
+                          opacity: labelOpacity,
+                          child: Text(
+                            label!,
+                            style: AstraTypography.captionFor(colors),
+                            textAlign: TextAlign.center,
+                            maxLines: 1,
+                            softWrap: false,
+                          ),
+                        ),
+                      ),
                     ),
-                  )
-                : null,
+                  ),
           ),
         ],
       ),

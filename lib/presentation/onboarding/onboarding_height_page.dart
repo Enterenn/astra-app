@@ -69,7 +69,6 @@ class OnboardingHeightPage extends StatelessWidget {
             unitLabelGap: OnboardingMetricPickerLayout.unitLabelGap,
             centerIndicatorHeight:
                 OnboardingMetricPickerLayout.centerIndicatorHeight,
-            enableHaptics: true,
           ),
         );
       },

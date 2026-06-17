@@ -7,6 +7,7 @@ import 'package:astra_app/core/di/app_dependencies.dart';
 import 'package:astra_app/data/repositories/user_preferences_repository.dart';
 import 'package:astra_app/presentation/cubits/onboarding_cubit.dart';
 import 'package:astra_app/presentation/onboarding/onboarding_flow.dart';
+import 'package:astra_app/presentation/widgets/animated_step_count.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:permission_handler/permission_handler.dart';
@@ -391,7 +392,12 @@ void main() {
       await tester.tap(find.text('lb'));
       await tester.pumpAndSettle();
 
-      expect(find.text('154'), findsWidgets);
+      expect(
+        find.byWidgetPredicate(
+          (w) => w is AnimatedStepCount && w.value == 154,
+        ),
+        findsOneWidget,
+      );
 
       await tester.tap(_weightContinue());
       await tester.pump();

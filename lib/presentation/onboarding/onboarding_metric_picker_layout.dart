@@ -29,6 +29,10 @@ class OnboardingMetricPickerLayout extends StatelessWidget {
   /// Center selection indicator bar height.
   static const centerIndicatorHeight = 48.0;
 
+  static const _optionalMetricsHint =
+      'Weight and height are optional, but help improve the accuracy of '
+      'measurements in the app.';
+
   @override
   Widget build(BuildContext context) {
     final colors = context.astraColors;
@@ -46,6 +50,12 @@ class OnboardingMetricPickerLayout extends StatelessWidget {
           Center(child: unitSelector),
           const SizedBox(height: AstraSpacing.kSpaceLg),
           ruler,
+          const SizedBox(height: AstraSpacing.kSpaceMd),
+          Text(
+            _optionalMetricsHint,
+            textAlign: TextAlign.center,
+            style: AstraTypography.captionFor(colors),
+          ),
         ],
       ),
     );

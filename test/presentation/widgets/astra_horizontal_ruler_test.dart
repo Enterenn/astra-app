@@ -1,15 +1,24 @@
 import 'package:astra_app/core/constants/preference_keys.dart';
 import 'package:astra_app/core/constants/astra_theme.dart';
+import 'package:astra_app/presentation/widgets/animated_step_count.dart';
 import 'package:astra_app/presentation/widgets/astra_horizontal_ruler.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 
 void main() {
   Finder readoutText(String value) => find.byWidgetPredicate(
-        (widget) =>
-            widget is Text &&
-            widget.style?.fontSize == 80 &&
-            widget.data == value,
+        (widget) {
+          if (widget is AnimatedStepCount) {
+            return widget.value.toString() == value;
+          }
+          return widget is Text &&
+              widget.style?.fontSize == 80 &&
+              widget.data == value;
+        },
+      );
+
+  Finder readoutShowing(int value) => find.byWidgetPredicate(
+        (widget) => widget is AnimatedStepCount && widget.value == value,
       );
 
   Finder majorTickLabel(String value) => find.byWidgetPredicate(
@@ -29,7 +38,6 @@ void main() {
     String unitLabel = 'kg',
     double majorTickEvery = 10,
     RulerValueFormatter? valueFormatter,
-    bool enableHaptics = false,
   }) async {
     await tester.pumpWidget(
       MaterialApp(
@@ -47,7 +55,6 @@ void main() {
                 unitLabel: unitLabel,
                 majorTickEvery: majorTickEvery,
                 valueFormatter: valueFormatter,
-                enableHaptics: enableHaptics,
               ),
             ),
           ),
@@ -162,7 +169,6 @@ void main() {
                   max: 80,
                   step: 1,
                   unitLabel: 'kg',
-                  enableHaptics: false,
                 ),
               ),
             ),
@@ -186,7 +192,6 @@ void main() {
                   max: 80,
                   step: 1,
                   unitLabel: 'kg',
-                  enableHaptics: false,
                 ),
               ),
             ),
@@ -245,6 +250,30 @@ void main() {
         ),
         isTrue,
       );
+    });
+
+    testWidgets('tapping a major label jumps to that value', (tester) async {
+      double? changed;
+      await pumpRuler(
+        tester,
+        value: 70,
+        min: 50,
+        max: 90,
+        onChanged: (v) => changed = v,
+      );
+
+      await tester.tap(majorTickLabel('60'));
+      await tester.pump();
+      await tester.pumpAndSettle();
+
+      expect(changed, 60);
+      expect(readoutText('60'), findsOneWidget);
+    });
+
+    testWidgets('readout uses step count digit micro-tick animation', (tester) async {
+      await pumpRuler(tester, value: 70, min: 60, max: 80);
+
+      expect(find.byType(AnimatedStepCount), findsOneWidget);
     });
   });
 }
