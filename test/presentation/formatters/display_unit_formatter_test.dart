@@ -115,6 +115,25 @@ void main() {
     });
   });
 
+  group('heightCmToDisplayInches / displayInchesToHeightCm', () {
+    test('170 cm converts to 67 inches', () {
+      expect(heightCmToDisplayInches(170), 67);
+    });
+
+    test('round-trip at bounds', () {
+      for (final cm in [kMinHeightCm, 170, kMaxHeightCm]) {
+        final inches = heightCmToDisplayInches(cm);
+        final back = displayInchesToHeightCm(inches);
+        expect((back - cm).abs(), lessThanOrEqualTo(1));
+      }
+    });
+
+    test('clamps out-of-range inches to bounds', () {
+      expect(displayInchesToHeightCm(1), kMinHeightCm);
+      expect(displayInchesToHeightCm(200), kMaxHeightCm);
+    });
+  });
+
   group('weightKgToDisplayLb / displayLbToWeightKg', () {
     test('72.5 kg round-trips through lb', () {
       final lb = weightKgToDisplayLb(72.5);

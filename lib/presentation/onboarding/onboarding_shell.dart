@@ -17,6 +17,9 @@ class OnboardingShell extends StatelessWidget {
     this.primaryLoading = false,
     this.showPrimaryTrailingArrow = false,
     this.onBack,
+    this.secondaryLabel,
+    this.onSecondary,
+    this.secondaryEnabled = true,
     super.key,
   });
 
@@ -28,6 +31,9 @@ class OnboardingShell extends StatelessWidget {
   final bool primaryLoading;
   final bool showPrimaryTrailingArrow;
   final VoidCallback? onBack;
+  final String? secondaryLabel;
+  final VoidCallback? onSecondary;
+  final bool secondaryEnabled;
 
   @override
   Widget build(BuildContext context) {
@@ -40,6 +46,16 @@ class OnboardingShell extends StatelessWidget {
         OnboardingProgressBar(currentStep: currentStep),
         const SizedBox(height: AstraSpacing.kSpace2xl),
         Expanded(child: content),
+        if (secondaryLabel != null && onSecondary != null) ...[
+          Center(
+            child: AstraButton(
+              label: secondaryLabel!,
+              variant: AstraButtonVariant.ghost,
+              onPressed: secondaryEnabled && !primaryLoading ? onSecondary : null,
+            ),
+          ),
+          const SizedBox(height: AstraSpacing.kSpaceMd),
+        ],
         Row(
           children: [
             if (showBack)

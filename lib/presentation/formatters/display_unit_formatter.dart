@@ -76,3 +76,12 @@ double weightKgToDisplayLb(double weightKg) => weightKg * _lbPerKg;
 
 /// Converts display pounds to canonical kg (one decimal, half-up).
 double displayLbToWeightKg(double lb) => (lb / _lbPerKg * 10).round() / 10;
+
+/// Converts canonical cm to total display inches (half-up rounding).
+int heightCmToDisplayInches(int heightCm) => (heightCm / _cmPerInch).round();
+
+/// Converts total display inches to canonical cm (half-up, clamped to bounds).
+int displayInchesToHeightCm(int inches) {
+  final heightCm = (inches * _cmPerInch).round();
+  return heightCm.clamp(kMinHeightCm, kMaxHeightCm);
+}
