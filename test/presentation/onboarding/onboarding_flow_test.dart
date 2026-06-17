@@ -6,6 +6,7 @@ import 'package:astra_app/core/database/app_database.dart';
 import 'package:astra_app/core/di/app_dependencies.dart';
 import 'package:astra_app/data/repositories/user_preferences_repository.dart';
 import 'package:astra_app/presentation/cubits/onboarding_cubit.dart';
+import 'package:astra_app/presentation/cubits/onboarding_state.dart';
 import 'package:astra_app/presentation/onboarding/onboarding_flow.dart';
 import 'package:astra_app/presentation/widgets/animated_step_count.dart';
 import 'package:flutter/material.dart';
@@ -167,6 +168,46 @@ void main() {
         findsOneWidget,
       );
     });
+
+    testWidgets(
+      'denied permission on intro completes via skip and persists onboarding flag',
+      (tester) async {
+        var onCompleteCalled = false;
+        OnboardingCubit? cubitRef;
+        var onboardingComplete = false;
+        var persistedGoal = 0;
+
+        await tester.pumpWidget(
+          buildFlow(
+            onComplete: () => onCompleteCalled = true,
+            createCubit: (repo) {
+              cubitRef = OnboardingCubit(
+                userPreferences: repo,
+                permissionRequester: (_) async => PermissionStatus.denied,
+              );
+              return cubitRef!;
+            },
+          ),
+        );
+
+        await tester.runAsync(() async {
+          await cubitRef!.requestActivityPermission();
+          cubitRef!.skipWeight();
+          await cubitRef!.skipHeight();
+          onboardingComplete = await userPreferences.getOnboardingComplete();
+          persistedGoal = await userPreferences.getDailyStepGoal();
+        });
+        await tester.pump();
+
+        expect(onCompleteCalled, isTrue);
+        expect(
+          cubitRef!.state.activityPermissionStatus,
+          PermissionRequestStatus.denied,
+        );
+        expect(onboardingComplete, isTrue);
+        expect(persistedGoal, 8000);
+      },
+    );
 
     testWidgets('recovers Continue after permission requester throws', (
       tester,

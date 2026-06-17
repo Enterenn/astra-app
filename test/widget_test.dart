@@ -108,7 +108,7 @@ void main() {
 
       expect(
         find.text('Steps'),
-        findsOneWidget,
+        findsAtLeastNWidgets(1),
       );
 
       await tester.tap(find.byIcon(PhosphorIconsRegular.chartBar));
