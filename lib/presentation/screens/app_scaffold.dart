@@ -37,7 +37,6 @@ class AppScaffold extends StatefulWidget {
     this.createHistoryCubit,
     this.createMyDataCubit,
     this.createProfileCubit,
-    this.onDebugSnackBarReady,
     super.key,
   });
 
@@ -55,7 +54,6 @@ class AppScaffold extends StatefulWidget {
   final HistoryCubit Function(AppDependencies deps)? createHistoryCubit;
   final MyDataCubit Function(AppDependencies deps)? createMyDataCubit;
   final ProfileCubit Function(AppDependencies deps)? createProfileCubit;
-  final ValueChanged<void Function(String message)?>? onDebugSnackBarReady;
 
   @override
   State<AppScaffold> createState() => _AppScaffoldState();
@@ -135,12 +133,6 @@ class _AppScaffoldState extends State<AppScaffold> {
     widget.onHistoryCubitReady?.call(_historyCubit);
     widget.onMyDataCubitReady?.call(_myDataCubit);
     widget.onProfileCubitReady?.call(_profileCubit);
-    WidgetsBinding.instance.addPostFrameCallback((_) {
-      if (!mounted) {
-        return;
-      }
-      widget.onDebugSnackBarReady?.call(_showDebugSnackBar);
-    });
     _tabScreens = [
       BlocProvider.value(
         value: _todayCubit,
@@ -174,7 +166,6 @@ class _AppScaffoldState extends State<AppScaffold> {
 
   @override
   void dispose() {
-    widget.onDebugSnackBarReady?.call(null);
     widget.deps.backgroundCollector.registerOnIngestionComplete(null);
     widget.onTodayCubitDisposed?.call();
     widget.onHistoryCubitDisposed?.call();
@@ -191,20 +182,6 @@ class _AppScaffoldState extends State<AppScaffold> {
     unawaited(_todayCubit.refreshMetadata());
     unawaited(_historyCubit.refresh(silent: true));
     unawaited(_myDataCubit.refresh(silent: true));
-  }
-
-  void _showDebugSnackBar(String message) {
-    if (!kDebugMode || !mounted) {
-      return;
-    }
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(
-        content: Text(message),
-        behavior: SnackBarBehavior.floating,
-        margin: const EdgeInsets.fromLTRB(16, 0, 16, 96),
-        duration: const Duration(seconds: 4),
-      ),
-    );
   }
 
   void _onDestinationSelected(int index) {
