@@ -7,10 +7,10 @@ import '../../core/di/app_dependencies.dart';
 import '../../data/repositories/user_preferences_repository.dart';
 import '../cubits/onboarding_cubit.dart';
 import '../cubits/onboarding_state.dart';
-import 'onboarding_height_placeholder.dart';
+import 'onboarding_height_page.dart';
 import 'onboarding_intro_page.dart';
 import 'onboarding_shell.dart';
-import 'onboarding_weight_placeholder.dart';
+import 'onboarding_weight_page.dart';
 
 class OnboardingFlow extends StatelessWidget {
   const OnboardingFlow({
@@ -49,6 +49,14 @@ class _OnboardingFlowView extends StatelessWidget {
     final cubit = context.read<OnboardingCubit>();
     await cubit.requestActivityPermission();
     cubit.nextStep();
+  }
+
+  Future<void> _onHeightLetsGo(BuildContext context) async {
+    await context.read<OnboardingCubit>().completeWithHeight();
+  }
+
+  Future<void> _onHeightSkip(BuildContext context) async {
+    await context.read<OnboardingCubit>().skipHeight();
   }
 
   @override
@@ -94,18 +102,22 @@ class _OnboardingFlowView extends StatelessWidget {
                   currentStep: 1,
                   showBack: true,
                   primaryLabel: 'Continue',
+                  secondaryLabel: 'Skip',
                   onBack: cubit.previousStep,
-                  onPrimary: cubit.nextStep,
-                  content: const OnboardingWeightPlaceholder(),
+                  onSecondary: cubit.skipWeight,
+                  onPrimary: cubit.commitWeightAndContinue,
+                  content: const OnboardingWeightPage(),
                 ),
                 OnboardingShell(
                   key: const ValueKey('onboarding-step-2'),
                   currentStep: 2,
                   showBack: true,
-                  primaryLabel: 'Continue',
+                  primaryLabel: "Let's Go",
+                  secondaryLabel: 'Skip',
                   onBack: cubit.previousStep,
-                  onPrimary: () {},
-                  content: const OnboardingHeightPlaceholder(),
+                  onSecondary: () => _onHeightSkip(context),
+                  onPrimary: () => _onHeightLetsGo(context),
+                  content: const OnboardingHeightPage(),
                 ),
               ],
             ),
