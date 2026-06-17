@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 
 import '../../core/constants/astra_colors.dart';
 import '../../core/constants/astra_spacing.dart';
@@ -113,6 +114,9 @@ class _AstraHorizontalRulerState extends State<AstraHorizontalRuler> {
     return value.toStringAsFixed(1);
   }
 
+  String get _semanticsLabel =>
+      '${_formatValue(_displayValue)} ${widget.unitLabel}';
+
   void _syncScrollToValue(double value, {required bool animate}) {
     if (!_scrollController.hasClients) return;
     final index = _indexForValue(value);
@@ -183,6 +187,9 @@ class _AstraHorizontalRulerState extends State<AstraHorizontalRuler> {
     }
     if (_lastReportedValue != newValue) {
       _lastReportedValue = newValue;
+      if (widget.enableHaptics) {
+        HapticFeedback.selectionClick();
+      }
       widget.onChanged(newValue);
     }
   }
@@ -211,75 +218,87 @@ class _AstraHorizontalRulerState extends State<AstraHorizontalRuler> {
   Widget build(BuildContext context) {
     final colors = context.astraColors;
 
-    return AstraInsetShadowSurface(
-      color: colors.bgElevated,
-      borderRadius: BorderRadius.circular(AstraSpacing.kRadiusLg),
-      child: Padding(
-        padding: const EdgeInsets.all(AstraSpacing.kCardPadding),
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            Text(
-              _formatValue(_displayValue),
-              style: AstraTypography.displayFor(colors),
-              textAlign: TextAlign.center,
-            ),
-            const SizedBox(height: AstraSpacing.kSpaceSm),
-            SizedBox(
-              height: AstraHorizontalRuler.rulerBandHeight,
-              child: LayoutBuilder(
-                builder: (context, constraints) {
-                  final sidePadding =
-                      constraints.maxWidth / 2 -
-                      AstraHorizontalRuler.itemExtent / 2;
+    return Semantics(
+      label: _semanticsLabel,
+      value: _formatValue(_displayValue),
+      slider: true,
+      child: ExcludeSemantics(
+        child: AstraInsetShadowSurface(
+          color: colors.bgElevated,
+          borderRadius: BorderRadius.circular(AstraSpacing.kRadiusLg),
+          child: Padding(
+            padding: const EdgeInsets.all(AstraSpacing.kCardPadding),
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Text(
+                  _formatValue(_displayValue),
+                  style: AstraTypography.displayFor(colors),
+                  textAlign: TextAlign.center,
+                ),
+                const SizedBox(height: AstraSpacing.kSpaceSm),
+                SizedBox(
+                  height: AstraHorizontalRuler.rulerBandHeight,
+                  child: LayoutBuilder(
+                    builder: (context, constraints) {
+                      final sidePadding =
+                          constraints.maxWidth / 2 -
+                          AstraHorizontalRuler.itemExtent / 2;
 
-                  return Stack(
-                    alignment: Alignment.topCenter,
-                    children: [
-                      NotificationListener<ScrollNotification>(
-                        onNotification: _onScrollNotification,
-                        child: ListView.builder(
-                          controller: _scrollController,
-                          scrollDirection: Axis.horizontal,
-                          physics: const ClampingScrollPhysics(),
-                          padding: EdgeInsets.symmetric(horizontal: sidePadding),
-                          itemExtent: AstraHorizontalRuler.itemExtent,
-                          itemCount: _tickCount,
-                          itemBuilder: (context, index) {
-                            final tickValue = _valueForIndex(index);
-                            final isMajor = _isMajorTick(tickValue);
-                            return _RulerTick(
-                              colors: colors,
-                              isMajor: isMajor,
-                              label: isMajor ? _formatValue(tickValue) : null,
-                            );
-                          },
-                        ),
-                      ),
-                      IgnorePointer(
-                        child: Column(
-                          mainAxisSize: MainAxisSize.min,
-                          children: [
-                            Container(
-                              width: AstraHorizontalRuler.centerIndicatorWidth,
-                              height:
-                                  AstraHorizontalRuler.centerIndicatorHeight,
-                              color: colors.textPrimary,
+                      return Stack(
+                        alignment: Alignment.topCenter,
+                        children: [
+                          NotificationListener<ScrollNotification>(
+                            onNotification: _onScrollNotification,
+                            child: ListView.builder(
+                              controller: _scrollController,
+                              scrollDirection: Axis.horizontal,
+                              physics: const ClampingScrollPhysics(),
+                              padding: EdgeInsets.symmetric(
+                                horizontal: sidePadding,
+                              ),
+                              itemExtent: AstraHorizontalRuler.itemExtent,
+                              itemCount: _tickCount,
+                              itemBuilder: (context, index) {
+                                final tickValue = _valueForIndex(index);
+                                final isMajor = _isMajorTick(tickValue);
+                                return _RulerTick(
+                                  colors: colors,
+                                  isMajor: isMajor,
+                                  label: isMajor
+                                      ? _formatValue(tickValue)
+                                      : null,
+                                );
+                              },
                             ),
-                            const SizedBox(height: AstraSpacing.kSpaceXs),
-                            Text(
-                              widget.unitLabel,
-                              style: AstraTypography.captionFor(colors),
+                          ),
+                          IgnorePointer(
+                            child: Column(
+                              mainAxisSize: MainAxisSize.min,
+                              children: [
+                                Container(
+                                  width:
+                                      AstraHorizontalRuler.centerIndicatorWidth,
+                                  height: AstraHorizontalRuler
+                                      .centerIndicatorHeight,
+                                  color: colors.textPrimary,
+                                ),
+                                const SizedBox(height: AstraSpacing.kSpaceXs),
+                                Text(
+                                  widget.unitLabel,
+                                  style: AstraTypography.captionFor(colors),
+                                ),
+                              ],
                             ),
-                          ],
-                        ),
-                      ),
-                    ],
-                  );
-                },
-              ),
+                          ),
+                        ],
+                      );
+                    },
+                  ),
+                ),
+              ],
             ),
-          ],
+          ),
         ),
       ),
     );
