@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:astra_app/core/constants/astra_theme.dart';
 import 'package:astra_app/core/database/app_database.dart';
 import 'package:astra_app/core/di/app_dependencies.dart';
@@ -11,6 +13,16 @@ import 'package:sqflite/sqflite.dart';
 import 'package:sqflite_common_ffi/sqflite_ffi.dart';
 
 import '../../helpers/sqflite_test_helper.dart';
+
+Finder _introContinue() => find.descendant(
+  of: find.byKey(const ValueKey('onboarding-step-0')),
+  matching: find.text('Continue'),
+);
+
+Finder _weightContinue() => find.descendant(
+  of: find.byKey(const ValueKey('onboarding-step-1')),
+  matching: find.text('Continue'),
+);
 
 void main() {
   setUpAll(() async {
@@ -36,7 +48,7 @@ void main() {
       await db.close();
     });
 
-    testWidgets('shows trust headline on first step', (tester) async {
+    testWidgets('shows intro headline on first step', (tester) async {
       await tester.pumpWidget(
         MaterialApp(
           theme: buildAstraLightTheme(),
@@ -44,11 +56,15 @@ void main() {
         ),
       );
 
-      expect(find.text('Your steps stay on this device.'), findsOneWidget);
+      expect(
+        find.text('Your Health. Your Phone. Period.').hitTestable(),
+        findsOneWidget,
+      );
+      expect(find.text('Your steps stay on this device.'), findsNothing);
       expect(find.byType(NavigationBar), findsNothing);
     });
 
-    testWidgets('trust Continue does not request permissions', (tester) async {
+    testWidgets('intro Continue requests activity permission', (tester) async {
       var permissionRequestCount = 0;
 
       await tester.pumpWidget(
@@ -68,14 +84,13 @@ void main() {
         ),
       );
 
-      await tester.tap(find.text('Continue'));
+      await tester.tap(_introContinue());
       await tester.pump();
 
-      expect(permissionRequestCount, 0);
-      expect(find.text('Allow activity access'), findsOneWidget);
+      expect(permissionRequestCount, 1);
     });
 
-    testWidgets('back navigation moves from permissions to trust', (
+    testWidgets('advances to weight placeholder after permission resolves', (
       tester,
     ) async {
       await tester.pumpWidget(
@@ -92,21 +107,97 @@ void main() {
         ),
       );
 
-      await tester.tap(find.text('Continue'));
-      await tester.pump();
+      await tester.tap(_introContinue());
+      await tester.pumpAndSettle();
 
-      expect(find.text('Allow activity access'), findsOneWidget);
-
-      await tester.tap(find.byTooltip('Back'));
-      await tester.pump();
-
-      expect(find.text('Your steps stay on this device.'), findsOneWidget);
-      expect(find.text('Allow activity access'), findsNothing);
+      expect(find.text('Weight').hitTestable(), findsOneWidget);
+      expect(
+        find.text('Your Health. Your Phone. Period.').hitTestable(),
+        findsNothing,
+      );
     });
 
-    testWidgets('back navigation moves from goal to permissions', (
+    testWidgets('denied activity permission still advances to weight step', (
       tester,
     ) async {
+      await tester.pumpWidget(
+        MaterialApp(
+          theme: buildAstraLightTheme(),
+          home: OnboardingFlow(
+            deps: deps,
+            onComplete: () {},
+            createCubit: (repo) => OnboardingCubit(
+              userPreferences: repo,
+              permissionRequester: (_) async => PermissionStatus.denied,
+            ),
+          ),
+        ),
+      );
+
+      await tester.tap(_introContinue());
+      await tester.pumpAndSettle();
+
+      expect(find.text('Weight').hitTestable(), findsOneWidget);
+    });
+
+    testWidgets('disclaimer expand does not disable Continue', (tester) async {
+      await tester.pumpWidget(
+        MaterialApp(
+          theme: buildAstraLightTheme(),
+          home: OnboardingFlow(deps: deps, onComplete: () {}),
+        ),
+      );
+
+      expect(_introContinue(), findsOneWidget);
+
+      await tester.tap(find.text('Learn more'));
+      await tester.pump();
+
+      expect(
+        find.textContaining('All data stays on this device'),
+        findsOneWidget,
+      );
+
+      final continueButton = tester.widget<FilledButton>(
+        find.ancestor(
+          of: _introContinue(),
+          matching: find.byType(FilledButton),
+        ),
+      );
+      expect(continueButton.onPressed, isNotNull);
+    });
+
+    testWidgets('shows loading on Continue during permission request', (
+      tester,
+    ) async {
+      final permissionCompleter = Completer<PermissionStatus>();
+
+      await tester.pumpWidget(
+        MaterialApp(
+          theme: buildAstraLightTheme(),
+          home: OnboardingFlow(
+            deps: deps,
+            onComplete: () {},
+            createCubit: (repo) => OnboardingCubit(
+              userPreferences: repo,
+              permissionRequester: (_) => permissionCompleter.future,
+            ),
+          ),
+        ),
+      );
+
+      await tester.tap(_introContinue());
+      await tester.pump();
+
+      expect(find.byType(CircularProgressIndicator), findsOneWidget);
+
+      permissionCompleter.complete(PermissionStatus.granted);
+      await tester.pumpAndSettle();
+
+      expect(find.text('Weight').hitTestable(), findsOneWidget);
+    });
+
+    testWidgets('back navigation moves from weight to intro', (tester) async {
       await tester.pumpWidget(
         MaterialApp(
           theme: buildAstraLightTheme(),
@@ -121,18 +212,48 @@ void main() {
         ),
       );
 
-      await tester.tap(find.text('Continue'));
-      await tester.pump();
-      await tester.tap(find.text('Allow activity access'));
-      await tester.pump();
+      await tester.tap(_introContinue());
+      await tester.pumpAndSettle();
 
-      expect(find.text('Set a daily step goal'), findsOneWidget);
+      expect(find.text('Weight').hitTestable(), findsOneWidget);
 
       await tester.tap(find.byTooltip('Back'));
       await tester.pump();
 
-      expect(find.text('Allow activity access'), findsOneWidget);
-      expect(find.text('Set a daily step goal'), findsNothing);
+      expect(
+        find.text('Your Health. Your Phone. Period.').hitTestable(),
+        findsOneWidget,
+      );
+      expect(find.text('Weight').hitTestable(), findsNothing);
+    });
+
+    testWidgets('back navigation moves from height to weight', (tester) async {
+      await tester.pumpWidget(
+        MaterialApp(
+          theme: buildAstraLightTheme(),
+          home: OnboardingFlow(
+            deps: deps,
+            onComplete: () {},
+            createCubit: (repo) => OnboardingCubit(
+              userPreferences: repo,
+              permissionRequester: (_) async => PermissionStatus.granted,
+            ),
+          ),
+        ),
+      );
+
+      await tester.tap(_introContinue());
+      await tester.pumpAndSettle();
+      await tester.tap(_weightContinue());
+      await tester.pump();
+
+      expect(find.text('Height').hitTestable(), findsOneWidget);
+
+      await tester.tap(find.byTooltip('Back'));
+      await tester.pump();
+
+      expect(find.text('Weight').hitTestable(), findsOneWidget);
+      expect(find.text('Height').hitTestable(), findsNothing);
     });
 
     testWidgets('invokes onComplete when onboarding finishes', (tester) async {
@@ -162,57 +283,6 @@ void main() {
       await tester.pump();
 
       expect(onCompleteCalled, isTrue);
-    });
-
-    testWidgets('goal Continue advances to display name step', (tester) async {
-      await tester.pumpWidget(
-        MaterialApp(
-          theme: buildAstraLightTheme(),
-          home: OnboardingFlow(
-            deps: deps,
-            onComplete: () {},
-            createCubit: (repo) => OnboardingCubit(
-              userPreferences: repo,
-              permissionRequester: (_) async => PermissionStatus.granted,
-            ),
-          ),
-        ),
-      );
-
-      await tester.tap(find.text('Continue'));
-      await tester.pump();
-      await tester.tap(find.text('Allow activity access'));
-      await tester.pump();
-      await tester.tap(find.text('Start tracking'));
-      await tester.pump();
-
-      expect(find.text('What should we call you?'), findsOneWidget);
-      expect(find.text('Continue without name'), findsOneWidget);
-    });
-
-    testWidgets('denied activity permission still advances to goal step', (
-      tester,
-    ) async {
-      await tester.pumpWidget(
-        MaterialApp(
-          theme: buildAstraLightTheme(),
-          home: OnboardingFlow(
-            deps: deps,
-            onComplete: () {},
-            createCubit: (repo) => OnboardingCubit(
-              userPreferences: repo,
-              permissionRequester: (_) async => PermissionStatus.denied,
-            ),
-          ),
-        ),
-      );
-
-      await tester.tap(find.text('Continue'));
-      await tester.pump();
-      await tester.tap(find.text('Allow activity access'));
-      await tester.pump();
-
-      expect(find.text('Set a daily step goal'), findsOneWidget);
     });
   });
 }

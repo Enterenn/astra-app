@@ -243,7 +243,7 @@ void main() {
       });
 
       expect(find.byType(AppBottomNav), findsOneWidget);
-      expect(find.text('Your steps stay on this device.'), findsNothing);
+      expect(find.text('Your Health. Your Phone. Period.'), findsNothing);
 
       await tester.runAsync(() async {
         await tester.pumpWidget(const SizedBox.shrink());
@@ -265,7 +265,7 @@ void main() {
         await tester.pump();
       });
 
-      expect(find.text('Your steps stay on this device.'), findsOneWidget);
+      expect(find.text('Your Health. Your Phone. Period.'), findsOneWidget);
       expect(find.byType(AppBottomNav), findsNothing);
     });
 
@@ -294,7 +294,7 @@ void main() {
         await tester.pump();
       });
 
-      expect(find.text('Your steps stay on this device.'), findsOneWidget);
+      expect(find.text('Your Health. Your Phone. Period.'), findsOneWidget);
 
       await tester.runAsync(() async {
         await cubitRef!.completeOnboarding(goal: 8000);
@@ -304,7 +304,7 @@ void main() {
       await tester.pump();
 
       expect(find.byType(AppBottomNav), findsOneWidget);
-      expect(find.text('Your steps stay on this device.'), findsNothing);
+      expect(find.text('Your Health. Your Phone. Period.'), findsNothing);
       expect(
         find.text('Steps'),
         findsOneWidget,
