@@ -52,11 +52,10 @@ void main() {
 
       cubit.nextStep();
       cubit.nextStep();
-      cubit.nextStep();
-      expect(cubit.state.currentStep, 3);
+      expect(cubit.state.currentStep, 2);
 
       cubit.nextStep();
-      expect(cubit.state.currentStep, 3);
+      expect(cubit.state.currentStep, 2);
 
       cubit.close();
     });
@@ -277,6 +276,46 @@ void main() {
 
       expect(cubit.state.isGoalValid, isFalse);
       expect(cubit.state.resolvedGoal, kDefaultStepGoal);
+
+      cubit.close();
+    });
+
+    test('completeWithHeight persists default metrics and completion flag',
+        () async {
+      final cubit = OnboardingCubit(userPreferences: repository)
+        ..commitWeightAndContinue();
+
+      await cubit.completeWithHeight();
+
+      expect(cubit.state.status, OnboardingStatus.completed);
+      expect(await repository.getDailyStepGoal(), kDefaultStepGoal);
+      expect(await repository.getWeightKg(), 70.0);
+      expect(await repository.getHeightCm(), 170);
+      expect(await repository.getOnboardingComplete(), isTrue);
+
+      cubit.close();
+    });
+
+    test('skipWeight leaves null weight after completeWithHeight', () async {
+      final cubit = OnboardingCubit(userPreferences: repository)
+        ..skipWeight();
+
+      await cubit.completeWithHeight();
+
+      expect(await repository.getWeightKg(), isNull);
+      expect(await repository.getHeightCm(), 170);
+
+      cubit.close();
+    });
+
+    test('skipHeight leaves null height after completeWithHeight', () async {
+      final cubit = OnboardingCubit(userPreferences: repository);
+      cubit.commitWeightAndContinue();
+      await cubit.skipHeight();
+
+      expect(await repository.getWeightKg(), 70.0);
+      expect(await repository.getHeightCm(), isNull);
+      expect(await repository.getOnboardingComplete(), isTrue);
 
       cubit.close();
     });

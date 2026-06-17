@@ -2,6 +2,8 @@ import 'package:flutter/foundation.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:permission_handler/permission_handler.dart';
 
+import '../../core/constants/display_unit_preferences.dart';
+import '../../core/constants/preference_keys.dart';
 import '../../core/permissions/activity_permission_resolver.dart';
 import '../../data/repositories/user_preferences_repository.dart';
 import 'onboarding_state.dart';
@@ -44,6 +46,50 @@ class OnboardingCubit extends Cubit<OnboardingState> {
 
   void setGoalInput(String value) {
     emit(state.copyWith(goalInput: value));
+  }
+
+  void setWeightKg(double kg) {
+    emit(state.copyWith(weightKg: kg, weightSkipped: false));
+  }
+
+  void setHeightCm(int cm) {
+    emit(state.copyWith(heightCm: cm, heightSkipped: false));
+  }
+
+  void setWeightDisplayUnit(WeightDisplayUnit unit) {
+    emit(state.copyWith(weightDisplayUnit: unit));
+  }
+
+  void setHeightUsesInches(bool usesInches) {
+    emit(state.copyWith(heightUsesInches: usesInches));
+  }
+
+  void skipWeight() {
+    emit(state.copyWith(weightSkipped: true, clearWeightKg: true));
+    nextStep();
+  }
+
+  Future<void> skipHeight() async {
+    emit(state.copyWith(heightSkipped: true, clearHeightCm: true));
+    await completeWithHeight();
+  }
+
+  void commitWeightAndContinue() {
+    if (!state.weightSkipped) {
+      emit(state.copyWith(weightKg: state.weightKg ?? 70.0));
+    }
+    nextStep();
+  }
+
+  Future<void> completeWithHeight() async {
+    final weightToSave = state.weightSkipped ? null : state.weightKg;
+    final heightToSave = state.heightSkipped ? null : (state.heightCm ?? 170);
+
+    await userPreferences.setDailyStepGoal(kDefaultStepGoal);
+    await userPreferences.setWeightKg(weightToSave);
+    await userPreferences.setHeightCm(heightToSave);
+    await userPreferences.setOnboardingComplete(true);
+    emit(state.copyWith(status: OnboardingStatus.completed));
   }
 
   Future<void> requestActivityPermission() async {
