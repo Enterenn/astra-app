@@ -1,6 +1,6 @@
 # Story 13.2: AstraHorizontalRuler Widget
 
-Status: review
+Status: done
 
 <!-- Note: Validation is optional. Run validate-create-story for quality check before dev-story. -->
 <!-- Mockup ref: assets/.../Weight-light-70d5a378-*.png, Height-light-2ccf1294-*.png (Baptiste 2026-06-17) -->
@@ -398,7 +398,7 @@ Mandatory — [`docs/project-context.md`](../../../docs/project-context.md):
 
 ## Story Completion Status
 
-- Status: **review**
+- Status: **done**
 - Ultimate context engine analysis completed — comprehensive developer guide created
 - Epic 13 status: **in-progress** (story 13.1 done; 13.2 ready)
 - **Critical guardrail:** Deliver widget in isolation — no onboarding flow edits until Story 13.3

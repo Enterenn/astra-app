@@ -1,6 +1,6 @@
 # generated: 2026-05-25
-# last_updated: 2026-06-17 (Story 13.2 review)
-# NEXT: code-review 13-2-astra-horizontal-ruler-widget OR dev-story 13-3
+# last_updated: 2026-06-17 (Story 13.2 done)
+# NEXT: dev-story 13-3-weight-and-height-onboarding-steps
 # Ref: planning-artifacts/sprint-change-proposal-2026-06-17.md
 # project: astra-app
 # project_key: NOKEY
@@ -172,7 +172,7 @@ development_status:
 
   epic-13: in-progress
   13-1-onboarding-shell-and-intro-screen: done
-  13-2-astra-horizontal-ruler-widget: review
+  13-2-astra-horizontal-ruler-widget: done
   13-3-weight-and-height-onboarding-steps: backlog
   13-4-flow-completion-and-cleanup: backlog
   epic-13-retrospective: optional

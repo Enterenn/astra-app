@@ -59,13 +59,15 @@ class _AstraHorizontalRulerState extends State<AstraHorizontalRuler> {
   @override
   void initState() {
     super.initState();
+    assert(widget.step > 0, 'step must be positive');
+    assert(widget.max >= widget.min, 'max must be >= min');
     _displayValue = _clampToStepGrid(widget.value);
     _lastReportedValue = _displayValue;
     _scrollController = ScrollController();
-    WidgetsBinding.instance.addPostFrameCallback((_) => _syncScrollToValue(
-          _displayValue,
-          animate: false,
-        ));
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (!mounted) return;
+      _syncScrollToValue(_displayValue, animate: false);
+    });
   }
 
   @override
@@ -77,6 +79,7 @@ class _AstraHorizontalRulerState extends State<AstraHorizontalRuler> {
         oldWidget.step != widget.step) {
       final clamped = _clampToStepGrid(widget.value);
       _displayValue = clamped;
+      _lastReportedValue = clamped;
       _syncScrollToValue(clamped, animate: false);
     }
   }
@@ -117,6 +120,58 @@ class _AstraHorizontalRulerState extends State<AstraHorizontalRuler> {
   String get _semanticsLabel =>
       '${_formatValue(_displayValue)} ${widget.unitLabel}';
 
+  String? get _semanticsIncreasedValue {
+    final nextIndex = _indexForValue(_displayValue) + 1;
+    if (nextIndex >= _tickCount) return null;
+    return _formatValue(_valueForIndex(nextIndex));
+  }
+
+  String? get _semanticsDecreasedValue {
+    final prevIndex = _indexForValue(_displayValue) - 1;
+    if (prevIndex < 0) return null;
+    return _formatValue(_valueForIndex(prevIndex));
+  }
+
+  void _stepBy(int direction) {
+    final currentIndex = _indexForValue(_displayValue);
+    final newIndex = (currentIndex + direction).clamp(0, _tickCount - 1);
+    if (newIndex == currentIndex) return;
+    _selectValue(_valueForIndex(newIndex), animate: true);
+  }
+
+  void _selectValue(double value, {required bool animate}) {
+    final snapped = _clampToStepGrid(value);
+    if (!_scrollController.hasClients) {
+      _finalizeValueChange(snapped);
+      return;
+    }
+
+    final targetOffset = _indexForValue(snapped) * AstraHorizontalRuler.itemExtent;
+    if (!animate || MediaQuery.disableAnimationsOf(context)) {
+      _scrollController.jumpTo(targetOffset);
+      _finalizeValueChange(snapped);
+      return;
+    }
+
+    if ((_scrollController.offset - targetOffset).abs() < 0.5) {
+      _finalizeValueChange(snapped);
+      return;
+    }
+
+    _syncingScroll = true;
+    _scrollController
+        .animateTo(
+          targetOffset,
+          duration: AstraHorizontalRuler.snapDuration,
+          curve: Curves.easeOutCubic,
+        )
+        .whenComplete(() {
+      if (!mounted) return;
+      _syncingScroll = false;
+      _finalizeValueChange(snapped);
+    });
+  }
+
   void _syncScrollToValue(double value, {required bool animate}) {
     if (!_scrollController.hasClients) return;
     final index = _indexForValue(value);
@@ -131,7 +186,10 @@ class _AstraHorizontalRulerState extends State<AstraHorizontalRuler> {
             duration: AstraHorizontalRuler.snapDuration,
             curve: Curves.easeOutCubic,
           )
-          .whenComplete(() => _syncingScroll = false);
+          .whenComplete(() {
+        if (!mounted) return;
+        _syncingScroll = false;
+      });
     } else {
       _scrollController.jumpTo(targetOffset);
       _syncingScroll = false;
@@ -143,7 +201,7 @@ class _AstraHorizontalRulerState extends State<AstraHorizontalRuler> {
     final index =
         (_scrollController.offset / AstraHorizontalRuler.itemExtent).round();
     final value = _valueForIndex(index);
-    if (value != _displayValue) {
+    if (value != _displayValue && mounted) {
       setState(() => _displayValue = value);
     }
   }
@@ -172,6 +230,7 @@ class _AstraHorizontalRulerState extends State<AstraHorizontalRuler> {
               curve: Curves.easeOutCubic,
             )
             .whenComplete(() {
+          if (!mounted) return;
           _syncingScroll = false;
           _finalizeValueChange(newValue);
         });
@@ -182,6 +241,7 @@ class _AstraHorizontalRulerState extends State<AstraHorizontalRuler> {
   }
 
   void _finalizeValueChange(double newValue) {
+    if (!mounted) return;
     if (_displayValue != newValue) {
       setState(() => _displayValue = newValue);
     }
@@ -221,58 +281,67 @@ class _AstraHorizontalRulerState extends State<AstraHorizontalRuler> {
     return Semantics(
       label: _semanticsLabel,
       value: _formatValue(_displayValue),
+      increasedValue: _semanticsIncreasedValue,
+      decreasedValue: _semanticsDecreasedValue,
+      onIncrease:
+          _semanticsIncreasedValue != null ? () => _stepBy(1) : null,
+      onDecrease:
+          _semanticsDecreasedValue != null ? () => _stepBy(-1) : null,
       slider: true,
-      child: ExcludeSemantics(
-        child: AstraInsetShadowSurface(
-          color: colors.bgElevated,
-          borderRadius: BorderRadius.circular(AstraSpacing.kRadiusLg),
-          child: Padding(
-            padding: const EdgeInsets.all(AstraSpacing.kCardPadding),
-            child: Column(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                Text(
+      container: true,
+      child: AstraInsetShadowSurface(
+        color: colors.bgElevated,
+        borderRadius: BorderRadius.circular(AstraSpacing.kRadiusLg),
+        child: Padding(
+          padding: const EdgeInsets.all(AstraSpacing.kCardPadding),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              ExcludeSemantics(
+                child: Text(
                   _formatValue(_displayValue),
                   style: AstraTypography.displayFor(colors),
                   textAlign: TextAlign.center,
                 ),
-                const SizedBox(height: AstraSpacing.kSpaceSm),
-                SizedBox(
-                  height: AstraHorizontalRuler.rulerBandHeight,
-                  child: LayoutBuilder(
-                    builder: (context, constraints) {
-                      final sidePadding =
-                          constraints.maxWidth / 2 -
-                          AstraHorizontalRuler.itemExtent / 2;
+              ),
+              const SizedBox(height: AstraSpacing.kSpaceSm),
+              SizedBox(
+                height: AstraHorizontalRuler.rulerBandHeight,
+                child: LayoutBuilder(
+                  builder: (context, constraints) {
+                    final sidePadding =
+                        constraints.maxWidth / 2 -
+                        AstraHorizontalRuler.itemExtent / 2;
 
-                      return Stack(
-                        alignment: Alignment.topCenter,
-                        children: [
-                          NotificationListener<ScrollNotification>(
-                            onNotification: _onScrollNotification,
-                            child: ListView.builder(
-                              controller: _scrollController,
-                              scrollDirection: Axis.horizontal,
-                              physics: const ClampingScrollPhysics(),
-                              padding: EdgeInsets.symmetric(
-                                horizontal: sidePadding,
-                              ),
-                              itemExtent: AstraHorizontalRuler.itemExtent,
-                              itemCount: _tickCount,
-                              itemBuilder: (context, index) {
-                                final tickValue = _valueForIndex(index);
-                                final isMajor = _isMajorTick(tickValue);
-                                return _RulerTick(
-                                  colors: colors,
-                                  isMajor: isMajor,
-                                  label: isMajor
-                                      ? _formatValue(tickValue)
-                                      : null,
-                                );
-                              },
+                    return Stack(
+                      alignment: Alignment.topCenter,
+                      children: [
+                        NotificationListener<ScrollNotification>(
+                          onNotification: _onScrollNotification,
+                          child: ListView.builder(
+                            controller: _scrollController,
+                            scrollDirection: Axis.horizontal,
+                            physics: const ClampingScrollPhysics(),
+                            padding: EdgeInsets.symmetric(
+                              horizontal: sidePadding,
                             ),
+                            itemExtent: AstraHorizontalRuler.itemExtent,
+                            itemCount: _tickCount,
+                            itemBuilder: (context, index) {
+                              final tickValue = _valueForIndex(index);
+                              final isMajor = _isMajorTick(tickValue);
+                              return _RulerTick(
+                                colors: colors,
+                                isMajor: isMajor,
+                                label: isMajor
+                                    ? _formatValue(tickValue)
+                                    : null,
+                              );
+                            },
                           ),
-                          IgnorePointer(
+                        ),
+                        ExcludeSemantics(
+                          child: IgnorePointer(
                             child: Column(
                               mainAxisSize: MainAxisSize.min,
                               children: [
@@ -291,13 +360,13 @@ class _AstraHorizontalRulerState extends State<AstraHorizontalRuler> {
                               ],
                             ),
                           ),
-                        ],
-                      );
-                    },
-                  ),
+                        ),
+                      ],
+                    );
+                  },
                 ),
-              ],
-            ),
+              ),
+            ],
           ),
         ),
       ),
