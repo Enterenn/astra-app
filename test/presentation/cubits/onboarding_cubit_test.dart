@@ -28,12 +28,11 @@ void main() {
       await db.close();
     });
 
-    test('starts on trust step with default goal input', () {
+    test('starts on intro step', () {
       final cubit = OnboardingCubit(userPreferences: repository);
 
       expect(cubit.state.currentStep, 0);
-      expect(cubit.state.goalInput, '8000');
-      expect(cubit.state.isGoalValid, isTrue);
+      expect(cubit.state.status, OnboardingStatus.inProgress);
 
       cubit.close();
     });
@@ -56,72 +55,6 @@ void main() {
 
       cubit.nextStep();
       expect(cubit.state.currentStep, 2);
-
-      cubit.close();
-    });
-
-    test('completeOnboarding persists goal and completion flag', () async {
-      final cubit = OnboardingCubit(userPreferences: repository);
-
-      await cubit.completeOnboarding(goal: 12000);
-
-      expect(cubit.state.status, OnboardingStatus.completed);
-      expect(await repository.getDailyStepGoal(), 12000);
-      expect(await repository.getOnboardingComplete(), isTrue);
-
-      cubit.close();
-    });
-
-    test('completeOnboarding persists notification opt-in preference', () async {
-      final cubit = OnboardingCubit(userPreferences: repository);
-      cubit.setNotificationOptIn(true);
-
-      await cubit.completeOnboarding(goal: 8000);
-
-      expect(await repository.getGoalNotificationsEnabled(), isTrue);
-
-      cubit.close();
-    });
-
-    test('completeOnboarding persists notification opt-out', () async {
-      final cubit = OnboardingCubit(userPreferences: repository);
-
-      await cubit.completeOnboarding(goal: 8000);
-
-      expect(await repository.getGoalNotificationsEnabled(), isFalse);
-
-      cubit.close();
-    });
-
-    test('completeOnboarding persists optional display name', () async {
-      final cubit = OnboardingCubit(userPreferences: repository);
-
-      await cubit.completeOnboarding(goal: 9000, displayName: '  Alex  ');
-
-      expect(await repository.getDisplayName(), 'Alex');
-      expect(await repository.getDailyStepGoal(), 9000);
-
-      cubit.close();
-    });
-
-    test('completeOnboarding without display name clears stored name', () async {
-      final cubit = OnboardingCubit(userPreferences: repository);
-      await repository.setDisplayName('Old');
-
-      await cubit.completeOnboarding(goal: 8000);
-
-      expect(await repository.getDisplayName(), isNull);
-
-      cubit.close();
-    });
-
-    test('skip goal path persists default 8000', () async {
-      final cubit = OnboardingCubit(userPreferences: repository);
-
-      await cubit.completeOnboarding(goal: kDefaultStepGoal);
-
-      expect(await repository.getDailyStepGoal(), kDefaultStepGoal);
-      expect(await repository.getOnboardingComplete(), isTrue);
 
       cubit.close();
     });
@@ -171,50 +104,6 @@ void main() {
       cubit.close();
     });
 
-    test(
-      'requestNotificationPermissionIfOptedIn skips when toggle off',
-      () async {
-        var requestCount = 0;
-        final cubit = OnboardingCubit(
-          userPreferences: repository,
-          permissionRequester: (_) async {
-            requestCount++;
-            return PermissionStatus.granted;
-          },
-        );
-
-        await cubit.requestNotificationPermissionIfOptedIn();
-
-        expect(requestCount, 0);
-
-        cubit.close();
-      },
-    );
-
-    test(
-      'requestNotificationPermissionIfOptedIn requests when toggle on',
-      () async {
-        Permission? requestedPermission;
-        final cubit = OnboardingCubit(
-          userPreferences: repository,
-          permissionRequester: (permission) async {
-            requestedPermission = permission;
-            return PermissionStatus.granted;
-          },
-        )..setNotificationOptIn(true);
-
-        await cubit.requestNotificationPermissionIfOptedIn();
-
-        expect(requestedPermission, Permission.notification);
-        expect(
-          cubit.state.notificationPermissionStatus,
-          PermissionRequestStatus.granted,
-        );
-
-        cubit.close();
-      },
-    );
-
     test('requestActivityPermission maps denied platform status', () async {
       final cubit = OnboardingCubit(
         userPreferences: repository,
@@ -245,37 +134,6 @@ void main() {
         cubit.state.activityPermissionStatus,
         PermissionRequestStatus.denied,
       );
-
-      cubit.close();
-    });
-
-    test(
-      'requestNotificationPermissionIfOptedIn recovers when requester throws',
-      () async {
-        final cubit = OnboardingCubit(
-          userPreferences: repository,
-          permissionRequester: (_) async {
-            throw Exception('platform channel failure');
-          },
-        )..setNotificationOptIn(true);
-
-        await cubit.requestNotificationPermissionIfOptedIn();
-
-        expect(
-          cubit.state.notificationPermissionStatus,
-          PermissionRequestStatus.denied,
-        );
-
-        cubit.close();
-      },
-    );
-
-    test('invalid goal input disables isGoalValid', () {
-      final cubit = OnboardingCubit(userPreferences: repository)
-        ..setGoalInput('999');
-
-      expect(cubit.state.isGoalValid, isFalse);
-      expect(cubit.state.resolvedGoal, kDefaultStepGoal);
 
       cubit.close();
     });

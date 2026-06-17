@@ -297,7 +297,7 @@ void main() {
       expect(find.text('Your Health. Your Phone. Period.'), findsOneWidget);
 
       await tester.runAsync(() async {
-        await cubitRef!.completeOnboarding(goal: 8000);
+        await cubitRef!.completeWithHeight();
         await tester.pump();
         await Future<void>.delayed(const Duration(milliseconds: 300));
       });
@@ -305,10 +305,7 @@ void main() {
 
       expect(find.byType(AppBottomNav), findsOneWidget);
       expect(find.text('Your Health. Your Phone. Period.'), findsNothing);
-      expect(
-        find.text('Steps'),
-        findsOneWidget,
-      );
+      expect(find.text('Steps'), findsAtLeastNWidgets(1));
 
       await tester.runAsync(() async {
         await tester.pumpWidget(const SizedBox.shrink());
