@@ -1,4 +1,5 @@
 import 'package:astra_app/core/constants/astra_theme.dart';
+import 'package:astra_app/presentation/widgets/astra_inset_shadow.dart';
 import 'package:astra_app/presentation/widgets/astra_segmented_control.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
@@ -76,6 +77,12 @@ void main() {
 
       final moved = tester.getTopLeft(thumbFinder());
       expect(moved.dx, greaterThan(initial.dx));
+    });
+
+    testWidgets('uses inset shadow surface for gray track', (tester) async {
+      await pumpControl(tester);
+
+      expect(find.byType(AstraInsetShadowSurface), findsOneWidget);
     });
   });
 }

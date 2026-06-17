@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import '../../core/constants/astra_colors.dart';
 import '../../core/constants/astra_spacing.dart';
 import '../../core/constants/astra_typography.dart';
+import 'astra_inset_shadow.dart';
 import 'astra_pressable.dart';
 
 /// One segment in [AstraSegmentedControl].
@@ -48,11 +49,8 @@ class AstraSegmentedControl<T> extends StatelessWidget {
     final selectedIndex = options.indexWhere((option) => option.value == selected);
     final safeSelectedIndex = selectedIndex < 0 ? 0 : selectedIndex;
 
-    return DecoratedBox(
-      decoration: BoxDecoration(
-        color: colors.bgSubtle,
-        borderRadius: BorderRadius.circular(AstraSpacing.kRadiusFull),
-      ),
+    return AstraInsetShadowSurface(
+      color: colors.bgSubtle,
       child: Padding(
         padding: const EdgeInsets.all(AstraSpacing.kSpaceXs),
         child: LayoutBuilder(

@@ -873,17 +873,24 @@ class GoalRingPainter extends CustomPainter {
     final center = Offset(size.width / 2, size.height / 2);
     final radius = (size.width - strokeWidth) / 2;
     final rect = Rect.fromCircle(center: center, radius: radius);
-
-    final trackPaint = Paint()
-      ..color = trackColor
-      ..style = PaintingStyle.stroke
-      ..strokeWidth = strokeWidth
-      ..strokeCap = StrokeCap.round;
+    final innerRadius = radius - strokeWidth / 2;
+    final outerRadius = radius + strokeWidth / 2;
 
     if (dashedTrack) {
+      final trackPaint = Paint()
+        ..color = trackColor
+        ..style = PaintingStyle.stroke
+        ..strokeWidth = strokeWidth
+        ..strokeCap = StrokeCap.round;
       _drawDashedArc(canvas, rect, trackPaint, _startAngle, _fullSweep);
     } else {
-      canvas.drawArc(rect, _startAngle, _fullSweep, false, trackPaint);
+      final annulus = Path()
+        ..fillType = PathFillType.evenOdd
+        ..addOval(Rect.fromCircle(center: center, radius: outerRadius))
+        ..addOval(Rect.fromCircle(center: center, radius: innerRadius));
+
+      canvas.drawPath(annulus, Paint()..color = trackColor);
+      paintGoalRingTrackInnerShadow(canvas, annulus, center, innerRadius, outerRadius);
     }
 
     if (progress <= 0) {

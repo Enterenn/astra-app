@@ -1,3 +1,5 @@
+import 'dart:ui' show PictureRecorder;
+
 import 'package:astra_app/core/constants/astra_accent_preset.dart';
 import 'package:astra_app/core/constants/astra_colors.dart';
 import 'package:astra_app/presentation/cubits/today_state.dart';
@@ -458,11 +460,33 @@ void main() {
       final ringSize = tester.getSize(
         find.descendant(
           of: find.byType(GoalRing),
-          matching: find.byType(CustomPaint),
+          matching: find.byWidgetPredicate(
+            (widget) =>
+                widget is CustomPaint && widget.painter is GoalRingPainter,
+          ),
         ),
       );
       expect(ringSize.width, kGoalRingMaxDiameter);
       expect(ringSize.height, kGoalRingMaxDiameter);
+    });
+  });
+
+  group('paintGoalRingTrackInnerShadow', () {
+    test('paints without error on annulus path', () {
+      const size = Size.square(280);
+      final recorder = PictureRecorder();
+      final canvas = Canvas(recorder);
+      final center = Offset(size.width / 2, size.height / 2);
+      const strokeWidth = kGoalRingStrokeWidth;
+      final radius = (size.width - strokeWidth) / 2;
+      final innerRadius = radius - strokeWidth / 2;
+      final outerRadius = radius + strokeWidth / 2;
+      final annulus = Path()
+        ..fillType = PathFillType.evenOdd
+        ..addOval(Rect.fromCircle(center: center, radius: outerRadius))
+        ..addOval(Rect.fromCircle(center: center, radius: innerRadius));
+
+      paintGoalRingTrackInnerShadow(canvas, annulus, center, innerRadius, outerRadius);
     });
   });
 }

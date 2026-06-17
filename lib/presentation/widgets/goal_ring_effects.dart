@@ -1,6 +1,55 @@
 import 'dart:math' as math;
+import 'dart:ui' as ui;
 
 import 'package:flutter/material.dart';
+
+import 'astra_inset_shadow.dart';
+
+/// Paints an inset shadow at the top of the goal ring track (annulus).
+///
+/// Technique (adapted from the neumorphism pattern): clip to the annulus, then
+/// draw only the **top half arc** of the outer circle as a thick blurred stroke,
+/// shifted down by [kAstraInsetShadowOffsetY].  Because only the upper arc is
+/// used as the shadow source, the blur bleeds inward from the top of the ring
+/// only — there is no shadow artefact at the bottom.
+void paintGoalRingTrackInnerShadow(
+  Canvas canvas,
+  Path annulusPath,
+  Offset center,
+  double innerRadius,
+  double outerRadius,
+) {
+  canvas.save();
+  canvas.clipPath(annulusPath);
+
+  final shadowPaint = Paint()
+    ..color = kAstraInsetShadowColor.withValues(alpha: kAstraInsetShadowOpacity)
+    ..imageFilter = ui.ImageFilter.blur(
+      sigmaX: kAstraInsetShadowBlur / 2,
+      sigmaY: kAstraInsetShadowBlur / 2,
+    )
+    ..strokeWidth = 8.0
+    ..style = PaintingStyle.stroke
+    ..strokeCap = StrokeCap.round;
+
+  // Top-half arc of the outer circle: 9 o'clock → 12 o'clock → 3 o'clock.
+  // In Flutter canvas angles, 0 = 3 o'clock, π = 9 o'clock (clockwise).
+  // Sweeping π clockwise from π passes through 3π/2 (top/12 o'clock) to 2π/0.
+  final topArc = Path()
+    ..arcTo(
+      Rect.fromCircle(center: center, radius: outerRadius),
+      math.pi, // start at 9 o'clock
+      math.pi, // sweep CW through 12 o'clock to 3 o'clock
+      false,
+    );
+
+  canvas.save();
+  canvas.translate(0, kAstraInsetShadowOffsetY);
+  canvas.drawPath(topArc, shadowPaint);
+  canvas.restore();
+
+  canvas.restore();
+}
 
 /// Shared ring stroke effects for celebration and overflow ambient motion.
 class GoalRingShimmerPainter extends CustomPainter {
