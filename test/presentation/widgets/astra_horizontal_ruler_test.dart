@@ -1,7 +1,6 @@
 import 'package:astra_app/core/constants/preference_keys.dart';
 import 'package:astra_app/core/constants/astra_theme.dart';
 import 'package:astra_app/presentation/widgets/astra_horizontal_ruler.dart';
-import 'package:astra_app/presentation/widgets/astra_inset_shadow.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 
@@ -9,7 +8,14 @@ void main() {
   Finder readoutText(String value) => find.byWidgetPredicate(
         (widget) =>
             widget is Text &&
-            widget.style?.fontSize == 52 &&
+            widget.style?.fontSize == 80 &&
+            widget.data == value,
+      );
+
+  Finder majorTickLabel(String value) => find.byWidgetPredicate(
+        (widget) =>
+            widget is Text &&
+            widget.style?.fontSize == 12 &&
             widget.data == value,
       );
 
@@ -217,14 +223,28 @@ void main() {
         majorTickEvery: 10,
       );
 
-      expect(find.text('60'), findsWidgets);
-      expect(find.text('80'), findsWidgets);
+      expect(majorTickLabel('60'), findsWidgets);
+      expect(majorTickLabel('70'), findsWidgets);
+      expect(majorTickLabel('80'), findsWidgets);
     });
 
-    testWidgets('uses elevated inset shadow card chrome', (tester) async {
+    testWidgets('card uses flat elevated fill without inset shadow', (tester) async {
       await pumpRuler(tester);
 
-      expect(find.byType(AstraInsetShadowSurface), findsOneWidget);
+      final decorated = tester.widgetList<DecoratedBox>(
+        find.descendant(
+          of: find.byType(AstraHorizontalRuler),
+          matching: find.byType(DecoratedBox),
+        ),
+      );
+      expect(
+        decorated.any(
+          (box) =>
+              box.decoration is BoxDecoration &&
+              (box.decoration as BoxDecoration).color != null,
+        ),
+        isTrue,
+      );
     });
   });
 }

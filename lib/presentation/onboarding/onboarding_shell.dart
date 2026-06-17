@@ -3,6 +3,7 @@ import 'package:phosphoricons_flutter/phosphoricons_flutter.dart';
 
 import '../../core/constants/astra_colors.dart';
 import '../../core/constants/astra_spacing.dart';
+import '../../core/constants/astra_typography.dart';
 import '../widgets/astra_button.dart';
 import 'onboarding_progress_bar.dart';
 
@@ -59,13 +60,34 @@ class OnboardingShell extends StatelessWidget {
         Row(
           children: [
             if (showBack)
-              IconButton(
-                onPressed: primaryLoading ? null : onBack,
-                icon: Icon(
-                  PhosphorIconsRegular.arrowLeft,
-                  color: colors.textPrimary,
+              Tooltip(
+                message: 'Back',
+                child: TextButton(
+                  onPressed: primaryLoading ? null : onBack,
+                  style: TextButton.styleFrom(
+                    foregroundColor: colors.textPrimary,
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: AstraSpacing.kIconButtonHorizontalInset,
+                    ),
+                    minimumSize: const Size(0, AstraSpacing.kMinTouchTarget),
+                    tapTargetSize: MaterialTapTargetSize.shrinkWrap,
+                  ),
+                  child: Row(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      Icon(
+                        PhosphorIconsRegular.arrowLeft,
+                        size: 18,
+                        color: colors.textPrimary,
+                      ),
+                      const SizedBox(width: AstraSpacing.kSpaceXs),
+                      Text(
+                        'Back',
+                        style: AstraTypography.labelFor(colors),
+                      ),
+                    ],
+                  ),
                 ),
-                tooltip: 'Back',
               )
             else
               const SizedBox.shrink(),

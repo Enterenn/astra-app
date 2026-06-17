@@ -30,6 +30,7 @@ class AstraSegmentedControl<T> extends StatelessWidget {
     required this.semanticsHint,
     this.enabled = true,
     this.fireOnReselect = true,
+    this.segmentHorizontalPadding = 0,
     super.key,
   });
 
@@ -40,7 +41,11 @@ class AstraSegmentedControl<T> extends StatelessWidget {
   final bool enabled;
   final bool fireOnReselect;
 
+  /// Extra horizontal inset inside each segment (e.g. onboarding unit pill).
+  final double segmentHorizontalPadding;
+
   static const thumbDuration = Duration(milliseconds: 250);
+  static const _segmentLabelMinWidth = 28.0;
 
   @override
   Widget build(BuildContext context) {
@@ -53,49 +58,105 @@ class AstraSegmentedControl<T> extends StatelessWidget {
       color: colors.bgSubtle,
       child: Padding(
         padding: const EdgeInsets.all(AstraSpacing.kSpaceXs),
-        child: LayoutBuilder(
-          builder: (context, constraints) {
-            final segmentWidth = constraints.maxWidth / options.length;
+        child: segmentHorizontalPadding > 0
+            ? _buildCompactTrack(
+                colors: colors,
+                disableAnimations: disableAnimations,
+                safeSelectedIndex: safeSelectedIndex,
+              )
+            : LayoutBuilder(
+                builder: (context, constraints) {
+                  final segmentWidth = constraints.maxWidth / options.length;
 
-            return Stack(
-              children: [
-                AnimatedPositioned(
-                  duration:
-                      disableAnimations ? Duration.zero : thumbDuration,
-                  curve: Curves.easeInOutCubic,
-                  left: safeSelectedIndex * segmentWidth,
-                  width: segmentWidth,
-                  top: 0,
-                  bottom: 0,
-                  child: DecoratedBox(
-                    decoration: BoxDecoration(
-                      color: colors.bgElevated,
-                      borderRadius: BorderRadius.circular(
-                        AstraSpacing.kRadiusFull,
-                      ),
-                    ),
-                  ),
-                ),
-                Row(
-                  children: [
-                    for (final option in options)
-                      Expanded(
-                        child: _SegmentTarget<T>(
-                          option: option,
-                          selected: option.value == selected,
-                          enabled: enabled,
-                          semanticsHint: semanticsHint,
-                          colors: colors,
-                          fireOnReselect: fireOnReselect,
-                          onChanged: onChanged,
+                  return Stack(
+                    children: [
+                      AnimatedPositioned(
+                        duration: disableAnimations
+                            ? Duration.zero
+                            : thumbDuration,
+                        curve: Curves.easeInOutCubic,
+                        left: safeSelectedIndex * segmentWidth,
+                        width: segmentWidth,
+                        top: 0,
+                        bottom: 0,
+                        child: DecoratedBox(
+                          decoration: BoxDecoration(
+                            color: colors.bgElevated,
+                            borderRadius: BorderRadius.circular(
+                              AstraSpacing.kRadiusFull,
+                            ),
+                          ),
                         ),
                       ),
-                  ],
+                      Row(
+                        children: [
+                          for (final option in options)
+                            Expanded(
+                              child: _SegmentTarget<T>(
+                                option: option,
+                                selected: option.value == selected,
+                                enabled: enabled,
+                                semanticsHint: semanticsHint,
+                                colors: colors,
+                                fireOnReselect: fireOnReselect,
+                                onChanged: onChanged,
+                              ),
+                            ),
+                        ],
+                      ),
+                    ],
+                  );
+                },
+              ),
+      ),
+    );
+  }
+
+  Widget _buildCompactTrack({
+    required AstraColors colors,
+    required bool disableAnimations,
+    required int safeSelectedIndex,
+  }) {
+    final segmentWidth =
+        segmentHorizontalPadding * 2 + _segmentLabelMinWidth;
+
+    return SizedBox(
+      width: segmentWidth * options.length,
+      child: Stack(
+        children: [
+          AnimatedPositioned(
+            duration: disableAnimations ? Duration.zero : thumbDuration,
+            curve: Curves.easeInOutCubic,
+            left: safeSelectedIndex * segmentWidth,
+            width: segmentWidth,
+            top: 0,
+            bottom: 0,
+            child: DecoratedBox(
+              decoration: BoxDecoration(
+                color: colors.bgElevated,
+                borderRadius: BorderRadius.circular(AstraSpacing.kRadiusFull),
+              ),
+            ),
+          ),
+          Row(
+            children: [
+              for (final option in options)
+                SizedBox(
+                  width: segmentWidth,
+                  child: _SegmentTarget<T>(
+                    option: option,
+                    selected: option.value == selected,
+                    enabled: enabled,
+                    semanticsHint: semanticsHint,
+                    colors: colors,
+                    fireOnReselect: fireOnReselect,
+                    onChanged: onChanged,
+                    horizontalPadding: segmentHorizontalPadding,
+                  ),
                 ),
-              ],
-            );
-          },
-        ),
+            ],
+          ),
+        ],
       ),
     );
   }
@@ -110,6 +171,7 @@ class _SegmentTarget<T> extends StatelessWidget {
     required this.colors,
     required this.fireOnReselect,
     required this.onChanged,
+    this.horizontalPadding = 0,
   });
 
   final AstraSegmentOption<T> option;
@@ -119,6 +181,7 @@ class _SegmentTarget<T> extends StatelessWidget {
   final AstraColors colors;
   final bool fireOnReselect;
   final ValueChanged<T> onChanged;
+  final double horizontalPadding;
 
   @override
   Widget build(BuildContext context) {
@@ -151,12 +214,16 @@ class _SegmentTarget<T> extends StatelessWidget {
                 constraints: const BoxConstraints(
                   minHeight: AstraSpacing.kMinTouchTarget,
                 ),
-                child: Center(
-                  child: Text(
-                    option.label,
-                    style: textStyle,
-                    maxLines: 1,
-                    overflow: TextOverflow.ellipsis,
+                child: Padding(
+                  padding: EdgeInsets.symmetric(horizontal: horizontalPadding),
+                  child: Center(
+                    child: Text(
+                      option.label,
+                      style: textStyle,
+                      maxLines: 1,
+                      overflow: TextOverflow.visible,
+                      softWrap: false,
+                    ),
                   ),
                 ),
               ),

@@ -15,6 +15,15 @@ abstract final class AstraTypography {
     color: colors.textPrimary,
   );
 
+  /// Ruler selected value readout (onboarding weight/height picker).
+  static TextStyle rulerSelectedValueFor(AstraColors colors) => TextStyle(
+    fontFamily: darkerGrotesque,
+    fontSize: 80,
+    fontWeight: FontWeight.w700,
+    height: 1.0,
+    color: colors.textPrimary,
+  );
+
   /// Today goal ring step count (Darker Grotesque Black 64px).
   static TextStyle goalRingStepCountFor(AstraColors colors) => TextStyle(
     fontFamily: darkerGrotesque,
