@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import '../../core/constants/astra_colors.dart';
 import '../../core/constants/astra_spacing.dart';
 import '../../core/constants/astra_typography.dart';
+import 'astra_inset_shadow.dart';
 
 typedef RulerValueFormatter = String Function(double value);
 
@@ -34,6 +35,9 @@ class AstraHorizontalRuler extends StatefulWidget {
   static const itemExtent = 10.0;
   static const minorTickHeight = 12.0;
   static const majorTickHeight = 24.0;
+  static const centerIndicatorWidth = 2.0;
+  static const centerIndicatorHeight = 32.0;
+  static const rulerBandHeight = 56.0;
   static const snapDuration = Duration(milliseconds: 200);
 
   @override
@@ -207,45 +211,77 @@ class _AstraHorizontalRulerState extends State<AstraHorizontalRuler> {
   Widget build(BuildContext context) {
     final colors = context.astraColors;
 
-    return Column(
-      mainAxisSize: MainAxisSize.min,
-      children: [
-        Text(
-          _formatValue(_displayValue),
-          textAlign: TextAlign.center,
-        ),
-        SizedBox(
-          height: 56,
-          child: LayoutBuilder(
-            builder: (context, constraints) {
-              final sidePadding =
-                  constraints.maxWidth / 2 -
-                  AstraHorizontalRuler.itemExtent / 2;
+    return AstraInsetShadowSurface(
+      color: colors.bgElevated,
+      borderRadius: BorderRadius.circular(AstraSpacing.kRadiusLg),
+      child: Padding(
+        padding: const EdgeInsets.all(AstraSpacing.kCardPadding),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Text(
+              _formatValue(_displayValue),
+              style: AstraTypography.displayFor(colors),
+              textAlign: TextAlign.center,
+            ),
+            const SizedBox(height: AstraSpacing.kSpaceSm),
+            SizedBox(
+              height: AstraHorizontalRuler.rulerBandHeight,
+              child: LayoutBuilder(
+                builder: (context, constraints) {
+                  final sidePadding =
+                      constraints.maxWidth / 2 -
+                      AstraHorizontalRuler.itemExtent / 2;
 
-              return NotificationListener<ScrollNotification>(
-                onNotification: _onScrollNotification,
-                child: ListView.builder(
-                  controller: _scrollController,
-                  scrollDirection: Axis.horizontal,
-                  physics: const ClampingScrollPhysics(),
-                  padding: EdgeInsets.symmetric(horizontal: sidePadding),
-                  itemExtent: AstraHorizontalRuler.itemExtent,
-                  itemCount: _tickCount,
-                  itemBuilder: (context, index) {
-                    final tickValue = _valueForIndex(index);
-                    final isMajor = _isMajorTick(tickValue);
-                    return _RulerTick(
-                      colors: colors,
-                      isMajor: isMajor,
-                      label: isMajor ? _formatValue(tickValue) : null,
-                    );
-                  },
-                ),
-              );
-            },
-          ),
+                  return Stack(
+                    alignment: Alignment.topCenter,
+                    children: [
+                      NotificationListener<ScrollNotification>(
+                        onNotification: _onScrollNotification,
+                        child: ListView.builder(
+                          controller: _scrollController,
+                          scrollDirection: Axis.horizontal,
+                          physics: const ClampingScrollPhysics(),
+                          padding: EdgeInsets.symmetric(horizontal: sidePadding),
+                          itemExtent: AstraHorizontalRuler.itemExtent,
+                          itemCount: _tickCount,
+                          itemBuilder: (context, index) {
+                            final tickValue = _valueForIndex(index);
+                            final isMajor = _isMajorTick(tickValue);
+                            return _RulerTick(
+                              colors: colors,
+                              isMajor: isMajor,
+                              label: isMajor ? _formatValue(tickValue) : null,
+                            );
+                          },
+                        ),
+                      ),
+                      IgnorePointer(
+                        child: Column(
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            Container(
+                              width: AstraHorizontalRuler.centerIndicatorWidth,
+                              height:
+                                  AstraHorizontalRuler.centerIndicatorHeight,
+                              color: colors.textPrimary,
+                            ),
+                            const SizedBox(height: AstraSpacing.kSpaceXs),
+                            Text(
+                              widget.unitLabel,
+                              style: AstraTypography.captionFor(colors),
+                            ),
+                          ],
+                        ),
+                      ),
+                    ],
+                  );
+                },
+              ),
+            ),
+          ],
         ),
-      ],
+      ),
     );
   }
 }
