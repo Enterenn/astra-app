@@ -21,6 +21,7 @@ import 'package:astra_app/presentation/widgets/status_banner.dart';
 import 'package:astra_app/presentation/widgets/trends_average_stats_row.dart';
 import 'package:astra_app/presentation/widgets/trends_monthly_bar_chart.dart';
 import 'package:astra_app/presentation/widgets/trends_peak_day_card.dart';
+import 'package:astra_app/presentation/widgets/trend_chip.dart';
 import 'package:astra_app/presentation/widgets/week_progress_row.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
@@ -678,6 +679,7 @@ void main() {
       expect(find.byType(TrendsPeakDayCard), findsNothing);
       expect(find.text('12 months'), findsOneWidget);
       expect(find.text('Jul 2025 – Jun 2026'), findsOneWidget);
+      expect(find.byType(CaptionPill), findsOneWidget);
     });
   });
 }

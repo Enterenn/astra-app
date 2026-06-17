@@ -99,4 +99,19 @@ void main() {
       expect(find.byIcon(PhosphorIconsRegular.minus), findsOneWidget);
     });
   });
+
+  group('CaptionPill', () {
+    testWidgets('renders label without leading icon', (tester) async {
+      await tester.pumpWidget(
+        wrapWithAstraTheme(
+          const CaptionPill(label: 'Jul 2025 – Jun 2026'),
+          preset: AstraAccentPreset.magenta,
+        ),
+      );
+      await tester.pump();
+
+      expect(find.text('Jul 2025 – Jun 2026'), findsOneWidget);
+      expect(find.byType(Icon), findsNothing);
+    });
+  });
 }

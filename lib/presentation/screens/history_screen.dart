@@ -58,13 +58,13 @@ class HistoryScreen extends StatelessWidget {
                       if (state.period == HistoryPeriod.months12 &&
                           state.status == HistoryStatus.ready &&
                           state.monthlyChartPoints.isNotEmpty) ...[
-                        const SizedBox(height: AstraSpacing.kSpaceSm),
-                        Text(
-                          TrendsMonthlyBarChart.formatPeriodRange(
-                            state.monthlyChartPoints,
-                          )!,
-                          style: AstraTypography.captionFor(colors).copyWith(
-                            color: colors.neutralGray,
+                        const SizedBox(height: AstraSpacing.kSpaceMd),
+                        Align(
+                          alignment: Alignment.centerLeft,
+                          child: CaptionPill(
+                            label: TrendsMonthlyBarChart.formatPeriodRange(
+                              state.monthlyChartPoints,
+                            )!,
                           ),
                         ),
                       ],
