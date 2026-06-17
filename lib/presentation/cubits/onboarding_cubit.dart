@@ -40,14 +40,6 @@ class OnboardingCubit extends Cubit<OnboardingState> {
     emit(state.copyWith(currentStep: state.currentStep - 1));
   }
 
-  void setNotificationOptIn(bool value) {
-    emit(state.copyWith(notificationOptIn: value));
-  }
-
-  void setGoalInput(String value) {
-    emit(state.copyWith(goalInput: value));
-  }
-
   void setWeightKg(double kg) {
     emit(state.copyWith(weightKg: kg, weightSkipped: false));
   }
@@ -105,20 +97,6 @@ class OnboardingCubit extends Cubit<OnboardingState> {
     emit(state.copyWith(activityPermissionStatus: resolved));
   }
 
-  Future<void> requestNotificationPermissionIfOptedIn() async {
-    if (!state.notificationOptIn) return;
-
-    emit(
-      state.copyWith(
-        notificationPermissionStatus: PermissionRequestStatus.requesting,
-      ),
-    );
-
-    final resolved = await _resolvePermission(Permission.notification);
-
-    emit(state.copyWith(notificationPermissionStatus: resolved));
-  }
-
   Future<PermissionRequestStatus> _resolvePermission(
     Permission permission,
   ) async {
@@ -132,17 +110,6 @@ class OnboardingCubit extends Cubit<OnboardingState> {
       }
       return PermissionRequestStatus.denied;
     }
-  }
-
-  Future<void> completeOnboarding({int? goal, String? displayName}) async {
-    final resolvedGoal = goal ?? state.resolvedGoal;
-    await userPreferences.setDailyStepGoal(resolvedGoal);
-    await userPreferences.setDisplayName(displayName);
-    await userPreferences.setGoalNotificationsEnabled(
-      state.notificationOptIn,
-    );
-    await userPreferences.setOnboardingComplete(true);
-    emit(state.copyWith(status: OnboardingStatus.completed));
   }
 
   PermissionRequestStatus _mapPermissionStatus(PermissionStatus status) {
