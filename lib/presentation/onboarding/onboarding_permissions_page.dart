@@ -8,7 +8,7 @@ import '../../core/constants/astra_typography.dart';
 import '../cubits/onboarding_cubit.dart';
 import '../cubits/onboarding_state.dart';
 import '../widgets/astra_button.dart';
-import 'onboarding_progress_indicator.dart';
+import 'onboarding_progress_bar.dart';
 
 class OnboardingPermissionsPage extends StatelessWidget {
   const OnboardingPermissionsPage({super.key});
@@ -48,7 +48,7 @@ class OnboardingPermissionsPage extends StatelessWidget {
               tooltip: 'Back',
             ),
             const Expanded(
-              child: OnboardingProgressIndicator(currentStep: 1, totalSteps: 4),
+              child: OnboardingProgressBar(currentStep: 1, totalSteps: 4),
             ),
             const SizedBox(width: 48),
           ],

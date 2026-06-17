@@ -9,7 +9,7 @@ import '../../core/constants/preference_keys.dart';
 import '../cubits/onboarding_cubit.dart';
 import '../cubits/onboarding_state.dart';
 import '../widgets/astra_button.dart';
-import 'onboarding_progress_indicator.dart';
+import 'onboarding_progress_bar.dart';
 
 class OnboardingDisplayNamePage extends StatefulWidget {
   const OnboardingDisplayNamePage({
@@ -77,7 +77,7 @@ class _OnboardingDisplayNamePageState extends State<OnboardingDisplayNamePage> {
               tooltip: 'Back',
             ),
             const Expanded(
-              child: OnboardingProgressIndicator(currentStep: 3, totalSteps: 4),
+              child: OnboardingProgressBar(currentStep: 3, totalSteps: 4),
             ),
             const SizedBox(width: 48),
           ],

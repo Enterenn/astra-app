@@ -4,7 +4,7 @@ import '../../core/constants/astra_colors.dart';
 import '../../core/constants/astra_spacing.dart';
 import '../../core/constants/astra_typography.dart';
 import '../widgets/astra_button.dart';
-import 'onboarding_progress_indicator.dart';
+import 'onboarding_progress_bar.dart';
 
 class OnboardingTrustPage extends StatelessWidget {
   const OnboardingTrustPage({
@@ -21,7 +21,7 @@ class OnboardingTrustPage extends StatelessWidget {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
-        const OnboardingProgressIndicator(currentStep: 0, totalSteps: 4),
+        const OnboardingProgressBar(currentStep: 0, totalSteps: 4),
         const SizedBox(height: AstraSpacing.kSpace2xl),
         Text(
           'Your steps stay on this device.',
