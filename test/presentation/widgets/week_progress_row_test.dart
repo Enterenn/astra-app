@@ -118,7 +118,7 @@ void main() {
     );
   });
 
-  testWidgets('future day shows neutral gray dot', (tester) async {
+  testWidgets('future day hides dot', (tester) async {
     await pumpRow(tester, [
       day(
         localDay: DateTime.utc(2026, 6, 4),
@@ -128,18 +128,43 @@ void main() {
       ),
     ], DateTime.utc(2026, 6, 3));
 
-    final dot = tester.widget<Container>(
-      find.descendant(
-        of: find.byType(WeekProgressRow),
-        matching: find.byWidgetPredicate(
-          (widget) =>
-              widget is Container &&
-              widget.decoration is BoxDecoration &&
-              (widget.decoration! as BoxDecoration).shape == BoxShape.circle,
-        ),
+    expect(
+      find.byWidgetPredicate(
+        (widget) =>
+            widget is Container &&
+            widget.decoration is BoxDecoration &&
+            (widget.decoration! as BoxDecoration).shape == BoxShape.circle,
       ),
+      findsNothing,
     );
-    expect((dot.decoration! as BoxDecoration).color, colors.neutralGray);
+  });
+
+  testWidgets('past day number uses bold 16px text primary', (tester) async {
+    final selectedDay = DateTime.utc(2026, 6, 2);
+    await pumpRow(tester, [
+      day(localDay: selectedDay, label: 'TUE', dayNumber: 2),
+    ], selectedDay);
+
+    final numberText = tester.widget<Text>(find.text('2'));
+    expect(numberText.style?.color, colors.textPrimary);
+    expect(numberText.style?.fontSize, 16);
+    expect(numberText.style?.fontWeight, FontWeight.w900);
+  });
+
+  testWidgets('future day number uses neutral gray', (tester) async {
+    await pumpRow(tester, [
+      day(
+        localDay: DateTime.utc(2026, 6, 4),
+        label: 'THU',
+        dayNumber: 4,
+        isFuture: true,
+      ),
+    ], DateTime.utc(2026, 6, 3));
+
+    final numberText = tester.widget<Text>(find.text('4'));
+    expect(numberText.style?.color, colors.neutralGray);
+    expect(numberText.style?.fontSize, 16);
+    expect(numberText.style?.fontWeight, FontWeight.w900);
   });
 
   testWidgets('future day tap does not invoke callback', (tester) async {

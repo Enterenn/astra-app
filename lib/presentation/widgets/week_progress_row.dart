@@ -62,14 +62,13 @@ class _DayPill extends StatelessWidget {
 
     final backgroundColor =
         selected ? colors.accentPrimary : colors.bgSubtle;
-    final textColor = selected ? colors.accentSecondary : colors.textPrimary;
+    final dayNumberColor =
+        day.isFuture ? colors.neutralGray : colors.textPrimary;
     final mutedColor = selected ? colors.accentSecondary : colors.neutralGray;
 
     Color? dotColor;
-    if (selected || isToday) {
+    if (selected || isToday || day.isFuture) {
       dotColor = null;
-    } else if (day.isFuture) {
-      dotColor = colors.neutralGray;
     } else if (day.goalMet) {
       dotColor = colors.accentPrimary;
     }
@@ -114,14 +113,17 @@ class _DayPill extends StatelessWidget {
                     color: mutedColor,
                     fontSize: 10,
                     fontWeight: FontWeight.w600,
+                    height: 1,
                   ),
                 ),
-                const SizedBox(height: 2),
+                const SizedBox(height: 6),
                 Text(
                   '${day.dayNumber}',
                   style: AstraTypography.labelFor(colors).copyWith(
-                    color: textColor,
-                    fontWeight: FontWeight.w600,
+                    color: dayNumberColor,
+                    fontSize: 16,
+                    fontWeight: FontWeight.w900,
+                    height: 1,
                   ),
                 ),
               ],
