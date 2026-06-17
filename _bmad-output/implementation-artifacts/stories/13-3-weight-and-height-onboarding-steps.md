@@ -1,6 +1,6 @@
 # Story 13.3: Weight & Height Onboarding Steps
 
-Status: review
+Status: done
 
 <!-- Note: Validation is optional. Run validate-create-story for quality check before dev-story. -->
 <!-- Mockup ref: assets/.../Weight-light-70d5a378-*.png, Height-light-2ccf1294-*.png (Baptiste 2026-06-17) -->
@@ -470,7 +470,7 @@ Mandatory — [`docs/project-context.md`](../../../docs/project-context.md):
 
 ## Story Completion Status
 
-- Status: **review**
+- Status: **done**
 - Ultimate context engine analysis completed — comprehensive developer guide created
 - Epic 13 status: **in-progress** (13.1–13.2 done; 13.3 ready)
 - **Critical guardrail:** Height **Let's Go** must complete onboarding with `daily_step_goal=8000` and nullable body metrics — fix the no-op `onPrimary` on step 3

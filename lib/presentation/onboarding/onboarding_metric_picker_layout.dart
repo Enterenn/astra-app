@@ -44,7 +44,7 @@ class OnboardingMetricPickerLayout extends StatelessWidget {
           Text(
             title,
             textAlign: TextAlign.center,
-            style: AstraTypography.onboardingIntroTitleFor(colors),
+            style: AstraTypography.titleFor(colors),
           ),
           const SizedBox(height: AstraSpacing.kSpaceXl),
           Center(child: unitSelector),

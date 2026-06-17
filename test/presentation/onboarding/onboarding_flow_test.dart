@@ -405,5 +405,36 @@ void main() {
       expect(cubitRef!.state.weightKg, 70.0);
       expect(cubitRef!.state.weightDisplayUnit, WeightDisplayUnit.lb);
     });
+
+    testWidgets('unit toggle preserves canonical height across cm and in', (
+      tester,
+    ) async {
+      OnboardingCubit? cubitRef;
+
+      await tester.pumpWidget(
+        buildFlow(
+          onComplete: () {},
+          createCubit: (repo) {
+            cubitRef = grantedCubit(repo);
+            return cubitRef!;
+          },
+        ),
+      );
+
+      await _advancePastIntro(tester);
+      await tester.tap(_weightContinue());
+      await tester.pumpAndSettle();
+
+      await tester.tap(find.text('in'));
+      await tester.pumpAndSettle();
+
+      expect(
+        find.byWidgetPredicate(
+          (w) => w is AnimatedStepCount && w.value == 67,
+        ),
+        findsOneWidget,
+      );
+      expect(cubitRef!.state.heightUsesInches, isTrue);
+    });
   });
 }

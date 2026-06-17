@@ -323,6 +323,10 @@ class _AstraHorizontalRulerState extends State<AstraHorizontalRuler>
         animateReadout: true,
         pulseIndicator: _isUserDrivingScroll,
       );
+      if (_lastReportedValue != value) {
+        _lastReportedValue = value;
+        widget.onChanged(value);
+      }
     }
   }
 
