@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 
 import '../../core/constants/astra_colors.dart';
+import '../../core/constants/astra_spacing.dart';
+import '../../core/constants/astra_typography.dart';
 
 typedef RulerValueFormatter = String Function(double value);
 
@@ -30,6 +32,8 @@ class AstraHorizontalRuler extends StatefulWidget {
   final bool enableHaptics;
 
   static const itemExtent = 10.0;
+  static const minorTickHeight = 12.0;
+  static const majorTickHeight = 24.0;
   static const snapDuration = Duration(milliseconds: 200);
 
   @override
@@ -190,6 +194,15 @@ class _AstraHorizontalRulerState extends State<AstraHorizontalRuler> {
     return false;
   }
 
+  bool _isMajorTick(double tickValue) {
+    if (widget.majorTickEvery <= 0) return false;
+    final offsetFromMin = tickValue - widget.min;
+    final stepsFromMin = (offsetFromMin / widget.step).round();
+    final majorEverySteps =
+        (widget.majorTickEvery / widget.step).round().clamp(1, 999999);
+    return stepsFromMin % majorEverySteps == 0;
+  }
+
   @override
   Widget build(BuildContext context) {
     final colors = context.astraColors;
@@ -202,7 +215,7 @@ class _AstraHorizontalRulerState extends State<AstraHorizontalRuler> {
           textAlign: TextAlign.center,
         ),
         SizedBox(
-          height: 40,
+          height: 56,
           child: LayoutBuilder(
             builder: (context, constraints) {
               final sidePadding =
@@ -218,23 +231,63 @@ class _AstraHorizontalRulerState extends State<AstraHorizontalRuler> {
                   padding: EdgeInsets.symmetric(horizontal: sidePadding),
                   itemExtent: AstraHorizontalRuler.itemExtent,
                   itemCount: _tickCount,
-                  itemBuilder: (context, index) => SizedBox(
-                    width: AstraHorizontalRuler.itemExtent,
-                    child: Align(
-                      alignment: Alignment.topCenter,
-                      child: Container(
-                        width: 1,
-                        height: 12,
-                        color: colors.borderDefault,
-                      ),
-                    ),
-                  ),
+                  itemBuilder: (context, index) {
+                    final tickValue = _valueForIndex(index);
+                    final isMajor = _isMajorTick(tickValue);
+                    return _RulerTick(
+                      colors: colors,
+                      isMajor: isMajor,
+                      label: isMajor ? _formatValue(tickValue) : null,
+                    );
+                  },
                 ),
               );
             },
           ),
         ),
       ],
+    );
+  }
+}
+
+class _RulerTick extends StatelessWidget {
+  const _RulerTick({
+    required this.colors,
+    required this.isMajor,
+    this.label,
+  });
+
+  final AstraColors colors;
+  final bool isMajor;
+  final String? label;
+
+  @override
+  Widget build(BuildContext context) {
+    final tickHeight = isMajor
+        ? AstraHorizontalRuler.majorTickHeight
+        : AstraHorizontalRuler.minorTickHeight;
+
+    return SizedBox(
+      width: AstraHorizontalRuler.itemExtent,
+      child: Column(
+        mainAxisAlignment: MainAxisAlignment.start,
+        children: [
+          Container(
+            width: 1,
+            height: tickHeight,
+            color: isMajor ? colors.textPrimary : colors.borderDefault,
+          ),
+          if (label != null) ...[
+            const SizedBox(height: AstraSpacing.kSpaceXs),
+            Text(
+              label!,
+              style: AstraTypography.captionFor(colors),
+              maxLines: 1,
+              overflow: TextOverflow.clip,
+            ),
+          ],
+        ],
+      ),
     );
   }
 }
