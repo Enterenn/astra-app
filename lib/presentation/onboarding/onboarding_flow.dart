@@ -7,10 +7,10 @@ import '../../core/di/app_dependencies.dart';
 import '../../data/repositories/user_preferences_repository.dart';
 import '../cubits/onboarding_cubit.dart';
 import '../cubits/onboarding_state.dart';
-import 'onboarding_display_name_page.dart';
-import 'onboarding_goal_page.dart';
-import 'onboarding_permissions_page.dart';
-import 'onboarding_trust_page.dart';
+import 'onboarding_height_placeholder.dart';
+import 'onboarding_intro_page.dart';
+import 'onboarding_shell.dart';
+import 'onboarding_weight_placeholder.dart';
 
 class OnboardingFlow extends StatelessWidget {
   const OnboardingFlow({
@@ -45,27 +45,26 @@ class OnboardingFlow extends StatelessWidget {
 class _OnboardingFlowView extends StatelessWidget {
   const _OnboardingFlowView();
 
-  Future<void> _completeOnboarding(
-    BuildContext context, {
-    String? displayName,
-  }) async {
+  Future<void> _onIntroContinue(BuildContext context) async {
     final cubit = context.read<OnboardingCubit>();
-    await cubit.completeOnboarding(
-      goal: cubit.state.resolvedGoal,
-      displayName: displayName,
-    );
+    await cubit.requestActivityPermission();
+    cubit.nextStep();
   }
 
   @override
   Widget build(BuildContext context) {
     final colors = context.astraColors;
-    final step = context.watch<OnboardingCubit>().state.currentStep;
+    final cubit = context.watch<OnboardingCubit>();
+    final state = cubit.state;
+    final step = state.currentStep;
+    final isRequestingActivity =
+        state.activityPermissionStatus == PermissionRequestStatus.requesting;
 
     return PopScope(
       canPop: step == 0,
       onPopInvokedWithResult: (didPop, result) {
         if (didPop) return;
-        context.read<OnboardingCubit>().previousStep();
+        cubit.previousStep();
       },
       child: Scaffold(
         backgroundColor: colors.bgBase,
@@ -78,16 +77,35 @@ class _OnboardingFlowView extends StatelessWidget {
             child: IndexedStack(
               index: step,
               children: [
-                OnboardingTrustPage(
-                  onContinue: context.read<OnboardingCubit>().nextStep,
+                OnboardingShell(
+                  key: const ValueKey('onboarding-step-0'),
+                  currentStep: 0,
+                  showBack: false,
+                  showPrimaryTrailingArrow: true,
+                  primaryLabel: 'Continue',
+                  primaryLoading: isRequestingActivity,
+                  onPrimary: isRequestingActivity
+                      ? null
+                      : () => _onIntroContinue(context),
+                  content: const OnboardingIntroPage(),
                 ),
-                const OnboardingPermissionsPage(),
-                OnboardingGoalPage(
-                  onContinue: context.read<OnboardingCubit>().nextStep,
+                OnboardingShell(
+                  key: const ValueKey('onboarding-step-1'),
+                  currentStep: 1,
+                  showBack: true,
+                  primaryLabel: 'Continue',
+                  onBack: cubit.previousStep,
+                  onPrimary: cubit.nextStep,
+                  content: const OnboardingWeightPlaceholder(),
                 ),
-                OnboardingDisplayNamePage(
-                  onComplete: ({displayName}) =>
-                      _completeOnboarding(context, displayName: displayName),
+                OnboardingShell(
+                  key: const ValueKey('onboarding-step-2'),
+                  currentStep: 2,
+                  showBack: true,
+                  primaryLabel: 'Continue',
+                  onBack: cubit.previousStep,
+                  onPrimary: () {},
+                  content: const OnboardingHeightPlaceholder(),
                 ),
               ],
             ),
