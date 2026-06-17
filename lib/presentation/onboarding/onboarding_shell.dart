@@ -3,7 +3,7 @@ import 'package:phosphoricons_flutter/phosphoricons_flutter.dart';
 
 import '../../core/constants/astra_colors.dart';
 import '../../core/constants/astra_spacing.dart';
-import '../../core/constants/astra_typography.dart';
+import '../widgets/astra_button.dart';
 import 'onboarding_progress_bar.dart';
 
 /// Shared onboarding chrome: segment progress, content slot, footer actions.
@@ -54,75 +54,22 @@ class OnboardingShell extends StatelessWidget {
             else
               const SizedBox.shrink(),
             const Spacer(),
-            _FooterPrimaryButton(
+            AstraButton(
               label: primaryLabel,
               onPressed: primaryEnabled ? onPrimary : null,
               isLoading: primaryLoading,
-              showTrailingArrow: showPrimaryTrailingArrow,
+              compact: true,
+              trailing: showPrimaryTrailingArrow && !primaryLoading
+                  ? Icon(
+                      PhosphorIconsRegular.arrowRight,
+                      size: 18,
+                      color: colors.accentSecondary,
+                    )
+                  : null,
             ),
           ],
         ),
       ],
-    );
-  }
-}
-
-class _FooterPrimaryButton extends StatelessWidget {
-  const _FooterPrimaryButton({
-    required this.label,
-    required this.onPressed,
-    required this.isLoading,
-    required this.showTrailingArrow,
-  });
-
-  final String label;
-  final VoidCallback? onPressed;
-  final bool isLoading;
-  final bool showTrailingArrow;
-
-  @override
-  Widget build(BuildContext context) {
-    final colors = context.astraColors;
-    final labelStyle = AstraTypography.labelFor(colors).copyWith(
-      color: colors.accentSecondary,
-    );
-
-    return FilledButton(
-      onPressed: onPressed,
-      style: FilledButton.styleFrom(
-        minimumSize: const Size(0, AstraSpacing.kMinTouchTarget),
-        padding: const EdgeInsets.symmetric(horizontal: AstraSpacing.kSpaceLg),
-        backgroundColor: colors.accentPrimary,
-        disabledBackgroundColor: colors.accentPrimaryMuted,
-        foregroundColor: colors.accentSecondary,
-        disabledForegroundColor: colors.textMuted,
-        shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.circular(AstraSpacing.kRadiusSm),
-        ),
-      ),
-      child: isLoading
-          ? SizedBox(
-              height: 20,
-              width: 20,
-              child: CircularProgressIndicator(
-                strokeWidth: 2,
-                color: labelStyle.color,
-              ),
-            )
-          : Row(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                Text(label, style: labelStyle),
-                if (showTrailingArrow) ...[
-                  const SizedBox(width: AstraSpacing.kSpaceSm),
-                  Icon(
-                    PhosphorIconsRegular.arrowRight,
-                    size: 18,
-                    color: labelStyle.color,
-                  ),
-                ],
-              ],
-            ),
     );
   }
 }

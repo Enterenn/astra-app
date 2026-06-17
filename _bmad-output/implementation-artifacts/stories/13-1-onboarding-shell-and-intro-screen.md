@@ -1,6 +1,6 @@
 # Story 13.1: Onboarding Shell & Intro Screen
 
-Status: review
+Status: done
 
 <!-- Note: Validation is optional. Run validate-create-story for quality check before dev-story. -->
 <!-- Mockup ref: assets/.../onboarding-light-ae0cd500-*.png (Baptiste 2026-06-17) -->
@@ -274,7 +274,14 @@ Follow [`docs/project-context.md`](../../../docs/project-context.md):
 
 ## Change Log
 
-- 2026-06-17: Story 13.1 — onboarding shell, intro screen, 3-step flow, permission bridge (Date: 2026-06-17)
+- 2026-06-17: Code review fixes — AstraButton in shell, permission throw recovery test (Date: 2026-06-17)
+
+### Review Findings
+
+- [x] [Review][Patch] Reuse `AstraButton` in onboarding shell footer [`onboarding_shell.dart`]
+- [x] [Review][Patch] Flow test for permission requester throw recovery [`onboarding_flow_test.dart`]
+- [x] [Review][Defer] `widget_test` duplicate Steps text — pre-existing, unrelated to 13.1
+- [x] [Review][Defer] No UI completion path until Stories 13.3/13.4 — expected scope boundary
 
 ## Technical Requirements
 

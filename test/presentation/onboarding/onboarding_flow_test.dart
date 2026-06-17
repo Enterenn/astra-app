@@ -167,6 +167,43 @@ void main() {
       expect(continueButton.onPressed, isNotNull);
     });
 
+    testWidgets('recovers Continue after permission requester throws', (
+      tester,
+    ) async {
+      await tester.pumpWidget(
+        MaterialApp(
+          theme: buildAstraLightTheme(),
+          home: OnboardingFlow(
+            deps: deps,
+            onComplete: () {},
+            createCubit: (repo) => OnboardingCubit(
+              userPreferences: repo,
+              permissionRequester: (_) async {
+                throw Exception('platform channel failure');
+              },
+            ),
+          ),
+        ),
+      );
+
+      await tester.tap(_introContinue());
+      await tester.pumpAndSettle();
+
+      expect(find.text('Weight').hitTestable(), findsOneWidget);
+
+      await tester.tap(find.byTooltip('Back'));
+      await tester.pump();
+
+      final continueButton = tester.widget<FilledButton>(
+        find.ancestor(
+          of: _introContinue(),
+          matching: find.byType(FilledButton),
+        ),
+      );
+      expect(continueButton.onPressed, isNotNull);
+      expect(find.byType(CircularProgressIndicator), findsNothing);
+    });
+
     testWidgets('shows loading on Continue during permission request', (
       tester,
     ) async {

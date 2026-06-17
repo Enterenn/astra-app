@@ -14,12 +14,16 @@ class AstraButton extends StatelessWidget {
     required this.onPressed,
     this.variant = AstraButtonVariant.primary,
     this.isLoading = false,
+    this.compact = false,
+    this.trailing,
   });
 
   final String label;
   final VoidCallback? onPressed;
   final AstraButtonVariant variant;
   final bool isLoading;
+  final bool compact;
+  final Widget? trailing;
 
   bool get _isDisabled => onPressed == null || isLoading;
 
@@ -46,7 +50,14 @@ class AstraButton extends StatelessWidget {
         AstraButtonVariant.primary => FilledButton(
             onPressed: _isDisabled ? null : onPressed,
             style: FilledButton.styleFrom(
-              minimumSize: const Size.fromHeight(AstraSpacing.kMinTouchTarget),
+              minimumSize: compact
+                  ? const Size(0, AstraSpacing.kMinTouchTarget)
+                  : const Size.fromHeight(AstraSpacing.kMinTouchTarget),
+              padding: compact
+                  ? const EdgeInsets.symmetric(
+                      horizontal: AstraSpacing.kSpaceLg,
+                    )
+                  : null,
               backgroundColor: colors.accentPrimary,
               disabledBackgroundColor: colors.accentPrimaryMuted,
               foregroundColor: colors.accentSecondary,
@@ -139,6 +150,16 @@ class AstraButton extends StatelessWidget {
         ),
       );
     }
-    return Text(label, style: labelStyle);
+    if (trailing == null) {
+      return Text(label, style: labelStyle);
+    }
+    return Row(
+      mainAxisSize: MainAxisSize.min,
+      children: [
+        Text(label, style: labelStyle),
+        const SizedBox(width: AstraSpacing.kSpaceSm),
+        trailing!,
+      ],
+    );
   }
 }
