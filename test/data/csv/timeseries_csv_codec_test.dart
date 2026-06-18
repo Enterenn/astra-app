@@ -175,6 +175,47 @@ void main() {
         ),
       );
     });
+
+    test('parseDataRow accepts legacy UUID v4 id', () {
+      final parsed = TimeseriesCsvCodec.parseDataRow(
+        'a1b2c3d4-e5f6-7890-abcd-ef1234567890,'
+        '2026-05-22T14:30:00Z,'
+        '2026-05-22T14:35:00Z,'
+        'steps,42,count,5min,internal_phone,smartphone,+02:00',
+        rowNumber: 1,
+      );
+
+      expect(parsed.id, 'a1b2c3d4-e5f6-7890-abcd-ef1234567890');
+    });
+
+    test('parseDataRow accepts base36 timestamp id', () {
+      final parsed = TimeseriesCsvCodec.parseDataRow(
+        'l7x3k2m-1,'
+        '2026-05-22T14:30:00Z,'
+        '2026-05-22T14:35:00Z,'
+        'steps,42,count,5min,internal_phone,smartphone,+02:00',
+        rowNumber: 1,
+      );
+
+      expect(parsed.id, 'l7x3k2m-1');
+    });
+
+    test('parseDataRow rejects garbage id', () {
+      expect(
+        () => TimeseriesCsvCodec.parseDataRow(
+          'not-a-valid-id!,'
+          '2026-05-22T14:30:00Z,'
+          '2026-05-22T14:35:00Z,'
+          'steps,42,count,5min,internal_phone,smartphone,+02:00',
+          rowNumber: 5,
+        ),
+        throwsA(
+          predicate<ImportValidationException>(
+            (e) => e.message.contains('Row 5: id must be a valid sample id'),
+          ),
+        ),
+      );
+    });
   });
 }
 

@@ -31,8 +31,13 @@ class TimeseriesCsvCodec {
     kDailyResolution,
   };
 
-  static final _uuidPattern = RegExp(
+  static final _legacyUuidPattern = RegExp(
     r'^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$',
+    caseSensitive: false,
+  );
+
+  static final _timestampIdPattern = RegExp(
+    r'^[0-9a-z]+(-[0-9a-z]+)?$',
     caseSensitive: false,
   );
 
@@ -243,9 +248,9 @@ class TimeseriesCsvCodec {
     }
 
     final id = map['id']! as String;
-    if (!_uuidPattern.hasMatch(id)) {
+    if (!_legacyUuidPattern.hasMatch(id) && !_timestampIdPattern.hasMatch(id)) {
       throw ImportValidationException(
-        'Row $rowNumber: id must be a valid UUID',
+        'Row $rowNumber: id must be a valid sample id',
       );
     }
 
