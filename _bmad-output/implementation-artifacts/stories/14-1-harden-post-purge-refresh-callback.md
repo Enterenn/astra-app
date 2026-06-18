@@ -1,6 +1,6 @@
 # Story 14.1: Harden postPurgeRefresh Callback
 
-Status: review
+Status: done
 
 <!-- Refacto Epic 14 — branch `refacto` only until merge review -->
 <!-- Source: epics-refacto.md Story 14-1 · refactoring-audit-master-v0.6.1.md §1.2b -->

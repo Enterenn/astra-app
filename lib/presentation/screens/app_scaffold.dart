@@ -158,6 +158,9 @@ class _AppScaffoldState extends State<AppScaffold> {
     try {
       phase = 'clearLastDisplayedSteps';
       await widget.deps.userPreferences.clearLastDisplayedSteps();
+      // TODO(refactor): If the widget is unmounted mid-flux, we return silently to avoid StateError.
+      // Trade-off: MyDataCubit might assume a full success while some late refreshes were skipped.
+      // Considered acceptable as the database purge itself is already complete at this stage.
       if (!mounted) return;
 
       phase = 'reconcileFromDatabase';
