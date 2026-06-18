@@ -304,6 +304,40 @@ void main() {
       expect(await repository.getDailyStepGoal(), 8800);
     });
 
+    test('getGoalsForLocalDays matches per-day resolution for journal fixtures', () async {
+      await db.insert('daily_goal_effective', {
+        'effective_from_local_day': '2026-06-08',
+        'goal': 8000,
+      });
+      await db.insert('daily_goal_effective', {
+        'effective_from_local_day': '2026-06-11',
+        'goal': 10000,
+      });
+
+      const days = [
+        '2026-06-08',
+        '2026-06-09',
+        '2026-06-10',
+        '2026-06-11',
+        '2026-06-12',
+      ];
+      final batch = await repository.getGoalsForLocalDays(days);
+
+      for (final day in days) {
+        expect(batch[day], await repository.getGoalForLocalDay(day));
+      }
+    });
+
+    test('getGoalsForLocalDays falls back to default when no row applies', () async {
+      final batch = await repository.getGoalsForLocalDays(['2020-01-01']);
+      expect(batch['2020-01-01'], kDefaultStepGoal);
+    });
+
+    test('getGoalsForLocalDays returns empty map without querying when input empty', () async {
+      expect(await repository.getGoalsForLocalDays([]), isEmpty);
+      expect(await repository.getGoalsForLocalDays(const []), isEmpty);
+    });
+
     test('same-day update does not create second row', () async {
       await repository.setDailyStepGoal(9000);
       await repository.setDailyStepGoal(9500);

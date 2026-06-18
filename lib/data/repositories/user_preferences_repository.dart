@@ -57,9 +57,51 @@ class UserPreferencesRepository {
       if (rows.isEmpty) {
         return kDefaultStepGoal;
       }
-      final raw = rows.first['goal'];
-      final goal = raw is int ? raw : (raw as num).toInt();
-      return goal > 0 ? goal : kDefaultStepGoal;
+      return _normalizeJournalGoal(rows.first['goal']);
+    });
+  }
+
+  /// Resolves step goals for multiple local days (`YYYY-MM-DD`) in one SQL round-trip.
+  ///
+  /// Returns a map keyed by each requested ISO day. Semantics match [getGoalForLocalDay]
+  /// for every day in [localDayIsos].
+  Future<Map<String, int>> getGoalsForLocalDays(
+    List<String> localDayIsos,
+  ) async {
+    final days = localDayIsos.toSet().toList()..sort();
+    if (days.isEmpty) {
+      return const {};
+    }
+
+    return _session.withRetry((db) async {
+      final rows = await db.rawQuery(
+        '''
+        SELECT effective_from_local_day, goal
+        FROM daily_goal_effective
+        WHERE effective_from_local_day <= ?
+        ORDER BY effective_from_local_day ASC
+        ''',
+        [days.last],
+      );
+
+      var journalIndex = 0;
+      var currentGoal = kDefaultStepGoal;
+      final result = <String, int>{};
+
+      for (final day in days) {
+        while (journalIndex < rows.length) {
+          final effectiveDay =
+              rows[journalIndex]['effective_from_local_day'] as String;
+          if (effectiveDay.compareTo(day) > 0) {
+            break;
+          }
+          currentGoal = _normalizeJournalGoal(rows[journalIndex]['goal']);
+          journalIndex++;
+        }
+        result[day] = currentGoal;
+      }
+
+      return result;
     });
   }
 
@@ -416,4 +458,9 @@ class UserPreferencesRepository {
     'dark' => AstraThemePreference.dark,
     _ => AstraThemePreference.system,
   };
+
+  static int _normalizeJournalGoal(dynamic raw) {
+    final parsed = raw is int ? raw : (raw as num).toInt();
+    return parsed > 0 ? parsed : kDefaultStepGoal;
+  }
 }
