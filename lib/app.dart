@@ -89,6 +89,46 @@ bool shouldRunResumePhoneCatchUp({
       pauseDuration >= minPauseForPhoneCatchUp;
 }
 
+/// Serializes lifecycle pause/resume handlers so foreground recovery cannot
+/// race background persist. Extracted for fast unit tests (Story 14-2).
+@visibleForTesting
+Future<void> runSerializedLifecycleTransition({
+  required Future<void>? Function() readInFlight,
+  required void Function(Future<void>?) writeInFlight,
+  required Future<void> Function() operation,
+}) async {
+  while (readInFlight() != null) {
+    try {
+      await readInFlight();
+    } catch (error, stackTrace) {
+      if (kDebugMode) {
+        debugPrint(
+          'AstraApp._enqueueLifecycleTransition: prior transition failed: $error',
+        );
+        debugPrintStack(stackTrace: stackTrace);
+      }
+    }
+  }
+
+  late final Future<void> transition;
+  transition = operation();
+  writeInFlight(transition);
+  try {
+    await transition;
+  } catch (error, stackTrace) {
+    if (kDebugMode) {
+      debugPrint(
+        'AstraApp._enqueueLifecycleTransition: transition failed: $error',
+      );
+      debugPrintStack(stackTrace: stackTrace);
+    }
+  } finally {
+    if (readInFlight() == transition) {
+      writeInFlight(null);
+    }
+  }
+}
+
 /// Whether resume should briefly stop the monitor for a one-shot phone peek.
 ///
 /// Skips the destructive stop/peek cycle when background collection (pause
@@ -173,21 +213,12 @@ class _AstraAppState extends State<AstraApp> with WidgetsBindingObserver {
   /// Serializes pause/resume handlers so foreground recovery cannot race background persist.
   Future<void> _enqueueLifecycleTransition(
     Future<void> Function() operation,
-  ) async {
-    while (_lifecycleTransitionInFlight != null) {
-      await _lifecycleTransitionInFlight;
-    }
-
-    late final Future<void> transition;
-    transition = operation();
-    _lifecycleTransitionInFlight = transition;
-    try {
-      await transition;
-    } finally {
-      if (_lifecycleTransitionInFlight == transition) {
-        _lifecycleTransitionInFlight = null;
-      }
-    }
+  ) {
+    return runSerializedLifecycleTransition(
+      readInFlight: () => _lifecycleTransitionInFlight,
+      writeInFlight: (future) => _lifecycleTransitionInFlight = future,
+      operation: operation,
+    );
   }
 
   Future<void> _onAppBackgrounded() async {
