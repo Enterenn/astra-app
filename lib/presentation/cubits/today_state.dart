@@ -44,6 +44,8 @@ class TodayState {
     this.foregroundCatchUp = false,
     this.catchUpTargetSteps,
     this.selectedLocalDay,
+    this.lastDisplayedSteps,
+    this.lastDisplayedStepsLoaded = false,
   });
 
   final TodayStatus status;
@@ -65,6 +67,12 @@ class TodayState {
   final int? catchUpTargetSteps;
   final DateTime? selectedLocalDay;
 
+  /// Last step count shown in [GoalRing] for the current display day (prefs).
+  final int? lastDisplayedSteps;
+
+  /// True once [lastDisplayedSteps] has been loaded from prefs for the display day.
+  final bool lastDisplayedStepsLoaded;
+
   const TodayState.loading() : this(status: TodayStatus.loading);
 
   const TodayState.noPermission() : this(status: TodayStatus.noPermission);
@@ -82,6 +90,8 @@ class TodayState {
     bool foregroundCatchUp = false,
     int? catchUpTargetSteps,
     DateTime? selectedLocalDay,
+    int? lastDisplayedSteps,
+    bool lastDisplayedStepsLoaded = false,
   }) {
     return TodayState(
       status: _resolveStatus(steps: steps, goal: goal),
@@ -97,6 +107,8 @@ class TodayState {
       foregroundCatchUp: foregroundCatchUp,
       catchUpTargetSteps: catchUpTargetSteps,
       selectedLocalDay: selectedLocalDay,
+      lastDisplayedSteps: lastDisplayedSteps,
+      lastDisplayedStepsLoaded: lastDisplayedStepsLoaded,
     );
   }
 
@@ -114,6 +126,8 @@ class TodayState {
     bool? foregroundCatchUp,
     Object? catchUpTargetSteps = _unset,
     Object? selectedLocalDay = _unset,
+    Object? lastDisplayedSteps = _unset,
+    bool? lastDisplayedStepsLoaded,
   }) {
     return TodayState(
       status: status ?? this.status,
@@ -133,6 +147,11 @@ class TodayState {
       selectedLocalDay: selectedLocalDay == _unset
           ? this.selectedLocalDay
           : selectedLocalDay as DateTime?,
+      lastDisplayedSteps: lastDisplayedSteps == _unset
+          ? this.lastDisplayedSteps
+          : lastDisplayedSteps as int?,
+      lastDisplayedStepsLoaded:
+          lastDisplayedStepsLoaded ?? this.lastDisplayedStepsLoaded,
     );
   }
 

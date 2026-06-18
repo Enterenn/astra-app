@@ -633,8 +633,46 @@ void main() {
       await cubit.refresh();
 
       expect(cubit.state.steps, 4292);
+      expect(cubit.state.lastDisplayedSteps, 4374);
+      expect(cubit.state.lastDisplayedStepsLoaded, isTrue);
       await cubit.syncSteps(4292, clampStaleDisplay: true);
       expect(await userPreferences.getLastDisplayedSteps(localDay), 4292);
+      expect(cubit.state.lastDisplayedSteps, 4292);
+      cubit.close();
+    });
+
+    test('refresh loads lastDisplayedSteps from prefs', () async {
+      final localDay = formatLocalDayIso(clock.snapshot());
+      await userPreferences.setLastDisplayedSteps(
+        localDayIso: localDay,
+        steps: 2500,
+      );
+      await stepRepository.upsertIngestionBucket(
+        _bucket(
+          startTimeUtc: DateTime.utc(2026, 6, 2, 10),
+          value: 1500,
+          zoneOffset: '+02:00',
+        ),
+      );
+
+      final cubit = buildCubit();
+      await cubit.refresh();
+
+      expect(cubit.state.lastDisplayedStepsLoaded, isTrue);
+      expect(cubit.state.lastDisplayedSteps, 2500);
+      cubit.close();
+    });
+
+    test('recordLastDisplayedSteps persists to prefs and updates state', () async {
+      final cubit = buildCubit();
+      await cubit.refresh();
+      final localDay = formatLocalDayIso(clock.snapshot());
+
+      await cubit.recordLastDisplayedSteps(1234);
+      await Future<void>.delayed(const Duration(milliseconds: 50));
+
+      expect(cubit.state.lastDisplayedSteps, 1234);
+      expect(await userPreferences.getLastDisplayedSteps(localDay), 1234);
       cubit.close();
     });
 
