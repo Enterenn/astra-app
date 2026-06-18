@@ -1,5 +1,5 @@
 # generated: 2026-06-18
-# last_updated: 2026-06-18 (Story 14-1 done)
+# last_updated: 2026-06-18 (Story 14-2 review)
 # NEXT: dev-story 14-2-fix-lifecycle-transition-deadlock
 # Ref: planning-artifacts/epics-refacto.md · planning-artifacts/refactoring-audit-master-v0.6.1.md
 # branch: refacto
@@ -58,7 +58,7 @@
 # NAVIGATION: _bmad-output/README.md · planning-artifacts/epics-refacto.md
 
 generated: 2026-06-18
-last_updated: 2026-06-18 (Story 14-1 done)
+last_updated: 2026-06-18 (Story 14-2 ready-for-dev)
 project: astra-app
 project_key: NOKEY
 tracking_system: file-system
@@ -69,7 +69,7 @@ git_branch: refacto
 development_status:
   epic-14: in-progress
   14-1-harden-post-purge-refresh-callback: done
-  14-2-fix-lifecycle-transition-deadlock: backlog
+  14-2-fix-lifecycle-transition-deadlock: review
   epic-14-retrospective: optional
 
   epic-15: backlog
