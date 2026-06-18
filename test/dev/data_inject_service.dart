@@ -1,15 +1,14 @@
 import 'dart:math';
 
+import 'package:astra_app/core/time/local_day_calculator.dart';
+import 'package:astra_app/core/time/time_provider.dart';
+import 'package:astra_app/core/time/timestamp_codec.dart';
+import 'package:astra_app/data/datasources/data_ingestion_source.dart';
+import 'package:astra_app/data/models/normalized_step_bucket.dart';
+import 'package:astra_app/data/models/timeseries_sample_model.dart';
+import 'package:astra_app/data/repositories/step_repository.dart';
 import 'package:flutter/foundation.dart';
 import 'package:uuid/uuid.dart';
-
-import '../core/time/local_day_calculator.dart';
-import '../core/time/time_provider.dart';
-import '../core/time/timestamp_codec.dart';
-import '../data/datasources/data_ingestion_source.dart';
-import '../data/models/normalized_step_bucket.dart';
-import '../data/models/timeseries_sample_model.dart';
-import '../data/repositories/step_repository.dart';
 
 const kDevInjectDayCount = 90;
 const kDevInjectBucketsPerDay = 288;

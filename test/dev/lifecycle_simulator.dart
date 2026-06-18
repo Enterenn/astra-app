@@ -1,8 +1,7 @@
+import 'package:astra_app/core/time/time_provider.dart';
+import 'package:astra_app/data/models/normalized_step_bucket.dart';
+import 'package:astra_app/data/repositories/step_repository.dart';
 import 'package:flutter/foundation.dart';
-
-import '../core/time/time_provider.dart';
-import '../data/models/normalized_step_bucket.dart';
-import '../data/repositories/step_repository.dart';
 
 class LifecycleSimResult {
   const LifecycleSimResult({

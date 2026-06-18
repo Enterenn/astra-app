@@ -1,12 +1,12 @@
+import 'package:astra_app/core/time/time_provider.dart';
+import 'package:astra_app/data/models/chart_day_aggregate.dart';
+import 'package:astra_app/data/repositories/step_repository.dart';
+import 'package:astra_app/data/repositories/user_preferences_repository.dart';
+import 'package:astra_app/presentation/cubits/history_cubit.dart';
+import 'package:astra_app/presentation/cubits/history_state.dart';
 import 'package:flutter/foundation.dart';
 import 'package:sqflite/sqflite.dart';
 
-import '../core/time/time_provider.dart';
-import '../data/models/chart_day_aggregate.dart';
-import '../data/repositories/step_repository.dart';
-import '../data/repositories/user_preferences_repository.dart';
-import '../presentation/cubits/history_cubit.dart';
-import '../presentation/cubits/history_state.dart';
 import 'data_inject_service.dart';
 import 'lifecycle_simulator.dart';
 

@@ -1,11 +1,14 @@
+import 'package:astra_app/core/di/app_dependencies.dart';
 import 'package:flutter/material.dart';
 import 'package:phosphoricons_flutter/phosphoricons_flutter.dart';
 
-import '../core/di/app_dependencies.dart';
 import 'chart_benchmark.dart';
 import 'chart_benchmark_render_pump.dart';
 
-/// Debug-only FAB on History tab to run KPI-01 on a physical device.
+/// Debug-only FAB for test/widget harnesses to run KPI-01 on a physical device.
+///
+/// **Not imported from production `lib/`** — use `flutter test test/dev/chart_benchmark_test.dart`
+/// or wire this widget in a test harness only.
 class ChartBenchmarkDevFab extends StatefulWidget {
   const ChartBenchmarkDevFab({required this.deps, super.key});
 

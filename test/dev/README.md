@@ -1,6 +1,6 @@
-# ASTRA dev tooling (`lib/dev/`)
+# ASTRA dev tooling (`test/dev/`)
 
-FR28 dev-only helpers for Epic 3 chart development and storage benchmarks. **Not for production use.**
+FR28 dev-only helpers for Epic 3 chart development and storage benchmarks. **Not compiled into release APKs** — lives outside `lib/`.
 
 ## Purpose
 
@@ -15,7 +15,7 @@ Real devices use **`DataLifecycleService`** (`lib/core/services/data_lifecycle_s
 - Android: weekly WorkManager task (`astra_database_maintenance`)
 - iOS / foreground: opportunistic `runMaintenance()` on app resume when due
 
-Keep **`runDevLifecycleSimulate()`** for KPI-01 compacted profile (`kDatasetLabelCompacted10080`) and debug benchmarks — do not route production scheduling through `lib/dev/`.
+Keep **`runDevLifecycleSimulate()`** for KPI-01 compacted profile (`kDatasetLabelCompacted10080`) and debug benchmarks — do not route production scheduling through `test/dev/`.
 
 Downstream stories consume this data:
 
@@ -57,7 +57,7 @@ flutter test test/dev/data_inject_service_test.dart
 flutter test test/dev/lifecycle_simulator_test.dart
 flutter test test/dev/chart_benchmark_test.dart
 flutter test test/dev/
-flutter analyze lib/dev/
+flutter analyze test/dev/
 ```
 
 ## KPI-01 chart benchmark
@@ -75,8 +75,16 @@ Reproducible harness for **History chart query + render latency** when toggling 
 
 KPI-01 **pass/fail** is measured on a **mid-range Android reference device** (debug build). CI/emulator runs are **log-only** — slow VMs must not fail the suite.
 
+**Entry points (test harness only — no production FAB):**
+
+1. **Automated:** `flutter test test/dev/chart_benchmark_test.dart` (CI smoke; no 100ms gate).
+2. **On-device programmatic:** call `runDevChartBenchmark` from a test/widget harness with `pumpChart: createOverlayStepBarChartPump(context)` (see snippet below).
+3. **Optional widget harness:** import `ChartBenchmarkDevFab` from `test/dev/chart_benchmark_dev_fab.dart` in a **test-only** scaffold — never from `lib/`.
+
+Steps for manual device run:
+
 1. Install **debug** build on physical Android device (mid-range reference, e.g. CPH2663).
-2. Open **History** tab — tap the **speed FAB** (debug only). This runs `runDevChartBenchmark` with 90-day inject, **50 iterations**, and off-screen `StepBarChart` pumps (7d + 30d).
+2. Run benchmark via test harness or programmatic call with 90-day inject, **50 iterations**, and off-screen `StepBarChart` pumps (7d + 30d).
 3. Capture console `[KPI-01]` log (`render=true`, `profile=full-stack`, `total_p95`).
 4. **Pass:** `total_p95 < 100 ms`. Record in `_bmad-output/implementation-artifacts/kpi-01-regression-log.md`.
 
@@ -116,15 +124,14 @@ Example log line:
 | `toggle_p50/p95` | In-memory `HistoryCubit.selectPeriod(7d↔30d)` + optional chart pump |
 | `total_p50/p95` | **KPI-01 metric** = query + toggle per iteration |
 
-Chart render is measured when `pumpChart` is set (device FAB uses `createOverlayStepBarChartPump`). CI smoke also runs `pumpChart` via `test/dev/chart_benchmark_pump.dart`.
+Chart render is measured when `pumpChart` is set (device harness uses `createOverlayStepBarChartPump`). CI smoke also runs `pumpChart` via `test/dev/chart_benchmark_pump.dart`.
 
 ## Release-build safety
 
-- Entry points `runDevInject()`, `runDevLifecycleSimulate()`, and `runDevChartBenchmark()` throw unless `kDebugMode` is true.
-- `ChartBenchmarkDevFab` is only built when `kDebugMode` is true.
+- Files live under `test/dev/` — **not** part of the `lib/` compilation tree, so release APKs exclude dev simulator and benchmark classes.
+- Entry points `runDevInject()`, `runDevLifecycleSimulate()`, and `runDevChartBenchmark()` throw unless `kDebugMode` is true (defensive depth for debug/test runs).
 - `StepRepository.insertDevSamplesBatch()` is guarded with a debug `assert`.
-- **Do not import `lib/dev/` from `main.dart`, `app.dart`, or production widgets** without a `kDebugMode` guard.
-- Flutter release builds tree-shake unreachable debug paths when callers respect this policy; keep dev triggers in tests or debug-only code paths.
+- **Do not import `test/dev/` from any `lib/` file** — use relative imports from `test/` only.
 
 ## File map
 
@@ -134,4 +141,4 @@ Chart render is measured when `pumpChart` is set (device FAB uses `createOverlay
 | `lifecycle_simulator.dart` | Dev FR11 preview (delegates to repository downsample) |
 | `chart_benchmark.dart` | KPI-01 harness + `runDevChartBenchmark()` |
 | `chart_benchmark_render_pump.dart` | Off-screen `StepBarChart` pump for device/tests |
-| `chart_benchmark_dev_fab.dart` | History-tab debug FAB to run KPI-01 on device |
+| `chart_benchmark_dev_fab.dart` | Test-only FAB widget to run KPI-01 on device |
