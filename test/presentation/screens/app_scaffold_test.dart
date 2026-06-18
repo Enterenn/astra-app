@@ -17,7 +17,6 @@ import 'package:astra_app/presentation/screens/app_scaffold.dart';
 import 'package:astra_app/presentation/screens/today_screen.dart';
 import 'package:astra_app/presentation/widgets/accent_preset_selector.dart';
 import 'package:astra_app/presentation/widgets/app_bottom_nav.dart';
-import 'package:astra_app/presentation/widgets/goal_ring.dart';
 import 'package:astra_app/presentation/widgets/menu_nav_row.dart';
 import 'package:astra_app/presentation/widgets/theme_selector.dart';
 import 'package:flutter/material.dart';
@@ -193,14 +192,6 @@ void main() {
   group('AppScaffold', () {
     late Database db;
     late AppDependencies deps;
-
-    setUp(() {
-      GoalRing.disableStepPersistence = true;
-    });
-
-    tearDown(() {
-      GoalRing.disableStepPersistence = false;
-    });
 
     setUpAll(() async {
       db = await openAstraDatabase(databasePath: inMemoryDatabasePath);
@@ -696,6 +687,11 @@ void main() {
       expect(historyCubit!.refreshCallCount, greaterThanOrEqualTo(1));
       expect(myDataCubit!.state.purgeSuccessPending, isTrue);
       expect(myDataCubit!.state.purgeErrorMessage, isNull);
+
+      await tester.runAsync(() async {
+        await Future<void>.delayed(const Duration(milliseconds: 200));
+      });
+      await tester.pump();
 
       await _disposeScaffold(tester);
     });

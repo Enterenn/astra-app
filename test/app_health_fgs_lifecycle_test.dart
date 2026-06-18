@@ -84,8 +84,8 @@ void main() {
   });
 
   // SKIP: Same 'step_count' MissingPluginException as the test above; additionally
-  // GoalRing.disableStepPersistence is false which triggers a DatabaseException
-  // during widget deactivation when the test DB is already closed.
+  // GoalRing persistence via TodayCubit can trigger async prefs writes during teardown
+  // when the test DB is already closed.
   testWidgets('pause keeps live monitor running while FGS starts', skip: true, (tester) async {
     final fgsCalls = <String>[];
 

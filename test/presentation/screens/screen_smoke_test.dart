@@ -38,7 +38,19 @@ class _SeededTodayCubit extends TodayCubit {
     required super.clock,
     required TodayState initial,
   }) : super(activityPermissionGranted: () async => true) {
-    emit(initial);
+    emit(_displayReady(initial));
+  }
+
+  static TodayState _displayReady(TodayState state) {
+    if (state.lastDisplayedStepsLoaded ||
+        state.status == TodayStatus.loading ||
+        state.status == TodayStatus.noPermission) {
+      return state;
+    }
+    return state.copyWith(
+      lastDisplayedSteps: state.steps,
+      lastDisplayedStepsLoaded: true,
+    );
   }
 
   @override
@@ -71,7 +83,6 @@ void main() {
     late UnitsCubit unitsCubit;
 
     setUp(() async {
-      GoalRing.disableStepPersistence = true;
       clock = FakeTimeProvider(
         fixedNowUtc: DateTime.utc(2026, 6, 3, 12),
         zoneOffset: const Duration(hours: 2),
@@ -83,7 +94,6 @@ void main() {
     });
 
     tearDown(() async {
-      GoalRing.disableStepPersistence = false;
       await unitsCubit.close();
       await db.close();
     });

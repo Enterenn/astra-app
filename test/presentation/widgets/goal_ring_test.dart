@@ -29,6 +29,8 @@ class _ForegroundCatchUpHarnessState extends State<_ForegroundCatchUpHarness> {
       steps: 100,
       goal: 8000,
       isStale: false,
+      lastDisplayedSteps: 100,
+      lastDisplayedStepsLoaded: true,
     );
   }
 
@@ -45,7 +47,6 @@ class _ForegroundCatchUpHarnessState extends State<_ForegroundCatchUpHarness> {
   Widget build(BuildContext context) {
     return GoalRing(
       state: ringState,
-      debugLastDisplayedSteps: 100,
       onForegroundCatchUpHandled: () {
         catchUpHandled = true;
         setState(() {
@@ -58,13 +59,16 @@ class _ForegroundCatchUpHarnessState extends State<_ForegroundCatchUpHarness> {
 
 void main() {
   group('GoalRing', () {
-    setUp(() {
-      GoalRing.disableStepPersistence = true;
-    });
+    TodayState _displayReady(TodayState state) {
+      if (state.lastDisplayedStepsLoaded) {
+        return state;
+      }
+      return state.copyWith(
+        lastDisplayedSteps: state.steps,
+        lastDisplayedStepsLoaded: true,
+      );
+    }
 
-    tearDown(() {
-      GoalRing.disableStepPersistence = false;
-    });
     Future<void> pumpGoalRing(
       WidgetTester tester, {
       required TodayState state,
@@ -76,7 +80,7 @@ void main() {
           Center(
             child: SizedBox(
               width: width,
-              child: GoalRing(state: state),
+              child: GoalRing(state: _displayReady(state)),
             ),
           ),
           preset: preset,
@@ -251,10 +255,12 @@ void main() {
               child: SizedBox(
                 width: 400,
                 child: GoalRing(
-                  state: TodayState.fromData(
-                    steps: 10_847,
-                    goal: 8000,
-                    isStale: false,
+                  state: _displayReady(
+                    TodayState.fromData(
+                      steps: 10_847,
+                      goal: 8000,
+                      isStale: false,
+                    ),
                   ),
                 ),
               ),
@@ -289,8 +295,9 @@ void main() {
                   steps: 1024,
                   goal: 8000,
                   isStale: false,
+                  lastDisplayedSteps: 470,
+                  lastDisplayedStepsLoaded: true,
                 ),
-                debugLastDisplayedSteps: 470,
               ),
             ),
           ),
@@ -325,8 +332,9 @@ void main() {
                   steps: 1024,
                   goal: 8000,
                   isStale: false,
+                  lastDisplayedSteps: 470,
+                  lastDisplayedStepsLoaded: true,
                 ),
-                debugLastDisplayedSteps: 470,
               ),
             ),
           ),

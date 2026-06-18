@@ -156,7 +156,6 @@ void main() {
     late LiveStepMonitor monitor;
     late FakeTimeProvider clock;
     setUp(() async {
-      GoalRing.disableStepPersistence = true;
       db = await openAstraDatabase(databasePath: inMemoryDatabasePath);
       clock = FakeTimeProvider(
         fixedNowUtc: DateTime.utc(2026, 6, 2, 8),
@@ -190,7 +189,6 @@ void main() {
     });
 
     tearDown(() async {
-      GoalRing.disableStepPersistence = false;
       // Resume pipeline handlers are enqueued via unawaited — brief drain before DB close.
       await Future<void>.delayed(const Duration(milliseconds: 400));
       await phoneStreams.events.close();
