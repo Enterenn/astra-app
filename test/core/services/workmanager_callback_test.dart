@@ -5,7 +5,7 @@ import 'package:astra_app/core/services/notification_service.dart';
 import 'package:astra_app/core/services/data_lifecycle_service.dart';
 import 'package:astra_app/core/services/workmanager_callback.dart';
 import 'package:astra_app/core/services/workmanager_tasks.dart';
-import 'package:astra_app/dev/data_inject_service.dart';
+import '../../dev/data_inject_service.dart';
 import 'package:astra_app/core/time/local_day_formatter.dart';
 import 'package:astra_app/data/datasources/data_ingestion_source.dart';
 import 'package:astra_app/data/models/normalized_step_bucket.dart';

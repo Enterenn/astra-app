@@ -4,7 +4,7 @@ import 'package:astra_app/core/database/app_database.dart';
 import 'package:astra_app/core/services/data_lifecycle_service.dart';
 import 'package:astra_app/data/repositories/step_repository.dart';
 import 'package:astra_app/data/repositories/user_preferences_repository.dart';
-import 'package:astra_app/dev/data_inject_service.dart';
+import '../../dev/data_inject_service.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:sqflite/sqflite.dart';
 

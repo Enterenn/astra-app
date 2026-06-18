@@ -1,9 +1,9 @@
 import 'package:astra_app/core/database/app_database.dart';
 import 'package:astra_app/data/repositories/step_repository.dart';
 import 'package:astra_app/data/repositories/user_preferences_repository.dart';
-import 'package:astra_app/dev/chart_benchmark.dart';
-import 'package:astra_app/dev/data_inject_service.dart';
-import 'package:astra_app/dev/lifecycle_simulator.dart';
+import 'chart_benchmark.dart';
+import 'data_inject_service.dart';
+import 'lifecycle_simulator.dart';
 import 'package:astra_app/data/models/chart_day_aggregate.dart';
 import 'package:astra_app/presentation/cubits/history_cubit.dart';
 import 'package:astra_app/presentation/cubits/history_state.dart';

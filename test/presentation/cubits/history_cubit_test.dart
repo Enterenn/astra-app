@@ -8,7 +8,7 @@ import 'package:astra_app/data/datasources/data_ingestion_source.dart';
 import 'package:astra_app/data/models/normalized_step_bucket.dart';
 import 'package:astra_app/data/repositories/step_repository.dart';
 import 'package:astra_app/data/repositories/user_preferences_repository.dart';
-import 'package:astra_app/dev/data_inject_service.dart';
+import '../../dev/data_inject_service.dart';
 import 'package:astra_app/presentation/cubits/history_cubit.dart';
 import 'package:astra_app/presentation/cubits/history_state.dart';
 import 'package:flutter_test/flutter_test.dart';

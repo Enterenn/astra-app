@@ -14,6 +14,6 @@ Tracks History chart **query + render** benchmark results for UX checklist item 
 
 ## How to add a row
 
-1. Run benchmark on physical Android device (see `lib/dev/README.md` → KPI-01 section).
+1. Run benchmark on physical Android device (see `test/dev/README.md` → KPI-01 section).
 2. Copy `total_p50` / `total_p95` from `[KPI-01]` console log.
 3. Record device model, Android version, profile (`raw-25920` or `compacted-10080`), row count, pass/fail, and current git SHA.

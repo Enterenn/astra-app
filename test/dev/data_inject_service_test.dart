@@ -1,7 +1,7 @@
 import 'package:astra_app/core/database/app_database.dart';
 import 'package:astra_app/data/models/normalized_step_bucket.dart';
 import 'package:astra_app/data/repositories/step_repository.dart';
-import 'package:astra_app/dev/data_inject_service.dart';
+import 'data_inject_service.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:sqflite/sqflite.dart';
 

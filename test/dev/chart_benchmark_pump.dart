@@ -1,6 +1,6 @@
 import 'package:astra_app/core/constants/astra_theme.dart';
 import 'package:astra_app/data/models/chart_day_aggregate.dart';
-import 'package:astra_app/dev/chart_benchmark.dart';
+import 'chart_benchmark.dart';
 import 'package:astra_app/presentation/cubits/history_state.dart';
 import 'package:astra_app/presentation/widgets/step_bar_chart.dart';
 import 'package:flutter/material.dart';
