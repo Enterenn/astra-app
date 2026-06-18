@@ -1,6 +1,6 @@
 # Story 15.1: Batch SQL Goal Resolution for History
 
-Status: review
+Status: done
 
 <!-- Refacto Epic 15 — branch `refacto` only until merge review -->
 <!-- Source: epics-refacto.md Story 15-1 · refactoring-audit-master-v0.6.1.md §3.4 -->
@@ -291,3 +291,4 @@ Composer (Cursor)
 ### Change Log
 
 - 2026-06-18: Batch SQL goal resolution for History chart (REF-03) — repository batch API + cubit wiring + tests
+- 2026-06-18: Code review approved — story marked done
