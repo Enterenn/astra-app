@@ -355,11 +355,7 @@ class HistoryCubit extends Cubit<HistoryState> {
       return const {};
     }
 
-    final goals = await Future.wait<int>([
-      for (final iso in distinctIsos)
-        userPreferences.getGoalForLocalDay(iso),
-    ]);
-    return Map.fromIterables(distinctIsos, goals);
+    return userPreferences.getGoalsForLocalDays(distinctIsos);
   }
 
   /// When 7d is selected but the last 7 days have no steps while older days do,

@@ -17,6 +17,27 @@ import 'package:sqflite/sqflite.dart';
 import '../../core/time/fake_time_provider.dart';
 import '../../helpers/sqflite_test_helper.dart';
 
+class _BatchGoalSpyPreferencesRepository extends UserPreferencesRepository {
+  _BatchGoalSpyPreferencesRepository(super.db, {super.clock});
+
+  int getGoalsForLocalDaysCallCount = 0;
+  int getGoalForLocalDayCallCount = 0;
+
+  @override
+  Future<Map<String, int>> getGoalsForLocalDays(
+    List<String> localDayIsos,
+  ) async {
+    getGoalsForLocalDaysCallCount++;
+    return super.getGoalsForLocalDays(localDayIsos);
+  }
+
+  @override
+  Future<int> getGoalForLocalDay(String localDayIso) async {
+    getGoalForLocalDayCallCount++;
+    return super.getGoalForLocalDay(localDayIso);
+  }
+}
+
 class _ChartAggregateSpyRepository implements StepRepository {
   _ChartAggregateSpyRepository(this._delegate);
 
@@ -182,10 +203,13 @@ void main() {
       await db.close();
     });
 
-    HistoryCubit buildCubit({StepRepository? repository}) {
+    HistoryCubit buildCubit({
+      StepRepository? repository,
+      UserPreferencesRepository? preferences,
+    }) {
       return HistoryCubit(
         stepRepository: repository ?? stepRepository,
-        userPreferences: userPreferences,
+        userPreferences: preferences ?? userPreferences,
       );
     }
 
@@ -477,6 +501,51 @@ void main() {
       expect(cubit.state.goalsByDay['2026-06-01'], 8000);
       cubit.close();
     });
+
+    test(
+      'refresh uses single batch goal resolution for 30-day chart window',
+      () async {
+        await DataInjectService(repository: stepRepository).inject90Days(
+          clock: clock,
+        );
+        final prefsSpy = _BatchGoalSpyPreferencesRepository(db, clock: clock);
+        final cubit = buildCubit(preferences: prefsSpy);
+
+        await cubit.refresh();
+
+        expect(prefsSpy.getGoalsForLocalDaysCallCount, 1);
+        expect(
+          prefsSpy.getGoalForLocalDayCallCount,
+          1,
+          reason: 'only _resolveTodayGoal should call getGoalForLocalDay',
+        );
+        expect(cubit.state.status, HistoryStatus.ready);
+        cubit.close();
+      },
+    );
+
+    test(
+      'refreshGoal uses single batch goal resolution without per-day calls',
+      () async {
+        await DataInjectService(repository: stepRepository).inject90Days(
+          clock: clock,
+        );
+        final prefsSpy = _BatchGoalSpyPreferencesRepository(db, clock: clock);
+        final cubit = buildCubit(preferences: prefsSpy);
+
+        await cubit.refresh();
+        prefsSpy.getGoalsForLocalDaysCallCount = 0;
+        prefsSpy.getGoalForLocalDayCallCount = 0;
+
+        await prefsSpy.setDailyStepGoal(12_000);
+        await cubit.refreshGoal();
+
+        expect(prefsSpy.getGoalsForLocalDaysCallCount, 1);
+        expect(prefsSpy.getGoalForLocalDayCallCount, 1);
+        expect(cubit.state.dailyGoal, 12_000);
+        cubit.close();
+      },
+    );
 
     test(
       'refresh defaults to 30d when last 7 days are empty but older days have steps',
