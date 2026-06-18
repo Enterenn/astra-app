@@ -1,9 +1,9 @@
 # generated: 2026-06-18
-# last_updated: 2026-06-18 (Story 14-2 review)
-# NEXT: dev-story 14-2-fix-lifecycle-transition-deadlock
+# last_updated: 2026-06-18 (Epic 14 done — v0.6.2+13)
+# NEXT: dev-story 15-1-batch-sql-goal-resolution-for-history
 # Ref: planning-artifacts/epics-refacto.md · planning-artifacts/refactoring-audit-master-v0.6.1.md
 # branch: refacto
-# base_version: 0.6.1+12
+# base_version: 0.6.2+13
 # project: astra-app
 # project_key: NOKEY
 # tracking_system: file-system
@@ -58,7 +58,7 @@
 # NAVIGATION: _bmad-output/README.md · planning-artifacts/epics-refacto.md
 
 generated: 2026-06-18
-last_updated: 2026-06-18 (Story 14-2 ready-for-dev)
+last_updated: 2026-06-18 (Epic 14 done — v0.6.2+13)
 project: astra-app
 project_key: NOKEY
 tracking_system: file-system
@@ -67,9 +67,9 @@ epics_source: planning-artifacts/epics-refacto.md
 git_branch: refacto
 
 development_status:
-  epic-14: in-progress
+  epic-14: done
   14-1-harden-post-purge-refresh-callback: done
-  14-2-fix-lifecycle-transition-deadlock: review
+  14-2-fix-lifecycle-transition-deadlock: done
   epic-14-retrospective: optional
 
   epic-15: backlog

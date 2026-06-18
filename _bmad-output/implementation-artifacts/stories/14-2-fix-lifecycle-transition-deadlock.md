@@ -1,6 +1,6 @@
 # Story 14.2: Fix Lifecycle Transition Deadlock
 
-Status: review
+Status: done
 
 <!-- Refacto Epic 14 — branch `refacto` only until merge review -->
 <!-- Source: epics-refacto.md Story 14-2 · refactoring-audit-master-v0.6.1.md §1.4 -->
@@ -297,5 +297,5 @@ claude-4.6-sonnet-medium-thinking
 
 ## Story Completion Status
 
-- **Status:** review
-- **Completion note:** Mutex hardened with while-loop catch + transition catch/logging. `runSerializedLifecycleTransition` extracted for fast unit tests. All ACs satisfied. Awaiting code review + Baptiste commit approval per review-before-commit workflow.
+- **Status:** done
+- **Completion note:** Mutex hardened with while-loop catch + transition catch/logging. `runSerializedLifecycleTransition` extracted for fast unit tests. All ACs satisfied. Code review approved; Epic 14 closed at v0.6.2+13.
