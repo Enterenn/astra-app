@@ -1,5 +1,6 @@
 import 'dart:math';
 
+import 'package:astra_app/core/ids/sample_id_generator.dart';
 import 'package:astra_app/core/time/local_day_calculator.dart';
 import 'package:astra_app/core/time/time_provider.dart';
 import 'package:astra_app/core/time/timestamp_codec.dart';
@@ -8,7 +9,6 @@ import 'package:astra_app/data/models/normalized_step_bucket.dart';
 import 'package:astra_app/data/models/timeseries_sample_model.dart';
 import 'package:astra_app/data/repositories/step_repository.dart';
 import 'package:flutter/foundation.dart';
-import 'package:uuid/uuid.dart';
 
 const kDevInjectDayCount = 90;
 const kDevInjectBucketsPerDay = 288;
@@ -31,13 +31,10 @@ class DataInjectService {
   DataInjectService({
     required this.repository,
     Random? rng,
-    Uuid? uuid,
-  }) : _rng = rng ?? Random(42),
-       _uuid = uuid ?? const Uuid();
+  }) : _rng = rng ?? Random(42);
 
   final StepRepository repository;
   final Random _rng;
-  final Uuid _uuid;
 
   Future<DataInjectResult> inject90Days({required TimeProvider clock}) async {
     final snapshot = clock.snapshot();
@@ -65,7 +62,11 @@ class DataInjectService {
 
         samples.add(
           TimeseriesSampleModel(
-            id: _uuid.v4(),
+            id: SampleIdGenerator.deterministicFromIngestionBucket(
+              startTimeUtc: startTimeUtc,
+              provider: kInternalPhoneProvider,
+              deviceId: kSmartphoneDeviceId,
+            ),
             startTimeUtc: startTimeUtc,
             endTimeUtc: endTimeUtc,
             type: kStepSampleType,
