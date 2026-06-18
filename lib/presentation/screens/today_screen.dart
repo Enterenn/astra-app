@@ -3,7 +3,6 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:permission_handler/permission_handler.dart';
 
 import '../../core/constants/astra_colors.dart';
-import '../../core/time/local_day_formatter.dart';
 import '../../core/constants/astra_spacing.dart';
 import '../../core/constants/astra_typography.dart';
 import '../cubits/today_cubit.dart';
@@ -131,16 +130,6 @@ class _GoalRingCard extends StatelessWidget {
   Widget build(BuildContext context) {
     final colors = context.astraColors;
     final cubit = context.read<TodayCubit>();
-    final localDayForPrefs = state.selectedLocalDay ??
-        (state.weekDays.isNotEmpty
-            ? state.weekDays.firstWhere(
-                (day) => day.isToday,
-                orElse: () => state.weekDays.first,
-              ).localDay
-            : null);
-    final localDayIsoForPrefs = localDayForPrefs == null
-        ? null
-        : localDayIsoFromDateOnly(localDayForPrefs);
 
     return ElevatedCard(
       padding: AstraSpacing.kSpaceLg,
@@ -154,9 +143,8 @@ class _GoalRingCard extends StatelessWidget {
                   )
                 : GoalRing(
                     state: state,
-                    userPreferences: cubit.userPreferences,
-                    localDayIso: localDayIsoForPrefs,
                     onForegroundCatchUpHandled: cubit.clearForegroundCatchUp,
+                    onLastDisplayedStepsChanged: cubit.recordLastDisplayedSteps,
                   ),
           ),
           const SizedBox(height: AstraSpacing.kSpaceLg),

@@ -3,13 +3,11 @@ import 'dart:math' as math;
 
 import 'package:flutter/material.dart';
 import 'package:phosphoricons_flutter/phosphoricons_flutter.dart';
-import 'package:sqflite/sqflite.dart';
 
 import '../../core/constants/astra_colors.dart';
 import '../../core/debug/live_pipeline_log.dart';
 import '../../core/constants/astra_spacing.dart';
 import '../../core/constants/astra_typography.dart';
-import '../../data/repositories/user_preferences_repository.dart';
 import '../cubits/today_state.dart';
 import '../formatters/step_count_formatter.dart';
 import 'animated_step_count.dart';
@@ -63,27 +61,18 @@ int tabReturnDurationMs(int delta) {
 class GoalRing extends StatefulWidget {
   const GoalRing({
     required this.state,
-    this.userPreferences,
-    this.localDayIso,
     this.showRing = true,
     this.freezeMotion = false,
-    this.debugLastDisplayedSteps,
     this.onForegroundCatchUpHandled,
+    this.onLastDisplayedStepsChanged,
     super.key,
   });
 
-  @visibleForTesting
-  static bool disableStepPersistence = false;
-
-  /// Test-only: skip prefs I/O and seed [lastDisplayedSteps] for cold-start tests.
-  final int? debugLastDisplayedSteps;
-
   final TodayState state;
-  final UserPreferencesRepository? userPreferences;
-  final String? localDayIso;
   final bool showRing;
   final bool freezeMotion;
   final VoidCallback? onForegroundCatchUpHandled;
+  final ValueChanged<int>? onLastDisplayedStepsChanged;
 
   @visibleForTesting
   static double ringProgressFor(TodayState state) {
@@ -112,10 +101,8 @@ class _GoalRingState extends State<GoalRing> with TickerProviderStateMixin {
   int _displayedSteps = 0;
   int? _microTickPreviousSteps;
   double _animatedProgress = 0;
-  bool _prefsLoaded = false;
-  bool _prefsLoadHandled = false;
+  bool _displayStateHandled = false;
   bool _coldStartHandled = false;
-  int? _lastPersistedSteps;
   Timer? _liveCoalesceTimer;
   Timer? _foregroundCatchUpTimer;
   bool _foregroundCatchUpScheduled = false;
@@ -158,27 +145,17 @@ class _GoalRingState extends State<GoalRing> with TickerProviderStateMixin {
     if (widget.freezeMotion) {
       _displayedSteps = _targetSteps;
       _animatedProgress = _targetProgressRatio;
-      _prefsLoaded = true;
+      _displayStateHandled = true;
       _coldStartHandled = true;
       _lastDisplayedSteps = _targetSteps;
-    } else if (widget.debugLastDisplayedSteps != null) {
-      final seed = widget.debugLastDisplayedSteps!;
-      _lastDisplayedSteps = seed;
-      _displayedSteps = seed;
-      _animatedProgress = _progressRatioFor(seed);
-      _prefsLoaded = true;
-      WidgetsBinding.instance.addPostFrameCallback((_) {
-        if (!mounted || _prefsLoadHandled) {
-          return;
-        }
-        _prefsLoadHandled = true;
-        _afterLastDisplayedStepsLoaded();
-      });
     } else {
-      // Hold at zero until prefs resolve — avoids flashing the target count.
+      // Hold at zero until cubit loads display prefs — avoids flashing target count.
       _displayedSteps = 0;
       _animatedProgress = 0;
-      unawaited(_loadLastDisplayedSteps());
+      if (widget.state.lastDisplayedStepsLoaded) {
+        _seedFromDisplayState();
+        _scheduleAfterDisplayStateLoaded();
+      }
     }
   }
 
@@ -195,11 +172,25 @@ class _GoalRingState extends State<GoalRing> with TickerProviderStateMixin {
     _syncPulseAnimation();
     _syncOverflowAnimation();
 
-    if (oldWidget.localDayIso != widget.localDayIso) {
+    final displayDayChanged =
+        oldWidget.state.selectedLocalDay != widget.state.selectedLocalDay;
+    final displayStateBecameLoaded =
+        !oldWidget.state.lastDisplayedStepsLoaded &&
+        widget.state.lastDisplayedStepsLoaded;
+    final displaySeedChanged =
+        oldWidget.state.lastDisplayedSteps != widget.state.lastDisplayedSteps;
+
+    if (displayDayChanged || displayStateBecameLoaded || displaySeedChanged) {
       _coldStartHandled = false;
-      _prefsLoadHandled = false;
-      _lastDisplayedSteps = 0;
-      unawaited(_loadLastDisplayedSteps());
+      _displayStateHandled = false;
+      if (widget.state.lastDisplayedStepsLoaded) {
+        _seedFromDisplayState();
+        _scheduleAfterDisplayStateLoaded();
+      } else if (displayDayChanged) {
+        _lastDisplayedSteps = 0;
+        _displayedSteps = 0;
+        _animatedProgress = 0;
+      }
     }
 
     _handleStepChange(
@@ -208,73 +199,29 @@ class _GoalRingState extends State<GoalRing> with TickerProviderStateMixin {
     );
   }
 
-  Future<void> _loadLastDisplayedSteps() async {
-    final debugSeed = widget.debugLastDisplayedSteps;
-    if (debugSeed != null) {
-      if (!mounted) {
-        return;
-      }
-      setState(() {
-        _lastDisplayedSteps = debugSeed;
-        _displayedSteps = debugSeed;
-        _animatedProgress = _progressRatioFor(debugSeed);
-        _prefsLoaded = true;
-      });
-      _scheduleAfterPrefsLoaded();
-      return;
-    }
-    if (GoalRing.disableStepPersistence) {
-      if (!mounted) {
-        return;
-      }
-      setState(() => _prefsLoaded = true);
-      _scheduleAfterPrefsLoaded();
-      return;
-    }
-    final prefs = widget.userPreferences;
-    final day = widget.localDayIso;
-    if (prefs == null || day == null) {
-      if (!mounted) {
-        return;
-      }
-      setState(() => _prefsLoaded = true);
-      _scheduleAfterPrefsLoaded();
-      return;
-    }
-
-    final stored = await prefs.getLastDisplayedSteps(day);
-    if (!mounted) {
-      return;
-    }
-    setState(() {
-      _lastDisplayedSteps = stored ?? 0;
-      _displayedSteps = _lastDisplayedSteps;
-      _animatedProgress = _progressRatioFor(_lastDisplayedSteps);
-      _prefsLoaded = true;
-    });
-    _scheduleAfterPrefsLoaded();
+  void _seedFromDisplayState() {
+    final seed = widget.state.lastDisplayedSteps ?? 0;
+    _lastDisplayedSteps = seed;
+    _displayedSteps = seed;
+    _animatedProgress = _progressRatioFor(seed);
   }
 
-  void _scheduleAfterPrefsLoaded() {
-    if (_prefsLoadHandled) {
+  void _scheduleAfterDisplayStateLoaded() {
+    if (_displayStateHandled) {
       return;
     }
     WidgetsBinding.instance.addPostFrameCallback((_) {
-      if (!mounted || !_prefsLoaded || _prefsLoadHandled) {
+      if (!mounted ||
+          !widget.state.lastDisplayedStepsLoaded ||
+          _displayStateHandled) {
         return;
       }
-      _prefsLoadHandled = true;
-      _afterLastDisplayedStepsLoaded();
+      _displayStateHandled = true;
+      _afterDisplayStateLoaded();
     });
   }
 
-  void _afterLastDisplayedStepsLoaded() {
-    if (GoalRing.disableStepPersistence &&
-        widget.debugLastDisplayedSteps == null) {
-      _coldStartHandled = true;
-      _setDisplayedInstant(_targetSteps);
-      return;
-    }
+  void _afterDisplayStateLoaded() {
     _handleStepChange(
       oldStatus: TodayStatus.loading,
       oldSteps: 0,
@@ -290,7 +237,7 @@ class _GoalRingState extends State<GoalRing> with TickerProviderStateMixin {
     if (widget.freezeMotion) {
       return;
     }
-    if (!_prefsLoaded) {
+    if (!widget.state.lastDisplayedStepsLoaded) {
       return;
     }
 
@@ -452,7 +399,7 @@ class _GoalRingState extends State<GoalRing> with TickerProviderStateMixin {
       _displayedSteps = to;
       _animatedProgress = toRatio;
       _lastDisplayedSteps = to;
-      unawaited(_persistLastDisplayedSteps(to));
+      _notifyLastDisplayedStepsChanged(to);
       _releaseCountUpController();
       if (_pendingForegroundCatchUpClear) {
         _pendingForegroundCatchUpClear = false;
@@ -520,7 +467,7 @@ class _GoalRingState extends State<GoalRing> with TickerProviderStateMixin {
       if (status == AnimationStatus.completed) {
         _microTickPreviousSteps = null;
         _animatedProgress = toRatio;
-        unawaited(_persistLastDisplayedSteps(to));
+        _notifyLastDisplayedStepsChanged(to);
       }
     }
 
@@ -540,7 +487,11 @@ class _GoalRingState extends State<GoalRing> with TickerProviderStateMixin {
       _animatedProgress = _progressRatioFor(steps);
       _lastDisplayedSteps = steps;
     });
-    unawaited(_persistLastDisplayedSteps(steps));
+    _notifyLastDisplayedStepsChanged(steps);
+  }
+
+  void _notifyLastDisplayedStepsChanged(int steps) {
+    widget.onLastDisplayedStepsChanged?.call(steps);
   }
 
   void _resetDisplayed({required bool instant}) {
@@ -553,27 +504,6 @@ class _GoalRingState extends State<GoalRing> with TickerProviderStateMixin {
     if (instant) {
       _setDisplayedInstant(0);
     }
-  }
-
-  Future<void> _persistLastDisplayedSteps(int steps) async {
-    if (GoalRing.disableStepPersistence ||
-        _lastPersistedSteps == steps) {
-      return;
-    }
-    final prefs = widget.userPreferences;
-    final day = widget.localDayIso;
-    if (prefs == null || day == null || !mounted || !prefs.isDatabaseOpen) {
-      return;
-    }
-    try {
-      await prefs.setLastDisplayedSteps(localDayIso: day, steps: steps);
-    } on DatabaseException {
-      return;
-    }
-    if (!mounted) {
-      return;
-    }
-    _lastPersistedSteps = steps;
   }
 
   void _syncPulseAnimation() {
@@ -642,14 +572,6 @@ class _GoalRingState extends State<GoalRing> with TickerProviderStateMixin {
       return 0;
     }
     return (steps / goal).clamp(0.0, 1.0);
-  }
-
-  @override
-  void deactivate() {
-    if (!widget.freezeMotion) {
-      unawaited(_persistLastDisplayedSteps(_displayedSteps));
-    }
-    super.deactivate();
   }
 
   @override
