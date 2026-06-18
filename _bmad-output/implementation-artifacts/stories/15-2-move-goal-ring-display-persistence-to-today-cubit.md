@@ -1,6 +1,6 @@
 # Story 15.2: Move GoalRing Display Persistence to TodayCubit
 
-Status: review
+Status: done
 
 <!-- Refacto Epic 15 — branch `refacto` only until merge review -->
 <!-- Source: epics-refacto.md Story 15-2 · refactoring-audit-master-v0.6.1.md §1.1 -->
@@ -308,6 +308,7 @@ claude-4.6-sonnet-medium-thinking
 - ✅ `GoalRing` is prefs-free; uses cubit state + `onLastDisplayedStepsChanged` callback.
 - ✅ All `disableStepPersistence` / `debugLastDisplayedSteps` test toggles removed.
 - ✅ `flutter analyze` (touched lib files) + full `flutter test` (835 passed, 15 skipped).
+- ✅ Code review: `selectLocalDay` resets `lastDisplayedSteps`/`lastDisplayedStepsLoaded` synchronously; day-switch and post-purge tests added.
 
 ### File List
 
@@ -325,3 +326,4 @@ claude-4.6-sonnet-medium-thinking
 ### Change Log
 
 - 2026-06-18: Moved GoalRing display-step persistence to TodayCubit/TodayState; removed widget prefs I/O and test static flag.
+- 2026-06-18: Code review follow-up — sync display-state reset on day select; regression tests for day switch and post-purge.

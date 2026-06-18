@@ -598,7 +598,13 @@ class TodayCubit extends Cubit<TodayState> {
       return;
     }
     _hasUserSelectedLocalDay = true;
-    emit(state.copyWith(selectedLocalDay: normalizedDay));
+    emit(
+      state.copyWith(
+        selectedLocalDay: normalizedDay,
+        lastDisplayedSteps: null,
+        lastDisplayedStepsLoaded: false,
+      ),
+    );
     unawaited(_applySelectedDayDisplay());
   }
 

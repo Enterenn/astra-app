@@ -805,6 +805,41 @@ void main() {
         cubit.close();
       });
 
+      test(
+        'selectLocalDay resets display state before async reload completes',
+        () async {
+          await stepRepository.upsertIngestionBucket(
+            _bucket(
+              startTimeUtc: DateTime.utc(2026, 6, 1, 10),
+              value: 6000,
+              zoneOffset: '+02:00',
+            ),
+          );
+          final localDay = formatLocalDayIso(clock.snapshot());
+          await userPreferences.setLastDisplayedSteps(
+            localDayIso: localDay,
+            steps: 4374,
+          );
+          final cubit = buildCubit();
+          await cubit.refresh();
+
+          expect(cubit.state.lastDisplayedSteps, 4374);
+          expect(cubit.state.lastDisplayedStepsLoaded, isTrue);
+
+          final pastDay = cubit.state.weekDays.firstWhere((day) => !day.isToday);
+          cubit.selectLocalDay(pastDay.localDay);
+
+          expect(cubit.state.lastDisplayedStepsLoaded, isFalse);
+          expect(cubit.state.lastDisplayedSteps, isNull);
+
+          await pumpEventQueue();
+
+          expect(cubit.state.lastDisplayedStepsLoaded, isTrue);
+          expect(cubit.state.lastDisplayedSteps, isNull);
+          cubit.close();
+        },
+      );
+
       test('refreshMetadata keeps in-session selected day deterministic', () async {
         final cubit = buildCubit();
         await cubit.refresh();

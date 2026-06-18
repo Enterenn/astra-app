@@ -673,6 +673,17 @@ void main() {
       await tester.pump();
 
       expect(myDataCubit, isNotNull);
+      expect(todayCubit, isNotNull);
+
+      await tester.runAsync(() async {
+        await todayCubit!.recordLastDisplayedSteps(3500);
+        await Future<void>.delayed(const Duration(milliseconds: 50));
+      });
+      await tester.pump();
+
+      expect(todayCubit!.state.lastDisplayedSteps, 3500);
+      expect(todayCubit!.state.lastDisplayedStepsLoaded, isTrue);
+
       await tester.runAsync(() async {
         await myDataCubit!.refresh();
         await myDataCubit!.confirmAndPurge(
@@ -687,6 +698,9 @@ void main() {
       expect(historyCubit!.refreshCallCount, greaterThanOrEqualTo(1));
       expect(myDataCubit!.state.purgeSuccessPending, isTrue);
       expect(myDataCubit!.state.purgeErrorMessage, isNull);
+      expect(todayCubit!.state.lastDisplayedSteps, isNot(3500));
+      expect(todayCubit!.state.lastDisplayedSteps, anyOf(isNull, 0));
+      expect(todayCubit!.state.lastDisplayedStepsLoaded, isTrue);
 
       await tester.runAsync(() async {
         await Future<void>.delayed(const Duration(milliseconds: 200));
