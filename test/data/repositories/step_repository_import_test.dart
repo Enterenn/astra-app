@@ -127,6 +127,49 @@ void main() {
       expect(result.skippedCount, 0);
     });
 
+    test('export purge import round-trip preserves base36 ids from ingestion', () async {
+      await repository.upsertIngestionBucket(
+        _ingestionBucket(
+          startTimeUtc: DateTime.utc(2026, 6, 2, 8),
+          value: 100,
+        ),
+      );
+      await repository.upsertIngestionBucket(
+        _ingestionBucket(
+          startTimeUtc: DateTime.utc(2026, 6, 2, 8, 5),
+          value: 42,
+        ),
+      );
+
+      final idsBeforeExport = await _sampleIds(db);
+      expect(idsBeforeExport, hasLength(2));
+      for (final id in idsBeforeExport) {
+        expect(
+          id,
+          isNot(
+            matches(
+              RegExp(
+                r'^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$',
+                caseSensitive: false,
+              ),
+            ),
+          ),
+        );
+      }
+
+      final exportPath = await repository.exportCsv(outputDirectory: tempDir.path);
+      await repository.purge();
+      expect(await repository.countStepSamples(), 0);
+
+      final result = await repository.importCsv(filePath: exportPath);
+
+      expect(result.totalRowsInFile, 2);
+      expect(result.insertedCount, 2);
+      expect(result.skippedCount, 0);
+      expect(await repository.countStepSamples(), 2);
+      expect(await _sampleIds(db), idsBeforeExport);
+    });
+
     test('round-trip restores chart daily aggregates', () async {
       final samples = [
         _sample(
@@ -157,6 +200,29 @@ void main() {
       }
     });
   });
+}
+
+Future<List<String>> _sampleIds(Database db) async {
+  final rows = await db.query(
+    'timeseries_samples',
+    columns: ['id'],
+    orderBy: 'start_time ASC',
+  );
+  return rows.map((row) => row['id']! as String).toList();
+}
+
+NormalizedStepBucket _ingestionBucket({
+  required DateTime startTimeUtc,
+  required int value,
+}) {
+  return NormalizedStepBucket(
+    startTimeUtc: startTimeUtc,
+    endTimeUtc: startTimeUtc.add(const Duration(minutes: 5)),
+    value: value,
+    provider: kInternalPhoneProvider,
+    deviceId: kSmartphoneDeviceId,
+    zoneOffset: '+02:00',
+  );
 }
 
 TimeseriesSampleModel _sample({
