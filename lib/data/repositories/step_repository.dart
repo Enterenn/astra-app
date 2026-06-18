@@ -3,10 +3,10 @@ import 'dart:io';
 import 'package:flutter/foundation.dart';
 import 'package:path/path.dart' as p;
 import 'package:sqflite/sqflite.dart';
-import 'package:uuid/uuid.dart';
 
 import '../../core/constants/preference_keys.dart';
 import '../../core/database/astra_database_session.dart';
+import '../../core/ids/sample_id_generator.dart';
 import '../../core/lifecycle/sample_compaction_runner.dart';
 import '../../core/time/local_day_formatter.dart';
 import '../../core/time/local_day_calculator.dart';
@@ -27,19 +27,19 @@ class StepRepository {
     AstraDatabaseSession? session,
     Database? db,
     String databasePath = inMemoryDatabasePath,
-    Uuid? uuid,
+    SampleIdGenerator? idGenerator,
   }) : _session =
            session ??
            AstraDatabaseSession(
              databasePath: databasePath,
              initial: db!,
            ),
-       _uuid = uuid ?? const Uuid(),
+       _idGenerator = idGenerator ?? SampleIdGenerator(clock),
        assert(session != null || db != null);
 
   final AstraDatabaseSession _session;
   final TimeProvider clock;
-  final Uuid _uuid;
+  final SampleIdGenerator _idGenerator;
 
   Database get db => _session.database;
 
@@ -55,7 +55,7 @@ class StepRepository {
   Future<void> upsertIngestionBucket(NormalizedStepBucket bucket) async {
     final model = TimeseriesSampleModel.fromNormalizedBucket(
       bucket: bucket,
-      id: _uuid.v4(),
+      id: _idGenerator.nextId(),
     );
     final row = model.toMap();
 
@@ -470,7 +470,7 @@ class StepRepository {
     final referenceZoneOffset = TimestampCodec.formatZoneOffset(
       timeSnapshot.zoneOffset,
     );
-    final runner = SampleCompactionRunner(uuid: _uuid);
+    final runner = SampleCompactionRunner();
 
     Future<CompactionResult> run(Transaction transaction) {
       final writer = TransactionCompactionWriter(transaction);
