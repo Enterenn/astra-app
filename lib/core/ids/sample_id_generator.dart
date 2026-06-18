@@ -18,4 +18,21 @@ class SampleIdGenerator {
   /// Deterministic id from bucket start time — safe for bulk inserts with unique starts.
   static String deterministicFromStartUtc(DateTime startTimeUtc) =>
       startTimeUtc.toUtc().microsecondsSinceEpoch.toRadixString(36);
+
+  /// Compacted row id — resolution suffix avoids PK clash with finer-tier rows at same start.
+  static String deterministicFromMergedBucket({
+    required DateTime startTimeUtc,
+    required String resolution,
+  }) =>
+      '${deterministicFromStartUtc(startTimeUtc)}-$resolution';
+
+  /// Ingestion row id — provider/device suffix when multiple sources share a start window.
+  static String deterministicFromIngestionBucket({
+    required DateTime startTimeUtc,
+    required String provider,
+    required String deviceId,
+  }) {
+    final identity = '$provider$deviceId'.replaceAll(RegExp(r'[^a-z0-9]'), '');
+    return '${deterministicFromStartUtc(startTimeUtc)}-$identity';
+  }
 }

@@ -27,19 +27,16 @@ class StepRepository {
     AstraDatabaseSession? session,
     Database? db,
     String databasePath = inMemoryDatabasePath,
-    SampleIdGenerator? idGenerator,
   }) : _session =
            session ??
            AstraDatabaseSession(
              databasePath: databasePath,
              initial: db!,
            ),
-       _idGenerator = idGenerator ?? SampleIdGenerator(clock),
        assert(session != null || db != null);
 
   final AstraDatabaseSession _session;
   final TimeProvider clock;
-  final SampleIdGenerator _idGenerator;
 
   Database get db => _session.database;
 
@@ -55,7 +52,11 @@ class StepRepository {
   Future<void> upsertIngestionBucket(NormalizedStepBucket bucket) async {
     final model = TimeseriesSampleModel.fromNormalizedBucket(
       bucket: bucket,
-      id: _idGenerator.nextId(),
+      id: SampleIdGenerator.deterministicFromIngestionBucket(
+        startTimeUtc: bucket.startTimeUtc,
+        provider: bucket.provider,
+        deviceId: bucket.deviceId,
+      ),
     );
     final row = model.toMap();
 

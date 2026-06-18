@@ -137,8 +137,9 @@ class SampleCompactionRunner {
 
         final hourlySample = mergeFiveMinuteBucketsToHourly(
           buckets: hourBuckets,
-          newId: SampleIdGenerator.deterministicFromStartUtc(
-            _hourlyMergeStartUtc(hourBuckets),
+          newId: SampleIdGenerator.deterministicFromMergedBucket(
+            startTimeUtc: _hourlyMergeStartUtc(hourBuckets),
+            resolution: kHourlyResolution,
           ),
         );
         await writer.insertCompactedSample(hourlySample);
@@ -186,8 +187,9 @@ class SampleCompactionRunner {
 
         final dailySample = mergeHourlyBucketsToDaily(
           buckets: dayBuckets,
-          newId: SampleIdGenerator.deterministicFromStartUtc(
-            _dailyMergeStartUtc(dayBuckets),
+          newId: SampleIdGenerator.deterministicFromMergedBucket(
+            startTimeUtc: _dailyMergeStartUtc(dayBuckets),
+            resolution: kDailyResolution,
           ),
         );
         await writer.insertCompactedSample(dailySample);
@@ -238,8 +240,9 @@ class SampleCompactionRunner {
 
         final dailySample = mergeFiveMinuteBucketsToDaily(
           buckets: dayBuckets,
-          newId: SampleIdGenerator.deterministicFromStartUtc(
-            _dailyMergeStartUtc(dayBuckets),
+          newId: SampleIdGenerator.deterministicFromMergedBucket(
+            startTimeUtc: _dailyMergeStartUtc(dayBuckets),
+            resolution: kDailyResolution,
           ),
         );
         await writer.insertCompactedSample(dailySample);

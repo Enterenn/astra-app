@@ -53,13 +53,46 @@ void main() {
       );
     });
 
-    test('deterministicFromStartUtc differs for distinct bucket starts', () {
-      final a = DateTime.utc(2026, 6, 1, 0, 0);
-      final b = DateTime.utc(2026, 6, 1, 0, 5);
+    test('deterministicFromMergedBucket appends resolution to avoid tier PK clash', () {
+      final start = DateTime.utc(2026, 6, 1, 0, 0);
 
       expect(
-        SampleIdGenerator.deterministicFromStartUtc(a),
-        isNot(SampleIdGenerator.deterministicFromStartUtc(b)),
+        SampleIdGenerator.deterministicFromMergedBucket(
+          startTimeUtc: start,
+          resolution: '1hour',
+        ),
+        '${start.microsecondsSinceEpoch.toRadixString(36)}-1hour',
+      );
+      expect(
+        SampleIdGenerator.deterministicFromMergedBucket(
+          startTimeUtc: start,
+          resolution: '1d',
+        ),
+        isNot(
+          SampleIdGenerator.deterministicFromMergedBucket(
+            startTimeUtc: start,
+            resolution: '1hour',
+          ),
+        ),
+      );
+    });
+
+    test('deterministicFromIngestionBucket differs for same start across providers', () {
+      final start = DateTime.utc(2026, 6, 1, 22, 30);
+
+      expect(
+        SampleIdGenerator.deterministicFromIngestionBucket(
+          startTimeUtc: start,
+          provider: 'internal_phone',
+          deviceId: 'smartphone',
+        ),
+        isNot(
+          SampleIdGenerator.deterministicFromIngestionBucket(
+            startTimeUtc: start,
+            provider: 'adp_ble',
+            deviceId: 'ring',
+          ),
+        ),
       );
     });
   });
