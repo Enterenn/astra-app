@@ -1,6 +1,6 @@
 # generated: 2026-06-18
-# last_updated: 2026-06-18 (Story 15-3 review)
-# NEXT: dev-story 15-3-relocate-dev-tooling-to-test-dev
+# last_updated: 2026-06-18 (Story 15-3 done)
+# NEXT: dev-story 15-4-replace-uuid-with-timestamp-based-bucket-ids
 # Ref: planning-artifacts/epics-refacto.md · planning-artifacts/refactoring-audit-master-v0.6.1.md
 # branch: refacto
 # base_version: 0.6.2+13
@@ -58,7 +58,7 @@
 # NAVIGATION: _bmad-output/README.md · planning-artifacts/epics-refacto.md
 
 generated: 2026-06-18
-last_updated: 2026-06-18 (Story 15-3 ready-for-dev)
+last_updated: 2026-06-18 (Story 15-3 done)
 project: astra-app
 project_key: NOKEY
 tracking_system: file-system
@@ -75,7 +75,7 @@ development_status:
   epic-15: in-progress
   15-1-batch-sql-goal-resolution-for-history: done
   15-2-move-goal-ring-display-persistence-to-today-cubit: done
-  15-3-relocate-dev-tooling-to-test-dev: review
+  15-3-relocate-dev-tooling-to-test-dev: done
   15-4-replace-uuid-with-timestamp-based-bucket-ids: backlog
   epic-15-retrospective: optional
 

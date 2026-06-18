@@ -1,6 +1,6 @@
 # Story 15.3: Relocate Dev Tooling to test/dev
 
-Status: review
+Status: done
 
 <!-- Refacto Epic 15 — branch `refacto` only until merge review -->
 <!-- Source: epics-refacto.md Story 15-3 · refactoring-audit-master-v0.6.1.md §4 / §6.3 -->
@@ -280,3 +280,4 @@ Claude (Cursor Agent)
 ## Change Log
 
 - 2026-06-18: Relocated dev tooling from `lib/dev/` to `test/dev/`; removed production FAB; updated test imports and KPI docs (Story 15-3, REF-05).
+- 2026-06-18: Code review approved — story marked done.
