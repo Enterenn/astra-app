@@ -103,18 +103,7 @@ class _AppScaffoldState extends State<AppScaffold> {
             await _historyCubit.refresh(silent: true);
             await _myDataCubit.refresh(silent: true);
           },
-          postPurgeRefresh: () async {
-            await widget.deps.userPreferences.clearLastDisplayedSteps();
-            await widget.deps.liveStepMonitor.reconcileFromDatabase();
-            await _todayCubit.refresh(silent: true);
-            await _todayCubit.syncSteps(
-              widget.deps.liveStepMonitor.currentTodaySteps,
-            );
-            await _todayCubit.refreshMetadata();
-            await _historyCubit.refresh(silent: true);
-            await _myDataCubit.refresh(silent: true);
-            unawaited(widget.deps.dataLifecycleService.runMaintenance(force: true));
-          },
+          postPurgeRefresh: _runPostPurgeRefresh,
           postGoalUpdate: () async {
             await _todayCubit.refreshMetadata();
             await _historyCubit.refreshGoal();
@@ -161,6 +150,51 @@ class _AppScaffoldState extends State<AppScaffold> {
     final backfill = widget.foregroundBackfill;
     if (backfill != null) {
       await backfill;
+    }
+  }
+
+  Future<void> _runPostPurgeRefresh() async {
+    var phase = '';
+    try {
+      phase = 'clearLastDisplayedSteps';
+      await widget.deps.userPreferences.clearLastDisplayedSteps();
+      if (!mounted) return;
+
+      phase = 'reconcileFromDatabase';
+      await widget.deps.liveStepMonitor.reconcileFromDatabase();
+      if (!mounted) return;
+
+      phase = 'todayRefresh';
+      await _todayCubit.refresh(silent: true);
+      if (!mounted) return;
+
+      phase = 'todaySyncSteps';
+      await _todayCubit.syncSteps(
+        widget.deps.liveStepMonitor.currentTodaySteps,
+      );
+      if (!mounted) return;
+
+      phase = 'todayRefreshMetadata';
+      await _todayCubit.refreshMetadata();
+      if (!mounted) return;
+
+      phase = 'historyRefresh';
+      await _historyCubit.refresh(silent: true);
+      if (!mounted) return;
+
+      phase = 'myDataRefresh';
+      await _myDataCubit.refresh(silent: true);
+      if (!mounted) return;
+
+      unawaited(widget.deps.dataLifecycleService.runMaintenance(force: true));
+    } catch (error, stackTrace) {
+      if (kDebugMode) {
+        debugPrint(
+          'AppScaffold.postPurgeRefresh failed at $phase: $error',
+        );
+        debugPrintStack(stackTrace: stackTrace);
+      }
+      rethrow;
     }
   }
 

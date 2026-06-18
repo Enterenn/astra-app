@@ -5,11 +5,13 @@ import 'package:astra_app/core/database/app_database.dart';
 import 'package:astra_app/core/di/app_dependencies.dart';
 import 'package:astra_app/data/repositories/user_preferences_repository.dart';
 import 'package:astra_app/presentation/cubits/history_cubit.dart';
+import 'package:astra_app/presentation/cubits/my_data_cubit.dart';
 import 'package:astra_app/presentation/cubits/theme_cubit.dart';
 import 'package:astra_app/presentation/cubits/theme_state.dart';
 import 'package:astra_app/presentation/cubits/today_cubit.dart';
 import 'package:astra_app/presentation/cubits/today_state.dart';
 import 'package:astra_app/presentation/cubits/units_cubit.dart';
+import 'package:astra_app/presentation/widgets/confirm_dialog.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:astra_app/presentation/screens/app_scaffold.dart';
 import 'package:astra_app/presentation/screens/today_screen.dart';
@@ -51,6 +53,8 @@ class _RefreshCountingCubit extends TodayCubit {
   }) : super(activityPermissionGranted: () async => true);
 
   int refreshCallCount = 0;
+  int syncStepsCallCount = 0;
+  int refreshMetadataCallCount = 0;
 
   @override
   Future<void> refresh({bool silent = true}) async {
@@ -59,8 +63,23 @@ class _RefreshCountingCubit extends TodayCubit {
   }
 
   @override
+  Future<void> syncSteps(
+    int steps, {
+    bool foregroundCatchUp = false,
+    bool clampStaleDisplay = false,
+  }) async {
+    syncStepsCallCount++;
+    await super.syncSteps(
+      steps,
+      foregroundCatchUp: foregroundCatchUp,
+      clampStaleDisplay: clampStaleDisplay,
+    );
+  }
+
+  @override
   Future<void> refreshMetadata() async {
     refreshCallCount++;
+    refreshMetadataCallCount++;
     if (state.status == TodayStatus.loading) {
       return;
     }
@@ -70,6 +89,34 @@ class _RefreshCountingCubit extends TodayCubit {
         lastIngestionUtc: state.lastIngestionUtc,
       ),
     );
+  }
+}
+
+class _RefreshCountingHistoryCubit extends HistoryCubit {
+  _RefreshCountingHistoryCubit({
+    required super.stepRepository,
+    required super.userPreferences,
+  });
+
+  int refreshCallCount = 0;
+
+  @override
+  Future<void> refresh({bool silent = true}) async {
+    refreshCallCount++;
+    await super.refresh(silent: silent);
+  }
+}
+
+class _ThrowingRefreshTodayCubit extends TodayCubit {
+  _ThrowingRefreshTodayCubit({
+    required super.stepRepository,
+    required super.userPreferences,
+    required super.clock,
+  }) : super(activityPermissionGranted: () async => true);
+
+  @override
+  Future<void> refresh({bool silent = true}) async {
+    throw StateError('today refresh failed');
   }
 }
 
@@ -558,6 +605,97 @@ void main() {
       await tester.pump();
 
       expect(find.text('Menu'), findsOneWidget);
+
+      await _disposeScaffold(tester);
+    });
+
+    testWidgets(
+      'postPurgeRefresh failure surfaces purgeErrorMessage on MyDataCubit',
+      (tester) async {
+        MyDataCubit? myDataCubit;
+
+        await _pumpAppScaffold(
+          tester,
+          AppScaffold(
+            deps: deps,
+            createTodayCubit: (dependencies) => _ThrowingRefreshTodayCubit(
+              stepRepository: dependencies.stepRepository,
+              userPreferences: dependencies.userPreferences,
+              clock: dependencies.timeProvider,
+            ),
+            createHistoryCubit: _testHistoryCubit,
+            onMyDataCubitReady: (cubit) => myDataCubit = cubit,
+          ),
+          userPreferences: deps.userPreferences,
+        );
+        await tester.pump();
+
+        expect(myDataCubit, isNotNull);
+        await tester.runAsync(() async {
+          await myDataCubit!.refresh();
+          await myDataCubit!.confirmAndPurge(
+            confirmedAction: PurgeConfirmAction.deleteConfirmed,
+          );
+        });
+        await tester.pump();
+
+        expect(myDataCubit!.state.purgeSuccessPending, isFalse);
+        expect(
+          myDataCubit!.state.purgeErrorMessage,
+          'All local data was removed, but the app could not refresh. Try again.',
+        );
+
+        await _disposeScaffold(tester);
+      },
+    );
+
+    testWidgets('postPurgeRefresh success runs all refresh steps', (
+      tester,
+    ) async {
+      _RefreshCountingCubit? todayCubit;
+      _RefreshCountingHistoryCubit? historyCubit;
+      MyDataCubit? myDataCubit;
+
+      await _pumpAppScaffold(
+        tester,
+        AppScaffold(
+          deps: deps,
+          createTodayCubit: (dependencies) {
+            todayCubit = _RefreshCountingCubit(
+              stepRepository: dependencies.stepRepository,
+              userPreferences: dependencies.userPreferences,
+              clock: dependencies.timeProvider,
+            );
+            return todayCubit!;
+          },
+          createHistoryCubit: (dependencies) {
+            historyCubit = _RefreshCountingHistoryCubit(
+              stepRepository: dependencies.stepRepository,
+              userPreferences: dependencies.userPreferences,
+            );
+            return historyCubit!;
+          },
+          onMyDataCubitReady: (cubit) => myDataCubit = cubit,
+        ),
+        userPreferences: deps.userPreferences,
+      );
+      await tester.pump();
+
+      expect(myDataCubit, isNotNull);
+      await tester.runAsync(() async {
+        await myDataCubit!.refresh();
+        await myDataCubit!.confirmAndPurge(
+          confirmedAction: PurgeConfirmAction.deleteConfirmed,
+        );
+      });
+      await tester.pump();
+
+      expect(todayCubit!.refreshCallCount, greaterThanOrEqualTo(1));
+      expect(todayCubit!.syncStepsCallCount, 1);
+      expect(todayCubit!.refreshMetadataCallCount, greaterThanOrEqualTo(1));
+      expect(historyCubit!.refreshCallCount, greaterThanOrEqualTo(1));
+      expect(myDataCubit!.state.purgeSuccessPending, isTrue);
+      expect(myDataCubit!.state.purgeErrorMessage, isNull);
 
       await _disposeScaffold(tester);
     });
