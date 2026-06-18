@@ -6,7 +6,6 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 
 import '../../core/constants/astra_colors.dart';
 import '../../core/di/app_dependencies.dart';
-import '../../dev/chart_benchmark_dev_fab.dart';
 import '../cubits/history_cubit.dart';
 import '../cubits/my_data_cubit.dart';
 import '../cubits/profile_cubit.dart';
@@ -311,9 +310,6 @@ class _AppScaffoldState extends State<AppScaffold> {
 
     return Scaffold(
       backgroundColor: colors.bgBase,
-      floatingActionButton: kDebugMode && _selectedIndex == 1
-          ? ChartBenchmarkDevFab(deps: widget.deps)
-          : null,
       body: IndexedStack(
         index: _selectedIndex,
         children: _tabScreens,
