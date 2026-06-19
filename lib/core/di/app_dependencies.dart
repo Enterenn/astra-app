@@ -16,6 +16,7 @@ import '../../core/constants/display_unit_preferences.dart';
 import '../../presentation/cubits/theme_state.dart';
 import '../database/astra_database_session.dart';
 import '../permissions/activity_permission_resolver.dart';
+import '../services/app_lifecycle_coordinator.dart';
 import '../services/background_collector.dart';
 import '../services/data_lifecycle_service.dart';
 import '../services/health_foreground_service.dart';
@@ -47,6 +48,7 @@ class AppDependencies {
     required this.dataLifecycleService,
     required this.databaseSession,
     required this.databasePath,
+    required this.appLifecycleCoordinator,
   });
 
   final UserPreferencesRepository userPreferences;
@@ -68,6 +70,7 @@ class AppDependencies {
   final DataLifecycleService dataLifecycleService;
   final AstraDatabaseSession databaseSession;
   final String databasePath;
+  final AppLifecycleCoordinator appLifecycleCoordinator;
 
   static Future<bool> resolveActivityRecognitionGranted() =>
       isActivityRecognitionGranted();
@@ -144,7 +147,7 @@ class AppDependencies {
       clock: timeProvider,
     );
 
-    return AppDependencies(
+    return _buildDependencies(
       userPreferences: userPreferences,
       initialTheme: initialTheme,
       initialAccentPreset: initialAccentPreset,
@@ -167,6 +170,56 @@ class AppDependencies {
     );
   }
 
+  static AppDependencies _buildDependencies({
+    required UserPreferencesRepository userPreferences,
+    required AstraThemePreference initialTheme,
+    required AstraAccentPreset initialAccentPreset,
+    required DistanceDisplayUnit initialDistanceUnit,
+    required WeightDisplayUnit initialWeightUnit,
+    required HeightDisplayUnit initialHeightUnit,
+    required bool initialOnboardingComplete,
+    required TimeProvider timeProvider,
+    required List<DataIngestionSource> ingestionSources,
+    required StepNormalizer stepNormalizer,
+    required StepRepository stepRepository,
+    required BackgroundCollector backgroundCollector,
+    required NotificationService notificationService,
+    required LiveStepMonitor liveStepMonitor,
+    required ActivityPermissionChecker activityPermissionGranted,
+    required HealthForegroundServiceCoordinator healthForegroundCoordinator,
+    required DataLifecycleService dataLifecycleService,
+    required AstraDatabaseSession databaseSession,
+    required String databasePath,
+    AppLifecycleCoordinator? appLifecycleCoordinator,
+  }) {
+    late AppDependencies builtDeps;
+    final coordinator = appLifecycleCoordinator ??
+        AppLifecycleCoordinator(depsGetter: () => builtDeps);
+    builtDeps = AppDependencies(
+      userPreferences: userPreferences,
+      initialTheme: initialTheme,
+      initialAccentPreset: initialAccentPreset,
+      initialDistanceUnit: initialDistanceUnit,
+      initialWeightUnit: initialWeightUnit,
+      initialHeightUnit: initialHeightUnit,
+      initialOnboardingComplete: initialOnboardingComplete,
+      timeProvider: timeProvider,
+      ingestionSources: ingestionSources,
+      stepNormalizer: stepNormalizer,
+      stepRepository: stepRepository,
+      backgroundCollector: backgroundCollector,
+      notificationService: notificationService,
+      liveStepMonitor: liveStepMonitor,
+      activityPermissionGranted: activityPermissionGranted,
+      healthForegroundCoordinator: healthForegroundCoordinator,
+      dataLifecycleService: dataLifecycleService,
+      databaseSession: databaseSession,
+      databasePath: databasePath,
+      appLifecycleCoordinator: coordinator,
+    );
+    return builtDeps;
+  }
+
   /// Test factory — reads persisted prefs while avoiding live platform streams by default.
   static Future<AppDependencies> test({
     required Database db,
@@ -181,6 +234,8 @@ class AppDependencies {
     HealthForegroundServiceCoordinator? healthForegroundCoordinator,
     DataLifecycleService? dataLifecycleService,
     String? databasePath,
+    AppLifecycleCoordinator? appLifecycleCoordinator,
+    BackgroundCollector? backgroundCollector,
   }) async {
     final initialTheme = await userPreferences.getThemeMode();
     final initialAccentPreset = await userPreferences.getAccentPreset();
@@ -238,16 +293,17 @@ class AppDependencies {
         HealthForegroundServiceCoordinator(
           activityPermissionGranted: permissionCheck,
         );
-    final backgroundCollector = BackgroundCollector(
-      sources: sources,
-      normalizer: stepNormalizer,
-      repository: stepRepository,
-      baselineRepository: baselineRepository,
-      userPreferences: userPreferences,
-      clock: clock,
-      notificationService: notifications,
-      notificationPermissionGranted: notificationCheck,
-    );
+    final collector = backgroundCollector ??
+        BackgroundCollector(
+          sources: sources,
+          normalizer: stepNormalizer,
+          repository: stepRepository,
+          baselineRepository: baselineRepository,
+          userPreferences: userPreferences,
+          clock: clock,
+          notificationService: notifications,
+          notificationPermissionGranted: notificationCheck,
+        );
     final lifecycleService =
         dataLifecycleService ??
         DataLifecycleService(
@@ -257,7 +313,7 @@ class AppDependencies {
           userPreferences: userPreferences,
           clock: clock,
         );
-    return AppDependencies(
+    return _buildDependencies(
       userPreferences: userPreferences,
       initialTheme: initialTheme,
       initialAccentPreset: initialAccentPreset,
@@ -269,7 +325,7 @@ class AppDependencies {
       ingestionSources: sources,
       stepNormalizer: stepNormalizer,
       stepRepository: stepRepository,
-      backgroundCollector: backgroundCollector,
+      backgroundCollector: collector,
       notificationService: notifications,
       liveStepMonitor: monitor,
       activityPermissionGranted: permissionCheck,
@@ -277,6 +333,7 @@ class AppDependencies {
       dataLifecycleService: lifecycleService,
       databaseSession: databaseSession,
       databasePath: path,
+      appLifecycleCoordinator: appLifecycleCoordinator,
     );
   }
 }
