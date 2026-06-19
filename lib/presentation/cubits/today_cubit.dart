@@ -18,8 +18,7 @@ import '../../core/time/timestamp_codec.dart';
 import '../../core/validation/step_goal_validator.dart';
 import '../../data/models/chart_day_aggregate.dart';
 import '../../data/models/timeseries_sample_model.dart';
-import '../../data/repositories/step_repository.dart';
-import '../../data/repositories/user_preferences_repository.dart';
+import '../../data/contracts/contracts.dart';
 import '../models/week_day_status.dart';
 import 'today_state.dart';
 
@@ -39,8 +38,8 @@ class TodayCubit extends Cubit<TodayState> {
        _isIos = isIos ?? Platform.isIOS,
        super(const TodayState.loading());
 
-  final StepRepository stepRepository;
-  final UserPreferencesRepository userPreferences;
+  final StepRepositoryContract stepRepository;
+  final UserPreferencesRepositoryContract userPreferences;
   final TimeProvider clock;
   final ActivityPermissionChecker _activityPermissionGranted;
   final bool _isIos;

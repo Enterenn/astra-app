@@ -17,8 +17,7 @@ import '../../core/permissions/activity_permission_resolver.dart'
 import '../../core/time/time_provider.dart';
 import '../../data/csv/timeseries_csv_codec.dart';
 import '../../data/models/database_footprint.dart';
-import '../../data/repositories/step_repository.dart';
-import '../../data/repositories/user_preferences_repository.dart';
+import '../../data/contracts/contracts.dart';
 import '../widgets/confirm_dialog.dart';
 import 'my_data_state.dart';
 
@@ -64,8 +63,8 @@ class MyDataCubit extends Cubit<MyDataState> {
        _isIos = isIos ?? Platform.isIOS,
        super(const MyDataState.loading());
 
-  final StepRepository stepRepository;
-  final UserPreferencesRepository userPreferences;
+  final StepRepositoryContract stepRepository;
+  final UserPreferencesRepositoryContract userPreferences;
   final TimeProvider clock;
   final String databasePath;
   final ActivityPermissionChecker _activityPermissionGranted;

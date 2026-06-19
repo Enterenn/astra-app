@@ -6,8 +6,7 @@ import '../../core/time/calendar_week.dart';
 import '../../core/time/local_day_formatter.dart';
 import '../../data/models/chart_day_aggregate.dart';
 import '../../data/models/chart_month_aggregate.dart';
-import '../../data/repositories/step_repository.dart';
-import '../../data/repositories/user_preferences_repository.dart';
+import '../../data/contracts/contracts.dart';
 import 'history_state.dart';
 
 class HistoryCubit extends Cubit<HistoryState> {
@@ -16,8 +15,8 @@ class HistoryCubit extends Cubit<HistoryState> {
     required this.userPreferences,
   }) : super(const HistoryState.loading());
 
-  final StepRepository stepRepository;
-  final UserPreferencesRepository userPreferences;
+  final StepRepositoryContract stepRepository;
+  final UserPreferencesRepositoryContract userPreferences;
 
   List<ChartDayAggregate> _cachedAggregates30d = const [];
   List<ChartMonthAggregate> _cachedMonthlyAggregates12 = const [];
