@@ -366,6 +366,56 @@ void main() {
       );
     });
 
+    Future<void> pumpGoalRingRaw(
+      WidgetTester tester, {
+      required TodayState state,
+      double width = 400,
+    }) async {
+      await tester.pumpWidget(
+        wrapWithAstraTheme(
+          Center(
+            child: SizedBox(
+              width: width,
+              child: GoalRing(state: state),
+            ),
+          ),
+        ),
+      );
+      await tester.pump();
+      await tester.pump();
+    }
+
+    testWidgets('loading placeholder hides step digits and goal fraction', (
+      tester,
+    ) async {
+      await pumpGoalRingRaw(
+        tester,
+        state: const TodayState.loading(),
+      );
+
+      expect(find.byKey(const Key('goal_ring_loading_skeleton')), findsOneWidget);
+      expect(find.textContaining('/'), findsNothing);
+      expect(find.text('0'), findsNothing);
+    });
+
+    testWidgets('lastDisplayedStepsLoaded false hides numeric center content', (
+      tester,
+    ) async {
+      await pumpGoalRingRaw(
+        tester,
+        state: TodayState.fromData(
+          steps: 3200,
+          goal: 8000,
+          isStale: false,
+          lastDisplayedStepsLoaded: false,
+        ),
+      );
+
+      expect(find.byKey(const Key('goal_ring_loading_skeleton')), findsOneWidget);
+      expect(find.textContaining('/'), findsNothing);
+      expect(find.text('3 200'), findsNothing);
+    });
+
     testWidgets('loading to ready triggers cold-start count-up', (
       tester,
     ) async {
