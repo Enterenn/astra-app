@@ -20,7 +20,7 @@ class CompactionResult {
   final int hourlyDeleted;
 }
 
-/// Administrative write surface for compaction — implemented by [StepRepository].
+/// Administrative write surface for compaction — implemented by [StepAggregationRepository].
 abstract class CompactionWriter {
   Future<List<TimeseriesSampleModel>> loadStepSamples(String resolution);
 

@@ -5,7 +5,7 @@ import 'timestamp_codec.dart';
 /// Formats the user's current local calendar day as `YYYY-MM-DD`.
 ///
 /// Uses [TimeSnapshot.zoneOffset] from [TimeProvider.snapshot()] — not device
-/// `DateTime.now()` — aligned with [LocalDayCalculator] / [StepRepository.getTodaySteps].
+/// `DateTime.now()` — aligned with [LocalDayCalculator] / [StepAggregationRepository.getTodaySteps].
 String formatLocalDayIso(TimeSnapshot snapshot) {
   final localDay = LocalDayCalculator.localDay(
     utc: snapshot.nowUtc,
