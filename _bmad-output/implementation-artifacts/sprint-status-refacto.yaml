@@ -1,6 +1,6 @@
 # generated: 2026-06-18
-# last_updated: 2026-06-19 (Story 16-1 review)
-# NEXT: dev-story 16-1-introduce-repository-abstraction-contracts
+# last_updated: 2026-06-19 (Story 16-2 created)
+# NEXT: dev-story 16-2-cache-static-gpu-inset-shadows
 # Ref: planning-artifacts/epics-refacto.md · planning-artifacts/refactoring-audit-master-v0.6.1.md
 # branch: refacto
 # base_version: 0.6.2+13
@@ -58,7 +58,7 @@
 # NAVIGATION: _bmad-output/README.md · planning-artifacts/epics-refacto.md
 
 generated: 2026-06-18
-last_updated: 2026-06-19 (Story 16-1 review)
+last_updated: 2026-06-19 (Story 16-2 created)
 project: astra-app
 project_key: NOKEY
 tracking_system: file-system
@@ -81,7 +81,7 @@ development_status:
 
   epic-16: in-progress
   16-1-introduce-repository-abstraction-contracts: done
-  16-2-cache-static-gpu-inset-shadows: backlog
+  16-2-cache-static-gpu-inset-shadows: review
   16-3-tab-repaint-isolation-in-app-scaffold: backlog
   16-4-goal-ring-repaint-boundary-and-controller-lifecycle-audit: backlog
   16-5-granular-bloc-selector-on-today-screen: backlog

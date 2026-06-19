@@ -480,8 +480,25 @@ void main() {
   });
 
   group('paintGoalRingTrackInnerShadow', () {
-    test('paints without error on annulus path', () {
-      const size = Size.square(280);
+    late GoalRingInsetShadowCache cache;
+    const size = Size.square(280);
+
+    setUp(() => cache = GoalRingInsetShadowCache());
+    tearDown(() => cache.dispose());
+
+    Path _annulusFor(Size canvasSize) {
+      final center = Offset(canvasSize.width / 2, canvasSize.height / 2);
+      const strokeWidth = kGoalRingStrokeWidth;
+      final radius = (canvasSize.width - strokeWidth) / 2;
+      final innerRadius = radius - strokeWidth / 2;
+      final outerRadius = radius + strokeWidth / 2;
+      return Path()
+        ..fillType = PathFillType.evenOdd
+        ..addOval(Rect.fromCircle(center: center, radius: outerRadius))
+        ..addOval(Rect.fromCircle(center: center, radius: innerRadius));
+    }
+
+    test('paints without error on first call', () {
       final recorder = PictureRecorder();
       final canvas = Canvas(recorder);
       final center = Offset(size.width / 2, size.height / 2);
@@ -489,12 +506,75 @@ void main() {
       final radius = (size.width - strokeWidth) / 2;
       final innerRadius = radius - strokeWidth / 2;
       final outerRadius = radius + strokeWidth / 2;
-      final annulus = Path()
-        ..fillType = PathFillType.evenOdd
-        ..addOval(Rect.fromCircle(center: center, radius: outerRadius))
-        ..addOval(Rect.fromCircle(center: center, radius: innerRadius));
+      final annulus = _annulusFor(size);
 
-      paintGoalRingTrackInnerShadow(canvas, annulus, center, innerRadius, outerRadius);
+      paintGoalRingTrackInnerShadow(
+        canvas,
+        annulus,
+        center,
+        innerRadius,
+        outerRadius,
+        size,
+        cache,
+      );
+
+      expect(cache.isValid(size), isTrue);
+    });
+
+    test('cache hit on second call with same size', () {
+      final center = Offset(size.width / 2, size.height / 2);
+      const strokeWidth = kGoalRingStrokeWidth;
+      final radius = (size.width - strokeWidth) / 2;
+      final innerRadius = radius - strokeWidth / 2;
+      final outerRadius = radius + strokeWidth / 2;
+      final annulus = _annulusFor(size);
+
+      final recorder = PictureRecorder();
+      paintGoalRingTrackInnerShadow(
+        Canvas(recorder),
+        annulus,
+        center,
+        innerRadius,
+        outerRadius,
+        size,
+        cache,
+      );
+      expect(cache.isValid(size), isTrue);
+
+      final recorder2 = PictureRecorder();
+      paintGoalRingTrackInnerShadow(
+        Canvas(recorder2),
+        annulus,
+        center,
+        innerRadius,
+        outerRadius,
+        size,
+        cache,
+      );
+      expect(cache.isValid(size), isTrue);
+    });
+
+    test('cache invalidates on size change', () {
+      final center = Offset(size.width / 2, size.height / 2);
+      const strokeWidth = kGoalRingStrokeWidth;
+      final radius = (size.width - strokeWidth) / 2;
+      final innerRadius = radius - strokeWidth / 2;
+      final outerRadius = radius + strokeWidth / 2;
+      final annulus = _annulusFor(size);
+
+      paintGoalRingTrackInnerShadow(
+        Canvas(PictureRecorder()),
+        annulus,
+        center,
+        innerRadius,
+        outerRadius,
+        size,
+        cache,
+      );
+      expect(cache.isValid(size), isTrue);
+
+      const newSize = Size.square(320);
+      expect(cache.isValid(newSize), isFalse);
     });
   });
 }
