@@ -3,7 +3,7 @@ import 'dart:io';
 import 'package:astra_app/core/database/app_database.dart';
 import 'package:astra_app/core/services/data_lifecycle_service.dart';
 import 'package:astra_app/data/repositories/step_repository.dart';
-import 'package:astra_app/data/repositories/user_preferences_repository.dart';
+import 'package:astra_app/data/repositories/user_settings_repository.dart';
 import '../../dev/data_inject_service.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:sqflite/sqflite.dart';
@@ -19,7 +19,7 @@ void main() {
   group('DataLifecycleService', () {
     late Database db;
     late StepRepository repository;
-    late UserPreferencesRepository userPreferences;
+    late UserSettingsRepository userSettings;
     late FakeTimeProvider clock;
     late DataLifecycleService service;
     var vacuumInvoked = 0;
@@ -31,13 +31,13 @@ void main() {
         zoneOffset: const Duration(hours: 2),
       );
       repository = StepRepository(db: db, clock: clock);
-      userPreferences = UserPreferencesRepository(db);
+      userSettings = UserSettingsRepository(db);
       vacuumInvoked = 0;
       service = DataLifecycleService(
         db: db,
         databasePath: inMemoryDatabasePath,
         repository: repository,
-        userPreferences: userPreferences,
+        userSettings: userSettings,
         clock: clock,
         optimizeAndVacuum: (_, _) async {
           vacuumInvoked++;
@@ -54,20 +54,20 @@ void main() {
     });
 
     test('isMaintenanceDue returns false within weekly interval', () async {
-      await userPreferences.setLastDatabaseOptimizedAt(clock.snapshot().nowUtc);
+      await userSettings.setLastDatabaseOptimizedAt(clock.snapshot().nowUtc);
 
       expect(await service.isMaintenanceDue(), isFalse);
     });
 
     test('isMaintenanceDue returns true after weekly interval elapsed', () async {
       final eightDaysAgo = clock.snapshot().nowUtc.subtract(const Duration(days: 8));
-      await userPreferences.setLastDatabaseOptimizedAt(eightDaysAgo);
+      await userSettings.setLastDatabaseOptimizedAt(eightDaysAgo);
 
       expect(await service.isMaintenanceDue(), isTrue);
     });
 
     test('runMaintenance skips when not due and not forced', () async {
-      await userPreferences.setLastDatabaseOptimizedAt(clock.snapshot().nowUtc);
+      await userSettings.setLastDatabaseOptimizedAt(clock.snapshot().nowUtc);
 
       final result = await service.runMaintenance();
 
@@ -81,7 +81,7 @@ void main() {
       await DataInjectService(repository: repository).inject90Days(
         clock: clock,
       );
-      await userPreferences.setLastDatabaseOptimizedAt(clock.snapshot().nowUtc);
+      await userSettings.setLastDatabaseOptimizedAt(clock.snapshot().nowUtc);
 
       final result = await service.runMaintenance(force: true);
 
@@ -90,7 +90,7 @@ void main() {
       expect(await repository.countStepSamples(), 10080);
       expect(vacuumInvoked, 1);
       expect(
-        await userPreferences.getLastDatabaseOptimizedAt(),
+        await userSettings.getLastDatabaseOptimizedAt(),
         clock.snapshot().nowUtc,
       );
     });
@@ -104,7 +104,7 @@ void main() {
 
       expect(result.skipped, isFalse);
       expect(vacuumInvoked, 1);
-      expect(await userPreferences.getLastDatabaseOptimizedAt(), isNotNull);
+      expect(await userSettings.getLastDatabaseOptimizedAt(), isNotNull);
     });
 
     test('concurrent runMaintenance executes a single maintenance pass', () async {
@@ -115,7 +115,7 @@ void main() {
         db: db,
         databasePath: inMemoryDatabasePath,
         repository: repository,
-        userPreferences: userPreferences,
+        userSettings: userSettings,
         clock: clock,
         optimizeAndVacuum: (_, _) async {
           expect(vacuumInProgress, isFalse);
@@ -170,7 +170,7 @@ void main() {
           db: db,
           databasePath: databasePath,
           repository: repository,
-          userPreferences: UserPreferencesRepository(db),
+          userSettings: UserSettingsRepository(db),
           clock: clock,
           maintenanceOnCurrentConnection: true,
           optimizeAndVacuum: runPragmaOptimizeAndVacuumOnWorkerIsolate,
@@ -210,7 +210,7 @@ void main() {
         db: db,
         databasePath: inMemoryDatabasePath,
         repository: repository,
-        userPreferences: UserPreferencesRepository(db),
+        userSettings: UserSettingsRepository(db),
         clock: clock,
         optimizeAndVacuum: (_, _) async {},
       );
@@ -237,7 +237,7 @@ void main() {
       final db = await openAstraDatabase(databasePath: databasePath);
       addTearDown(db.close);
       final repository = StepRepository(db: db, clock: clock);
-      final userPreferences = UserPreferencesRepository(db);
+      final userSettings = UserSettingsRepository(db);
 
       await DataInjectService(repository: repository).inject90Days(
         clock: clock,
@@ -247,7 +247,7 @@ void main() {
         db: db,
         databasePath: databasePath,
         repository: repository,
-        userPreferences: userPreferences,
+        userSettings: userSettings,
         clock: clock,
         force: true,
       );

@@ -1,7 +1,8 @@
 import 'package:astra_app/core/constants/preference_keys.dart';
 import 'package:astra_app/core/database/app_database.dart';
 import 'package:astra_app/data/repositories/step_repository.dart';
-import 'package:astra_app/data/repositories/user_preferences_repository.dart';
+import 'package:astra_app/data/repositories/user_health_metrics_repository.dart';
+import 'package:astra_app/data/repositories/user_settings_repository.dart';
 import 'package:astra_app/presentation/cubits/my_data_cubit.dart';
 import 'package:astra_app/presentation/cubits/my_data_state.dart';
 import 'package:flutter_test/flutter_test.dart';
@@ -17,17 +18,19 @@ void main() {
 
   group('MyDataCubit daily step goal', () {
     late Database db;
-    late UserPreferencesRepository userPreferences;
+    late UserSettingsRepository userSettings;
+    late UserHealthMetricsRepository userHealthMetrics;
     late FakeTimeProvider clock;
     late StepRepository stepRepository;
 
     setUp(() async {
       db = await openAstraDatabase(databasePath: inMemoryDatabasePath);
-      userPreferences = UserPreferencesRepository(db);
+      userSettings = UserSettingsRepository(db);
       clock = FakeTimeProvider(
         fixedNowUtc: DateTime.utc(2026, 6, 3, 12),
         zoneOffset: const Duration(hours: 2),
       );
+      userHealthMetrics = UserHealthMetricsRepository(db, clock: clock);
       stepRepository = StepRepository(db: db, clock: clock);
     });
 
@@ -40,7 +43,8 @@ void main() {
     }) {
       return MyDataCubit(
         stepRepository: stepRepository,
-        userPreferences: userPreferences,
+        userSettings: userSettings,
+        userHealthMetrics: userHealthMetrics,
         clock: clock,
         databasePath: inMemoryDatabasePath,
         activityPermissionGranted: () async => true,
@@ -50,7 +54,7 @@ void main() {
     }
 
     test('refresh keeps dailyStepGoal from cubit state not preferences', () async {
-      await userPreferences.setDailyStepGoal(12000);
+      await userHealthMetrics.setDailyStepGoal(12000);
       final cubit = buildCubit();
       addTearDown(cubit.close);
 
@@ -63,7 +67,7 @@ void main() {
       await cubit.refresh(silent: true);
 
       expect(cubit.state.dailyStepGoal, 12000);
-      expect(await userPreferences.getDailyStepGoal(), 12000);
+      expect(await userHealthMetrics.getDailyStepGoal(), 12000);
     });
 
     test('updateDailyStepGoal persists and updates state', () async {
@@ -74,7 +78,7 @@ void main() {
       expect(await cubit.updateDailyStepGoal(15000), isTrue);
 
       expect(cubit.state.dailyStepGoal, 15000);
-      expect(await userPreferences.getDailyStepGoal(), 15000);
+      expect(await userHealthMetrics.getDailyStepGoal(), 15000);
     });
 
     test('invokes postGoalUpdate on successful update', () async {
@@ -93,7 +97,7 @@ void main() {
     });
 
     test('rejects invalid goal', () async {
-      await userPreferences.setDailyStepGoal(8000);
+      await userHealthMetrics.setDailyStepGoal(8000);
       final cubit = buildCubit();
       addTearDown(cubit.close);
 
@@ -101,12 +105,12 @@ void main() {
       expect(await cubit.updateDailyStepGoal(999), isFalse);
 
       expect(cubit.state.dailyStepGoal, 8000);
-      expect(await userPreferences.getDailyStepGoal(), 8000);
+      expect(await userHealthMetrics.getDailyStepGoal(), 8000);
     });
 
     test('no-op when goal unchanged', () async {
       var callbackCalled = false;
-      await userPreferences.setDailyStepGoal(8000);
+      await userHealthMetrics.setDailyStepGoal(8000);
       final cubit = buildCubit(
         postGoalUpdate: () async {
           callbackCalled = true;
@@ -132,7 +136,7 @@ void main() {
       expect(await cubit.updateDailyStepGoal(12000), isFalse);
 
       expect(cubit.state.dailyStepGoal, 12000);
-      expect(await userPreferences.getDailyStepGoal(), 12000);
+      expect(await userHealthMetrics.getDailyStepGoal(), 12000);
     });
 
     test('blocked while purge in flight', () async {
@@ -144,7 +148,7 @@ void main() {
       expect(await cubit.updateDailyStepGoal(10000), isFalse);
 
       expect(cubit.state.dailyStepGoal, isNot(10000));
-      expect(await userPreferences.getDailyStepGoal(), isNot(10000));
+      expect(await userHealthMetrics.getDailyStepGoal(), isNot(10000));
     });
 
     test('blocked while export in flight', () async {
@@ -155,7 +159,7 @@ void main() {
       cubit.emit(cubit.state.copyWith(isExporting: true));
       expect(await cubit.updateDailyStepGoal(10000), isFalse);
 
-      expect(await userPreferences.getDailyStepGoal(), isNot(10000));
+      expect(await userHealthMetrics.getDailyStepGoal(), isNot(10000));
     });
 
     test('blocked while import in flight', () async {
@@ -166,7 +170,7 @@ void main() {
       cubit.emit(cubit.state.copyWith(isImporting: true));
       expect(await cubit.updateDailyStepGoal(10000), isFalse);
 
-      expect(await userPreferences.getDailyStepGoal(), isNot(10000));
+      expect(await userHealthMetrics.getDailyStepGoal(), isNot(10000));
     });
 
     test('refresh completing after goal save keeps new dailyStepGoal', () async {
@@ -180,7 +184,7 @@ void main() {
       await refreshFuture;
 
       expect(cubit.state.dailyStepGoal, 15000);
-      expect(await userPreferences.getDailyStepGoal(), 15000);
+      expect(await userHealthMetrics.getDailyStepGoal(), 15000);
     });
   });
 }

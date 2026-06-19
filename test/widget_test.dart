@@ -4,7 +4,8 @@ import 'package:astra_app/core/di/app_dependencies.dart';
 import 'package:astra_app/data/datasources/data_ingestion_source.dart';
 import 'package:astra_app/data/models/step_reading.dart';
 import 'package:astra_app/data/repositories/step_repository.dart';
-import 'package:astra_app/data/repositories/user_preferences_repository.dart';
+import 'package:astra_app/data/repositories/user_health_metrics_repository.dart';
+import 'package:astra_app/data/repositories/user_settings_repository.dart';
 import 'package:astra_app/presentation/cubits/onboarding_cubit.dart';
 import 'package:astra_app/presentation/cubits/theme_state.dart';
 import 'package:astra_app/presentation/cubits/history_cubit.dart';
@@ -25,7 +26,8 @@ import 'core/time/fake_time_provider.dart';
 TodayCubit _testTodayCubit(AppDependencies deps) {
   return TodayCubit(
     stepRepository: deps.stepRepository,
-    userPreferences: deps.userPreferences,
+    userSettings: deps.userSettings,
+    userHealthMetrics: deps.userHealthMetrics,
     clock: deps.timeProvider,
     activityPermissionGranted: () async => true,
   );
@@ -34,14 +36,15 @@ TodayCubit _testTodayCubit(AppDependencies deps) {
 HistoryCubit _testHistoryCubit(AppDependencies deps) {
   return HistoryCubit(
     stepRepository: deps.stepRepository,
-    userPreferences: deps.userPreferences,
+    userHealthMetrics: deps.userHealthMetrics,
   );
 }
 
 MyDataCubit _testMyDataCubit(AppDependencies deps) {
   return MyDataCubit(
     stepRepository: deps.stepRepository,
-    userPreferences: deps.userPreferences,
+    userSettings: deps.userSettings,
+    userHealthMetrics: deps.userHealthMetrics,
     clock: deps.timeProvider,
     databasePath: deps.databasePath,
     activityPermissionGranted: () async => true,
@@ -64,11 +67,13 @@ void main() {
         fixedNowUtc: DateTime.utc(2026, 6, 3, 12),
         zoneOffset: const Duration(hours: 2),
       );
-      final userPreferences = UserPreferencesRepository(db, clock: clock);
-      await userPreferences.setOnboardingComplete(true);
+      final userSettings = UserSettingsRepository(db);
+      await userSettings.setOnboardingComplete(true);
+      final userHealthMetrics = UserHealthMetricsRepository(db, clock: clock);
       deps = await AppDependencies.test(
         db: db,
-        userPreferences: userPreferences,
+        userSettings: userSettings,
+        userHealthMetrics: userHealthMetrics,
         timeProvider: clock,
       );
     });
@@ -155,12 +160,12 @@ void main() {
 
     setUpAll(() async {
       db = await openAstraDatabase(databasePath: inMemoryDatabasePath);
-      final userPreferences = UserPreferencesRepository(db);
-      await userPreferences.setThemeMode(AstraThemePreference.dark);
-      await userPreferences.setOnboardingComplete(true);
+      final userSettings = UserSettingsRepository(db);
+      await userSettings.setThemeMode(AstraThemePreference.dark);
+      await userSettings.setOnboardingComplete(true);
       deps = await AppDependencies.test(
         db: db,
-        userPreferences: userPreferences,
+        userSettings: userSettings,
       );
     });
 
@@ -204,20 +209,20 @@ void main() {
 
     setUpAll(() async {
       completeDb = await openAstraDatabase(databasePath: inMemoryDatabasePath);
-      final completePrefs = UserPreferencesRepository(completeDb);
-      await completePrefs.setOnboardingComplete(true);
+      final completeSettings = UserSettingsRepository(completeDb);
+      await completeSettings.setOnboardingComplete(true);
       completeDeps = await AppDependencies.test(
         db: completeDb,
-        userPreferences: completePrefs,
+        userSettings: completeSettings,
       );
 
       incompleteDb = await openAstraDatabase(
         databasePath: inMemoryDatabasePath,
       );
-      final incompletePrefs = UserPreferencesRepository(incompleteDb);
+      final incompleteSettings = UserSettingsRepository(incompleteDb);
       incompleteDeps = await AppDependencies.test(
         db: incompleteDb,
-        userPreferences: incompletePrefs,
+        userSettings: incompleteSettings,
         initialOnboardingComplete: false,
       );
     });
@@ -279,9 +284,10 @@ void main() {
             deps: incompleteDeps,
             createTodayCubit: _testTodayCubit,
             createHistoryCubit: _testHistoryCubit,
-            createOnboardingCubit: (repo) {
+            createOnboardingCubit: (deps) {
               cubitRef = OnboardingCubit(
-                userPreferences: repo,
+                userSettings: deps.userSettings,
+                userHealthMetrics: deps.userHealthMetrics,
                 permissionRequester: (_) async => PermissionStatus.granted,
               );
               return cubitRef!;
@@ -331,16 +337,18 @@ void main() {
               createTodayCubit: (deps) {
                 todayCubitRef = TodayCubit(
                   stepRepository: deps.stepRepository,
-                  userPreferences: deps.userPreferences,
+                  userSettings: deps.userSettings,
+                  userHealthMetrics: deps.userHealthMetrics,
                   clock: deps.timeProvider,
                   activityPermissionGranted: () async => false,
                 );
                 return todayCubitRef!;
               },
               createHistoryCubit: _testHistoryCubit,
-              createOnboardingCubit: (repo) {
+              createOnboardingCubit: (deps) {
                 cubitRef = OnboardingCubit(
-                  userPreferences: repo,
+                  userSettings: deps.userSettings,
+                  userHealthMetrics: deps.userHealthMetrics,
                   permissionRequester: (_) async => PermissionStatus.denied,
                 );
                 return cubitRef!;
@@ -402,16 +410,16 @@ void main() {
 
     setUp(() async {
       db = await openAstraDatabase(databasePath: inMemoryDatabasePath);
-      final userPreferences = UserPreferencesRepository(db);
-      await userPreferences.setOnboardingComplete(true);
+      final userSettings = UserSettingsRepository(db);
+      await userSettings.setOnboardingComplete(true);
       final clock = FakeTimeProvider(
         fixedNowUtc: DateTime.utc(2026, 6, 2, 8),
         zoneOffset: const Duration(hours: 2),
       );
-      await userPreferences.setLastDatabaseOptimizedAt(clock.snapshot().nowUtc);
+      await userSettings.setLastDatabaseOptimizedAt(clock.snapshot().nowUtc);
       deps = await AppDependencies.test(
         db: db,
-        userPreferences: userPreferences,
+        userSettings: userSettings,
         timeProvider: clock,
         ingestionSources: [
           _MutableStepSource([

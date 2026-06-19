@@ -4,7 +4,8 @@ import 'package:astra_app/core/constants/astra_theme.dart';
 import 'package:astra_app/core/constants/display_unit_preferences.dart';
 import 'package:astra_app/core/database/app_database.dart';
 import 'package:astra_app/core/di/app_dependencies.dart';
-import 'package:astra_app/data/repositories/user_preferences_repository.dart';
+import 'package:astra_app/data/repositories/user_health_metrics_repository.dart';
+import 'package:astra_app/data/repositories/user_settings_repository.dart';
 import 'package:astra_app/presentation/cubits/onboarding_cubit.dart';
 import 'package:astra_app/presentation/cubits/onboarding_state.dart';
 import 'package:astra_app/presentation/onboarding/onboarding_flow.dart';
@@ -54,15 +55,18 @@ void main() {
 
   group('OnboardingFlow', () {
     late Database db;
-    late UserPreferencesRepository userPreferences;
+    late UserSettingsRepository userSettings;
+    late UserHealthMetricsRepository userHealthMetrics;
     late AppDependencies deps;
 
     setUp(() async {
       db = await openAstraDatabase(databasePath: inMemoryDatabasePath);
-      userPreferences = UserPreferencesRepository(db);
+      userSettings = UserSettingsRepository(db);
+      userHealthMetrics = UserHealthMetricsRepository(db);
       deps = await AppDependencies.test(
         db: db,
-        userPreferences: userPreferences,
+        userSettings: userSettings,
+        userHealthMetrics: userHealthMetrics,
         initialOnboardingComplete: false,
       );
     });
@@ -73,7 +77,7 @@ void main() {
 
     Widget buildFlow({
       required VoidCallback onComplete,
-      OnboardingCubit Function(UserPreferencesRepository)? createCubit,
+      OnboardingCubit Function(AppDependencies)? createCubit,
     }) {
       return MaterialApp(
         theme: buildAstraLightTheme(),
@@ -85,9 +89,10 @@ void main() {
       );
     }
 
-    OnboardingCubit grantedCubit(UserPreferencesRepository repo) {
+    OnboardingCubit grantedCubit(AppDependencies deps) {
       return OnboardingCubit(
-        userPreferences: repo,
+        userSettings: deps.userSettings,
+        userHealthMetrics: deps.userHealthMetrics,
         permissionRequester: (_) async => PermissionStatus.granted,
       );
     }
@@ -109,8 +114,9 @@ void main() {
       await tester.pumpWidget(
         buildFlow(
           onComplete: () {},
-          createCubit: (repo) => OnboardingCubit(
-            userPreferences: repo,
+          createCubit: (deps) => OnboardingCubit(
+            userSettings: deps.userSettings,
+            userHealthMetrics: deps.userHealthMetrics,
             permissionRequester: (_) async {
               permissionRequestCount++;
               return PermissionStatus.granted;
@@ -154,8 +160,9 @@ void main() {
       await tester.pumpWidget(
         buildFlow(
           onComplete: () {},
-          createCubit: (repo) => OnboardingCubit(
-            userPreferences: repo,
+          createCubit: (deps) => OnboardingCubit(
+            userSettings: deps.userSettings,
+            userHealthMetrics: deps.userHealthMetrics,
             permissionRequester: (_) async => PermissionStatus.denied,
           ),
         ),
@@ -178,9 +185,10 @@ void main() {
         await tester.pumpWidget(
           buildFlow(
             onComplete: () => onCompleteCalled = true,
-            createCubit: (repo) {
+            createCubit: (deps) {
               cubitRef = OnboardingCubit(
-                userPreferences: repo,
+                userSettings: deps.userSettings,
+                userHealthMetrics: deps.userHealthMetrics,
                 permissionRequester: (_) async => PermissionStatus.denied,
               );
               return cubitRef!;
@@ -212,8 +220,8 @@ void main() {
         expect(onCompleteCalled, isTrue);
 
         await tester.runAsync(() async {
-          expect(await userPreferences.getOnboardingComplete(), isTrue);
-          expect(await userPreferences.getDailyStepGoal(), 8000);
+          expect(await userSettings.getOnboardingComplete(), isTrue);
+          expect(await userHealthMetrics.getDailyStepGoal(), 8000);
         });
       },
     );
@@ -224,8 +232,9 @@ void main() {
       await tester.pumpWidget(
         buildFlow(
           onComplete: () {},
-          createCubit: (repo) => OnboardingCubit(
-            userPreferences: repo,
+          createCubit: (deps) => OnboardingCubit(
+            userSettings: deps.userSettings,
+            userHealthMetrics: deps.userHealthMetrics,
             permissionRequester: (_) async {
               throw Exception('platform channel failure');
             },
@@ -261,8 +270,9 @@ void main() {
       await tester.pumpWidget(
         buildFlow(
           onComplete: () {},
-          createCubit: (repo) => OnboardingCubit(
-            userPreferences: repo,
+          createCubit: (deps) => OnboardingCubit(
+            userSettings: deps.userSettings,
+            userHealthMetrics: deps.userHealthMetrics,
             permissionRequester: (_) => permissionCompleter.future,
           ),
         ),
@@ -363,8 +373,8 @@ void main() {
       await tester.pumpWidget(
         buildFlow(
           onComplete: () => onCompleteCalled = true,
-          createCubit: (repo) {
-            cubitRef = grantedCubit(repo);
+          createCubit: (deps) {
+            cubitRef = grantedCubit(deps);
             return cubitRef!;
           },
         ),
@@ -430,8 +440,8 @@ void main() {
       await tester.pumpWidget(
         buildFlow(
           onComplete: () {},
-          createCubit: (repo) {
-            cubitRef = grantedCubit(repo);
+          createCubit: (deps) {
+            cubitRef = grantedCubit(deps);
             return cubitRef!;
           },
         ),
@@ -464,8 +474,8 @@ void main() {
       await tester.pumpWidget(
         buildFlow(
           onComplete: () {},
-          createCubit: (repo) {
-            cubitRef = grantedCubit(repo);
+          createCubit: (deps) {
+            cubitRef = grantedCubit(deps);
             return cubitRef!;
           },
         ),

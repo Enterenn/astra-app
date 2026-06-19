@@ -2,7 +2,8 @@ import 'package:astra_app/core/constants/astra_theme.dart';
 import 'package:astra_app/core/database/app_database.dart';
 import 'package:astra_app/core/time/calendar_week.dart';
 import 'package:astra_app/data/repositories/step_repository.dart';
-import 'package:astra_app/data/repositories/user_preferences_repository.dart';
+import 'package:astra_app/data/repositories/user_health_metrics_repository.dart';
+import 'package:astra_app/data/repositories/user_settings_repository.dart';
 import 'package:astra_app/presentation/cubits/today_cubit.dart';
 import 'package:astra_app/presentation/cubits/today_state.dart';
 import 'package:astra_app/presentation/cubits/units_cubit.dart';
@@ -38,7 +39,8 @@ Color? goalRingLoadingSkeletonPrimaryBarColor(WidgetTester tester) {
 class _SeededTodayCubit extends TodayCubit {
   _SeededTodayCubit({
     required super.stepRepository,
-    required super.userPreferences,
+    required super.userSettings,
+    required super.userHealthMetrics,
     required super.clock,
     required TodayState initial,
   }) : super(activityPermissionGranted: () async => true) {
@@ -64,7 +66,8 @@ class _SeededTodayCubit extends TodayCubit {
 class _TrackingRefreshCubit extends _SeededTodayCubit {
   _TrackingRefreshCubit({
     required super.stepRepository,
-    required super.userPreferences,
+    required super.userSettings,
+    required super.userHealthMetrics,
     required super.clock,
     required super.initial,
     required this.onRefresh,
@@ -246,7 +249,8 @@ void main() {
 
   group('TodayScreen BlocSelector build isolation', () {
     late Database db;
-    late UserPreferencesRepository userPreferences;
+    late UserSettingsRepository userSettings;
+    late UserHealthMetricsRepository userHealthMetrics;
     late StepRepository stepRepository;
     late FakeTimeProvider clock;
     late UnitsCubit unitsCubit;
@@ -258,9 +262,10 @@ void main() {
         zoneOffset: const Duration(hours: 2),
       );
       db = await openAstraDatabase(databasePath: inMemoryDatabasePath);
-      userPreferences = UserPreferencesRepository(db);
+      userSettings = UserSettingsRepository(db);
+      userHealthMetrics = UserHealthMetricsRepository(db, clock: clock);
       stepRepository = StepRepository(db: db, clock: clock);
-      unitsCubit = UnitsCubit(userPreferences: userPreferences);
+      unitsCubit = UnitsCubit(userSettings: userSettings);
       buildCounts.clear();
       todaySectionBuildProbe = (section) {
         buildCounts[section] = (buildCounts[section] ?? 0) + 1;
@@ -291,7 +296,8 @@ void main() {
     _SeededTodayCubit buildCubit(TodayState state) {
       return _SeededTodayCubit(
         stepRepository: stepRepository,
-        userPreferences: userPreferences,
+        userSettings: userSettings,
+        userHealthMetrics: userHealthMetrics,
         clock: clock,
         initial: state,
       );
@@ -616,7 +622,8 @@ void main() {
       var refreshCalls = 0;
       final cubit = _TrackingRefreshCubit(
         stepRepository: stepRepository,
-        userPreferences: userPreferences,
+        userSettings: userSettings,
+        userHealthMetrics: userHealthMetrics,
         clock: clock,
         initial: TodayState.fromData(
           steps: 1200,

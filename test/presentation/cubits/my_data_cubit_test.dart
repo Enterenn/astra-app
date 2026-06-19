@@ -3,7 +3,8 @@ import 'package:astra_app/data/datasources/data_ingestion_source.dart';
 import 'package:astra_app/data/models/database_footprint.dart';
 import 'package:astra_app/data/models/normalized_step_bucket.dart';
 import 'package:astra_app/data/repositories/step_repository.dart';
-import 'package:astra_app/data/repositories/user_preferences_repository.dart';
+import 'package:astra_app/data/repositories/user_health_metrics_repository.dart';
+import 'package:astra_app/data/repositories/user_settings_repository.dart';
 import 'package:astra_app/presentation/cubits/my_data_cubit.dart';
 import 'package:astra_app/presentation/cubits/my_data_state.dart';
 import 'package:flutter_test/flutter_test.dart';
@@ -19,17 +20,19 @@ void main() {
 
   group('MyDataCubit', () {
     late Database db;
-    late UserPreferencesRepository userPreferences;
+    late UserSettingsRepository userSettings;
+    late UserHealthMetricsRepository userHealthMetrics;
     late FakeTimeProvider clock;
     late StepRepository stepRepository;
 
     setUp(() async {
       db = await openAstraDatabase(databasePath: inMemoryDatabasePath);
-      userPreferences = UserPreferencesRepository(db);
+      userSettings = UserSettingsRepository(db);
       clock = FakeTimeProvider(
         fixedNowUtc: DateTime.utc(2026, 6, 3, 12),
         zoneOffset: const Duration(hours: 2),
       );
+      userHealthMetrics = UserHealthMetricsRepository(db, clock: clock);
       stepRepository = StepRepository(db: db, clock: clock);
     });
 
@@ -43,7 +46,8 @@ void main() {
     }) {
       return MyDataCubit(
         stepRepository: stepRepository,
-        userPreferences: userPreferences,
+        userSettings: userSettings,
+        userHealthMetrics: userHealthMetrics,
         clock: clock,
         databasePath: inMemoryDatabasePath,
         activityPermissionGranted:
@@ -165,7 +169,8 @@ void main() {
       );
       final cubit = MyDataCubit(
         stepRepository: failingRepository,
-        userPreferences: userPreferences,
+        userSettings: userSettings,
+        userHealthMetrics: userHealthMetrics,
         activityPermissionGranted: () async => true,
         clock: clock,
         databasePath: inMemoryDatabasePath,
@@ -191,7 +196,8 @@ void main() {
       final flakyRepository = _FlakyFootprintRepository(db: db, clock: clock);
       final cubit = MyDataCubit(
         stepRepository: flakyRepository,
-        userPreferences: userPreferences,
+        userSettings: userSettings,
+        userHealthMetrics: userHealthMetrics,
         activityPermissionGranted: () async => true,
         clock: clock,
         databasePath: inMemoryDatabasePath,

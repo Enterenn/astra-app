@@ -41,10 +41,19 @@ class _FakeStepRepository implements StepRepositoryContract {
   dynamic noSuchMethod(Invocation invocation) => super.noSuchMethod(invocation);
 }
 
-class _FakeUserPreferencesRepository implements UserPreferencesRepositoryContract {
+class _FakeUserSettingsRepository implements UserSettingsRepositoryContract {
   @override
   bool get isDatabaseOpen => true;
 
+  @override
+  Future<int?> getLastDisplayedSteps(String localDayIso) async => null;
+
+  @override
+  dynamic noSuchMethod(Invocation invocation) => super.noSuchMethod(invocation);
+}
+
+class _FakeUserHealthMetricsRepository
+    implements UserHealthMetricsRepositoryContract {
   @override
   Future<int> getGoalForLocalDay(String localDayIso) async => kDefaultStepGoal;
 
@@ -53,9 +62,6 @@ class _FakeUserPreferencesRepository implements UserPreferencesRepositoryContrac
 
   @override
   Future<double?> getWeightKg() async => null;
-
-  @override
-  Future<int?> getLastDisplayedSteps(String localDayIso) async => null;
 
   @override
   dynamic noSuchMethod(Invocation invocation) => super.noSuchMethod(invocation);
@@ -75,7 +81,8 @@ void main() {
     test('refresh emits noPermission when activity permission denied', () async {
       final cubit = TodayCubit(
         stepRepository: _FakeStepRepository(clock),
-        userPreferences: _FakeUserPreferencesRepository(),
+        userSettings: _FakeUserSettingsRepository(),
+        userHealthMetrics: _FakeUserHealthMetricsRepository(),
         clock: clock,
         activityPermissionGranted: () async => false,
       );
@@ -89,7 +96,8 @@ void main() {
     test('refresh emits empty when permission granted and mocked zero steps', () async {
       final cubit = TodayCubit(
         stepRepository: _FakeStepRepository(clock),
-        userPreferences: _FakeUserPreferencesRepository(),
+        userSettings: _FakeUserSettingsRepository(),
+        userHealthMetrics: _FakeUserHealthMetricsRepository(),
         clock: clock,
         activityPermissionGranted: () async => true,
       );

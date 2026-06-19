@@ -1,7 +1,8 @@
 import 'package:astra_app/core/constants/astra_theme.dart';
 import 'package:astra_app/core/database/app_database.dart';
 import 'package:astra_app/data/repositories/step_repository.dart';
-import 'package:astra_app/data/repositories/user_preferences_repository.dart';
+import 'package:astra_app/data/repositories/user_health_metrics_repository.dart';
+import 'package:astra_app/data/repositories/user_settings_repository.dart';
 import 'package:astra_app/presentation/cubits/my_data_cubit.dart';
 import 'package:astra_app/presentation/cubits/my_data_state.dart';
 import 'package:astra_app/presentation/screens/my_data_screen.dart';
@@ -25,7 +26,8 @@ import '../../helpers/sqflite_test_helper.dart';
 class _SeededMyDataCubit extends MyDataCubit {
   _SeededMyDataCubit({
     required super.stepRepository,
-    required super.userPreferences,
+    required super.userSettings,
+    required super.userHealthMetrics,
     required super.clock,
     required super.databasePath,
     required MyDataState seededState,
@@ -88,13 +90,15 @@ void main() {
   });
 
   late Database db;
-  late UserPreferencesRepository userPreferences;
+  late UserSettingsRepository userSettings;
+  late UserHealthMetricsRepository userHealthMetrics;
   late FakeTimeProvider clock;
   late StepRepository stepRepository;
 
   setUp(() async {
     db = await openAstraDatabase(databasePath: inMemoryDatabasePath);
-    userPreferences = UserPreferencesRepository(db);
+    userSettings = UserSettingsRepository(db);
+    userHealthMetrics = UserHealthMetricsRepository(db);
     clock = FakeTimeProvider(
       fixedNowUtc: DateTime.utc(2026, 6, 3, 12),
       zoneOffset: const Duration(hours: 2),
@@ -109,7 +113,8 @@ void main() {
   MyDataCubit buildSeededCubit(MyDataState state) {
     return _SeededMyDataCubit(
       stepRepository: stepRepository,
-      userPreferences: userPreferences,
+      userSettings: userSettings,
+      userHealthMetrics: userHealthMetrics,
       clock: clock,
       databasePath: inMemoryDatabasePath,
       seededState: state,
@@ -372,7 +377,8 @@ void main() {
     testWidgets('shows export error banner with retry tap', (tester) async {
       final cubit = _RetryExportMyDataCubit(
         stepRepository: stepRepository,
-        userPreferences: userPreferences,
+        userSettings: userSettings,
+      userHealthMetrics: userHealthMetrics,
         clock: clock,
         databasePath: inMemoryDatabasePath,
       );
@@ -396,7 +402,8 @@ void main() {
     testWidgets('shows import error banner with retry tap', (tester) async {
       final cubit = _RetryImportMyDataCubit(
         stepRepository: stepRepository,
-        userPreferences: userPreferences,
+        userSettings: userSettings,
+      userHealthMetrics: userHealthMetrics,
         clock: clock,
         databasePath: inMemoryDatabasePath,
       );
@@ -461,7 +468,8 @@ void main() {
     testWidgets('shows purge error banner with retry tap', (tester) async {
       final cubit = _RetryPurgeMyDataCubit(
         stepRepository: stepRepository,
-        userPreferences: userPreferences,
+        userSettings: userSettings,
+      userHealthMetrics: userHealthMetrics,
         clock: clock,
         databasePath: inMemoryDatabasePath,
       );
@@ -487,7 +495,8 @@ void main() {
     ) async {
       final cubit = _DialogPurgeFlowMyDataCubit(
         stepRepository: stepRepository,
-        userPreferences: userPreferences,
+        userSettings: userSettings,
+      userHealthMetrics: userHealthMetrics,
         clock: clock,
         databasePath: inMemoryDatabasePath,
       );
@@ -522,7 +531,8 @@ void main() {
 class _RetryImportMyDataCubit extends _SeededMyDataCubit {
   _RetryImportMyDataCubit({
     required super.stepRepository,
-    required super.userPreferences,
+    required super.userSettings,
+    required super.userHealthMetrics,
     required super.clock,
     required super.databasePath,
   }) : super(
@@ -547,7 +557,8 @@ class _RetryImportMyDataCubit extends _SeededMyDataCubit {
 class _RetryExportMyDataCubit extends _SeededMyDataCubit {
   _RetryExportMyDataCubit({
     required super.stepRepository,
-    required super.userPreferences,
+    required super.userSettings,
+    required super.userHealthMetrics,
     required super.clock,
     required super.databasePath,
   }) : super(
@@ -572,7 +583,8 @@ class _RetryExportMyDataCubit extends _SeededMyDataCubit {
 class _DialogPurgeFlowMyDataCubit extends _SeededMyDataCubit {
   _DialogPurgeFlowMyDataCubit({
     required super.stepRepository,
-    required super.userPreferences,
+    required super.userSettings,
+    required super.userHealthMetrics,
     required super.clock,
     required super.databasePath,
   }) : super(seededState: _readyState());
@@ -600,7 +612,8 @@ class _DialogPurgeFlowMyDataCubit extends _SeededMyDataCubit {
 class _RetryPurgeMyDataCubit extends _SeededMyDataCubit {
   _RetryPurgeMyDataCubit({
     required super.stepRepository,
-    required super.userPreferences,
+    required super.userSettings,
+    required super.userHealthMetrics,
     required super.clock,
     required super.databasePath,
   }) : super(

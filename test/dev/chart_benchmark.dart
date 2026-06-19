@@ -1,7 +1,8 @@
 import 'package:astra_app/core/time/time_provider.dart';
 import 'package:astra_app/data/models/chart_day_aggregate.dart';
 import 'package:astra_app/data/repositories/step_repository.dart';
-import 'package:astra_app/data/repositories/user_preferences_repository.dart';
+import 'package:astra_app/data/repositories/user_health_metrics_repository.dart';
+import 'package:astra_app/data/repositories/user_settings_repository.dart';
 import 'package:astra_app/presentation/cubits/history_cubit.dart';
 import 'package:astra_app/presentation/cubits/history_state.dart';
 import 'package:flutter/foundation.dart';
@@ -69,7 +70,8 @@ Future<ChartBenchmarkResult> runChartBenchmark({
   required StepRepository repository,
   required TimeProvider clock,
   Database? db,
-  UserPreferencesRepository? userPreferences,
+  UserSettingsRepository? userSettings,
+  UserHealthMetricsRepository? userHealthMetrics,
   int iterations = kChartBenchmarkDefaultIterations,
   ChartBenchmarkProfile profile = ChartBenchmarkProfile.fullStack,
   bool runLifecycleCompaction = false,
@@ -110,11 +112,11 @@ Future<ChartBenchmarkResult> runChartBenchmark({
   final threshold = passThresholdMs ?? kChartBenchmarkPassThresholdMs;
   final measureQuery = profile == ChartBenchmarkProfile.fullStack;
 
-  final prefs =
-      userPreferences ?? UserPreferencesRepository(repository.db);
+  final health =
+      userHealthMetrics ?? UserHealthMetricsRepository(repository.db);
   final cubit = HistoryCubit(
     stepRepository: repository,
-    userPreferences: prefs,
+    userHealthMetrics: health,
   );
 
   try {
@@ -195,7 +197,8 @@ Future<ChartBenchmarkResult> runDevChartBenchmark({
   required StepRepository repository,
   required TimeProvider clock,
   Database? db,
-  UserPreferencesRepository? userPreferences,
+  UserSettingsRepository? userSettings,
+  UserHealthMetricsRepository? userHealthMetrics,
   int iterations = kChartBenchmarkDefaultIterations,
   ChartBenchmarkProfile profile = ChartBenchmarkProfile.fullStack,
   bool runLifecycleCompaction = false,
@@ -211,7 +214,8 @@ Future<ChartBenchmarkResult> runDevChartBenchmark({
     repository: repository,
     clock: clock,
     db: db,
-    userPreferences: userPreferences,
+    userSettings: userSettings,
+    userHealthMetrics: userHealthMetrics,
     iterations: iterations,
     profile: profile,
     runLifecycleCompaction: runLifecycleCompaction,

@@ -5,7 +5,8 @@ import 'package:astra_app/core/services/live_step_monitor.dart';
 import 'package:astra_app/data/datasources/phone_pedometer_source.dart';
 import 'package:astra_app/data/repositories/ingestion_baseline_repository.dart';
 import 'package:astra_app/data/repositories/step_repository.dart';
-import 'package:astra_app/data/repositories/user_preferences_repository.dart';
+import 'package:astra_app/data/repositories/user_health_metrics_repository.dart';
+import 'package:astra_app/data/repositories/user_settings_repository.dart';
 import 'package:astra_app/presentation/cubits/history_cubit.dart';
 import 'package:astra_app/presentation/cubits/today_cubit.dart';
 import 'package:flutter/material.dart';
@@ -34,16 +35,18 @@ void main() {
     await tester.runAsync(() async {
       final db = await openAstraDatabase(databasePath: inMemoryDatabasePath);
       addTearDown(db.close);
-      final userPreferences = UserPreferencesRepository(db);
-      await userPreferences.setOnboardingComplete(true);
       final clock = FakeTimeProvider(
         fixedNowUtc: DateTime.utc(2026, 6, 2, 8),
         zoneOffset: const Duration(hours: 2),
       );
+      final userSettings = UserSettingsRepository(db);
+      await userSettings.setOnboardingComplete(true);
+      final userHealthMetrics = UserHealthMetricsRepository(db, clock: clock);
       final healthFgs = RecordingHealthFgs(calls: fgsCalls);
       final deps = await AppDependencies.test(
         db: db,
-        userPreferences: userPreferences,
+        userSettings: userSettings,
+        userHealthMetrics: userHealthMetrics,
         timeProvider: clock,
         healthForegroundCoordinator: healthFgs,
       );
@@ -53,13 +56,14 @@ void main() {
           deps: deps,
           createTodayCubit: (dependencies) => TodayCubit(
             stepRepository: dependencies.stepRepository,
-            userPreferences: dependencies.userPreferences,
+            userSettings: dependencies.userSettings,
+            userHealthMetrics: dependencies.userHealthMetrics,
             clock: dependencies.timeProvider,
             activityPermissionGranted: () async => true,
           ),
           createHistoryCubit: (dependencies) => HistoryCubit(
             stepRepository: dependencies.stepRepository,
-            userPreferences: dependencies.userPreferences,
+            userHealthMetrics: dependencies.userHealthMetrics,
           ),
           enablePeriodicPersist: false,
           enableLiveStepPipeline: false,
@@ -92,12 +96,13 @@ void main() {
     await tester.runAsync(() async {
       final db = await openAstraDatabase(databasePath: inMemoryDatabasePath);
       addTearDown(db.close);
-      final userPreferences = UserPreferencesRepository(db);
-      await userPreferences.setOnboardingComplete(true);
       final clock = FakeTimeProvider(
         fixedNowUtc: DateTime.utc(2026, 6, 2, 8),
         zoneOffset: const Duration(hours: 2),
       );
+      final userSettings = UserSettingsRepository(db);
+      await userSettings.setOnboardingComplete(true);
+      final userHealthMetrics = UserHealthMetricsRepository(db, clock: clock);
       final events = Stream<PhoneStepEvent>.empty();
       final monitor = LiveStepMonitor(
         stepRepository: StepRepository(db: db, clock: clock),
@@ -108,7 +113,8 @@ void main() {
       final healthFgs = RecordingHealthFgs(calls: fgsCalls);
       final deps = await AppDependencies.test(
         db: db,
-        userPreferences: userPreferences,
+        userSettings: userSettings,
+        userHealthMetrics: userHealthMetrics,
         timeProvider: clock,
         liveStepMonitor: monitor,
         healthForegroundCoordinator: healthFgs,
@@ -119,13 +125,14 @@ void main() {
           deps: deps,
           createTodayCubit: (dependencies) => TodayCubit(
             stepRepository: dependencies.stepRepository,
-            userPreferences: dependencies.userPreferences,
+            userSettings: dependencies.userSettings,
+            userHealthMetrics: dependencies.userHealthMetrics,
             clock: dependencies.timeProvider,
             activityPermissionGranted: () async => true,
           ),
           createHistoryCubit: (dependencies) => HistoryCubit(
             stepRepository: dependencies.stepRepository,
-            userPreferences: dependencies.userPreferences,
+            userHealthMetrics: dependencies.userHealthMetrics,
           ),
           enablePeriodicPersist: false,
           enableLiveStepPipeline: true,

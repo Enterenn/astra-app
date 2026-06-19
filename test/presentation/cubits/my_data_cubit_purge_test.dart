@@ -1,6 +1,7 @@
 import 'package:astra_app/core/database/app_database.dart';
 import 'package:astra_app/data/repositories/step_repository.dart';
-import 'package:astra_app/data/repositories/user_preferences_repository.dart';
+import 'package:astra_app/data/repositories/user_health_metrics_repository.dart';
+import 'package:astra_app/data/repositories/user_settings_repository.dart';
 import 'package:astra_app/presentation/cubits/my_data_cubit.dart';
 import 'package:astra_app/presentation/widgets/confirm_dialog.dart';
 import 'package:flutter_test/flutter_test.dart';
@@ -33,18 +34,20 @@ void main() {
 
   group('MyDataCubit confirmAndPurge', () {
     late Database db;
-    late UserPreferencesRepository userPreferences;
+    late UserSettingsRepository userSettings;
+    late UserHealthMetricsRepository userHealthMetrics;
     late FakeTimeProvider clock;
     late _TrackingStepRepository stepRepository;
     late Directory tempDir;
 
     setUp(() async {
       db = await openAstraDatabase(databasePath: inMemoryDatabasePath);
-      userPreferences = UserPreferencesRepository(db);
+      userSettings = UserSettingsRepository(db);
       clock = FakeTimeProvider(
         fixedNowUtc: DateTime.utc(2026, 6, 3, 12),
         zoneOffset: const Duration(hours: 2),
       );
+      userHealthMetrics = UserHealthMetricsRepository(db, clock: clock);
       stepRepository = _TrackingStepRepository(db: db, clock: clock);
       tempDir = await Directory.systemTemp.createTemp('astra_cubit_purge_');
     });
@@ -64,7 +67,8 @@ void main() {
     }) {
       return MyDataCubit(
         stepRepository: stepRepository,
-        userPreferences: userPreferences,
+        userSettings: userSettings,
+        userHealthMetrics: userHealthMetrics,
         clock: clock,
         databasePath: inMemoryDatabasePath,
         isIos: false,
@@ -76,7 +80,7 @@ void main() {
     }
 
     test('deleteConfirmed clears lastOptimizedUtc after purge', () async {
-      await userPreferences.setLastDatabaseOptimizedAt(
+      await userSettings.setLastDatabaseOptimizedAt(
         DateTime.utc(2026, 6, 1),
       );
       final cubit = buildCubit();
@@ -198,7 +202,8 @@ void main() {
       final failingRepository = _FailingPurgeRepository(db: db, clock: clock);
       final cubit = MyDataCubit(
         stepRepository: failingRepository,
-        userPreferences: userPreferences,
+        userSettings: userSettings,
+        userHealthMetrics: userHealthMetrics,
         clock: clock,
         databasePath: inMemoryDatabasePath,
         isIos: false,

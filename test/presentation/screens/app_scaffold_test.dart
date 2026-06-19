@@ -3,7 +3,8 @@ import 'package:astra_app/core/constants/astra_spacing.dart';
 import 'package:astra_app/core/constants/astra_theme.dart';
 import 'package:astra_app/core/database/app_database.dart';
 import 'package:astra_app/core/di/app_dependencies.dart';
-import 'package:astra_app/data/repositories/user_preferences_repository.dart';
+import 'package:astra_app/data/repositories/user_health_metrics_repository.dart';
+import 'package:astra_app/data/repositories/user_settings_repository.dart';
 import 'package:astra_app/presentation/cubits/history_cubit.dart';
 import 'package:astra_app/presentation/cubits/my_data_cubit.dart';
 import 'package:astra_app/presentation/cubits/theme_cubit.dart';
@@ -33,7 +34,8 @@ import '../../core/time/fake_time_provider.dart';
 TodayCubit _testTodayCubit(AppDependencies deps) {
   return TodayCubit(
     stepRepository: deps.stepRepository,
-    userPreferences: deps.userPreferences,
+    userSettings: deps.userSettings,
+    userHealthMetrics: deps.userHealthMetrics,
     clock: deps.timeProvider,
     activityPermissionGranted: () async => true,
   );
@@ -42,14 +44,15 @@ TodayCubit _testTodayCubit(AppDependencies deps) {
 HistoryCubit _testHistoryCubit(AppDependencies deps) {
   return HistoryCubit(
     stepRepository: deps.stepRepository,
-    userPreferences: deps.userPreferences,
+    userHealthMetrics: deps.userHealthMetrics,
   );
 }
 
 class _RefreshCountingCubit extends TodayCubit {
   _RefreshCountingCubit({
     required super.stepRepository,
-    required super.userPreferences,
+    required super.userSettings,
+    required super.userHealthMetrics,
     required super.clock,
   }) : super(activityPermissionGranted: () async => true);
 
@@ -96,7 +99,7 @@ class _RefreshCountingCubit extends TodayCubit {
 class _RefreshCountingHistoryCubit extends HistoryCubit {
   _RefreshCountingHistoryCubit({
     required super.stepRepository,
-    required super.userPreferences,
+    required super.userHealthMetrics,
   });
 
   int refreshCallCount = 0;
@@ -111,7 +114,8 @@ class _RefreshCountingHistoryCubit extends HistoryCubit {
 class _ThrowingRefreshTodayCubit extends TodayCubit {
   _ThrowingRefreshTodayCubit({
     required super.stepRepository,
-    required super.userPreferences,
+    required super.userSettings,
+    required super.userHealthMetrics,
     required super.clock,
   }) : super(activityPermissionGranted: () async => true);
 
@@ -125,7 +129,7 @@ Future<void> _pumpAppScaffold(
   WidgetTester tester,
   AppScaffold scaffold, {
   bool disableAnimations = true,
-  required UserPreferencesRepository userPreferences,
+  required UserSettingsRepository userSettings,
 }) async {
   await tester.runAsync(() async {
     await tester.pumpWidget(
@@ -137,12 +141,12 @@ Future<void> _pumpAppScaffold(
             providers: [
               BlocProvider(
                 create: (_) => ThemeCubit(
-                  userPreferences: userPreferences,
+                  userSettings: userSettings,
                   initialPreference: AstraThemePreference.system,
                 ),
               ),
               BlocProvider(
-                create: (_) => UnitsCubit(userPreferences: userPreferences),
+                create: (_) => UnitsCubit(userSettings: userSettings),
               ),
             ],
             child: scaffold,
@@ -201,11 +205,13 @@ void main() {
         fixedNowUtc: DateTime.utc(2026, 6, 3, 12),
         zoneOffset: const Duration(hours: 2),
       );
-      final userPreferences = UserPreferencesRepository(db, clock: clock);
-      await userPreferences.setOnboardingComplete(true);
+      final userSettings = UserSettingsRepository(db);
+      await userSettings.setOnboardingComplete(true);
+      final userHealthMetrics = UserHealthMetricsRepository(db, clock: clock);
       deps = await AppDependencies.test(
         db: db,
-        userPreferences: userPreferences,
+        userSettings: userSettings,
+        userHealthMetrics: userHealthMetrics,
         timeProvider: clock,
       );
     });
@@ -224,7 +230,7 @@ void main() {
             createTodayCubit: _testTodayCubit,
             createHistoryCubit: _testHistoryCubit,
           ),
-          userPreferences: deps.userPreferences,
+          userSettings: deps.userSettings,
         );
         await tester.pump();
 
@@ -289,7 +295,7 @@ void main() {
             createTodayCubit: _testTodayCubit,
             createHistoryCubit: _testHistoryCubit,
           ),
-          userPreferences: deps.userPreferences,
+          userSettings: deps.userSettings,
         );
 
         expect(find.text("Today's activity"), findsNothing);
@@ -363,7 +369,7 @@ void main() {
           createTodayCubit: _testTodayCubit,
         ),
         disableAnimations: false,
-        userPreferences: deps.userPreferences,
+        userSettings: deps.userSettings,
       );
 
       await tester.pump();
@@ -396,14 +402,15 @@ void main() {
           createTodayCubit: (dependencies) {
             cubit = _RefreshCountingCubit(
               stepRepository: dependencies.stepRepository,
-              userPreferences: dependencies.userPreferences,
+              userSettings: dependencies.userSettings,
+              userHealthMetrics: dependencies.userHealthMetrics,
               clock: dependencies.timeProvider,
             );
             return cubit!;
           },
           createHistoryCubit: _testHistoryCubit,
         ),
-        userPreferences: deps.userPreferences,
+        userSettings: deps.userSettings,
       );
       await tester.pump();
 
@@ -437,7 +444,7 @@ void main() {
           deps: deps,
           createTodayCubit: _testTodayCubit,
         ),
-        userPreferences: deps.userPreferences,
+        userSettings: deps.userSettings,
       );
 
       expect(find.byType(AppBottomNav), findsOneWidget);
@@ -547,7 +554,7 @@ void main() {
           createTodayCubit: _testTodayCubit,
           createHistoryCubit: _testHistoryCubit,
         ),
-        userPreferences: deps.userPreferences,
+        userSettings: deps.userSettings,
       );
 
       await openMenuTab(tester);
@@ -596,7 +603,7 @@ void main() {
           createTodayCubit: _testTodayCubit,
           createHistoryCubit: _testHistoryCubit,
         ),
-        userPreferences: deps.userPreferences,
+        userSettings: deps.userSettings,
       );
 
       await openMenuTab(tester);
@@ -638,7 +645,7 @@ void main() {
           createTodayCubit: _testTodayCubit,
           createHistoryCubit: _testHistoryCubit,
         ),
-        userPreferences: deps.userPreferences,
+        userSettings: deps.userSettings,
       );
 
       await openMenuTab(tester);
@@ -694,7 +701,7 @@ void main() {
           createTodayCubit: _testTodayCubit,
           createHistoryCubit: _testHistoryCubit,
         ),
-        userPreferences: deps.userPreferences,
+        userSettings: deps.userSettings,
       );
 
       await openMenuTab(tester);
@@ -734,13 +741,14 @@ void main() {
             deps: deps,
             createTodayCubit: (dependencies) => _ThrowingRefreshTodayCubit(
               stepRepository: dependencies.stepRepository,
-              userPreferences: dependencies.userPreferences,
+              userSettings: dependencies.userSettings,
+              userHealthMetrics: dependencies.userHealthMetrics,
               clock: dependencies.timeProvider,
             ),
             createHistoryCubit: _testHistoryCubit,
             onMyDataCubitReady: (cubit) => myDataCubit = cubit,
           ),
-          userPreferences: deps.userPreferences,
+          userSettings: deps.userSettings,
         );
         await tester.pump();
 
@@ -777,7 +785,8 @@ void main() {
           createTodayCubit: (dependencies) {
             todayCubit = _RefreshCountingCubit(
               stepRepository: dependencies.stepRepository,
-              userPreferences: dependencies.userPreferences,
+              userSettings: dependencies.userSettings,
+              userHealthMetrics: dependencies.userHealthMetrics,
               clock: dependencies.timeProvider,
             );
             return todayCubit!;
@@ -785,13 +794,13 @@ void main() {
           createHistoryCubit: (dependencies) {
             historyCubit = _RefreshCountingHistoryCubit(
               stepRepository: dependencies.stepRepository,
-              userPreferences: dependencies.userPreferences,
+              userHealthMetrics: dependencies.userHealthMetrics,
             );
             return historyCubit!;
           },
           onMyDataCubitReady: (cubit) => myDataCubit = cubit,
         ),
-        userPreferences: deps.userPreferences,
+        userSettings: deps.userSettings,
       );
       await tester.pump();
 

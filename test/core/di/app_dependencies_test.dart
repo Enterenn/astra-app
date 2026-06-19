@@ -9,7 +9,8 @@ import 'package:astra_app/data/datasources/adp_ble_source.dart';
 import 'package:astra_app/data/datasources/phone_pedometer_source.dart';
 import 'package:astra_app/data/datasources/step_normalizer.dart';
 import 'package:astra_app/data/repositories/step_repository.dart';
-import 'package:astra_app/data/repositories/user_preferences_repository.dart';
+import 'package:astra_app/data/repositories/user_health_metrics_repository.dart';
+import 'package:astra_app/data/repositories/user_settings_repository.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:sqflite/sqflite.dart';
 
@@ -23,11 +24,13 @@ void main() {
 
   group('AppDependencies ingestion wiring', () {
     late Database db;
-    late UserPreferencesRepository userPreferences;
+    late UserSettingsRepository userSettings;
+    late UserHealthMetricsRepository userHealthMetrics;
 
     setUp(() async {
       db = await openAstraDatabase(databasePath: inMemoryDatabasePath);
-      userPreferences = UserPreferencesRepository(db);
+      userSettings = UserSettingsRepository(db);
+      userHealthMetrics = UserHealthMetricsRepository(db);
     });
 
     tearDown(() async {
@@ -44,7 +47,8 @@ void main() {
 
         final deps = await AppDependencies.test(
           db: db,
-          userPreferences: userPreferences,
+          userSettings: userSettings,
+          userHealthMetrics: UserHealthMetricsRepository(db, clock: clock),
           timeProvider: clock,
           ingestionSources: [PhonePedometerSource(), const AdpBleSource()],
         );
@@ -65,7 +69,8 @@ void main() {
 
         final defaultDeps = await AppDependencies.test(
           db: db,
-          userPreferences: userPreferences,
+          userSettings: userSettings,
+          userHealthMetrics: userHealthMetrics,
           timeProvider: clock,
         );
         expect(

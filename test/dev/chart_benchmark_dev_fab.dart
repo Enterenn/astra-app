@@ -42,7 +42,7 @@ class _ChartBenchmarkDevFabState extends State<ChartBenchmarkDevFab> {
         repository: widget.deps.stepRepository,
         clock: widget.deps.timeProvider,
         db: widget.deps.stepRepository.db,
-        userPreferences: widget.deps.userPreferences,
+        userHealthMetrics: widget.deps.userHealthMetrics,
         pumpChart: pumpChart,
         profile: ChartBenchmarkProfile.fullStack,
         assertPassGate: false,

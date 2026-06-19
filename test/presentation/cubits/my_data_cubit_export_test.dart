@@ -4,7 +4,8 @@ import 'package:astra_app/core/database/app_database.dart';
 import 'package:astra_app/data/datasources/data_ingestion_source.dart';
 import 'package:astra_app/data/models/normalized_step_bucket.dart';
 import 'package:astra_app/data/repositories/step_repository.dart';
-import 'package:astra_app/data/repositories/user_preferences_repository.dart';
+import 'package:astra_app/data/repositories/user_health_metrics_repository.dart';
+import 'package:astra_app/data/repositories/user_settings_repository.dart';
 import 'package:astra_app/presentation/cubits/my_data_cubit.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:sqflite/sqflite.dart';
@@ -19,18 +20,20 @@ void main() {
 
   group('MyDataCubit exportAndShare', () {
     late Database db;
-    late UserPreferencesRepository userPreferences;
+    late UserSettingsRepository userSettings;
+    late UserHealthMetricsRepository userHealthMetrics;
     late FakeTimeProvider clock;
     late StepRepository stepRepository;
     late Directory tempDir;
 
     setUp(() async {
       db = await openAstraDatabase(databasePath: inMemoryDatabasePath);
-      userPreferences = UserPreferencesRepository(db);
+      userSettings = UserSettingsRepository(db);
       clock = FakeTimeProvider(
         fixedNowUtc: DateTime.utc(2026, 6, 3, 12),
         zoneOffset: const Duration(hours: 2),
       );
+      userHealthMetrics = UserHealthMetricsRepository(db, clock: clock);
       stepRepository = StepRepository(db: db, clock: clock);
       tempDir = await Directory.systemTemp.createTemp('astra_cubit_export_');
     });
@@ -46,7 +49,8 @@ void main() {
     }) {
       return MyDataCubit(
         stepRepository: repository ?? stepRepository,
-        userPreferences: userPreferences,
+        userSettings: userSettings,
+        userHealthMetrics: userHealthMetrics,
         clock: clock,
         databasePath: inMemoryDatabasePath,
         activityPermissionGranted: () async => true,

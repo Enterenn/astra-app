@@ -5,7 +5,8 @@ import 'package:astra_app/core/time/calendar_week.dart';
 import 'package:astra_app/data/models/chart_day_aggregate.dart';
 import 'package:astra_app/data/models/chart_month_aggregate.dart';
 import 'package:astra_app/data/repositories/step_repository.dart';
-import 'package:astra_app/data/repositories/user_preferences_repository.dart';
+import 'package:astra_app/data/repositories/user_health_metrics_repository.dart';
+import 'package:astra_app/data/repositories/user_settings_repository.dart';
 import 'package:astra_app/presentation/cubits/history_cubit.dart';
 import 'package:astra_app/presentation/cubits/history_state.dart';
 import 'package:astra_app/presentation/cubits/today_cubit.dart';
@@ -34,7 +35,8 @@ import '../../helpers/sqflite_test_helper.dart';
 class _SeededTodayCubit extends TodayCubit {
   _SeededTodayCubit({
     required super.stepRepository,
-    required super.userPreferences,
+    required super.userSettings,
+    required super.userHealthMetrics,
     required super.clock,
     required TodayState initial,
   }) : super(activityPermissionGranted: () async => true) {
@@ -60,7 +62,7 @@ class _SeededTodayCubit extends TodayCubit {
 class _SeededHistoryCubit extends HistoryCubit {
   _SeededHistoryCubit({
     required super.stepRepository,
-    required super.userPreferences,
+    required super.userHealthMetrics,
     required HistoryState initial,
   }) {
     emit(initial);
@@ -77,7 +79,8 @@ void main() {
 
   group('TodayScreen smoke', () {
     late Database db;
-    late UserPreferencesRepository userPreferences;
+    late UserSettingsRepository userSettings;
+    late UserHealthMetricsRepository userHealthMetrics;
     late StepRepository stepRepository;
     late FakeTimeProvider clock;
     late UnitsCubit unitsCubit;
@@ -88,9 +91,10 @@ void main() {
         zoneOffset: const Duration(hours: 2),
       );
       db = await openAstraDatabase(databasePath: inMemoryDatabasePath);
-      userPreferences = UserPreferencesRepository(db);
+      userSettings = UserSettingsRepository(db);
+      userHealthMetrics = UserHealthMetricsRepository(db, clock: clock);
       stepRepository = StepRepository(db: db, clock: clock);
-      unitsCubit = UnitsCubit(userPreferences: userPreferences);
+      unitsCubit = UnitsCubit(userSettings: userSettings);
     });
 
     tearDown(() async {
@@ -101,7 +105,8 @@ void main() {
     _SeededTodayCubit buildCubit(TodayState state) {
       return _SeededTodayCubit(
         stepRepository: stepRepository,
-        userPreferences: userPreferences,
+        userSettings: userSettings,
+        userHealthMetrics: userHealthMetrics,
         clock: clock,
         initial: state,
       );
@@ -377,7 +382,7 @@ void main() {
 
   group('HistoryScreen smoke', () {
     late Database db;
-    late UserPreferencesRepository userPreferences;
+    late UserHealthMetricsRepository userHealthMetrics;
     late StepRepository stepRepository;
 
     setUp(() async {
@@ -386,7 +391,7 @@ void main() {
         zoneOffset: const Duration(hours: 2),
       );
       db = await openAstraDatabase(databasePath: inMemoryDatabasePath);
-      userPreferences = UserPreferencesRepository(db);
+      userHealthMetrics = UserHealthMetricsRepository(db, clock: clock);
       stepRepository = StepRepository(db: db, clock: clock);
     });
 
@@ -419,7 +424,7 @@ void main() {
     ) async {
       final cubit = _SeededHistoryCubit(
         stepRepository: stepRepository,
-        userPreferences: userPreferences,
+        userHealthMetrics: userHealthMetrics,
         initial: HistoryState.empty(),
       );
       addTearDown(cubit.close);
@@ -446,7 +451,7 @@ void main() {
     ) async {
       final cubit = _SeededHistoryCubit(
         stepRepository: stepRepository,
-        userPreferences: userPreferences,
+        userHealthMetrics: userHealthMetrics,
         initial: HistoryState.empty(),
       );
       addTearDown(cubit.close);
@@ -478,7 +483,7 @@ void main() {
     ) async {
       final cubit = _SeededHistoryCubit(
         stepRepository: stepRepository,
-        userPreferences: userPreferences,
+        userHealthMetrics: userHealthMetrics,
         initial: HistoryState.ready(
           chartPoints: [
             ChartDayAggregate(
@@ -508,7 +513,7 @@ void main() {
     testWidgets('hides average stat cards on empty state', (tester) async {
       final cubit = _SeededHistoryCubit(
         stepRepository: stepRepository,
-        userPreferences: userPreferences,
+        userHealthMetrics: userHealthMetrics,
         initial: HistoryState.empty(),
       );
       addTearDown(cubit.close);
@@ -525,7 +530,7 @@ void main() {
     testWidgets('hides average stat cards on loading state', (tester) async {
       final cubit = _SeededHistoryCubit(
         stepRepository: stepRepository,
-        userPreferences: userPreferences,
+        userHealthMetrics: userHealthMetrics,
         initial: const HistoryState.loading(),
       );
       addTearDown(cubit.close);
@@ -540,7 +545,7 @@ void main() {
       (tester) async {
         final cubit = _SeededHistoryCubit(
           stepRepository: stepRepository,
-          userPreferences: userPreferences,
+          userHealthMetrics: userHealthMetrics,
           initial: HistoryState.ready(
             chartPoints: List.generate(
               7,
@@ -563,7 +568,7 @@ void main() {
     testWidgets('shows peak day card when ready with peakDay', (tester) async {
       final cubit = _SeededHistoryCubit(
         stepRepository: stepRepository,
-        userPreferences: userPreferences,
+        userHealthMetrics: userHealthMetrics,
         initial: HistoryState.ready(
           chartPoints: [
             ChartDayAggregate(
@@ -595,7 +600,7 @@ void main() {
     testWidgets('hides peak day card on loading state', (tester) async {
       final cubit = _SeededHistoryCubit(
         stepRepository: stepRepository,
-        userPreferences: userPreferences,
+        userHealthMetrics: userHealthMetrics,
         initial: const HistoryState.loading(),
       );
       addTearDown(cubit.close);
@@ -611,7 +616,7 @@ void main() {
       (tester) async {
         final cubit = _SeededHistoryCubit(
           stepRepository: stepRepository,
-          userPreferences: userPreferences,
+          userHealthMetrics: userHealthMetrics,
           initial: HistoryState.ready(
             chartPoints: List.generate(
               7,
@@ -635,7 +640,7 @@ void main() {
     testWidgets('hides peak day card when peakDay is null', (tester) async {
       final cubit = _SeededHistoryCubit(
         stepRepository: stepRepository,
-        userPreferences: userPreferences,
+        userHealthMetrics: userHealthMetrics,
         initial: HistoryState.ready(
           chartPoints: [
             ChartDayAggregate(
@@ -672,7 +677,7 @@ void main() {
       );
       final cubit = _SeededHistoryCubit(
         stepRepository: stepRepository,
-        userPreferences: userPreferences,
+        userHealthMetrics: userHealthMetrics,
         initial: HistoryState.ready(
           period: HistoryPeriod.months12,
           chartPoints: const [],

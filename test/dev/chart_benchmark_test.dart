@@ -3,7 +3,7 @@ library;
 
 import 'package:astra_app/core/database/app_database.dart';
 import 'package:astra_app/data/repositories/step_repository.dart';
-import 'package:astra_app/data/repositories/user_preferences_repository.dart';
+import 'package:astra_app/data/repositories/user_health_metrics_repository.dart';
 import 'chart_benchmark.dart';
 import 'data_inject_service.dart';
 import 'lifecycle_simulator.dart';
@@ -25,7 +25,7 @@ void main() {
   group('ChartBenchmark smoke (shared 90d inject)', () {
     late Database db;
     late StepRepository repository;
-    late UserPreferencesRepository userPreferences;
+    late UserHealthMetricsRepository userHealthMetrics;
     late FakeTimeProvider clock;
 
     setUp(() async {
@@ -35,7 +35,7 @@ void main() {
         zoneOffset: const Duration(hours: 2),
       );
       repository = StepRepository(db: db, clock: clock);
-      userPreferences = UserPreferencesRepository(db);
+      userHealthMetrics = UserHealthMetricsRepository(db);
       await DataInjectService(repository: repository).inject90Days(clock: clock);
     });
 
@@ -47,7 +47,7 @@ void main() {
       final result = await runChartBenchmark(
         repository: repository,
         clock: clock,
-        userPreferences: userPreferences,
+        userHealthMetrics: userHealthMetrics,
         iterations: 1,
         skipDatasetSetup: true,
       );
@@ -74,12 +74,12 @@ void main() {
       addTearDown(emptyDb.close);
 
       final emptyRepo = StepRepository(db: emptyDb, clock: clock);
-      final emptyPrefs = UserPreferencesRepository(emptyDb);
+      final emptyHealth = UserHealthMetricsRepository(emptyDb);
 
       final result = await runChartBenchmark(
         repository: emptyRepo,
         clock: clock,
-        userPreferences: emptyPrefs,
+        userHealthMetrics: emptyHealth,
         iterations: 1,
       );
 
@@ -91,7 +91,7 @@ void main() {
       final result = await runChartBenchmark(
         repository: repository,
         clock: clock,
-        userPreferences: userPreferences,
+        userHealthMetrics: userHealthMetrics,
         iterations: 3,
         profile: ChartBenchmarkProfile.toggleOnly,
         skipDatasetSetup: true,
@@ -108,7 +108,7 @@ void main() {
         runChartBenchmark(
           repository: repository,
           clock: clock,
-          userPreferences: userPreferences,
+          userHealthMetrics: userHealthMetrics,
           iterations: 1,
           skipDatasetSetup: true,
           assertPassGate: true,
@@ -134,7 +134,7 @@ void main() {
       final result = await runDevChartBenchmark(
         repository: repository,
         clock: clock,
-        userPreferences: userPreferences,
+        userHealthMetrics: userHealthMetrics,
         iterations: 1,
         skipDatasetSetup: true,
       );
@@ -148,7 +148,7 @@ void main() {
       final result = await runChartBenchmark(
         repository: repository,
         clock: clock,
-        userPreferences: userPreferences,
+        userHealthMetrics: userHealthMetrics,
         iterations: 1,
         skipDatasetSetup: true,
         pumpChart: ({
@@ -192,7 +192,7 @@ void main() {
     test('benchmarkToggleRender toggles 7d and 30d on warmed cubit', () async {
       final cubit = HistoryCubit(
         stepRepository: repository,
-        userPreferences: userPreferences,
+        userHealthMetrics: userHealthMetrics,
       );
       addTearDown(cubit.close);
 
@@ -209,7 +209,7 @@ void main() {
   group('ChartBenchmark compacted profile', () {
     late Database db;
     late StepRepository repository;
-    late UserPreferencesRepository userPreferences;
+    late UserHealthMetricsRepository userHealthMetrics;
     late FakeTimeProvider clock;
 
     setUp(() async {
@@ -219,7 +219,7 @@ void main() {
         zoneOffset: const Duration(hours: 2),
       );
       repository = StepRepository(db: db, clock: clock);
-      userPreferences = UserPreferencesRepository(db);
+      userHealthMetrics = UserHealthMetricsRepository(db);
       await DataInjectService(repository: repository).inject90Days(clock: clock);
       await LifecycleSimulator(
         repository: repository,
@@ -235,7 +235,7 @@ void main() {
       final result = await runChartBenchmark(
         repository: repository,
         clock: clock,
-        userPreferences: userPreferences,
+        userHealthMetrics: userHealthMetrics,
         iterations: 1,
         skipDatasetSetup: true,
       );

@@ -8,7 +8,7 @@ import 'package:astra_app/data/datasources/data_ingestion_source.dart';
 import 'package:astra_app/data/models/normalized_step_bucket.dart';
 import 'package:astra_app/data/contracts/contracts.dart';
 import 'package:astra_app/data/repositories/step_repository.dart';
-import 'package:astra_app/data/repositories/user_preferences_repository.dart';
+import 'package:astra_app/data/repositories/user_health_metrics_repository.dart';
 import '../../dev/data_inject_service.dart';
 import 'package:astra_app/presentation/cubits/history_cubit.dart';
 import 'package:astra_app/presentation/cubits/history_state.dart';
@@ -18,8 +18,8 @@ import 'package:sqflite/sqflite.dart';
 import '../../core/time/fake_time_provider.dart';
 import '../../helpers/sqflite_test_helper.dart';
 
-class _BatchGoalSpyPreferencesRepository extends UserPreferencesRepository {
-  _BatchGoalSpyPreferencesRepository(super.db, {super.clock});
+class _BatchGoalSpyHealthMetricsRepository extends UserHealthMetricsRepository {
+  _BatchGoalSpyHealthMetricsRepository(super.db, {super.clock});
 
   int getGoalsForLocalDaysCallCount = 0;
   int getGoalForLocalDayCallCount = 0;
@@ -186,7 +186,7 @@ void main() {
 
   group('HistoryCubit', () {
     late Database db;
-    late UserPreferencesRepository userPreferences;
+    late UserHealthMetricsRepository userHealthMetrics;
     late FakeTimeProvider clock;
     late StepRepository stepRepository;
 
@@ -196,7 +196,7 @@ void main() {
         fixedNowUtc: DateTime.utc(2026, 6, 2, 12),
         zoneOffset: const Duration(hours: 2),
       );
-      userPreferences = UserPreferencesRepository(db, clock: clock);
+      userHealthMetrics = UserHealthMetricsRepository(db, clock: clock);
       stepRepository = StepRepository(db: db, clock: clock);
     });
 
@@ -206,11 +206,11 @@ void main() {
 
     HistoryCubit buildCubit({
       StepRepositoryContract? repository,
-      UserPreferencesRepositoryContract? preferences,
+      UserHealthMetricsRepositoryContract? healthMetrics,
     }) {
       return HistoryCubit(
         stepRepository: repository ?? stepRepository,
-        userPreferences: preferences ?? userPreferences,
+        userHealthMetrics: healthMetrics ?? userHealthMetrics,
       );
     }
 
@@ -411,7 +411,7 @@ void main() {
       await cubit.refresh();
       expect(spy.chartAggregateCallCount, 1);
 
-      await userPreferences.setDailyStepGoal(12_000);
+      await userHealthMetrics.setDailyStepGoal(12_000);
       await cubit.refreshGoal();
 
       expect(spy.chartAggregateCallCount, 1);
@@ -475,7 +475,7 @@ void main() {
       expect(cubit.state.goalsByDay['2026-06-01'], 8000);
       expect(cubit.state.goalsByDay['2026-06-02'], 8000);
 
-      await userPreferences.setDailyStepGoal(12_000);
+      await userHealthMetrics.setDailyStepGoal(12_000);
       await cubit.refreshGoal();
 
       expect(spy.chartAggregateCallCount, 1);
@@ -489,8 +489,8 @@ void main() {
       await DataInjectService(repository: stepRepository).inject90Days(
         clock: clock,
       );
-      final prefsSpy = _BatchGoalSpyPreferencesRepository(db, clock: clock);
-      final cubit = buildCubit(preferences: prefsSpy);
+      final prefsSpy = _BatchGoalSpyHealthMetricsRepository(db, clock: clock);
+      final cubit = buildCubit(healthMetrics: prefsSpy);
 
       await cubit.refresh();
       expect(prefsSpy.getGoalsForLocalDaysCallCount, 1);

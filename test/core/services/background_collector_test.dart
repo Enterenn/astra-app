@@ -10,7 +10,8 @@ import 'package:astra_app/data/models/normalized_step_bucket.dart';
 import 'package:astra_app/data/models/step_reading.dart';
 import 'package:astra_app/data/repositories/ingestion_baseline_repository.dart';
 import 'package:astra_app/data/repositories/step_repository.dart';
-import 'package:astra_app/data/repositories/user_preferences_repository.dart';
+import 'package:astra_app/data/repositories/user_health_metrics_repository.dart';
+import 'package:astra_app/data/repositories/user_settings_repository.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:permission_handler/permission_handler.dart';
 import 'package:sqflite/sqflite.dart';
@@ -28,7 +29,8 @@ void main() {
     late StepRepository repository;
     late StepNormalizer normalizer;
     late IngestionBaselineRepository baselineRepository;
-    late UserPreferencesRepository userPreferences;
+    late UserSettingsRepository userSettings;
+    late UserHealthMetricsRepository userHealthMetrics;
     late FakeTimeProvider clock;
 
     setUp(() async {
@@ -40,7 +42,8 @@ void main() {
       repository = StepRepository(db: db, clock: clock);
       normalizer = StepNormalizer(clock: clock);
       baselineRepository = IngestionBaselineRepository(db);
-      userPreferences = UserPreferencesRepository(db, clock: clock);
+      userSettings = UserSettingsRepository(db);
+      userHealthMetrics = UserHealthMetricsRepository(db, clock: clock);
       await db.delete('timeseries_samples');
       final prefRows = await db.query('user_preferences');
       for (final row in prefRows) {
@@ -299,8 +302,8 @@ void main() {
             showCount += 1;
           },
         );
-        await userPreferences.setGoalNotificationsEnabled(true);
-        await userPreferences.setDailyStepGoal(5000);
+        await userSettings.setGoalNotificationsEnabled(true);
+        await userHealthMetrics.setDailyStepGoal(5000);
         await repository.upsertIngestionBucket(
           _todayBucket(
             value: 4900,
@@ -324,7 +327,8 @@ void main() {
           normalizer: normalizer,
           repository: repository,
           baselineRepository: baselineRepository,
-          userPreferences: userPreferences,
+          userSettings: userSettings,
+        userHealthMetrics: userHealthMetrics,
           clock: clock,
           notificationService: notificationService,
           notificationPermissionGranted: () async => true,
@@ -335,10 +339,10 @@ void main() {
 
         expect(showCount, 1);
         expect(
-          await userPreferences.getGoalNotificationShownDate(),
+          await userSettings.getGoalNotificationShownDate(),
           formatLocalDayIso(clock.snapshot()),
         );
-        expect(await userPreferences.getCelebrationShownDate(), isNull);
+        expect(await userSettings.getCelebrationShownDate(), isNull);
       },
     );
 
@@ -350,9 +354,9 @@ void main() {
           showCount += 1;
         },
       );
-      await userPreferences.setGoalNotificationsEnabled(true);
-      await userPreferences.setDailyStepGoal(100);
-      await userPreferences.setCelebrationShownDate(
+      await userSettings.setGoalNotificationsEnabled(true);
+      await userHealthMetrics.setDailyStepGoal(100);
+      await userSettings.setCelebrationShownDate(
         formatLocalDayIso(clock.snapshot()),
       );
       await repository.upsertIngestionBucket(_todayBucket(value: 500));
@@ -361,7 +365,8 @@ void main() {
         normalizer: normalizer,
         repository: repository,
         baselineRepository: baselineRepository,
-        userPreferences: userPreferences,
+        userSettings: userSettings,
+        userHealthMetrics: userHealthMetrics,
         clock: clock,
         notificationService: notificationService,
         notificationPermissionGranted: () async => true,
@@ -380,9 +385,9 @@ void main() {
           showCount += 1;
         },
       );
-      await userPreferences.setGoalNotificationsEnabled(true);
-      await userPreferences.setDailyStepGoal(100);
-      await userPreferences.setGoalNotificationShownDate(
+      await userSettings.setGoalNotificationsEnabled(true);
+      await userHealthMetrics.setDailyStepGoal(100);
+      await userSettings.setGoalNotificationShownDate(
         formatLocalDayIso(clock.snapshot()),
       );
       await repository.upsertIngestionBucket(_todayBucket(value: 500));
@@ -391,7 +396,8 @@ void main() {
         normalizer: normalizer,
         repository: repository,
         baselineRepository: baselineRepository,
-        userPreferences: userPreferences,
+        userSettings: userSettings,
+        userHealthMetrics: userHealthMetrics,
         clock: clock,
         notificationService: notificationService,
         notificationPermissionGranted: () async => true,
@@ -411,15 +417,16 @@ void main() {
           showCount += 1;
         },
       );
-      await userPreferences.setGoalNotificationsEnabled(true);
-      await userPreferences.setDailyStepGoal(100);
+      await userSettings.setGoalNotificationsEnabled(true);
+      await userHealthMetrics.setDailyStepGoal(100);
       await repository.upsertIngestionBucket(_todayBucket(value: 500));
       final collector = BackgroundCollector(
         sources: [_FakeStepSource(const [])],
         normalizer: normalizer,
         repository: repository,
         baselineRepository: baselineRepository,
-        userPreferences: userPreferences,
+        userSettings: userSettings,
+        userHealthMetrics: userHealthMetrics,
         clock: clock,
         notificationService: notificationService,
         notificationPermissionGranted: () async => true,
@@ -439,15 +446,16 @@ void main() {
           showCount += 1;
         },
       );
-      await userPreferences.setGoalNotificationsEnabled(false);
-      await userPreferences.setDailyStepGoal(100);
+      await userSettings.setGoalNotificationsEnabled(false);
+      await userHealthMetrics.setDailyStepGoal(100);
       await repository.upsertIngestionBucket(_todayBucket(value: 500));
       final collector = BackgroundCollector(
         sources: [_FakeStepSource(const [])],
         normalizer: normalizer,
         repository: repository,
         baselineRepository: baselineRepository,
-        userPreferences: userPreferences,
+        userSettings: userSettings,
+        userHealthMetrics: userHealthMetrics,
         clock: clock,
         notificationService: notificationService,
         notificationPermissionGranted: () async => true,
@@ -466,15 +474,16 @@ void main() {
           throw StateError('presenter failed');
         },
       );
-      await userPreferences.setGoalNotificationsEnabled(true);
-      await userPreferences.setDailyStepGoal(100);
+      await userSettings.setGoalNotificationsEnabled(true);
+      await userHealthMetrics.setDailyStepGoal(100);
       await repository.upsertIngestionBucket(_todayBucket(value: 500));
       final collector = BackgroundCollector(
         sources: [_FakeStepSource(const [])],
         normalizer: normalizer,
         repository: repository,
         baselineRepository: baselineRepository,
-        userPreferences: userPreferences,
+        userSettings: userSettings,
+        userHealthMetrics: userHealthMetrics,
         clock: clock,
         notificationService: notificationService,
         notificationPermissionGranted: () async => true,
@@ -483,7 +492,7 @@ void main() {
 
       await collector.collectOnce(enableGoalNotification: true);
 
-      expect(await userPreferences.getGoalNotificationShownDate(), isNull);
+      expect(await userSettings.getGoalNotificationShownDate(), isNull);
     });
 
     test('skips notification when permission denied', () async {
@@ -493,15 +502,16 @@ void main() {
           showCount += 1;
         },
       );
-      await userPreferences.setGoalNotificationsEnabled(true);
-      await userPreferences.setDailyStepGoal(100);
+      await userSettings.setGoalNotificationsEnabled(true);
+      await userHealthMetrics.setDailyStepGoal(100);
       await repository.upsertIngestionBucket(_todayBucket(value: 500));
       final collector = BackgroundCollector(
         sources: [_FakeStepSource(const [])],
         normalizer: normalizer,
         repository: repository,
         baselineRepository: baselineRepository,
-        userPreferences: userPreferences,
+        userSettings: userSettings,
+        userHealthMetrics: userHealthMetrics,
         clock: clock,
         notificationService: notificationService,
         notificationPermissionGranted: () async => false,
@@ -511,7 +521,7 @@ void main() {
       await collector.collectOnce(enableGoalNotification: true);
 
       expect(showCount, 0);
-      expect(await userPreferences.getGoalNotificationShownDate(), isNull);
+      expect(await userSettings.getGoalNotificationShownDate(), isNull);
     });
 
     test('does not evaluate goal notification when flag is false', () async {
@@ -521,7 +531,7 @@ void main() {
           showCount += 1;
         },
       );
-      await userPreferences.setDailyStepGoal(100);
+      await userHealthMetrics.setDailyStepGoal(100);
       await repository.upsertIngestionBucket(_todayBucket(value: 500));
       final collector = BackgroundCollector(
         sources: [
@@ -539,7 +549,8 @@ void main() {
         normalizer: normalizer,
         repository: repository,
         baselineRepository: baselineRepository,
-        userPreferences: userPreferences,
+        userSettings: userSettings,
+        userHealthMetrics: userHealthMetrics,
         clock: clock,
         notificationService: notificationService,
         notificationPermissionGranted: () async => true,
@@ -558,7 +569,7 @@ void main() {
           showCount += 1;
         },
       );
-      await userPreferences.setDailyStepGoal(10_000);
+      await userHealthMetrics.setDailyStepGoal(10_000);
       final collector = BackgroundCollector(
         sources: [
           _FakeStepSource([
@@ -575,7 +586,8 @@ void main() {
         normalizer: normalizer,
         repository: repository,
         baselineRepository: baselineRepository,
-        userPreferences: userPreferences,
+        userSettings: userSettings,
+        userHealthMetrics: userHealthMetrics,
         clock: clock,
         notificationService: notificationService,
         notificationPermissionGranted: () async => true,
@@ -595,15 +607,16 @@ void main() {
           showCount += 1;
         },
       );
-      await userPreferences.setGoalNotificationsEnabled(true);
-      await userPreferences.setDailyStepGoal(100);
+      await userSettings.setGoalNotificationsEnabled(true);
+      await userHealthMetrics.setDailyStepGoal(100);
       await repository.upsertIngestionBucket(_todayBucket(value: 500));
       final collector = BackgroundCollector(
         sources: [_FakeStepSource(const [])],
         normalizer: normalizer,
         repository: repository,
         baselineRepository: baselineRepository,
-        userPreferences: userPreferences,
+        userSettings: userSettings,
+        userHealthMetrics: userHealthMetrics,
         clock: clock,
         notificationService: notificationService,
         notificationPermissionGranted: () async => true,
@@ -614,7 +627,7 @@ void main() {
 
       expect(showCount, 1);
       expect(
-        await userPreferences.getGoalNotificationShownDate(),
+        await userSettings.getGoalNotificationShownDate(),
         formatLocalDayIso(clock.snapshot()),
       );
     });
@@ -627,7 +640,7 @@ void main() {
           showCount += 1;
         },
       );
-      await userPreferences.setGoalNotificationsEnabled(true);
+      await userSettings.setGoalNotificationsEnabled(true);
       await db.insert('daily_goal_effective', {
         'effective_from_local_day': '2026-06-02',
         'goal': 8000,
@@ -644,7 +657,8 @@ void main() {
         normalizer: normalizer,
         repository: repository,
         baselineRepository: baselineRepository,
-        userPreferences: userPreferences,
+        userSettings: userSettings,
+        userHealthMetrics: userHealthMetrics,
         clock: clock,
         notificationService: notificationService,
         notificationPermissionGranted: () async => true,
@@ -666,8 +680,8 @@ void main() {
             order.add('notify');
           },
         );
-        await userPreferences.setGoalNotificationsEnabled(true);
-        await userPreferences.setDailyStepGoal(5000);
+        await userSettings.setGoalNotificationsEnabled(true);
+        await userHealthMetrics.setDailyStepGoal(5000);
         await repository.upsertIngestionBucket(
           _todayBucket(
             value: 4900,
@@ -691,7 +705,8 @@ void main() {
           normalizer: normalizer,
           repository: repository,
           baselineRepository: baselineRepository,
-          userPreferences: userPreferences,
+          userSettings: userSettings,
+        userHealthMetrics: userHealthMetrics,
           clock: clock,
           notificationService: notificationService,
           notificationPermissionGranted: () async => true,

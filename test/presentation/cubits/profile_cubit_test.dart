@@ -3,7 +3,8 @@ import 'dart:io';
 import 'package:astra_app/core/database/app_database.dart';
 import 'package:astra_app/core/database/astra_database_session.dart';
 import 'package:astra_app/core/services/notification_service.dart';
-import 'package:astra_app/data/repositories/user_preferences_repository.dart';
+import 'package:astra_app/data/repositories/user_health_metrics_repository.dart';
+import 'package:astra_app/data/repositories/user_settings_repository.dart';
 import 'package:astra_app/presentation/cubits/profile_cubit.dart';
 import 'package:astra_app/presentation/cubits/profile_state.dart';
 import 'package:flutter_test/flutter_test.dart';
@@ -20,7 +21,8 @@ void main() {
 
   group('ProfileCubit', () {
     late Database db;
-    late UserPreferencesRepository userPreferences;
+    late UserSettingsRepository userSettings;
+    late UserHealthMetricsRepository userHealthMetrics;
     late NotificationService notificationService;
     var permissionRequestCount = 0;
 
@@ -29,7 +31,8 @@ void main() {
 
     setUp(() async {
       db = await openAstraDatabase(databasePath: inMemoryDatabasePath);
-      userPreferences = UserPreferencesRepository(db);
+      userSettings = UserSettingsRepository(db);
+      userHealthMetrics = UserHealthMetricsRepository(db);
       permissionRequestCount = 0;
       permissionGrantedByOs = false;
       notificationService = NotificationService(
@@ -46,7 +49,8 @@ void main() {
       PostDisplayNameUpdateCallback? postDisplayNameUpdate,
     }) {
       return ProfileCubit(
-        userPreferences: userPreferences,
+        userSettings: userSettings,
+        userHealthMetrics: userHealthMetrics,
         notificationService: notificationService,
         permissionRequester: (permission) async {
           permissionRequestCount++;
@@ -58,10 +62,10 @@ void main() {
     }
 
     test('refresh loads persisted profile fields', () async {
-      await userPreferences.setDisplayName('Alex');
-      await userPreferences.setHeightCm(180);
-      await userPreferences.setWeightKg(75.0);
-      await userPreferences.setGoalNotificationsEnabled(true);
+      await userHealthMetrics.setDisplayName('Alex');
+      await userHealthMetrics.setHeightCm(180);
+      await userHealthMetrics.setWeightKg(75.0);
+      await userSettings.setGoalNotificationsEnabled(true);
 
       final cubit = buildCubit();
       await cubit.refresh();
@@ -86,18 +90,20 @@ void main() {
         databasePath: databasePath,
         initial: fileDb,
       );
-      final prefs = UserPreferencesRepository(session);
+      final settings = UserSettingsRepository(session);
+      final health = UserHealthMetricsRepository(session);
       addTearDown(() async {
         if (session.database.isOpen) {
           await session.database.close();
         }
         await tempDir.delete(recursive: true);
       });
-      await prefs.setDisplayName('Jordan');
+      await health.setDisplayName('Jordan');
       await session.database.close();
 
       final cubit = ProfileCubit(
-        userPreferences: prefs,
+        userSettings: settings,
+        userHealthMetrics: health,
         notificationService: notificationService,
         permissionRequester: (permission) async {
           permissionRequestCount++;
@@ -123,7 +129,7 @@ void main() {
 
       final saved = await cubit.updateDisplayName('Sam');
       expect(saved, isTrue);
-      expect(await userPreferences.getDisplayName(), 'Sam');
+      expect(await userHealthMetrics.getDisplayName(), 'Sam');
       expect(cubit.state.displayName, 'Sam');
       expect(hookCount, 1);
 
@@ -137,7 +143,7 @@ void main() {
       expect(await cubit.updateHeightCm(99), isFalse);
       expect(await cubit.updateHeightCm(251), isFalse);
       expect(await cubit.updateHeightCm(175), isTrue);
-      expect(await userPreferences.getHeightCm(), 175);
+      expect(await userHealthMetrics.getHeightCm(), 175);
 
       await cubit.close();
     });
@@ -147,7 +153,7 @@ void main() {
       await cubit.refresh();
 
       expect(await cubit.updateWeightKg(72.5), isTrue);
-      expect(await userPreferences.getWeightKg(), 72.5);
+      expect(await userHealthMetrics.getWeightKg(), 72.5);
 
       await cubit.close();
     });
@@ -170,7 +176,7 @@ void main() {
 
       expect(saved, isTrue);
       expect(permissionRequestCount, 1);
-      expect(await userPreferences.getGoalNotificationsEnabled(), isTrue);
+      expect(await userSettings.getGoalNotificationsEnabled(), isTrue);
       expect(cubit.state.goalNotificationsEnabled, isTrue);
 
       await cubit.close();
@@ -196,7 +202,8 @@ void main() {
 
     test('enabling goal notifications returns false when permission permanently denied', () async {
       final cubit = ProfileCubit(
-        userPreferences: userPreferences,
+        userSettings: userSettings,
+        userHealthMetrics: userHealthMetrics,
         notificationService: NotificationService(
           permissionChecker: () async => PermissionStatus.denied,
         ),
@@ -211,14 +218,14 @@ void main() {
 
       expect(saved, isFalse);
       expect(permissionRequestCount, 1);
-      expect(await userPreferences.getGoalNotificationsEnabled(), isFalse);
+      expect(await userSettings.getGoalNotificationsEnabled(), isFalse);
       expect(cubit.state.goalNotificationsEnabled, isFalse);
 
       await cubit.close();
     });
 
     test('disabling goal notifications does not request permission', () async {
-      await userPreferences.setGoalNotificationsEnabled(true);
+      await userSettings.setGoalNotificationsEnabled(true);
       final cubit = buildCubit();
       await cubit.refresh();
 
@@ -226,7 +233,7 @@ void main() {
 
       expect(saved, isTrue);
       expect(permissionRequestCount, 0);
-      expect(await userPreferences.getGoalNotificationsEnabled(), isFalse);
+      expect(await userSettings.getGoalNotificationsEnabled(), isFalse);
 
       await cubit.close();
     });

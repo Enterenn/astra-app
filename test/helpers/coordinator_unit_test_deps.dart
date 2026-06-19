@@ -16,7 +16,8 @@ import 'package:astra_app/data/datasources/phone_pedometer_source.dart';
 import 'package:astra_app/data/datasources/step_normalizer.dart';
 import 'package:astra_app/data/repositories/ingestion_baseline_repository.dart';
 import 'package:astra_app/data/repositories/step_repository.dart';
-import 'package:astra_app/data/repositories/user_preferences_repository.dart';
+import 'package:astra_app/data/repositories/user_health_metrics_repository.dart';
+import 'package:astra_app/data/repositories/user_settings_repository.dart';
 import 'package:astra_app/presentation/cubits/theme_state.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:permission_handler/permission_handler.dart';
@@ -104,7 +105,8 @@ AppDependencies buildCoordinatorUnitTestDeps({
     databasePath: databasePath,
     initial: CoordinatorStubDatabase(),
   );
-  final userPreferences = UserPreferencesRepository(
+  final userSettings = UserSettingsRepository(databaseSession);
+  final userHealthMetrics = UserHealthMetricsRepository(
     databaseSession,
     clock: timeProvider,
   );
@@ -147,7 +149,8 @@ AppDependencies buildCoordinatorUnitTestDeps({
         normalizer: stepNormalizer,
         repository: stepRepository,
         baselineRepository: baselineRepository,
-        userPreferences: userPreferences,
+        userSettings: userSettings,
+        userHealthMetrics: userHealthMetrics,
         clock: timeProvider,
         notificationService: notifications,
         notificationPermissionGranted: notifications.hasNotificationPermission,
@@ -156,14 +159,15 @@ AppDependencies buildCoordinatorUnitTestDeps({
     session: databaseSession,
     databasePath: databasePath,
     repository: stepRepository,
-    userPreferences: userPreferences,
+    userSettings: userSettings,
     clock: timeProvider,
   );
 
   late AppDependencies builtDeps;
   final coordinator = AppLifecycleCoordinator(depsGetter: () => builtDeps);
   builtDeps = AppDependencies(
-    userPreferences: userPreferences,
+    userSettings: userSettings,
+    userHealthMetrics: userHealthMetrics,
     initialTheme: AstraThemePreference.system,
     initialAccentPreset: kDefaultAccentPreset,
     initialDistanceUnit: DistanceDisplayUnit.metric,

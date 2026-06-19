@@ -2,7 +2,8 @@ import 'package:astra_app/core/constants/astra_accent_preset.dart';
 import 'package:astra_app/core/constants/astra_theme.dart';
 import 'package:astra_app/core/database/app_database.dart';
 import 'package:astra_app/core/services/notification_service.dart';
-import 'package:astra_app/data/repositories/user_preferences_repository.dart';
+import 'package:astra_app/data/repositories/user_health_metrics_repository.dart';
+import 'package:astra_app/data/repositories/user_settings_repository.dart';
 import 'package:astra_app/presentation/cubits/profile_cubit.dart';
 import 'package:astra_app/presentation/cubits/profile_state.dart';
 import 'package:astra_app/presentation/cubits/theme_cubit.dart';
@@ -23,7 +24,8 @@ import '../../helpers/sqflite_test_helper.dart';
 
 class _SeededProfileCubit extends ProfileCubit {
   _SeededProfileCubit({
-    required super.userPreferences,
+    required super.userSettings,
+    required super.userHealthMetrics,
     required super.notificationService,
     required ProfileState seededState,
   }) : _seededState = seededState {
@@ -76,11 +78,13 @@ void main() {
 
   group('SettingsScreen', () {
     late Database db;
-    late UserPreferencesRepository userPreferences;
+    late UserSettingsRepository userSettings;
+    late UserHealthMetricsRepository userHealthMetrics;
 
     setUp(() async {
       db = await openAstraDatabase(databasePath: inMemoryDatabasePath);
-      userPreferences = UserPreferencesRepository(db);
+      userSettings = UserSettingsRepository(db);
+      userHealthMetrics = UserHealthMetricsRepository(db);
     });
 
     tearDown(() async {
@@ -91,7 +95,8 @@ void main() {
       tester,
     ) async {
       final profileCubit = _SeededProfileCubit(
-        userPreferences: userPreferences,
+        userSettings: userSettings,
+        userHealthMetrics: userHealthMetrics,
         notificationService: NotificationService(
           permissionChecker: () async => PermissionStatus.granted,
         ),
@@ -100,13 +105,13 @@ void main() {
       addTearDown(profileCubit.close);
 
       final themeCubit = ThemeCubit(
-        userPreferences: userPreferences,
+        userSettings: userSettings,
         initialPreference: AstraThemePreference.light,
         initialAccentPreset: AstraAccentPreset.orange,
       );
       addTearDown(themeCubit.close);
 
-      final unitsCubit = UnitsCubit(userPreferences: userPreferences);
+      final unitsCubit = UnitsCubit(userSettings: userSettings);
       addTearDown(unitsCubit.close);
 
       await _pumpSettingsScreen(
@@ -147,7 +152,8 @@ void main() {
       tester,
     ) async {
       final profileCubit = _SeededProfileCubit(
-        userPreferences: userPreferences,
+        userSettings: userSettings,
+        userHealthMetrics: userHealthMetrics,
         notificationService: NotificationService(
           permissionChecker: () async => PermissionStatus.granted,
         ),
@@ -156,13 +162,13 @@ void main() {
       addTearDown(profileCubit.close);
 
       final themeCubit = ThemeCubit(
-        userPreferences: userPreferences,
+        userSettings: userSettings,
         initialPreference: AstraThemePreference.light,
         initialAccentPreset: AstraAccentPreset.orange,
       );
       addTearDown(themeCubit.close);
 
-      final unitsCubit = UnitsCubit(userPreferences: userPreferences);
+      final unitsCubit = UnitsCubit(userSettings: userSettings);
       addTearDown(unitsCubit.close);
 
       await _pumpSettingsScreen(
@@ -182,7 +188,8 @@ void main() {
       tester,
     ) async {
       final profileCubit = _SeededProfileCubit(
-        userPreferences: userPreferences,
+        userSettings: userSettings,
+        userHealthMetrics: userHealthMetrics,
         notificationService: NotificationService(
           permissionChecker: () async => PermissionStatus.granted,
         ),
@@ -190,10 +197,10 @@ void main() {
       );
       addTearDown(profileCubit.close);
 
-      final themeCubit = ThemeCubit(userPreferences: userPreferences);
+      final themeCubit = ThemeCubit(userSettings: userSettings);
       addTearDown(themeCubit.close);
 
-      final unitsCubit = UnitsCubit(userPreferences: userPreferences);
+      final unitsCubit = UnitsCubit(userSettings: userSettings);
       addTearDown(unitsCubit.close);
 
       await _pumpSettingsScreen(
@@ -213,7 +220,8 @@ void main() {
       tester,
     ) async {
       final profileCubit = _SeededProfileCubit(
-        userPreferences: userPreferences,
+        userSettings: userSettings,
+        userHealthMetrics: userHealthMetrics,
         notificationService: NotificationService(
           permissionChecker: () async => PermissionStatus.granted,
         ),
@@ -221,10 +229,10 @@ void main() {
       );
       addTearDown(profileCubit.close);
 
-      final themeCubit = ThemeCubit(userPreferences: userPreferences);
+      final themeCubit = ThemeCubit(userSettings: userSettings);
       addTearDown(themeCubit.close);
 
-      final unitsCubit = UnitsCubit(userPreferences: userPreferences);
+      final unitsCubit = UnitsCubit(userSettings: userSettings);
       addTearDown(unitsCubit.close);
 
       await _pumpSettingsScreen(
@@ -244,7 +252,8 @@ void main() {
       tester,
     ) async {
       final profileCubit = _SeededProfileCubit(
-        userPreferences: userPreferences,
+        userSettings: userSettings,
+        userHealthMetrics: userHealthMetrics,
         notificationService: NotificationService(
           permissionChecker: () async => PermissionStatus.granted,
         ),
@@ -255,10 +264,10 @@ void main() {
       );
       addTearDown(profileCubit.close);
 
-      final themeCubit = ThemeCubit(userPreferences: userPreferences);
+      final themeCubit = ThemeCubit(userSettings: userSettings);
       addTearDown(themeCubit.close);
 
-      final unitsCubit = UnitsCubit(userPreferences: userPreferences);
+      final unitsCubit = UnitsCubit(userSettings: userSettings);
       addTearDown(unitsCubit.close);
 
       await _pumpSettingsScreen(
@@ -277,7 +286,8 @@ void main() {
       tester,
     ) async {
       final profileCubit = _SeededProfileCubit(
-        userPreferences: userPreferences,
+        userSettings: userSettings,
+        userHealthMetrics: userHealthMetrics,
         notificationService: NotificationService(
           permissionChecker: () async => PermissionStatus.granted,
         ),
@@ -285,10 +295,10 @@ void main() {
       );
       addTearDown(profileCubit.close);
 
-      final themeCubit = ThemeCubit(userPreferences: userPreferences);
+      final themeCubit = ThemeCubit(userSettings: userSettings);
       addTearDown(themeCubit.close);
 
-      final unitsCubit = UnitsCubit(userPreferences: userPreferences);
+      final unitsCubit = UnitsCubit(userSettings: userSettings);
       addTearDown(unitsCubit.close);
 
       await _pumpSettingsScreen(

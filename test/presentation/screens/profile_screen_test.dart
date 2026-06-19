@@ -2,7 +2,8 @@ import 'package:astra_app/core/constants/astra_accent_preset.dart';
 import 'package:astra_app/core/constants/astra_theme.dart';
 import 'package:astra_app/core/database/app_database.dart';
 import 'package:astra_app/core/services/notification_service.dart';
-import 'package:astra_app/data/repositories/user_preferences_repository.dart';
+import 'package:astra_app/data/repositories/user_health_metrics_repository.dart';
+import 'package:astra_app/data/repositories/user_settings_repository.dart';
 import 'package:permission_handler/permission_handler.dart';
 import 'package:astra_app/core/constants/display_unit_preferences.dart';
 import 'package:astra_app/presentation/cubits/profile_cubit.dart';
@@ -21,7 +22,8 @@ import '../../helpers/sqflite_test_helper.dart';
 
 class _SeededProfileCubit extends ProfileCubit {
   _SeededProfileCubit({
-    required super.userPreferences,
+    required super.userSettings,
+    required super.userHealthMetrics,
     required super.notificationService,
     required ProfileState seededState,
   }) : _seededState = seededState {
@@ -73,13 +75,15 @@ void main() {
 
   group('ProfileScreen', () {
     late Database db;
-    late UserPreferencesRepository userPreferences;
+    late UserSettingsRepository userSettings;
+    late UserHealthMetricsRepository userHealthMetrics;
     late UnitsCubit unitsCubit;
 
     setUp(() async {
       db = await openAstraDatabase(databasePath: inMemoryDatabasePath);
-      userPreferences = UserPreferencesRepository(db);
-      unitsCubit = UnitsCubit(userPreferences: userPreferences);
+      userSettings = UserSettingsRepository(db);
+      userHealthMetrics = UserHealthMetricsRepository(db);
+      unitsCubit = UnitsCubit(userSettings: userSettings);
     });
 
     tearDown(() async {
@@ -91,7 +95,8 @@ void main() {
       tester,
     ) async {
       final cubit = _SeededProfileCubit(
-        userPreferences: userPreferences,
+        userSettings: userSettings,
+        userHealthMetrics: userHealthMetrics,
         notificationService: NotificationService(
           permissionChecker: () async => PermissionStatus.granted,
         ),
@@ -125,7 +130,8 @@ void main() {
       WidgetTester tester,
     ) async {
       final cubit = _SeededProfileCubit(
-        userPreferences: userPreferences,
+        userSettings: userSettings,
+        userHealthMetrics: userHealthMetrics,
         notificationService: NotificationService(
           permissionChecker: () async => PermissionStatus.granted,
         ),
@@ -165,7 +171,8 @@ void main() {
       tester,
     ) async {
       final cubit = _SeededProfileCubit(
-        userPreferences: userPreferences,
+        userSettings: userSettings,
+        userHealthMetrics: userHealthMetrics,
         notificationService: NotificationService(
           permissionChecker: () async => PermissionStatus.granted,
         ),
@@ -186,7 +193,8 @@ void main() {
 
     testWidgets('shows Not set for empty profile values', (tester) async {
       final cubit = _SeededProfileCubit(
-        userPreferences: userPreferences,
+        userSettings: userSettings,
+        userHealthMetrics: userHealthMetrics,
         notificationService: NotificationService(
           permissionChecker: () async => PermissionStatus.granted,
         ),
@@ -207,7 +215,8 @@ void main() {
       tester,
     ) async {
       final cubit = _SeededProfileCubit(
-        userPreferences: userPreferences,
+        userSettings: userSettings,
+        userHealthMetrics: userHealthMetrics,
         notificationService: NotificationService(
           permissionChecker: () async => PermissionStatus.granted,
         ),
@@ -229,7 +238,8 @@ void main() {
       tester,
     ) async {
       final cubit = _SeededProfileCubit(
-        userPreferences: userPreferences,
+        userSettings: userSettings,
+        userHealthMetrics: userHealthMetrics,
         notificationService: NotificationService(
           permissionChecker: () async => PermissionStatus.granted,
         ),
@@ -254,7 +264,8 @@ void main() {
       tester,
     ) async {
       final cubit = _SeededProfileCubit(
-        userPreferences: userPreferences,
+        userSettings: userSettings,
+        userHealthMetrics: userHealthMetrics,
         notificationService: NotificationService(
           permissionChecker: () async => PermissionStatus.granted,
         ),
@@ -273,7 +284,8 @@ void main() {
 
     testWidgets('formats height and weight values', (tester) async {
       final cubit = _SeededProfileCubit(
-        userPreferences: userPreferences,
+        userSettings: userSettings,
+        userHealthMetrics: userHealthMetrics,
         notificationService: NotificationService(
           permissionChecker: () async => PermissionStatus.granted,
         ),
@@ -301,7 +313,8 @@ void main() {
       });
 
       final cubit = _SeededProfileCubit(
-        userPreferences: userPreferences,
+        userSettings: userSettings,
+        userHealthMetrics: userHealthMetrics,
         notificationService: NotificationService(
           permissionChecker: () async => PermissionStatus.granted,
         ),

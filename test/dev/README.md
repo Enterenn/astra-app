@@ -95,7 +95,7 @@ await runDevChartBenchmark(
   repository: stepRepository,
   clock: timeProvider,
   db: stepRepository.db,
-  userPreferences: userPreferences,
+  userHealthMetrics: userHealthMetrics,
   pumpChart: createOverlayStepBarChartPump(context),
   assertPassGate: true,
 );

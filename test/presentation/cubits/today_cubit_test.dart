@@ -7,7 +7,8 @@ import 'package:astra_app/data/datasources/phone_pedometer_source.dart';
 import 'package:astra_app/data/repositories/ingestion_baseline_repository.dart';
 import 'package:astra_app/data/models/normalized_step_bucket.dart';
 import 'package:astra_app/data/repositories/step_repository.dart';
-import 'package:astra_app/data/repositories/user_preferences_repository.dart';
+import 'package:astra_app/data/repositories/user_health_metrics_repository.dart';
+import 'package:astra_app/data/repositories/user_settings_repository.dart';
 import 'package:astra_app/presentation/cubits/today_cubit.dart';
 import 'package:astra_app/presentation/cubits/today_state.dart';
 import 'dart:async';
@@ -25,7 +26,8 @@ void main() {
 
   group('TodayCubit', () {
     late Database db;
-    late UserPreferencesRepository userPreferences;
+    late UserSettingsRepository userSettings;
+    late UserHealthMetricsRepository userHealthMetrics;
     late FakeTimeProvider clock;
     late StepRepository stepRepository;
 
@@ -35,7 +37,8 @@ void main() {
         fixedNowUtc: DateTime.utc(2026, 6, 2, 12),
         zoneOffset: const Duration(hours: 2),
       );
-      userPreferences = UserPreferencesRepository(db, clock: clock);
+      userSettings = UserSettingsRepository(db);
+      userHealthMetrics = UserHealthMetricsRepository(db, clock: clock);
       stepRepository = StepRepository(db: db, clock: clock);
     });
 
@@ -49,7 +52,8 @@ void main() {
     }) {
       return TodayCubit(
         stepRepository: stepRepository,
-        userPreferences: userPreferences,
+        userSettings: userSettings,
+        userHealthMetrics: userHealthMetrics,
         clock: clock,
         activityPermissionGranted:
             activityPermissionGranted ?? () async => true,
@@ -91,7 +95,7 @@ void main() {
     // ── noPermission: status, week strip populated, zero metrics, no celebration ──
 
     test('noPermission: status, weekDays populated, zero metrics, no celebration even with steps at goal', () async {
-      await userPreferences.setDailyStepGoal(5000);
+      await userHealthMetrics.setDailyStepGoal(5000);
       await stepRepository.upsertIngestionBucket(
         _bucket(
           startTimeUtc: DateTime.utc(2026, 6, 2, 10),
@@ -129,7 +133,7 @@ void main() {
     });
 
     test('refresh status goalMet and overflow: both clamp progressRatio to 1', () async {
-      await userPreferences.setDailyStepGoal(5000);
+      await userHealthMetrics.setDailyStepGoal(5000);
       await stepRepository.upsertIngestionBucket(
         _bucket(
           startTimeUtc: DateTime.utc(2026, 6, 2, 10),
@@ -250,7 +254,7 @@ void main() {
     // ── Celebration ──
 
     test('celebration triggers on goalMet and overflow when pref unset', () async {
-      await userPreferences.setDailyStepGoal(5000);
+      await userHealthMetrics.setDailyStepGoal(5000);
       await stepRepository.upsertIngestionBucket(
         _bucket(
           startTimeUtc: DateTime.utc(2026, 6, 2, 10),
@@ -262,7 +266,7 @@ void main() {
       await c1.refresh();
       expect(c1.state.showCelebration, isTrue);
       expect(
-        await userPreferences.getCelebrationShownDate(),
+        await userSettings.getCelebrationShownDate(),
         formatLocalDayIso(clock.snapshot()),
       );
       c1.close();
@@ -288,7 +292,7 @@ void main() {
     });
 
     test('celebration does not trigger when steps below goal or pref already claimed today', () async {
-      await userPreferences.setDailyStepGoal(5000);
+      await userHealthMetrics.setDailyStepGoal(5000);
 
       // steps below goal
       await stepRepository.upsertIngestionBucket(
@@ -305,7 +309,7 @@ void main() {
 
       // pref already claimed today
       final todayIso = formatLocalDayIso(clock.snapshot());
-      await userPreferences.setCelebrationShownDate(todayIso);
+      await userSettings.setCelebrationShownDate(todayIso);
       await db.delete('timeseries_samples');
       await stepRepository.upsertIngestionBucket(
         _bucket(
@@ -321,7 +325,7 @@ void main() {
     });
 
     test('celebration: dismissCelebration clears flag, in-flight preserved on re-refresh, cleared after explicit dismiss', () async {
-      await userPreferences.setDailyStepGoal(5000);
+      await userHealthMetrics.setDailyStepGoal(5000);
       await stepRepository.upsertIngestionBucket(
         _bucket(
           startTimeUtc: DateTime.utc(2026, 6, 2, 10),
@@ -434,7 +438,7 @@ void main() {
     });
 
     test('live stream triggers celebration when goal crossed', () async {
-      await userPreferences.setDailyStepGoal(3000);
+      await userHealthMetrics.setDailyStepGoal(3000);
       final events = StreamController<PhoneStepEvent>.broadcast();
       final monitor = LiveStepMonitor(
         stepRepository: stepRepository,
@@ -579,7 +583,7 @@ void main() {
           zoneOffset: '+02:00',
         ),
       );
-      await userPreferences.setLastDisplayedSteps(
+      await userSettings.setLastDisplayedSteps(
         localDayIso: localDay,
         steps: 4374,
       );
@@ -591,7 +595,7 @@ void main() {
       expect(cubit.state.lastDisplayedSteps, 4374);
       expect(cubit.state.lastDisplayedStepsLoaded, isTrue);
       await cubit.syncSteps(4292, clampStaleDisplay: true);
-      expect(await userPreferences.getLastDisplayedSteps(localDay), 4292);
+      expect(await userSettings.getLastDisplayedSteps(localDay), 4292);
       expect(cubit.state.lastDisplayedSteps, 4292);
       cubit.close();
     });
@@ -599,7 +603,7 @@ void main() {
     test('cold start stays loading until steps and lastDisplayedSteps load', () async {
       final permissionGate = Completer<bool>();
       final localDay = formatLocalDayIso(clock.snapshot());
-      await userPreferences.setLastDisplayedSteps(
+      await userSettings.setLastDisplayedSteps(
         localDayIso: localDay,
         steps: 1200,
       );
@@ -629,7 +633,7 @@ void main() {
 
     test('refresh loads lastDisplayedSteps from prefs', () async {
       final localDay = formatLocalDayIso(clock.snapshot());
-      await userPreferences.setLastDisplayedSteps(
+      await userSettings.setLastDisplayedSteps(
         localDayIso: localDay,
         steps: 2500,
       );
@@ -658,7 +662,7 @@ void main() {
       await Future<void>.delayed(const Duration(milliseconds: 50));
 
       expect(cubit.state.lastDisplayedSteps, 1234);
-      expect(await userPreferences.getLastDisplayedSteps(localDay), 1234);
+      expect(await userSettings.getLastDisplayedSteps(localDay), 1234);
       cubit.close();
     });
 
@@ -731,14 +735,14 @@ void main() {
           zoneOffset: '+02:00',
         ),
       );
-      await userPreferences.setDailyStepGoal(8000);
+      await userHealthMetrics.setDailyStepGoal(8000);
       final cubit = buildCubit();
       await cubit.refresh();
       await cubit.syncSteps(5000);
       expect(cubit.state.goal, 8000);
       expect(cubit.state.steps, 5000);
 
-      await userPreferences.setDailyStepGoal(4000);
+      await userHealthMetrics.setDailyStepGoal(4000);
       await cubit.refreshMetadata();
 
       expect(cubit.state.steps, 5000);
@@ -779,7 +783,7 @@ void main() {
             ),
           );
           final localDay = formatLocalDayIso(clock.snapshot());
-          await userPreferences.setLastDisplayedSteps(
+          await userSettings.setLastDisplayedSteps(
             localDayIso: localDay,
             steps: 4374,
           );
@@ -1001,7 +1005,7 @@ void main() {
 
       test('celebration blocked when past day selected even if live crosses goal',
           () async {
-        await userPreferences.setDailyStepGoal(5000);
+        await userHealthMetrics.setDailyStepGoal(5000);
         await stepRepository.upsertIngestionBucket(
           _bucket(
             startTimeUtc: DateTime.utc(2026, 6, 1, 10),
@@ -1026,7 +1030,7 @@ void main() {
           'effective_from_local_day': '2026-06-01',
           'goal': 5000,
         });
-        await userPreferences.setDailyStepGoal(10000);
+        await userHealthMetrics.setDailyStepGoal(10000);
         await stepRepository.upsertIngestionBucket(
           _bucket(
             startTimeUtc: DateTime.utc(2026, 6, 1, 10),
@@ -1050,8 +1054,8 @@ void main() {
 
     group('activity metrics', () {
       test('refresh computes distance, kcal and duration; syncSteps updates distance only', () async {
-        await userPreferences.setHeightCm(175);
-        await userPreferences.setWeightKg(70);
+        await userHealthMetrics.setHeightCm(175);
+        await userHealthMetrics.setWeightKg(70);
         await stepRepository.upsertIngestionBucket(
           _bucket(
             startTimeUtc: DateTime.utc(2026, 6, 2, 10),
@@ -1118,7 +1122,7 @@ void main() {
         await cubit.syncSteps(10000);
         final defaultDistance = cubit.state.activityMetrics.distanceKm;
 
-        await userPreferences.setHeightCm(175);
+        await userHealthMetrics.setHeightCm(175);
         await cubit.refreshMetadata();
 
         expect(cubit.state.heightCm, 175);
@@ -1141,7 +1145,8 @@ void main() {
         var callbackCalled = false;
         final cubit = TodayCubit(
           stepRepository: stepRepository,
-          userPreferences: userPreferences,
+          userSettings: userSettings,
+        userHealthMetrics: userHealthMetrics,
           clock: clock,
           activityPermissionGranted: () async => true,
           postGoalUpdate: () async {
@@ -1153,17 +1158,18 @@ void main() {
         expect(await cubit.updateDailyStepGoal(15000), isTrue);
 
         expect(cubit.state.goal, 15000);
-        expect(await userPreferences.getDailyStepGoal(), 15000);
+        expect(await userHealthMetrics.getDailyStepGoal(), 15000);
         expect(callbackCalled, isTrue);
         cubit.close();
       });
 
       test('rejects invalid goal and is no-op when goal unchanged', () async {
         var callbackCalled = false;
-        await userPreferences.setDailyStepGoal(8000);
+        await userHealthMetrics.setDailyStepGoal(8000);
         final cubit = TodayCubit(
           stepRepository: stepRepository,
-          userPreferences: userPreferences,
+          userSettings: userSettings,
+        userHealthMetrics: userHealthMetrics,
           clock: clock,
           activityPermissionGranted: () async => true,
           postGoalUpdate: () async {
@@ -1176,7 +1182,7 @@ void main() {
         // rejects invalid goal
         expect(await cubit.updateDailyStepGoal(999), isFalse);
         expect(cubit.state.goal, 8000);
-        expect(await userPreferences.getDailyStepGoal(), 8000);
+        expect(await userHealthMetrics.getDailyStepGoal(), 8000);
 
         // no-op when goal unchanged
         expect(await cubit.updateDailyStepGoal(8000), isFalse);
@@ -1187,7 +1193,8 @@ void main() {
       test('returns false when postGoalUpdate throws', () async {
         final cubit = TodayCubit(
           stepRepository: stepRepository,
-          userPreferences: userPreferences,
+          userSettings: userSettings,
+        userHealthMetrics: userHealthMetrics,
           clock: clock,
           activityPermissionGranted: () async => true,
           postGoalUpdate: () async {
@@ -1199,7 +1206,7 @@ void main() {
         expect(await cubit.updateDailyStepGoal(12000), isFalse);
 
         expect(cubit.state.goal, 8000);
-        expect(await userPreferences.getDailyStepGoal(), 12000);
+        expect(await userHealthMetrics.getDailyStepGoal(), 12000);
         cubit.close();
       });
     });

@@ -13,7 +13,8 @@ import 'package:astra_app/data/datasources/phone_pedometer_source.dart';
 import 'package:astra_app/data/models/normalized_step_bucket.dart';
 import 'package:astra_app/data/repositories/ingestion_baseline_repository.dart';
 import 'package:astra_app/data/repositories/step_repository.dart';
-import 'package:astra_app/data/repositories/user_preferences_repository.dart';
+import 'package:astra_app/data/repositories/user_health_metrics_repository.dart';
+import 'package:astra_app/data/repositories/user_settings_repository.dart';
 import 'package:astra_app/presentation/cubits/history_cubit.dart';
 import 'package:astra_app/presentation/cubits/today_cubit.dart';
 import 'package:astra_app/presentation/cubits/today_state.dart';
@@ -70,7 +71,8 @@ class _TestPhoneStreams {
 TodayCubit _testTodayCubit(AppDependencies deps) {
   return TodayCubit(
     stepRepository: deps.stepRepository,
-    userPreferences: deps.userPreferences,
+    userSettings: deps.userSettings,
+    userHealthMetrics: deps.userHealthMetrics,
     clock: deps.timeProvider,
     activityPermissionGranted: () async => true,
   );
@@ -79,7 +81,7 @@ TodayCubit _testTodayCubit(AppDependencies deps) {
 HistoryCubit _testHistoryCubit(AppDependencies deps) {
   return HistoryCubit(
     stepRepository: deps.stepRepository,
-    userPreferences: deps.userPreferences,
+    userHealthMetrics: deps.userHealthMetrics,
   );
 }
 
@@ -164,8 +166,9 @@ void main() {
         fixedNowUtc: DateTime.utc(2026, 6, 2, 8),
         zoneOffset: const Duration(hours: 2),
       );
-      final userPreferences = UserPreferencesRepository(db, clock: clock);
-      await userPreferences.setOnboardingComplete(true);
+      final userSettings = UserSettingsRepository(db);
+      await userSettings.setOnboardingComplete(true);
+      final userHealthMetrics = UserHealthMetricsRepository(db, clock: clock);
       phoneStreams = _TestPhoneStreams();
       monitor = LiveStepMonitor(
         stepRepository: StepRepository(db: db, clock: clock),
@@ -176,7 +179,8 @@ void main() {
       );
       deps = await AppDependencies.test(
         db: db,
-        userPreferences: userPreferences,
+        userSettings: userSettings,
+        userHealthMetrics: userHealthMetrics,
         timeProvider: clock,
         liveStepMonitor: monitor,
         healthForegroundCoordinator: RecordingHealthFgs(calls: []),
@@ -622,7 +626,8 @@ void main() {
           );
           final countingDeps = await AppDependencies.test(
             db: db,
-            userPreferences: deps.userPreferences,
+            userSettings: deps.userSettings,
+            userHealthMetrics: deps.userHealthMetrics,
             timeProvider: deps.timeProvider,
             liveStepMonitor: countingMonitor,
             healthForegroundCoordinator: RecordingHealthFgs(calls: []),
@@ -1043,7 +1048,7 @@ void main() {
       TodayCubit? todayCubit;
 
       await tester.runAsync(() async {
-        await deps.userPreferences.setDailyStepGoal(100);
+        await deps.userHealthMetrics.setDailyStepGoal(100);
         clock.setNowUtc(DateTime.utc(2026, 6, 7, 20));
         await tester.pumpWidget(
           AstraApp(
@@ -1120,8 +1125,9 @@ void main() {
         fixedNowUtc: DateTime.utc(2026, 6, 2, 8),
         zoneOffset: const Duration(hours: 2),
       );
-      final userPreferences = UserPreferencesRepository(db, clock: clock);
-      await userPreferences.setOnboardingComplete(true);
+      final userSettings = UserSettingsRepository(db);
+      await userSettings.setOnboardingComplete(true);
+      final userHealthMetrics = UserHealthMetricsRepository(db, clock: clock);
       phoneStreams = _TestPhoneStreams();
       monitor = LiveStepMonitor(
         stepRepository: StepRepository(db: db, clock: clock),
@@ -1132,7 +1138,8 @@ void main() {
       );
       deps = await AppDependencies.test(
         db: db,
-        userPreferences: userPreferences,
+        userSettings: userSettings,
+        userHealthMetrics: userHealthMetrics,
         timeProvider: clock,
         liveStepMonitor: monitor,
         healthForegroundCoordinator: RecordingHealthFgs(calls: []),

@@ -11,7 +11,8 @@ import 'package:astra_app/data/datasources/data_ingestion_source.dart';
 import 'package:astra_app/data/models/normalized_step_bucket.dart';
 import 'package:astra_app/data/models/step_reading.dart';
 import 'package:astra_app/data/repositories/step_repository.dart';
-import 'package:astra_app/data/repositories/user_preferences_repository.dart';
+import 'package:astra_app/data/repositories/user_health_metrics_repository.dart';
+import 'package:astra_app/data/repositories/user_settings_repository.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:permission_handler/permission_handler.dart';
 import 'package:workmanager/workmanager.dart';
@@ -94,9 +95,10 @@ void main() {
 
       final uiDb = await openAstraDatabase(databasePath: databasePath);
       addTearDown(uiDb.close);
-      final userPreferences = UserPreferencesRepository(uiDb, clock: clock);
-      await userPreferences.setDailyStepGoal(5000);
-      await userPreferences.setGoalNotificationsEnabled(true);
+      final userSettings = UserSettingsRepository(uiDb);
+      final userHealthMetrics = UserHealthMetricsRepository(uiDb, clock: clock);
+      await userHealthMetrics.setDailyStepGoal(5000);
+      await userSettings.setGoalNotificationsEnabled(true);
       final repository = StepRepository(db: uiDb, clock: clock);
       await repository.upsertIngestionBucket(
         NormalizedStepBucket(
@@ -131,15 +133,15 @@ void main() {
 
       final verifyDb = await openAstraDatabase(databasePath: databasePath);
       addTearDown(verifyDb.close);
-      final verifyPrefs = UserPreferencesRepository(verifyDb);
+      final verifySettings = UserSettingsRepository(verifyDb);
 
       expect(success, isTrue);
       expect(showCount, 1);
       expect(
-        await verifyPrefs.getGoalNotificationShownDate(),
+        await verifySettings.getGoalNotificationShownDate(),
         formatLocalDayIso(clock.snapshot()),
       );
-      expect(await verifyPrefs.getCelebrationShownDate(), isNull);
+      expect(await verifySettings.getCelebrationShownDate(), isNull);
     });
 
     test(
@@ -183,9 +185,10 @@ void main() {
 
         final uiDb = await openAstraDatabase(databasePath: databasePath);
         addTearDown(uiDb.close);
-        final userPreferences = UserPreferencesRepository(uiDb, clock: clock);
-        await userPreferences.setDailyStepGoal(5000);
-        await userPreferences.setGoalNotificationsEnabled(true);
+        final userSettings = UserSettingsRepository(uiDb);
+        final userHealthMetrics = UserHealthMetricsRepository(uiDb, clock: clock);
+        await userHealthMetrics.setDailyStepGoal(5000);
+        await userSettings.setGoalNotificationsEnabled(true);
         final repository = StepRepository(db: uiDb, clock: clock);
         await repository.upsertIngestionBucket(
           NormalizedStepBucket(
@@ -220,10 +223,10 @@ void main() {
 
         final verifyDb = await openAstraDatabase(databasePath: databasePath);
         addTearDown(verifyDb.close);
-        final verifyPrefs = UserPreferencesRepository(verifyDb);
+        final verifySettings = UserSettingsRepository(verifyDb);
 
         expect(success, isTrue);
-        expect(await verifyPrefs.getGoalNotificationShownDate(), isNull);
+        expect(await verifySettings.getGoalNotificationShownDate(), isNull);
       },
     );
 
@@ -272,19 +275,19 @@ void main() {
       final verifyDb = await openAstraDatabase(databasePath: databasePath);
       addTearDown(verifyDb.close);
       final verifyRepository = StepRepository(db: verifyDb, clock: clock);
-      final verifyPrefs = UserPreferencesRepository(verifyDb);
+      final verifySettings = UserSettingsRepository(verifyDb);
 
       expect(success, isTrue);
       expect(await verifyRepository.countStepSamples(), 10080);
-      expect(await verifyPrefs.getLastDatabaseOptimizedAt(), isNotNull);
+      expect(await verifySettings.getLastDatabaseOptimizedAt(), isNotNull);
     });
 
     test('skips compaction when maintenance is not due', () async {
       final seedDb = await openAstraDatabase(databasePath: databasePath);
       final repository = StepRepository(db: seedDb, clock: clock);
       await DataInjectService(repository: repository).inject90Days(clock: clock);
-      final prefs = UserPreferencesRepository(seedDb);
-      await prefs.setLastDatabaseOptimizedAt(clock.snapshot().nowUtc);
+      final userSettings = UserSettingsRepository(seedDb);
+      await userSettings.setLastDatabaseOptimizedAt(clock.snapshot().nowUtc);
       await seedDb.close();
 
       LifecycleRunResult? captured;
