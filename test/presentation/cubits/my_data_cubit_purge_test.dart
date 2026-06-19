@@ -60,7 +60,6 @@ void main() {
 
     MyDataCubit buildCubit({
       PostPurgeRefreshCallback? postPurgeRefresh,
-      ShareCsvFileCallback? shareCsvFile,
       SaveCsvFileCallback? saveCsvFile,
     }) {
       return MyDataCubit(
@@ -71,8 +70,7 @@ void main() {
         isIos: false,
         activityPermissionGranted: () async => true,
         postPurgeRefresh: postPurgeRefresh,
-        shareCsvFile: shareCsvFile ?? (_, {sharePositionOrigin}) async {},
-        saveCsvFile: saveCsvFile ?? ((_) async => false),
+        saveCsvFile: saveCsvFile ?? ((_) async => true),
         tempDirectoryProvider: () async => tempDir.path,
       );
     }
@@ -132,8 +130,9 @@ void main() {
     test('exportFirst via callback does not purge', () async {
       var exportCalled = false;
       final cubit = buildCubit(
-        shareCsvFile: (_, {sharePositionOrigin}) async {
+        saveCsvFile: (_) async {
           exportCalled = true;
+          return true;
         },
       );
       addTearDown(cubit.close);
@@ -203,8 +202,7 @@ void main() {
         clock: clock,
         databasePath: inMemoryDatabasePath,
         isIos: false,
-        shareCsvFile: (_, {sharePositionOrigin}) async {},
-        saveCsvFile: (_) async => false,
+        saveCsvFile: (_) async => true,
         tempDirectoryProvider: () async => '',
       );
       addTearDown(cubit.close);

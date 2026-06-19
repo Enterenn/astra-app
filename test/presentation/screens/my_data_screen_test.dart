@@ -536,7 +536,7 @@ class _RetryExportMyDataCubit extends _SeededMyDataCubit {
   int exportAttempts = 0;
 
   @override
-  Future<void> exportAndShare({Rect? sharePositionOrigin}) async {
+  Future<void> exportAndShare() async {
     exportAttempts++;
   }
 }
@@ -552,7 +552,7 @@ class _DialogPurgeFlowMyDataCubit extends _SeededMyDataCubit {
   var confirmedPurgeWhileExporting = false;
 
   @override
-  Future<void> exportAndShare({Rect? sharePositionOrigin}) async {
+  Future<void> exportAndShare() async {
     emit(_readyState(isExporting: true));
   }
 

@@ -46,7 +46,6 @@ void main() {
         activityPermissionGranted: () async => true,
         isIos: false,
         postGoalUpdate: postGoalUpdate,
-        shareCsvFile: (_, {sharePositionOrigin}) async {},
       );
     }
 
