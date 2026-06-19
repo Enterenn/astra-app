@@ -240,6 +240,7 @@ class MyDataCubit extends Cubit<MyDataState> {
       state.copyWith(
         isExporting: true,
         exportErrorMessage: null,
+        exportSuccessPending: false,
       ),
     );
 
@@ -255,7 +256,13 @@ class MyDataCubit extends Cubit<MyDataState> {
         }
 
         if (savedOnDevice) {
-          emit(state.copyWith(isExporting: false, exportErrorMessage: null));
+          emit(
+            state.copyWith(
+              isExporting: false,
+              exportErrorMessage: null,
+              exportSuccessPending: true,
+            ),
+          );
           unawaited(refresh(silent: true));
         } else {
           emit(state.copyWith(isExporting: false));
@@ -281,6 +288,14 @@ class MyDataCubit extends Cubit<MyDataState> {
         ),
       );
     }
+  }
+
+  /// Clears [MyDataState.exportSuccessPending] after the UI shows the snackbar.
+  void ackExportSuccess() {
+    if (isClosed || !state.exportSuccessPending) {
+      return;
+    }
+    emit(state.copyWith(exportSuccessPending: false));
   }
 
   /// Clears [MyDataState.importSuccessPending] after the UI shows the snackbar.
@@ -624,6 +639,7 @@ class MyDataCubit extends Cubit<MyDataState> {
       ).copyWith(
         isExporting: state.isExporting,
         exportErrorMessage: state.exportErrorMessage,
+        exportSuccessPending: state.exportSuccessPending,
         isImporting: state.isImporting,
         importErrorMessage: state.importErrorMessage,
         importSuccessPending: state.importSuccessPending,

@@ -34,9 +34,8 @@ class MyDataScreen extends StatelessWidget {
           listeners: [
             BlocListener<MyDataCubit, MyDataState>(
               listenWhen: (previous, current) =>
-                  previous.isExporting &&
-                  !current.isExporting &&
-                  current.exportErrorMessage == null,
+                  !previous.exportSuccessPending &&
+                  current.exportSuccessPending,
               listener: (context, state) {
                 ScaffoldMessenger.of(context).showSnackBar(
                   const SnackBar(
@@ -44,6 +43,7 @@ class MyDataScreen extends StatelessWidget {
                     duration: Duration(seconds: 3),
                   ),
                 );
+                context.read<MyDataCubit>().ackExportSuccess();
               },
             ),
             BlocListener<MyDataCubit, MyDataState>(

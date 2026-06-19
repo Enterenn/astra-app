@@ -1,6 +1,6 @@
 # Story 17.1: Replace share_plus with file_picker CSV Export
 
-Status: review
+Status: done
 
 <!-- Refacto Epic 17 — branch `refacto` only until merge review -->
 <!-- Source: epics-refacto.md Story 17-1 · refactoring-audit-master-v0.6.1.md §6.2 · REF-14 · NFR-REF-03 -->
@@ -387,9 +387,11 @@ Claude claude-4.6-sonnet-medium-thinking (Cursor)
 - Rewrote export cubit tests for save-only flow (8 tests); full suite **801 passed** (`--exclude-tags slow`).
 - Deleted `share_position_origin.dart` and KGP patch for `share_plus`.
 - No version bump (Epic 17 closes with patch+1 when 17-1–17-3 done).
+- Code review fix: `exportSuccessPending` flag gates success snackbar; cancel is silent (AC #3).
 
 ### File List
 
+- `lib/presentation/cubits/my_data_state.dart` (modified — review fix)
 - `lib/presentation/cubits/my_data_cubit.dart` (modified)
 - `lib/presentation/screens/my_data_screen.dart` (modified)
 - `lib/presentation/utils/share_position_origin.dart` (deleted)
@@ -408,3 +410,4 @@ Claude claude-4.6-sonnet-medium-thinking (Cursor)
 
 - 2026-06-19: Story context created (create-story workflow) — ready-for-dev. Ultimate context engine analysis completed — comprehensive developer guide created.
 - 2026-06-19: Story 17-1 implemented — removed share_plus, save-only CSV export, tests green, APK 19.1 MB arm64 post-change.
+- 2026-06-19: Code review fix — `exportSuccessPending` snackbar gate; cancel no longer shows "Export saved"; story marked done.

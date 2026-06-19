@@ -47,6 +47,7 @@ class _SeededMyDataCubit extends MyDataCubit {
 MyDataState _readyState({
   bool isExporting = false,
   String? exportErrorMessage,
+  bool exportSuccessPending = false,
   bool isImporting = false,
   String? importErrorMessage,
   bool importSuccessPending = false,
@@ -71,6 +72,7 @@ MyDataState _readyState({
     isIos: isIos,
     isExporting: isExporting,
     exportErrorMessage: exportErrorMessage,
+    exportSuccessPending: exportSuccessPending,
     isImporting: isImporting,
     importErrorMessage: importErrorMessage,
     importSuccessPending: importSuccessPending,
@@ -282,7 +284,28 @@ void main() {
       expect(button.onPressed, isNull);
     });
 
-    testWidgets('shows Export saved snackbar for 3s after successful export', (
+    testWidgets(
+      'shows Export saved snackbar for 3s after successful export',
+      (tester) async {
+        final cubit = buildSeededCubit(_readyState());
+        addTearDown(cubit.close);
+
+        await pumpScreen(tester, cubit: cubit);
+
+        cubit.emit(_readyState());
+        await tester.pump();
+        cubit.emit(_readyState(exportSuccessPending: true));
+        await tester.pump();
+        await tester.pump();
+
+        expect(find.text('Export saved'), findsOneWidget);
+        final snackBar = tester.widget<SnackBar>(find.byType(SnackBar));
+        expect(snackBar.duration, const Duration(seconds: 3));
+        expect(cubit.state.exportSuccessPending, isFalse);
+      },
+    );
+
+    testWidgets('does not show Export saved snackbar when export is cancelled', (
       tester,
     ) async {
       final cubit = buildSeededCubit(_readyState());
@@ -292,12 +315,17 @@ void main() {
 
       cubit.emit(_readyState(isExporting: true));
       await tester.pump();
-      cubit.emit(_readyState(isExporting: false));
+      cubit.emit(
+        _readyState(
+          isExporting: false,
+          exportSuccessPending: false,
+        ),
+      );
+      await tester.pump();
       await tester.pump();
 
-      expect(find.text('Export saved'), findsOneWidget);
-      final snackBar = tester.widget<SnackBar>(find.byType(SnackBar));
-      expect(snackBar.duration, const Duration(seconds: 3));
+      expect(find.text('Export saved'), findsNothing);
+      expect(cubit.state.exportSuccessPending, isFalse);
     });
 
     testWidgets('shows Import CSV button below export', (tester) async {

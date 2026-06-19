@@ -20,6 +20,7 @@ class MyDataState {
     this.isIos = false,
     this.isExporting = false,
     this.exportErrorMessage,
+    this.exportSuccessPending = false,
     this.isImporting = false,
     this.importErrorMessage,
     this.importSuccessPending = false,
@@ -39,6 +40,8 @@ class MyDataState {
   final bool isIos;
   final bool isExporting;
   final String? exportErrorMessage;
+  /// True after successful CSV save; drives success snackbar once.
+  final bool exportSuccessPending;
   final bool isImporting;
   final String? importErrorMessage;
   /// True after import with at least one data row; drives success snackbar once.
@@ -87,6 +90,7 @@ class MyDataState {
     bool? isIos,
     bool? isExporting,
     Object? exportErrorMessage = _unset,
+    bool? exportSuccessPending,
     bool? isImporting,
     Object? importErrorMessage = _unset,
     bool? importSuccessPending,
@@ -108,6 +112,8 @@ class MyDataState {
       exportErrorMessage: exportErrorMessage == _unset
           ? this.exportErrorMessage
           : exportErrorMessage as String?,
+      exportSuccessPending:
+          exportSuccessPending ?? this.exportSuccessPending,
       isImporting: isImporting ?? this.isImporting,
       importErrorMessage: importErrorMessage == _unset
           ? this.importErrorMessage
