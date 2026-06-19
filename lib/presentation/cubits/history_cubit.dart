@@ -11,11 +11,11 @@ import 'history_state.dart';
 
 class HistoryCubit extends Cubit<HistoryState> {
   HistoryCubit({
-    required this.stepRepository,
+    required this.stepAggregation,
     required this.userHealthMetrics,
   }) : super(const HistoryState.loading());
 
-  final StepRepositoryContract stepRepository;
+  final StepAggregationRepositoryContract stepAggregation;
   final UserHealthMetricsRepositoryContract userHealthMetrics;
 
   List<ChartDayAggregate> _cachedAggregates30d = const [];
@@ -99,8 +99,8 @@ class HistoryCubit extends Cubit<HistoryState> {
 
     try {
       final fetchResults = await Future.wait<Object>([
-        stepRepository.getChartDailyAggregates(days: 30),
-        stepRepository.getChartMonthlyAggregates(months: 12),
+        stepAggregation.getChartDailyAggregates(days: 30),
+        stepAggregation.getChartMonthlyAggregates(months: 12),
       ]);
       if (isClosed) {
         return;
@@ -268,7 +268,7 @@ class HistoryCubit extends Cubit<HistoryState> {
     final bucketLists = await Future.wait(
       aggregates.map(
         (aggregate) =>
-            stepRepository.getActiveBucketsForLocalDay(aggregate.localDay),
+            stepAggregation.getActiveBucketsForLocalDay(aggregate.localDay),
       ),
     );
 
@@ -339,7 +339,7 @@ class HistoryCubit extends Cubit<HistoryState> {
   }
 
   Future<int> _resolveTodayGoal() async {
-    final todayIso = formatLocalDayIso(stepRepository.clock.snapshot());
+    final todayIso = formatLocalDayIso(stepAggregation.clock.snapshot());
     return userHealthMetrics.getGoalForLocalDay(todayIso);
   }
 

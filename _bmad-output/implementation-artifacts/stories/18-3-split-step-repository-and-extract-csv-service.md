@@ -79,36 +79,36 @@ So that each class stays under ~250 lines and is easier to test.
 
 ## Tasks / Subtasks
 
-- [ ] **Sub-task A — Design split + shared session helpers** (AC: #1, #2, #3)
-  - [ ] Read `lib/data/repositories/step_repository.dart` **fully** (692 lines) before editing — map every public method to Ingestion / Aggregation / Csv
-  - [ ] Read `lib/data/contracts/step_repository_contract.dart` and grep all `stepRepository.` / `StepRepository` call sites in `lib/` and `test/`
-  - [ ] Design shared internal helper (e.g. `_StepRepositorySessionMixin` or `_step_repository_session.dart`) holding `_session`, `_run`
-  - [ ] Design `_step_sample_bounds.dart` for `_todaySampleUtcBounds`, `_sampleUtcBoundsForLocalDay`, `_finestResolutionTotal`
-  - [ ] Design contract method lists (Dev Notes inventory)
+- [x] **Sub-task A — Design split + shared session helpers** (AC: #1, #2, #3)
+  - [x] Read `lib/data/repositories/step_repository.dart` **fully** (692 lines) before editing — map every public method to Ingestion / Aggregation / Csv
+  - [x] Read `lib/data/contracts/step_repository_contract.dart` and grep all `stepRepository.` / `StepRepository` call sites in `lib/` and `test/`
+  - [x] Design shared internal helper (e.g. `_StepRepositorySessionMixin` or `_step_repository_session.dart`) holding `_session`, `_run`
+  - [x] Design `_step_sample_bounds.dart` for `_todaySampleUtcBounds`, `_sampleUtcBoundsForLocalDay`, `_finestResolutionTotal`
+  - [x] Design contract method lists (Dev Notes inventory)
+  - [x] **Stop → review brief → wait for Baptiste OK → commit**
+
+- [x] **Sub-task B — Create split repositories, CsvService, and contracts** (AC: #1, #2, #3)
+  - [x] Create `lib/data/repositories/step/step_ingestion_repository.dart`
+  - [x] Create `lib/data/repositories/step/step_aggregation_repository.dart`
+  - [x] Create `lib/data/services/csv_service.dart` (Gemini path; alongside `timeseries_csv_codec.dart` in `data/csv/`)
+  - [x] Move methods mechanically — preserve SQL, transactions, `@override`, debug asserts
+  - [x] Create `step_ingestion_repository_contract.dart`, `step_aggregation_repository_contract.dart`, `csv_service_contract.dart`
+  - [x] Update `lib/data/contracts/contracts.dart` — export new contracts; **remove** `step_repository_contract.dart` after migration
+  - [x] Delete `lib/data/repositories/step_repository.dart` once call sites compile
+  - [x] Run `flutter analyze` on new files
   - [ ] **Stop → review brief → wait for Baptiste OK → commit**
 
-- [ ] **Sub-task B — Create split repositories, CsvService, and contracts** (AC: #1, #2, #3)
-  - [ ] Create `lib/data/repositories/step_ingestion_repository.dart`
-  - [ ] Create `lib/data/repositories/step_aggregation_repository.dart`
-  - [ ] Create `lib/data/csv/csv_service.dart` (alongside `timeseries_csv_codec.dart`)
-  - [ ] Move methods mechanically — preserve SQL, transactions, `@override`, debug asserts
-  - [ ] Create `step_ingestion_repository_contract.dart`, `step_aggregation_repository_contract.dart`, `csv_service_contract.dart`
-  - [ ] Update `lib/data/contracts/contracts.dart` — export new contracts; **remove** `step_repository_contract.dart` after migration
-  - [ ] Delete `lib/data/repositories/step_repository.dart` once call sites compile
-  - [ ] Run `flutter analyze` on new files
+- [x] **Sub-task C — Update DI and services** (AC: #4, #6)
+  - [x] Update `AppDependencies`: replace `stepRepository` with `stepIngestion`, `stepAggregation`, `csvService`; fix `create()`, `test()`, `_buildDependencies()`
+  - [x] Update `BackgroundCollector` (+ factory), `LiveStepMonitor`, `DataLifecycleService`, `runMaintenanceOnConnection`, `workmanager_callback.dart`, `background_collector_factory.dart`
+  - [x] Run `flutter analyze`
   - [ ] **Stop → review brief → wait for Baptiste OK → commit**
 
-- [ ] **Sub-task C — Update DI and services** (AC: #4, #6)
-  - [ ] Update `AppDependencies`: replace `stepRepository` with `stepIngestion`, `stepAggregation`, `csvService`; fix `create()`, `test()`, `_buildDependencies()`
-  - [ ] Update `BackgroundCollector` (+ factory), `LiveStepMonitor`, `DataLifecycleService`, `runMaintenanceOnConnection`, `workmanager_callback.dart`, `background_collector_factory.dart`
-  - [ ] Run `flutter analyze`
-  - [ ] **Stop → review brief → wait for Baptiste OK → commit**
-
-- [ ] **Sub-task D — Update cubits and contract test fakes** (AC: #3, #4)
-  - [ ] `TodayCubit`: inject `StepAggregationRepositoryContract` only
-  - [ ] `HistoryCubit`: inject `StepAggregationRepositoryContract` only
-  - [ ] `MyDataCubit`: inject aggregation + csv + ingestion contracts (three fields — minimal per usage)
-  - [ ] Update `AppScaffold` cubit construction wiring
+- [x] **Sub-task D — Update cubits and contract test fakes** (AC: #3, #4) — lib/ wiring only
+  - [x] `TodayCubit`: inject `StepAggregationRepositoryContract` only
+  - [x] `HistoryCubit`: inject `StepAggregationRepositoryContract` only
+  - [x] `MyDataCubit`: inject aggregation + csv + ingestion contracts (three fields — minimal per usage)
+  - [x] Update `AppScaffold` cubit construction wiring
   - [ ] Split `_FakeStepRepository` in `today_cubit_contract_test.dart` → `_FakeStepAggregationRepository` (+ update any other contract fakes)
   - [ ] Run cubit tests: `flutter test test/presentation/cubits/today_cubit_test.dart test/presentation/cubits/history_cubit_test.dart test/presentation/cubits/my_data_cubit_test.dart test/presentation/cubits/today_cubit_contract_test.dart`
   - [ ] **Stop → review brief → wait for Baptiste OK → commit**
@@ -460,6 +460,39 @@ final aggregates = await stepAggregation.getChartDailyAggregates(days: 7);
 
 ### Completion Notes List
 
+- Sub-task A: design approved and committed (`05c866e`).
+- Sub-task B–D (lib/): mechanical split complete — 3 contracts, 5 implementation files, monolith removed; `flutter analyze lib` — 0 errors (7 pre-existing info lints in unrelated files). Tests not migrated yet (Sub-task E).
+
 ### File List
 
+- `lib/data/contracts/step_ingestion_repository_contract.dart` (new)
+- `lib/data/contracts/step_aggregation_repository_contract.dart` (new)
+- `lib/data/contracts/csv_service_contract.dart` (new)
+- `lib/data/contracts/contracts.dart` (modified)
+- `lib/data/contracts/step_repository_contract.dart` (deleted)
+- `lib/data/repositories/step/_step_repository_session.dart` (new)
+- `lib/data/repositories/step/_step_sample_bounds.dart` (new)
+- `lib/data/repositories/step/step_ingestion_repository.dart` (new)
+- `lib/data/repositories/step/step_aggregation_repository.dart` (new)
+- `lib/data/services/csv_service.dart` (new)
+- `lib/data/repositories/step_repository.dart` (deleted)
+- `lib/core/di/app_dependencies.dart` (modified)
+- `lib/core/services/background_collector.dart` (modified)
+- `lib/core/services/background_collector_factory.dart` (modified)
+- `lib/core/services/live_step_monitor.dart` (modified)
+- `lib/core/services/data_lifecycle_service.dart` (modified)
+- `lib/core/services/workmanager_callback.dart` (modified)
+- `lib/core/services/app_lifecycle_coordinator.dart` (modified)
+- `lib/presentation/cubits/today_cubit.dart` (modified)
+- `lib/presentation/cubits/history_cubit.dart` (modified)
+- `lib/presentation/cubits/my_data_cubit.dart` (modified)
+- `lib/presentation/screens/app_scaffold.dart` (modified)
+- `lib/data/models/chart_day_aggregate.dart` (doc comment)
+- `lib/data/models/chart_month_aggregate.dart` (doc comment)
+- `lib/core/time/local_day_formatter.dart` (doc comment)
+- `lib/core/lifecycle/sample_compaction_runner.dart` (doc comment)
+
 ### Change Log
+
+- 2026-06-20: Sub-task A design gate approved.
+- 2026-06-20: Sub-task B–D lib/ — split StepRepository into ingestion, aggregation, CsvService; updated DI, services, cubits.

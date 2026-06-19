@@ -34,7 +34,9 @@ typedef PostDisplayNameUpdateCallback = Future<void> Function();
 
 class MyDataCubit extends Cubit<MyDataState> {
   MyDataCubit({
-    required this.stepRepository,
+    required this.stepAggregation,
+    required this.csvService,
+    required this.stepIngestion,
     required this.userSettings,
     required this.userHealthMetrics,
     required this.clock,
@@ -58,7 +60,9 @@ class MyDataCubit extends Cubit<MyDataState> {
        _isIos = isIos ?? Platform.isIOS,
        super(const MyDataState.loading());
 
-  final StepRepositoryContract stepRepository;
+  final StepAggregationRepositoryContract stepAggregation;
+  final CsvServiceContract csvService;
+  final StepIngestionRepositoryContract stepIngestion;
   final UserSettingsRepositoryContract userSettings;
   final UserHealthMetricsRepositoryContract userHealthMetrics;
   final TimeProvider clock;
@@ -144,7 +148,7 @@ class MyDataCubit extends Cubit<MyDataState> {
         return;
       }
 
-      final existingSampleCount = await stepRepository.countStepSamples();
+      final existingSampleCount = await stepAggregation.countStepSamples();
       if (isClosed) {
         return;
       }
@@ -168,7 +172,7 @@ class MyDataCubit extends Cubit<MyDataState> {
         }
       }
 
-      final result = await stepRepository.importSamples(samples);
+      final result = await csvService.importSamples(samples);
       if (isClosed) {
         return;
       }
@@ -248,7 +252,7 @@ class MyDataCubit extends Cubit<MyDataState> {
 
     try {
       final tempDirectory = await _tempDirectoryProvider();
-      final filePath = await stepRepository.exportCsv(
+      final filePath = await csvService.exportCsv(
         outputDirectory: tempDirectory,
       );
       try {
@@ -371,7 +375,7 @@ class MyDataCubit extends Cubit<MyDataState> {
 
     var purged = false;
     try {
-      await stepRepository.purge();
+      await stepIngestion.purge();
       purged = true;
       if (isClosed) {
         return;
@@ -543,8 +547,8 @@ class MyDataCubit extends Cubit<MyDataState> {
 
     try {
       final results = await Future.wait<Object?>([
-        stepRepository.getFootprint(databasePath: databasePath),
-        stepRepository.getLastIngestionUtc(),
+        stepAggregation.getFootprint(databasePath: databasePath),
+        stepAggregation.getLastIngestionUtc(),
         _activityPermissionGranted(),
         userSettings.getLastDatabaseOptimizedAt(),
       ]);
@@ -595,7 +599,7 @@ class MyDataCubit extends Cubit<MyDataState> {
 
     var sampleCount = 0;
     try {
-      sampleCount = await stepRepository.countStepSamples();
+      sampleCount = await stepAggregation.countStepSamples();
     } catch (error, stackTrace) {
       if (kDebugMode) {
         debugPrint('MyDataCubit._recoverFromRefreshFailure countSamples failed: $error');

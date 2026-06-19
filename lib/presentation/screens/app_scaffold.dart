@@ -74,7 +74,7 @@ class _AppScaffoldState extends State<AppScaffold> {
     _todayCubit =
         widget.createTodayCubit?.call(widget.deps) ??
         TodayCubit(
-          stepRepository: widget.deps.stepRepository,
+          stepAggregation: widget.deps.stepAggregation,
           userSettings: widget.deps.userSettings,
           userHealthMetrics: widget.deps.userHealthMetrics,
           clock: widget.deps.timeProvider,
@@ -87,13 +87,15 @@ class _AppScaffoldState extends State<AppScaffold> {
     _historyCubit =
         widget.createHistoryCubit?.call(widget.deps) ??
         HistoryCubit(
-          stepRepository: widget.deps.stepRepository,
+          stepAggregation: widget.deps.stepAggregation,
           userHealthMetrics: widget.deps.userHealthMetrics,
         );
     _myDataCubit =
         widget.createMyDataCubit?.call(widget.deps) ??
         MyDataCubit(
-          stepRepository: widget.deps.stepRepository,
+          stepAggregation: widget.deps.stepAggregation,
+          csvService: widget.deps.csvService,
+          stepIngestion: widget.deps.stepIngestion,
           userSettings: widget.deps.userSettings,
           userHealthMetrics: widget.deps.userHealthMetrics,
           clock: widget.deps.timeProvider,

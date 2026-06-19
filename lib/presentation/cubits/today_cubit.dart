@@ -27,7 +27,7 @@ typedef PostGoalUpdateCallback = Future<void> Function();
 
 class TodayCubit extends Cubit<TodayState> {
   TodayCubit({
-    required this.stepRepository,
+    required this.stepAggregation,
     required this.userSettings,
     required this.userHealthMetrics,
     required this.clock,
@@ -39,7 +39,7 @@ class TodayCubit extends Cubit<TodayState> {
        _isIos = isIos ?? Platform.isIOS,
        super(const TodayState.loading());
 
-  final StepRepositoryContract stepRepository;
+  final StepAggregationRepositoryContract stepAggregation;
   final UserSettingsRepositoryContract userSettings;
   final UserHealthMetricsRepositoryContract userHealthMetrics;
   final TimeProvider clock;
@@ -429,8 +429,8 @@ class TodayCubit extends Cubit<TodayState> {
 
     final results = await Future.wait<Object?>([
       _resolveTodayGoal(),
-      stepRepository.getLastIngestionUtc(),
-      stepRepository.getTodayActiveBuckets(),
+      stepAggregation.getLastIngestionUtc(),
+      stepAggregation.getTodayActiveBuckets(),
       userHealthMetrics.getHeightCm(),
       userHealthMetrics.getWeightKg(),
     ]);
@@ -521,10 +521,10 @@ class TodayCubit extends Cubit<TodayState> {
 
     final todayIso = formatLocalDayIso(clock.snapshot());
     final results = await Future.wait<Object?>([
-      stepRepository.getTodaySteps(),
+      stepAggregation.getTodaySteps(),
       _resolveTodayGoal(),
-      stepRepository.getLastIngestionUtc(),
-      stepRepository.getTodayActiveBuckets(),
+      stepAggregation.getLastIngestionUtc(),
+      stepAggregation.getTodayActiveBuckets(),
       userHealthMetrics.getHeightCm(),
       userHealthMetrics.getWeightKg(),
       userSettings.getLastDisplayedSteps(todayIso),
@@ -646,7 +646,7 @@ class TodayCubit extends Cubit<TodayState> {
   _loadSnapshotForLocalDay(DateTime day) async {
     final utcDay = day.toUtc();
     final normalizedDay = DateTime.utc(utcDay.year, utcDay.month, utcDay.day);
-    final aggregates = await stepRepository.getChartDailyAggregates(days: 7);
+    final aggregates = await stepAggregation.getChartDailyAggregates(days: 7);
     final steps = aggregates
         .firstWhere(
           (aggregate) => _isSameLocalDay(aggregate.localDay, normalizedDay),
@@ -659,7 +659,7 @@ class TodayCubit extends Cubit<TodayState> {
     final goal = await userHealthMetrics.getGoalForLocalDay(
       localDayIsoFromDateOnly(normalizedDay),
     );
-    final buckets = await stepRepository.getActiveBucketsForLocalDay(
+    final buckets = await stepAggregation.getActiveBucketsForLocalDay(
       normalizedDay,
     );
     // Avoid extra async reads here: when height/weight are null, the metrics
@@ -849,7 +849,7 @@ class TodayCubit extends Cubit<TodayState> {
     );
     final weekDayKeys = CalendarWeek.daysContaining(referenceToday);
 
-    final aggregates = await stepRepository.getChartDailyAggregates(days: 7);
+    final aggregates = await stepAggregation.getChartDailyAggregates(days: 7);
     final stepsByDay = {
       for (final aggregate in aggregates)
         aggregate.localDay: aggregate.totalSteps,
