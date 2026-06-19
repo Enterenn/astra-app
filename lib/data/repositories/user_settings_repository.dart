@@ -24,15 +24,25 @@ class UserSettingsRepository implements UserSettingsRepositoryContract {
        );
 
   final UserPreferencesKvStore _kv;
+  Future<void> _lastDisplayedWriteChain = Future<void>.value();
 
   @override
   bool get isDatabaseOpen => _kv.isDatabaseOpen;
+
+  Future<void> _runSerializedLastDisplayedWrite(
+    Future<void> Function() write,
+  ) {
+    final run = _lastDisplayedWriteChain.then((_) => write());
+    _lastDisplayedWriteChain = run.catchError((_) {});
+    return run;
+  }
 
   Future<AstraThemePreference> getThemeMode() async {
     final value = await _kv.readValue(kThemeModeKey);
     return _parseThemeMode(value);
   }
 
+  @override
   Future<void> setThemeMode(AstraThemePreference preference) async {
     final encoded = switch (preference) {
       AstraThemePreference.light => 'light',
@@ -47,6 +57,7 @@ class UserSettingsRepository implements UserSettingsRepositoryContract {
     return parseAccentPreset(value);
   }
 
+  @override
   Future<void> setAccentPreset(AstraAccentPreset preset) async {
     await _kv.writeValue(kAccentPresetKey, accentPresetToStorage(preset));
   }
@@ -56,6 +67,7 @@ class UserSettingsRepository implements UserSettingsRepositoryContract {
     return value == 'true';
   }
 
+  @override
   Future<void> setOnboardingComplete(bool complete) async {
     await _kv.writeValue(kOnboardingCompleteKey, complete ? 'true' : 'false');
   }
@@ -64,11 +76,13 @@ class UserSettingsRepository implements UserSettingsRepositoryContract {
     return (await _kv.readValue(kGoalNotificationsEnabledKey)) != null;
   }
 
+  @override
   Future<bool> getGoalNotificationsEnabled() async {
     final value = await _kv.readValue(kGoalNotificationsEnabledKey);
     return value == 'true';
   }
 
+  @override
   Future<void> setGoalNotificationsEnabled(bool enabled) async {
     await _kv.writeValue(
       kGoalNotificationsEnabledKey,
@@ -81,6 +95,7 @@ class UserSettingsRepository implements UserSettingsRepositoryContract {
     return parseDistanceDisplayUnit(value);
   }
 
+  @override
   Future<void> setDistanceDisplayUnit(DistanceDisplayUnit unit) async {
     await _kv.writeValue(kDistanceDisplayUnitKey, unit.storageValue);
   }
@@ -90,6 +105,7 @@ class UserSettingsRepository implements UserSettingsRepositoryContract {
     return parseWeightDisplayUnit(value);
   }
 
+  @override
   Future<void> setWeightDisplayUnit(WeightDisplayUnit unit) async {
     await _kv.writeValue(kWeightDisplayUnitKey, unit.storageValue);
   }
@@ -99,6 +115,7 @@ class UserSettingsRepository implements UserSettingsRepositoryContract {
     return parseHeightDisplayUnit(value);
   }
 
+  @override
   Future<void> setHeightDisplayUnit(HeightDisplayUnit unit) async {
     await _kv.writeValue(kHeightDisplayUnitKey, unit.storageValue);
   }
@@ -168,13 +185,41 @@ class UserSettingsRepository implements UserSettingsRepositoryContract {
     if (steps < 0) {
       throw ArgumentError.value(steps, 'steps', 'must be non-negative');
     }
-    await _kv.writeValue(kLastDisplayedStepsLocalDayKey, localDayIso);
-    await _kv.writeValue(kLastDisplayedStepsKey, steps.toString());
+    await _runSerializedLastDisplayedWrite(() async {
+      await _kv.session.withRetry((db) async {
+        final batch = db.batch();
+        batch.insert(
+          'user_preferences',
+          {'key': kLastDisplayedStepsLocalDayKey, 'value': localDayIso},
+          conflictAlgorithm: ConflictAlgorithm.replace,
+        );
+        batch.insert(
+          'user_preferences',
+          {'key': kLastDisplayedStepsKey, 'value': steps.toString()},
+          conflictAlgorithm: ConflictAlgorithm.replace,
+        );
+        await batch.commit(noResult: true);
+      });
+    });
   }
 
   Future<void> clearLastDisplayedSteps() async {
-    await _kv.deleteValue(kLastDisplayedStepsKey);
-    await _kv.deleteValue(kLastDisplayedStepsLocalDayKey);
+    await _runSerializedLastDisplayedWrite(() async {
+      await _kv.session.withRetry((db) async {
+        final batch = db.batch();
+        batch.delete(
+          'user_preferences',
+          where: 'key = ?',
+          whereArgs: [kLastDisplayedStepsKey],
+        );
+        batch.delete(
+          'user_preferences',
+          where: 'key = ?',
+          whereArgs: [kLastDisplayedStepsLocalDayKey],
+        );
+        await batch.commit(noResult: true);
+      });
+    });
   }
 
   @override

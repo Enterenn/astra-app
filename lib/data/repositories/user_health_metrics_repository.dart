@@ -137,6 +137,7 @@ class UserHealthMetricsRepository implements UserHealthMetricsRepositoryContract
     );
   }
 
+  @override
   Future<String?> getDisplayName() async {
     final value = await _kv.readValue(kDisplayNameKey);
     if (value == null) {
@@ -155,6 +156,7 @@ class UserHealthMetricsRepository implements UserHealthMetricsRepositoryContract
     return int.tryParse(value);
   }
 
+  @override
   Future<void> setHeightCm(int? heightCm) async {
     if (heightCm == null) {
       await _kv.deleteValue(kHeightCmKey);
@@ -179,6 +181,7 @@ class UserHealthMetricsRepository implements UserHealthMetricsRepositoryContract
     return double.tryParse(value);
   }
 
+  @override
   Future<void> setWeightKg(double? weightKg) async {
     if (weightKg == null) {
       await _kv.deleteValue(kWeightKgKey);

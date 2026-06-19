@@ -1,7 +1,7 @@
 import 'package:flutter_bloc/flutter_bloc.dart';
 
 import '../../core/constants/astra_accent_preset.dart';
-import '../../data/repositories/user_settings_repository.dart';
+import '../../data/contracts/user_settings_repository_contract.dart';
 import 'theme_state.dart';
 
 class ThemeCubit extends Cubit<ThemeState> {
@@ -16,7 +16,7 @@ class ThemeCubit extends Cubit<ThemeState> {
          ),
        );
 
-  final UserSettingsRepository userSettings;
+  final UserSettingsRepositoryContract userSettings;
 
   Future<void>? _setInFlight;
 

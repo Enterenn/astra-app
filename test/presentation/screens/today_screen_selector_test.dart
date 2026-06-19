@@ -1,5 +1,6 @@
 import 'package:astra_app/core/constants/astra_theme.dart';
 import 'package:astra_app/core/database/app_database.dart';
+import 'package:astra_app/core/database/astra_database_session.dart';
 import 'package:astra_app/core/time/calendar_week.dart';
 import 'package:astra_app/data/repositories/step_repository.dart';
 import 'package:astra_app/data/repositories/user_health_metrics_repository.dart';
@@ -262,8 +263,12 @@ void main() {
         zoneOffset: const Duration(hours: 2),
       );
       db = await openAstraDatabase(databasePath: inMemoryDatabasePath);
-      userSettings = UserSettingsRepository(db);
-      userHealthMetrics = UserHealthMetricsRepository(db, clock: clock);
+      final session = AstraDatabaseSession(
+        databasePath: db.path,
+        initial: db,
+      );
+      userSettings = UserSettingsRepository(session);
+      userHealthMetrics = UserHealthMetricsRepository(session, clock: clock);
       stepRepository = StepRepository(db: db, clock: clock);
       unitsCubit = UnitsCubit(userSettings: userSettings);
       buildCounts.clear();

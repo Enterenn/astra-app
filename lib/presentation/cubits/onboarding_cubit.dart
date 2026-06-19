@@ -5,8 +5,7 @@ import 'package:permission_handler/permission_handler.dart';
 import '../../core/constants/display_unit_preferences.dart';
 import '../../core/constants/preference_keys.dart';
 import '../../core/permissions/activity_permission_resolver.dart';
-import '../../data/repositories/user_health_metrics_repository.dart';
-import '../../data/repositories/user_settings_repository.dart';
+import '../../data/contracts/contracts.dart';
 import 'onboarding_state.dart';
 
 typedef PermissionRequester = Future<PermissionStatus> Function(Permission);
@@ -22,8 +21,8 @@ class OnboardingCubit extends Cubit<OnboardingState> {
            activityPermissionResolver ?? resolveActivityPermission,
        super(const OnboardingState());
 
-  final UserSettingsRepository userSettings;
-  final UserHealthMetricsRepository userHealthMetrics;
+  final UserSettingsRepositoryContract userSettings;
+  final UserHealthMetricsRepositoryContract userHealthMetrics;
   final PermissionRequester _requestPermission;
   final ActivityPermissionResolver _activityPermissionResolver;
 

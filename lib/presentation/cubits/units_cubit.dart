@@ -1,7 +1,7 @@
 import 'package:flutter_bloc/flutter_bloc.dart';
 
 import '../../core/constants/display_unit_preferences.dart';
-import '../../data/repositories/user_settings_repository.dart';
+import '../../data/contracts/user_settings_repository_contract.dart';
 import 'units_state.dart';
 
 class UnitsCubit extends Cubit<UnitsState> {
@@ -18,7 +18,7 @@ class UnitsCubit extends Cubit<UnitsState> {
          ),
        );
 
-  final UserSettingsRepository userSettings;
+  final UserSettingsRepositoryContract userSettings;
 
   Future<void>? _setInFlight;
 

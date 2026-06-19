@@ -5,9 +5,15 @@ abstract class UserHealthMetricsRepositoryContract {
 
   Future<void> setDailyStepGoal(int goal);
 
+  Future<String?> getDisplayName();
+
   Future<int?> getHeightCm();
 
   Future<double?> getWeightKg();
+
+  Future<void> setHeightCm(int? heightCm);
+
+  Future<void> setWeightKg(double? weightKg);
 
   Future<void> setDisplayName(String? name);
 }

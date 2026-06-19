@@ -8,6 +8,7 @@ import '../../data/repositories/ingestion_baseline_repository.dart';
 import '../../data/repositories/step_repository.dart';
 import '../../data/repositories/user_health_metrics_repository.dart';
 import '../../data/repositories/user_settings_repository.dart';
+import '../database/astra_database_session.dart';
 import '../time/system_time_provider.dart';
 import '../time/time_provider.dart';
 import 'background_collector.dart';
@@ -16,6 +17,7 @@ import 'notification_service.dart';
 /// Shared isolate-safe [BackgroundCollector] bootstrap for WorkManager and FGS.
 Future<BackgroundCollector> createIsolateBackgroundCollector({
   required Database db,
+  String? databasePath,
   List<DataIngestionSource>? sources,
   TimeProvider? clock,
   NotificationService? notificationService,
@@ -23,6 +25,10 @@ Future<BackgroundCollector> createIsolateBackgroundCollector({
   bool includePhonePedometerSource = true,
 }) async {
   final timeProvider = clock ?? const SystemTimeProvider();
+  final session = AstraDatabaseSession(
+    databasePath: databasePath ?? db.path,
+    initial: db,
+  );
   final resolvedSources = sources ??
       [
         if (includePhonePedometerSource) PhonePedometerSource(),
@@ -35,8 +41,8 @@ Future<BackgroundCollector> createIsolateBackgroundCollector({
     normalizer: StepNormalizer(clock: timeProvider),
     repository: StepRepository(db: db, clock: timeProvider),
     baselineRepository: IngestionBaselineRepository(db),
-    userSettings: UserSettingsRepository(db),
-    userHealthMetrics: UserHealthMetricsRepository(db, clock: timeProvider),
+    userSettings: UserSettingsRepository(session),
+    userHealthMetrics: UserHealthMetricsRepository(session, clock: timeProvider),
     clock: timeProvider,
     notificationService: notificationsReady ? notifications : null,
     notificationPermissionGranted: notificationsReady

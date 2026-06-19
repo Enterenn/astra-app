@@ -4,8 +4,7 @@ import 'package:permission_handler/permission_handler.dart';
 
 import '../../core/constants/preference_keys.dart';
 import '../../core/services/notification_service.dart';
-import '../../data/repositories/user_health_metrics_repository.dart';
-import '../../data/repositories/user_settings_repository.dart';
+import '../../data/contracts/contracts.dart';
 import 'profile_state.dart';
 
 typedef NotificationPermissionRequester = Future<PermissionStatus> Function(
@@ -27,8 +26,8 @@ class ProfileCubit extends Cubit<ProfileState> {
        _postDisplayNameUpdate = postDisplayNameUpdate,
        super(const ProfileState.loading());
 
-  final UserSettingsRepository userSettings;
-  final UserHealthMetricsRepository userHealthMetrics;
+  final UserSettingsRepositoryContract userSettings;
+  final UserHealthMetricsRepositoryContract userHealthMetrics;
   final NotificationService notificationService;
   final NotificationPermissionRequester _requestPermission;
   final PostDisplayNameUpdateCallback? _postDisplayNameUpdate;
