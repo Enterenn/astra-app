@@ -507,7 +507,9 @@ class _GoalRingState extends State<GoalRing> with TickerProviderStateMixin {
   }
 
   void _syncPulseAnimation() {
-    final shouldPulse = widget.state.status == TodayStatus.loading;
+    final shouldPulse =
+        _isLoadingPlaceholder &&
+        widget.state.status != TodayStatus.noPermission;
     final disableAnimations = MediaQuery.disableAnimationsOf(context);
 
     if (shouldPulse && !disableAnimations) {
@@ -552,8 +554,12 @@ class _GoalRingState extends State<GoalRing> with TickerProviderStateMixin {
 
   double get _targetProgressRatio => GoalRing.ringProgressFor(widget.state);
 
+  bool get _isLoadingPlaceholder =>
+      widget.state.status == TodayStatus.loading ||
+      !widget.state.lastDisplayedStepsLoaded;
+
   double get _effectiveProgress {
-    if (widget.state.status == TodayStatus.loading ||
+    if (_isLoadingPlaceholder ||
         widget.state.status == TodayStatus.noPermission) {
       return 0;
     }
@@ -664,7 +670,9 @@ class _GoalRingState extends State<GoalRing> with TickerProviderStateMixin {
 
     Widget result = ring;
 
-    if (status == TodayStatus.loading && _pulseController != null) {
+    if (_isLoadingPlaceholder &&
+        widget.state.status != TodayStatus.noPermission &&
+        _pulseController != null) {
       result = FadeTransition(
         opacity: Tween<double>(begin: 0.35, end: 0.85).animate(
           CurvedAnimation(parent: _pulseController!, curve: Curves.easeInOut),
@@ -700,6 +708,9 @@ class _GoalRingState extends State<GoalRing> with TickerProviderStateMixin {
 
   Widget _buildCenterContent(AstraColors colors, bool reduceMotion) {
     final status = widget.state.status;
+    final showLoadingSkeleton =
+        _isLoadingPlaceholder && status != TodayStatus.noPermission;
+
     final centerText = switch (status) {
       TodayStatus.loading => '',
       TodayStatus.noPermission => '--',
@@ -730,28 +741,40 @@ class _GoalRingState extends State<GoalRing> with TickerProviderStateMixin {
               Text('Steps', style: AstraTypography.goalRingLabelFor(colors)),
             ],
           ),
-          if (centerText != null)
-            Text(centerText, style: stepCountStyle)
-          else if (reduceMotion || widget.freezeMotion)
-            Text(formatStepCount(_targetSteps), style: stepCountStyle)
-          else
-            AnimatedStepCount(
-              value: _displayedSteps,
-              previousValue: _microTickPreviousSteps,
-              microTickProgress: _microTickController?.value ?? 0,
-              style: stepCountStyle,
+          if (showLoadingSkeleton)
+            _GoalRingCenterSkeleton(
+              key: const Key('goal_ring_loading_skeleton'),
+              colors: colors,
+              pulseController: reduceMotion ? null : _pulseController,
+            )
+          else ...[
+            if (centerText != null)
+              Text(centerText, style: stepCountStyle)
+            else if (reduceMotion || widget.freezeMotion)
+              Text(formatStepCount(_targetSteps), style: stepCountStyle)
+            else
+              AnimatedStepCount(
+                value: _displayedSteps,
+                previousValue: _microTickPreviousSteps,
+                microTickProgress: _microTickController?.value ?? 0,
+                style: stepCountStyle,
+              ),
+            const SizedBox(height: 2),
+            Text(
+              '/${formatStepCount(widget.state.goal)}',
+              style: AstraTypography.goalRingLabelFor(colors),
             ),
-          const SizedBox(height: 2),
-          Text(
-            '/${formatStepCount(widget.state.goal)}',
-            style: AstraTypography.goalRingLabelFor(colors),
-          ),
+          ],
         ],
       ),
     );
   }
 
   String get _semanticsLabel {
+    if (_isLoadingPlaceholder &&
+        widget.state.status != TodayStatus.noPermission) {
+      return 'Steps today: loading';
+    }
     final steps = _targetSteps;
     return switch (widget.state.status) {
       TodayStatus.loading => 'Steps today: loading',
@@ -764,6 +787,10 @@ class _GoalRingState extends State<GoalRing> with TickerProviderStateMixin {
   }
 
   String? get _semanticsValue {
+    if (_isLoadingPlaceholder &&
+        widget.state.status != TodayStatus.noPermission) {
+      return null;
+    }
     return switch (widget.state.status) {
       TodayStatus.loading || TodayStatus.noPermission => null,
       _ => _targetSteps.toString(),
@@ -789,6 +816,61 @@ class _GoalRingState extends State<GoalRing> with TickerProviderStateMixin {
         widget.state.goal.toString(),
       _ => null,
     };
+  }
+}
+
+class _GoalRingCenterSkeleton extends StatelessWidget {
+  const _GoalRingCenterSkeleton({
+    super.key,
+    required this.colors,
+    this.pulseController,
+  });
+
+  final AstraColors colors;
+  final AnimationController? pulseController;
+
+  @override
+  Widget build(BuildContext context) {
+    Widget buildBars(double opacityScale) {
+      Color barColor() =>
+          colors.textMuted.withValues(alpha: 0.18 * opacityScale);
+      return Column(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          const SizedBox(height: 2),
+          Container(
+            width: 84,
+            height: 28,
+            decoration: BoxDecoration(
+              color: barColor(),
+              borderRadius: BorderRadius.circular(6),
+            ),
+          ),
+          const SizedBox(height: 8),
+          Container(
+            width: 48,
+            height: 14,
+            decoration: BoxDecoration(
+              color: barColor(),
+              borderRadius: BorderRadius.circular(4),
+            ),
+          ),
+        ],
+      );
+    }
+
+    final controller = pulseController;
+    if (controller == null) {
+      return buildBars(1);
+    }
+
+    return AnimatedBuilder(
+      animation: controller,
+      builder: (context, _) {
+        final opacityScale = 0.35 + (0.85 - 0.35) * controller.value;
+        return buildBars(opacityScale);
+      },
+    );
   }
 }
 
