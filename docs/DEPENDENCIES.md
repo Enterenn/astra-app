@@ -142,7 +142,7 @@ See KGP section below for Android build patches.
 | Package | Notes |
 |---------|-------|
 | `phosphoricons_flutter` 1.0.0 | Figma-aligned Phosphor icons. **Not** `phosphor_flutter` 2.1.0 (incompatible with Dart 3.12). Tab icons: `sneakerMove`, `chartBar`, `database`, `user` |
-| Active nav squircle | Native `ClipPath` + `CustomClipper<Path>` (`ContinuousRectangleBorder` path, radius 16) — Story 17-3; `figma_squircle` removed |
+| Active nav squircle | Native `ClipPath` + `CustomClipper<Path>` (`RoundedSuperellipseBorder` path, radius 16) — Story 17-3; `figma_squircle` removed |
 | `file_picker` 12.0.0-beta.5 | Exact pin at 12.0.0-beta.5 (REF-15) — CSV import/export via OS dialogs (Story 4.4 import, Story 17-1 export) |
 
 ### Android Built-in Kotlin / KGP (Story 5.5)

@@ -469,13 +469,61 @@ void main() {
           AstraSpacing.kBottomNavItemGap * 2;
       expect(pillBox.width, expectedPillWidth);
 
+      void expectClipPathOnSelectedNavTabOnly() {
+        final nav = find.byType(AppBottomNav);
+
+        expect(
+          find.descendant(of: nav, matching: find.byType(ClipPath)),
+          findsOneWidget,
+        );
+
+        final selectedNavItem = find.descendant(
+          of: nav,
+          matching: find.byWidgetPredicate(
+            (w) =>
+                w is Semantics &&
+                w.properties.button == true &&
+                w.properties.selected == true,
+          ),
+        );
+        expect(selectedNavItem, findsOneWidget);
+        expect(
+          find.descendant(of: selectedNavItem, matching: find.byType(ClipPath)),
+          findsOneWidget,
+        );
+
+        final inactiveNavItems = find.descendant(
+          of: nav,
+          matching: find.byWidgetPredicate(
+            (w) =>
+                w is Semantics &&
+                w.properties.button == true &&
+                w.properties.selected == false,
+          ),
+        );
+        expect(inactiveNavItems, findsNWidgets(2));
+        expect(
+          find.descendant(of: inactiveNavItems, matching: find.byType(ClipPath)),
+          findsNothing,
+        );
+      }
+
+      expectClipPathOnSelectedNavTabOnly();
+
       expect(
-        find.descendant(
-          of: find.byType(AppBottomNav),
-          matching: find.byType(ClipPath),
+        find.byWidgetPredicate(
+          (w) => w.runtimeType.toString().contains('SmoothRectangleBorder'),
         ),
-        findsOneWidget,
+        findsNothing,
       );
+
+      await tester.tap(find.byIcon(PhosphorIconsRegular.chartBar));
+      await tester.pump();
+      expectClipPathOnSelectedNavTabOnly();
+
+      await tester.tap(find.byIcon(PhosphorIconsRegular.list));
+      await tester.pump();
+      expectClipPathOnSelectedNavTabOnly();
 
       await _disposeScaffold(tester);
     });
