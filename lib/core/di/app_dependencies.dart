@@ -10,7 +10,8 @@ import '../../data/datasources/phone_pedometer_source.dart';
 import '../../data/datasources/step_normalizer.dart';
 import '../../data/repositories/ingestion_baseline_repository.dart';
 import '../../data/repositories/step_repository.dart';
-import '../../data/repositories/user_preferences_repository.dart';
+import '../../data/repositories/user_health_metrics_repository.dart';
+import '../../data/repositories/user_settings_repository.dart';
 import '../../core/constants/astra_accent_preset.dart';
 import '../../core/constants/display_unit_preferences.dart';
 import '../../presentation/cubits/theme_state.dart';
@@ -29,7 +30,8 @@ typedef ActivityPermissionChecker = Future<bool> Function();
 
 class AppDependencies {
   AppDependencies({
-    required this.userPreferences,
+    required this.userSettings,
+    required this.userHealthMetrics,
     required this.initialTheme,
     required this.initialAccentPreset,
     required this.initialDistanceUnit,
@@ -51,7 +53,8 @@ class AppDependencies {
     required this.appLifecycleCoordinator,
   });
 
-  final UserPreferencesRepository userPreferences;
+  final UserSettingsRepository userSettings;
+  final UserHealthMetricsRepository userHealthMetrics;
   final AstraThemePreference initialTheme;
   final AstraAccentPreset initialAccentPreset;
   final DistanceDisplayUnit initialDistanceUnit;
@@ -82,17 +85,17 @@ class AppDependencies {
     final databaseSession = AstraDatabaseSession(databasePath: databasePath);
     await databaseSession.ensureOpen();
     final timeProvider = const SystemTimeProvider();
-    final userPreferences = UserPreferencesRepository(
+    final userSettings = UserSettingsRepository(databaseSession);
+    final userHealthMetrics = UserHealthMetricsRepository(
       databaseSession,
       clock: timeProvider,
     );
-    final initialTheme = await userPreferences.getThemeMode();
-    final initialAccentPreset = await userPreferences.getAccentPreset();
-    final initialDistanceUnit = await userPreferences.getDistanceDisplayUnit();
-    final initialWeightUnit = await userPreferences.getWeightDisplayUnit();
-    final initialHeightUnit = await userPreferences.getHeightDisplayUnit();
-    final initialOnboardingComplete = await userPreferences
-        .getOnboardingComplete();
+    final initialTheme = await userSettings.getThemeMode();
+    final initialAccentPreset = await userSettings.getAccentPreset();
+    final initialDistanceUnit = await userSettings.getDistanceDisplayUnit();
+    final initialWeightUnit = await userSettings.getWeightDisplayUnit();
+    final initialHeightUnit = await userSettings.getHeightDisplayUnit();
+    final initialOnboardingComplete = await userSettings.getOnboardingComplete();
     final stepRepository = StepRepository(
       session: databaseSession,
       clock: timeProvider,
@@ -114,7 +117,8 @@ class AppDependencies {
       normalizer: stepNormalizer,
       repository: stepRepository,
       baselineRepository: baselineRepository,
-      userPreferences: userPreferences,
+      userSettings: userSettings,
+      userHealthMetrics: userHealthMetrics,
       clock: timeProvider,
       notificationService: notificationService,
       notificationPermissionGranted:
@@ -123,9 +127,6 @@ class AppDependencies {
     );
     final healthForeground = HealthForegroundServiceCoordinator(
       activityPermissionGranted: resolveActivityRecognitionGranted,
-      // Reuse the UI [Database] — opening/closing a second connection on the same
-      // file path (see [runFgsStepCollectionCycle]) can close the app connection
-      // while the file picker is open (import → postImportRefresh).
       collectionRunner: ({bool skipPhoneSourceWhenUiActive = false}) async {
         try {
           await backgroundCollector.collectOnce(enableGoalNotification: true);
@@ -143,12 +144,13 @@ class AppDependencies {
       session: databaseSession,
       databasePath: databasePath,
       repository: stepRepository,
-      userPreferences: userPreferences,
+      userSettings: userSettings,
       clock: timeProvider,
     );
 
     return _buildDependencies(
-      userPreferences: userPreferences,
+      userSettings: userSettings,
+      userHealthMetrics: userHealthMetrics,
       initialTheme: initialTheme,
       initialAccentPreset: initialAccentPreset,
       initialDistanceUnit: initialDistanceUnit,
@@ -171,7 +173,8 @@ class AppDependencies {
   }
 
   static AppDependencies _buildDependencies({
-    required UserPreferencesRepository userPreferences,
+    required UserSettingsRepository userSettings,
+    required UserHealthMetricsRepository userHealthMetrics,
     required AstraThemePreference initialTheme,
     required AstraAccentPreset initialAccentPreset,
     required DistanceDisplayUnit initialDistanceUnit,
@@ -196,7 +199,8 @@ class AppDependencies {
     final coordinator = appLifecycleCoordinator ??
         AppLifecycleCoordinator(depsGetter: () => builtDeps);
     builtDeps = AppDependencies(
-      userPreferences: userPreferences,
+      userSettings: userSettings,
+      userHealthMetrics: userHealthMetrics,
       initialTheme: initialTheme,
       initialAccentPreset: initialAccentPreset,
       initialDistanceUnit: initialDistanceUnit,
@@ -223,7 +227,8 @@ class AppDependencies {
   /// Test factory — reads persisted prefs while avoiding live platform streams by default.
   static Future<AppDependencies> test({
     required Database db,
-    required UserPreferencesRepository userPreferences,
+    UserSettingsRepository? userSettings,
+    UserHealthMetricsRepository? userHealthMetrics,
     bool? initialOnboardingComplete,
     TimeProvider? timeProvider,
     List<DataIngestionSource>? ingestionSources,
@@ -237,20 +242,22 @@ class AppDependencies {
     AppLifecycleCoordinator? appLifecycleCoordinator,
     BackgroundCollector? backgroundCollector,
   }) async {
-    final initialTheme = await userPreferences.getThemeMode();
-    final initialAccentPreset = await userPreferences.getAccentPreset();
-    final initialDistanceUnit = await userPreferences.getDistanceDisplayUnit();
-    final initialWeightUnit = await userPreferences.getWeightDisplayUnit();
-    final initialHeightUnit = await userPreferences.getHeightDisplayUnit();
-    final onboardingComplete =
-        initialOnboardingComplete ??
-        await userPreferences.getOnboardingComplete();
     final clock = timeProvider ?? const SystemTimeProvider();
     final path = databasePath ?? inMemoryDatabasePath;
     final databaseSession = AstraDatabaseSession(
       databasePath: path,
       initial: db,
     );
+    final settings = userSettings ?? UserSettingsRepository(databaseSession);
+    final health = userHealthMetrics ??
+        UserHealthMetricsRepository(databaseSession, clock: clock);
+    final initialTheme = await settings.getThemeMode();
+    final initialAccentPreset = await settings.getAccentPreset();
+    final initialDistanceUnit = await settings.getDistanceDisplayUnit();
+    final initialWeightUnit = await settings.getWeightDisplayUnit();
+    final initialHeightUnit = await settings.getHeightDisplayUnit();
+    final onboardingComplete =
+        initialOnboardingComplete ?? await settings.getOnboardingComplete();
     final stepRepository = StepRepository(session: databaseSession, clock: clock);
     final stepNormalizer = StepNormalizer(clock: clock);
     final baselineRepository = IngestionBaselineRepository(databaseSession);
@@ -267,8 +274,6 @@ class AppDependencies {
         <DataIngestionSource>[
           MonitorDrainSource(
             monitor,
-            // Prevent real pedometer channel from opening in test environments
-            // when the monitor is not running and MonitorDrainSource falls back.
             phoneFallback: PhonePedometerSource(
               stepEventStreamFactory: () => const Stream.empty(),
             ),
@@ -299,7 +304,8 @@ class AppDependencies {
           normalizer: stepNormalizer,
           repository: stepRepository,
           baselineRepository: baselineRepository,
-          userPreferences: userPreferences,
+          userSettings: settings,
+          userHealthMetrics: health,
           clock: clock,
           notificationService: notifications,
           notificationPermissionGranted: notificationCheck,
@@ -310,11 +316,12 @@ class AppDependencies {
           session: databaseSession,
           databasePath: path,
           repository: stepRepository,
-          userPreferences: userPreferences,
+          userSettings: settings,
           clock: clock,
         );
     return _buildDependencies(
-      userPreferences: userPreferences,
+      userSettings: settings,
+      userHealthMetrics: health,
       initialTheme: initialTheme,
       initialAccentPreset: initialAccentPreset,
       initialDistanceUnit: initialDistanceUnit,

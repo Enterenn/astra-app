@@ -6,7 +6,8 @@ import '../../data/datasources/phone_pedometer_source.dart';
 import '../../data/datasources/step_normalizer.dart';
 import '../../data/repositories/ingestion_baseline_repository.dart';
 import '../../data/repositories/step_repository.dart';
-import '../../data/repositories/user_preferences_repository.dart';
+import '../../data/repositories/user_health_metrics_repository.dart';
+import '../../data/repositories/user_settings_repository.dart';
 import '../time/system_time_provider.dart';
 import '../time/time_provider.dart';
 import 'background_collector.dart';
@@ -34,7 +35,8 @@ Future<BackgroundCollector> createIsolateBackgroundCollector({
     normalizer: StepNormalizer(clock: timeProvider),
     repository: StepRepository(db: db, clock: timeProvider),
     baselineRepository: IngestionBaselineRepository(db),
-    userPreferences: UserPreferencesRepository(db),
+    userSettings: UserSettingsRepository(db),
+    userHealthMetrics: UserHealthMetricsRepository(db, clock: timeProvider),
     clock: timeProvider,
     notificationService: notificationsReady ? notifications : null,
     notificationPermissionGranted: notificationsReady

@@ -26,7 +26,7 @@ Future<void> main() async {
     notificationService: notificationService,
   );
   await migrateGoalNotificationPreferenceIfNeeded(
-    userPreferences: deps.userPreferences,
+    userSettings: deps.userSettings,
     notificationService: notificationService,
   );
   // WM registers regardless of FGS — reconciliation fallback (D-04), not realtime cadence.

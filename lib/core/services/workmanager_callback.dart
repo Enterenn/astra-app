@@ -9,7 +9,7 @@ import '../../data/datasources/data_ingestion_source.dart';
 import '../database/isolate_database_factory.dart';
 import '../time/time_provider.dart';
 import '../../data/repositories/step_repository.dart';
-import '../../data/repositories/user_preferences_repository.dart';
+import '../../data/repositories/user_settings_repository.dart';
 import '../time/system_time_provider.dart';
 import 'background_collector_factory.dart';
 import 'data_lifecycle_service.dart';
@@ -145,7 +145,7 @@ Future<bool> runDatabaseMaintenanceWorkmanagerTask({
       db: db,
       databasePath: databasePath,
       repository: StepRepository(db: db, clock: timeProvider),
-      userPreferences: UserPreferencesRepository(db),
+      userSettings: UserSettingsRepository(db),
       clock: timeProvider,
       maintenanceOnCurrentConnection: true,
     );
