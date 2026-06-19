@@ -1,6 +1,6 @@
 # generated: 2026-06-18
-# last_updated: 2026-06-19 (Story 16-5 done)
-# NEXT: dev-story 16-5-granular-bloc-selector-on-today-screen
+# last_updated: 2026-06-19 (Story 16-6 review)
+# NEXT: dev-story 16-6-collection-health-indicator-and-stale-banner-cta
 # Ref: planning-artifacts/epics-refacto.md · planning-artifacts/refactoring-audit-master-v0.6.1.md
 # branch: refacto
 # base_version: 0.6.2+13
@@ -58,7 +58,7 @@
 # NAVIGATION: _bmad-output/README.md · planning-artifacts/epics-refacto.md
 
 generated: 2026-06-18
-last_updated: 2026-06-19 (Story 16-5 done)
+last_updated: 2026-06-19 (Story 16-6 ready-for-dev)
 project: astra-app
 project_key: NOKEY
 tracking_system: file-system
@@ -85,7 +85,7 @@ development_status:
   16-3-tab-repaint-isolation-in-app-scaffold: done
   16-4-goal-ring-repaint-boundary-and-controller-lifecycle-audit: done
   16-5-granular-bloc-selector-on-today-screen: done
-  16-6-collection-health-indicator-and-stale-banner-cta: backlog
+  16-6-collection-health-indicator-and-stale-banner-cta: review
   16-7-cold-start-loading-shimmer-for-today: backlog
   epic-16-retrospective: optional
 

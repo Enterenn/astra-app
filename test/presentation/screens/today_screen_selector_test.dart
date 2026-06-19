@@ -9,6 +9,7 @@ import 'package:astra_app/presentation/cubits/units_cubit.dart';
 import 'package:astra_app/presentation/models/week_day_status.dart';
 import 'package:astra_app/presentation/screens/today_screen.dart';
 import 'package:astra_app/presentation/widgets/elevated_card.dart';
+import 'package:astra_app/presentation/widgets/status_banner.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:flutter_test/flutter_test.dart';
@@ -41,6 +42,23 @@ class _SeededTodayCubit extends TodayCubit {
 
   @override
   Future<void> refresh({bool silent = true}) async {}
+}
+
+class _TrackingRefreshCubit extends _SeededTodayCubit {
+  _TrackingRefreshCubit({
+    required super.stepRepository,
+    required super.userPreferences,
+    required super.clock,
+    required super.initial,
+    required this.onRefresh,
+  });
+
+  final VoidCallback onRefresh;
+
+  @override
+  Future<void> refresh({bool silent = true}) async {
+    onRefresh();
+  }
 }
 
 void main() {
@@ -113,6 +131,36 @@ void main() {
       );
 
       expect(todayWeekSliceEquals(before, after), isFalse);
+    });
+
+    test('health slice unchanged when only steps and metrics tick', () {
+      final before = TodayState.fromData(
+        steps: 1200,
+        goal: 8000,
+        isStale: false,
+        lastIngestionUtc: DateTime.utc(2026, 6, 3, 10),
+      );
+      final after = before.copyWith(
+        steps: 1201,
+        activityMetrics: const ActivityMetricsSnapshot(
+          distanceKm: 0.91,
+          walkingDuration: Duration(minutes: 12),
+          kcal: 49,
+        ),
+      );
+
+      expect(todayHealthSliceEquals(before, after), isTrue);
+    });
+
+    test('health slice changes when stale flag toggles', () {
+      final before = TodayState.fromData(
+        steps: 1200,
+        goal: 8000,
+        isStale: false,
+      );
+      final after = before.copyWith(isStale: true);
+
+      expect(todayHealthSliceEquals(before, after), isFalse);
     });
 
     test('activity stats slice changes when only steps and metrics tick', () {
@@ -189,6 +237,52 @@ void main() {
         clock: clock,
         initial: state,
       );
+    }
+
+    Future<_SeededTodayCubit> pumpHealthSlot(
+      WidgetTester tester, {
+      required TodayState initial,
+    }) async {
+      final cubit = buildCubit(initial);
+      addTearDown(cubit.close);
+
+      await tester.pumpWidget(
+        MaterialApp(
+          theme: buildAstraLightTheme(),
+          home: MediaQuery(
+            data: const MediaQueryData(disableAnimations: true),
+            child: BlocProvider<TodayCubit>.value(
+              value: cubit,
+              child: buildTodayHealthSlotForTest(),
+            ),
+          ),
+        ),
+      );
+      await tester.pump();
+      return cubit;
+    }
+
+    Future<_SeededTodayCubit> pumpStaleBannerSlot(
+      WidgetTester tester, {
+      required TodayState initial,
+    }) async {
+      final cubit = buildCubit(initial);
+      addTearDown(cubit.close);
+
+      await tester.pumpWidget(
+        MaterialApp(
+          theme: buildAstraLightTheme(),
+          home: MediaQuery(
+            data: const MediaQueryData(disableAnimations: true),
+            child: BlocProvider<TodayCubit>.value(
+              value: cubit,
+              child: buildTodayStaleBannerSlotForTest(),
+            ),
+          ),
+        ),
+      );
+      await tester.pump();
+      return cubit;
     }
 
     Future<_SeededTodayCubit> pumpWeekSection(
@@ -372,6 +466,89 @@ void main() {
       expect(builds, 2);
     });
 
+    testWidgets('live step tick does not rebuild health selector', (tester) async {
+      const initialSteps = 1200;
+      final cubit = await pumpHealthSlot(
+        tester,
+        initial: TodayState.fromData(
+          steps: initialSteps,
+          goal: 8000,
+          isStale: false,
+          lastIngestionUtc: DateTime.utc(2026, 6, 3, 10),
+        ),
+      );
+
+      final healthBuildsAfterPump = buildCounts['health'] ?? 0;
+      expect(healthBuildsAfterPump, greaterThan(0));
+
+      final before = cubit.state;
+      final nextState = before.copyWith(steps: initialSteps + 1);
+      expect(todayHealthSliceEquals(before, nextState), isTrue);
+
+      cubit.emit(nextState);
+      await tester.pump();
+
+      expect(buildCounts['health'], healthBuildsAfterPump);
+    });
+
+    testWidgets('live step tick does not rebuild stale banner selector', (
+      tester,
+    ) async {
+      const initialSteps = 1200;
+      final cubit = await pumpStaleBannerSlot(
+        tester,
+        initial: TodayState.fromData(
+          steps: initialSteps,
+          goal: 8000,
+          isStale: true,
+          weekDays: sampleWeekDays(),
+        ),
+      );
+
+      final staleBannerBuildsAfterPump = buildCounts['staleBanner'] ?? 0;
+      expect(staleBannerBuildsAfterPump, greaterThan(0));
+
+      cubit.emit(cubit.state.copyWith(steps: initialSteps + 1));
+      await tester.pump();
+
+      expect(buildCounts['staleBanner'], staleBannerBuildsAfterPump);
+    });
+
+    testWidgets('stale banner tap invokes cubit refresh', (tester) async {
+      var refreshCalls = 0;
+      final cubit = _TrackingRefreshCubit(
+        stepRepository: stepRepository,
+        userPreferences: userPreferences,
+        clock: clock,
+        initial: TodayState.fromData(
+          steps: 1200,
+          goal: 8000,
+          isStale: true,
+        ),
+        onRefresh: () => refreshCalls++,
+      );
+      addTearDown(cubit.close);
+
+      await tester.pumpWidget(
+        MaterialApp(
+          theme: buildAstraLightTheme(),
+          home: MediaQuery(
+            data: const MediaQueryData(disableAnimations: true),
+            child: BlocProvider<TodayCubit>.value(
+              value: cubit,
+              child: buildTodayStaleBannerSlotForTest(),
+            ),
+          ),
+        ),
+      );
+      await tester.pump();
+
+      await tester.tap(find.byType(StatusBanner));
+      await tester.pump();
+
+      expect(refreshCalls, 1);
+    });
+
     testWidgets('live step tick does not rebuild week selector', (tester) async {
       const initialSteps = 1200;
       final cubit = await pumpWeekSection(
@@ -487,11 +664,14 @@ void main() {
         final titleBuilds = buildCounts['staticTitle'] ?? 0;
         final setGoalBuilds = buildCounts['staticSetGoal'] ?? 0;
         final weekBuilds = buildCounts['week'] ?? 0;
+        final healthBuilds = buildCounts['health'] ?? 0;
+        final staleBannerBuilds = buildCounts['staleBanner'] ?? 0;
         final activityBuilds = buildCounts['activityStats'] ?? 0;
 
         expect(titleBuilds, greaterThan(0));
         expect(setGoalBuilds, greaterThan(0));
         expect(weekBuilds, greaterThan(0));
+        expect(healthBuilds, greaterThan(0));
         expect(activityBuilds, greaterThan(0));
         expect(find.text('48'), findsOneWidget);
 
@@ -516,6 +696,8 @@ void main() {
         expect(buildCounts['staticTitle'], titleBuilds);
         expect(buildCounts['staticSetGoal'], setGoalBuilds);
         expect(buildCounts['week'], weekBuilds);
+        expect(buildCounts['health'], healthBuilds);
+        expect(buildCounts['staleBanner'], staleBannerBuilds);
         expect(buildCounts['activityStats'], greaterThan(activityBuilds));
         expect(find.text('49'), findsOneWidget);
       },

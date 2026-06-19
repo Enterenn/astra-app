@@ -322,6 +322,7 @@ class _StaleBannerSlot extends StatelessWidget {
       key: sectionKey,
       selector: (state) => state.isStale,
       builder: (context, isStale) {
+        _probeSectionBuild('staleBanner');
         if (!isStale) {
           return const SizedBox.shrink();
         }
@@ -571,6 +572,9 @@ Widget buildTodayWeekSectionForTest() => const _WeekSection();
 
 @visibleForTesting
 Widget buildTodayHealthSlotForTest() => const _CollectionHealthSlot();
+
+@visibleForTesting
+Widget buildTodayStaleBannerSlotForTest() => const _StaleBannerSlot();
 
 @visibleForTesting
 Widget buildTodayActivityStatsSectionForTest() => const _ActivityStatsSection();
