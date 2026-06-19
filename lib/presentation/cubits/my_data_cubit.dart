@@ -1,13 +1,11 @@
 import 'dart:async';
 import 'dart:io';
-import 'dart:ui' show Rect;
 
 import 'package:flutter/foundation.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:path/path.dart' as p;
 import 'package:file_picker/file_picker.dart';
 import 'package:path_provider/path_provider.dart';
-import 'package:share_plus/share_plus.dart';
 
 import '../../core/validation/step_goal_validator.dart';
 import '../../data/csv/import_validation_exception.dart';
@@ -23,8 +21,6 @@ import 'my_data_state.dart';
 
 typedef ActivityPermissionChecker = Future<bool> Function();
 typedef TempDirectoryProvider = Future<String> Function();
-typedef ShareCsvFileCallback =
-    Future<void> Function(String filePath, {Rect? sharePositionOrigin});
 /// Returns true when the user saved to a chosen on-device location.
 typedef SaveCsvFileCallback = Future<bool> Function(String filePath);
 typedef PickCsvFileCallback = Future<String?> Function();
@@ -44,7 +40,6 @@ class MyDataCubit extends Cubit<MyDataState> {
     required this.databasePath,
     ActivityPermissionChecker? activityPermissionGranted,
     TempDirectoryProvider? tempDirectoryProvider,
-    ShareCsvFileCallback? shareCsvFile,
     SaveCsvFileCallback? saveCsvFile,
     PickCsvFileCallback? pickCsvFile,
     this._confirmImport,
@@ -57,7 +52,6 @@ class MyDataCubit extends Cubit<MyDataState> {
            activityPermissionGranted ?? isActivityRecognitionGranted,
        _tempDirectoryProvider =
            tempDirectoryProvider ?? _defaultTempDirectoryProvider,
-       _shareCsvFile = shareCsvFile ?? _defaultShareCsvFile,
        _saveCsvFile = saveCsvFile ?? _defaultSaveCsvFile,
        _pickCsvFile = pickCsvFile ?? _defaultPickCsvFile,
        _isIos = isIos ?? Platform.isIOS,
@@ -69,7 +63,6 @@ class MyDataCubit extends Cubit<MyDataState> {
   final String databasePath;
   final ActivityPermissionChecker _activityPermissionGranted;
   final TempDirectoryProvider _tempDirectoryProvider;
-  final ShareCsvFileCallback _shareCsvFile;
   final SaveCsvFileCallback _saveCsvFile;
   final PickCsvFileCallback _pickCsvFile;
   final ConfirmImportCallback? _confirmImport;
@@ -107,19 +100,6 @@ class MyDataCubit extends Cubit<MyDataState> {
       allowedExtensions: ['csv'],
     );
     return savedPath != null;
-  }
-
-  static Future<void> _defaultShareCsvFile(
-    String filePath, {
-    Rect? sharePositionOrigin,
-  }) async {
-    await SharePlus.instance.share(
-      ShareParams(
-        files: [XFile(filePath)],
-        fileNameOverrides: [p.basename(filePath)],
-        sharePositionOrigin: sharePositionOrigin,
-      ),
-    );
   }
 
   Future<void> pickAndImport({
@@ -236,7 +216,7 @@ class MyDataCubit extends Cubit<MyDataState> {
     }
   }
 
-  Future<void> exportAndShare({Rect? sharePositionOrigin}) async {
+  Future<void> exportAndShare() async {
     if (isClosed ||
         state.isExporting ||
         state.isImporting ||
@@ -247,9 +227,7 @@ class MyDataCubit extends Cubit<MyDataState> {
       return _exportInFlight!;
     }
 
-    _exportInFlight = _exportAndShareImpl(
-      sharePositionOrigin: sharePositionOrigin,
-    );
+    _exportInFlight = _exportAndShareImpl();
     try {
       await _exportInFlight!;
     } finally {
@@ -257,7 +235,7 @@ class MyDataCubit extends Cubit<MyDataState> {
     }
   }
 
-  Future<void> _exportAndShareImpl({Rect? sharePositionOrigin}) async {
+  Future<void> _exportAndShareImpl() async {
     emit(
       state.copyWith(
         isExporting: true,
@@ -271,33 +249,22 @@ class MyDataCubit extends Cubit<MyDataState> {
         outputDirectory: tempDirectory,
       );
       try {
-        var savedOnDevice = false;
-        try {
-          savedOnDevice = await _saveCsvFile(filePath);
-        } catch (saveError, saveStack) {
-          if (kDebugMode) {
-            debugPrint('MyDataCubit.saveCsvFile failed: $saveError');
-            debugPrintStack(stackTrace: saveStack);
-          }
+        final savedOnDevice = await _saveCsvFile(filePath);
+        if (isClosed) {
+          return;
         }
-        if (!savedOnDevice && !isClosed) {
-          await _shareCsvFile(
-            filePath,
-            sharePositionOrigin: sharePositionOrigin,
-          );
+
+        if (savedOnDevice) {
+          emit(state.copyWith(isExporting: false, exportErrorMessage: null));
+          unawaited(refresh(silent: true));
+        } else {
+          emit(state.copyWith(isExporting: false));
         }
       } finally {
         try {
           await File(filePath).delete();
         } catch (_) {}
       }
-
-      if (isClosed) {
-        return;
-      }
-
-      emit(state.copyWith(isExporting: false, exportErrorMessage: null));
-      unawaited(refresh(silent: true));
     } catch (error, stackTrace) {
       if (kDebugMode) {
         debugPrint('MyDataCubit.exportAndShare failed: $error');
