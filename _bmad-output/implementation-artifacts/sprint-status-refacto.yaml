@@ -1,6 +1,6 @@
 # generated: 2026-06-18
-# last_updated: 2026-06-20 (Story 18-2 review)
-# NEXT: dev-story 18-2
+# last_updated: 2026-06-20 (Story 18-3 in-progress)
+# NEXT: dev-story 18-3
 # Ref: planning-artifacts/epics-refacto.md · planning-artifacts/refactoring-audit-master-v0.6.1.md
 # branch: refacto
 # base_version: 0.6.2+13
@@ -58,7 +58,7 @@
 # NAVIGATION: _bmad-output/README.md · planning-artifacts/epics-refacto.md
 
 generated: 2026-06-18
-last_updated: 2026-06-20 (Story 18-2 review)
+last_updated: 2026-06-20 (Story 18-3 in-progress)
 project: astra-app
 project_key: NOKEY
 tracking_system: file-system
@@ -98,7 +98,7 @@ development_status:
   epic-18: in-progress
   18-1-extract-app-lifecycle-coordinator-from-app-dart: done
   18-2-split-user-preferences-repository: done
-  18-3-split-step-repository-and-extract-csv-service: backlog
+  18-3-split-step-repository-and-extract-csv-service: in-progress
   epic-18-retrospective: optional
 
   epic-19: backlog
