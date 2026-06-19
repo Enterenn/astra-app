@@ -122,7 +122,7 @@ Direct dependencies from `pubspec.yaml` (locked versions from `pubspec.lock` as 
 | `fl_chart` | 1.2.0 | Trends bar chart | No |
 | `flutter_local_notifications` | 21.0.0 | Local goal-reached and FGS ongoing notifications, **no FCM/Firebase** | No (local channels only) |
 | `path_provider` | 2.1.5 | App documents/temp paths for export | No |
-| `file_picker` | 12.0.0-beta.5 | My Data CSV import/export via OS save/pick dialogs | No data upload; OS picker only |
+| `file_picker` | 12.0.0-beta.5 (exact pin) | My Data CSV import/export via OS save/pick dialogs | No data upload; OS picker only |
 | `phosphoricons_flutter` | 1.0.0 | Phosphor icon fonts (bundled in package) | No |
 | `figma_squircle` | 0.6.3 | Figma corner smoothing on nav squircle | No |
 | `package_info_plus` | 10.1.0 | Profile version footer from built manifest (Story 7.3); local platform channel only | No |
@@ -144,7 +144,7 @@ See KGP section below for Android build patches.
 |---------|-------|
 | `phosphoricons_flutter` 1.0.0 | Figma-aligned Phosphor icons. **Not** `phosphor_flutter` 2.1.0 (incompatible with Dart 3.12). Tab icons: `sneakerMove`, `chartBar`, `database`, `user` |
 | `figma_squircle` 0.6.3 | `SmoothRectangleBorder` on active nav squircle, `cornerRadius` 16, `cornerSmoothing` 1.0 |
-| `file_picker` 12.0.0-beta.5 | Beta pin for CSV import/export via OS dialogs (Story 4.4 import, Story 17-1 export) |
+| `file_picker` 12.0.0-beta.5 | Exact pin at 12.0.0-beta.5 (REF-15) — CSV import/export via OS dialogs (Story 4.4 import, Story 17-1 export) |
 
 ### Android Built-in Kotlin / KGP (Story 5.5)
 
@@ -174,7 +174,13 @@ AGP 9.0.1 + Flutter 3.44.0 use **built-in Kotlin** (no `kotlin-android` on the a
 
 **Pub upgrades skipped for KGP:** `pedometer`, `workmanager`, `file_picker` already at latest compatible versions; `permission_handler` / `sqflite` minor bumps are unrelated to KGP (deferred).
 
-**`file_picker` 12.0.0-beta.5:** AGP9-aware, applies KGP only when `android.builtInKotlin=false`; no patch required once built-in Kotlin is enabled.
+**`file_picker` 12.0.0-beta.5:** AGP9-aware, applies KGP only when `android.builtInKotlin=false`; no patch required once built-in Kotlin is enabled. **Exact pin** in `pubspec.yaml` (no `^`) — hold at beta.5 until a deliberate upgrade story; pub.dev latest prerelease is `12.0.0-beta.7` (informational only, do not bump without manual CSV import/export device testing).
+
+**`file_picker` upgrade criteria (not actionable until a dedicated story):**
+
+1. pub.dev publishes stable `12.0.0` (non-beta), **or**
+2. Deliberate story to evaluate beta.6+ with manual Android CSV import/export + full test suite
+3. Re-check AGP/KGP compatibility (Story 5.5 criteria)
 
 ### Dev / test only (not shipped in release APK)
 
