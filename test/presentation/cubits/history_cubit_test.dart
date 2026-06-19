@@ -6,6 +6,7 @@ import 'package:astra_app/data/models/chart_month_aggregate.dart';
 import 'package:astra_app/data/models/timeseries_sample_model.dart';
 import 'package:astra_app/data/datasources/data_ingestion_source.dart';
 import 'package:astra_app/data/models/normalized_step_bucket.dart';
+import 'package:astra_app/data/contracts/contracts.dart';
 import 'package:astra_app/data/repositories/step_repository.dart';
 import 'package:astra_app/data/repositories/user_preferences_repository.dart';
 import '../../dev/data_inject_service.dart';
@@ -38,10 +39,10 @@ class _BatchGoalSpyPreferencesRepository extends UserPreferencesRepository {
   }
 }
 
-class _ChartAggregateSpyRepository implements StepRepository {
+class _ChartAggregateSpyRepository implements StepRepositoryContract {
   _ChartAggregateSpyRepository(this._delegate);
 
-  final StepRepository _delegate;
+  final StepRepositoryContract _delegate;
   int chartAggregateCallCount = 0;
   int chartMonthlyAggregateCallCount = 0;
 
@@ -77,10 +78,10 @@ class _ChartAggregateSpyRepository implements StepRepository {
   }
 }
 
-class _ThrowingChartRepository implements StepRepository {
+class _ThrowingChartRepository implements StepRepositoryContract {
   _ThrowingChartRepository(this._fallback);
 
-  final StepRepository _fallback;
+  final StepRepositoryContract _fallback;
   int callCount = 0;
 
   @override
@@ -117,7 +118,7 @@ class _ThrowingChartRepository implements StepRepository {
   }
 }
 
-class _AlwaysThrowingChartRepository implements StepRepository {
+class _AlwaysThrowingChartRepository implements StepRepositoryContract {
   @override
   Future<List<ChartDayAggregate>> getChartDailyAggregates({
     required int days,
@@ -138,10 +139,10 @@ class _AlwaysThrowingChartRepository implements StepRepository {
   }
 }
 
-class _ThrowingBucketOnSecondRefreshRepository implements StepRepository {
+class _ThrowingBucketOnSecondRefreshRepository implements StepRepositoryContract {
   _ThrowingBucketOnSecondRefreshRepository(this._delegate);
 
-  final StepRepository _delegate;
+  final StepRepositoryContract _delegate;
   int refreshCount = 0;
 
   @override
@@ -204,7 +205,7 @@ void main() {
     });
 
     HistoryCubit buildCubit({
-      StepRepository? repository,
+      StepRepositoryContract? repository,
       UserPreferencesRepository? preferences,
     }) {
       return HistoryCubit(
