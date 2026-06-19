@@ -1,3 +1,4 @@
+import 'package:flutter/foundation.dart' show immutable, listEquals, visibleForTesting;
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:permission_handler/permission_handler.dart';
@@ -38,80 +39,33 @@ class TodayScreen extends StatelessWidget {
       color: colors.bgBase,
       child: SafeArea(
         bottom: false,
-        child: BlocBuilder<TodayCubit, TodayState>(
-          builder: (context, state) {
-            return Semantics(
-              label: _kScreenTitle,
-              child: SingleChildScrollView(
-                padding: EdgeInsets.fromLTRB(
-                  horizontalPadding,
-                  AstraSpacing.kSpaceSm,
-                  horizontalPadding,
-                  bottomScrollPadding,
+        child: Semantics(
+          label: _kScreenTitle,
+          child: SingleChildScrollView(
+            padding: EdgeInsets.fromLTRB(
+              horizontalPadding,
+              AstraSpacing.kSpaceSm,
+              horizontalPadding,
+              bottomScrollPadding,
+            ),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.stretch,
+              children: [
+                Text(
+                  _kScreenTitle,
+                  style: AstraTypography.screenTitleFor(colors),
                 ),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.stretch,
-                  children: [
-                    Text(
-                      _kScreenTitle,
-                      style: AstraTypography.screenTitleFor(colors),
-                    ),
-                    if (state.isStale) ...[
-                      const SizedBox(height: AstraSpacing.kSpaceMd),
-                      const StatusBanner(
-                        variant: StatusBannerVariant.staleCompact,
-                      ),
-                    ],
-                    const SizedBox(height: AstraSpacing.kSpaceMd),
-                    SectionCard(
-                      headline: 'This week',
-                      trailing: state.weekDays.isEmpty
-                          ? null
-                          : WeekTrophyBadge(
-                              goalsMetCount: countWeekGoalsMet(state.weekDays),
-                            ),
-                      child: state.weekDays.isEmpty
-                          ? const SizedBox(
-                              height: 72,
-                              child: Center(child: CircularProgressIndicator()),
-                            )
-                          : WeekProgressRow(
-                              days: state.weekDays,
-                              selectedLocalDay:
-                                  state.selectedLocalDay ??
-                                  state.weekDays
-                                      .firstWhere(
-                                        (day) => day.isToday,
-                                        orElse: () => state.weekDays.first,
-                                      )
-                                      .localDay,
-                              onDayTap: context.read<TodayCubit>().selectLocalDay,
-                            ),
-                    ),
-                    const SizedBox(height: AstraSpacing.kSpaceMd),
-                    _GoalRingCard(state: state),
-                    if (state.status == TodayStatus.noPermission) ...[
-                      const SizedBox(height: AstraSpacing.kSpaceSm),
-                      TextButton(
-                        onPressed: () => openAppSettings(),
-                        child: Text(
-                          'Open settings to allow step access',
-                          style: AstraTypography.captionFor(colors),
-                        ),
-                      ),
-                    ],
-                    const SizedBox(height: AstraSpacing.kSpaceMd),
-                    ElevatedCard(
-                      child: ActivityStatsRow(
-                        status: state.status,
-                        metrics: state.activityMetrics,
-                      ),
-                    ),
-                  ],
-                ),
-              ),
-            );
-          },
+                const _StaleBannerSlot(),
+                const SizedBox(height: AstraSpacing.kSpaceMd),
+                const _WeekSection(),
+                const SizedBox(height: AstraSpacing.kSpaceMd),
+                const _GoalRingCard(),
+                const _PermissionCta(),
+                const SizedBox(height: AstraSpacing.kSpaceMd),
+                const _ActivityStatsSection(),
+              ],
+            ),
+          ),
         ),
       ),
     );
@@ -121,31 +75,333 @@ class TodayScreen extends StatelessWidget {
 int countWeekGoalsMet(List<WeekDayStatus> days) =>
     days.where((day) => !day.isFuture && day.goalMet).length;
 
-class _GoalRingCard extends StatelessWidget {
-  const _GoalRingCard({required this.state});
+/// Optional hook for build-isolation widget tests (Story 16-5).
+@visibleForTesting
+void Function(String section)? todaySectionBuildProbe;
 
-  final TodayState state;
+void _probeSectionBuild(String section) => todaySectionBuildProbe?.call(section);
+
+@visibleForTesting
+bool todayWeekSliceEquals(TodayState a, TodayState b) =>
+    _WeekProgressViewModel.fromState(a) == _WeekProgressViewModel.fromState(b);
+
+@visibleForTesting
+bool todayGoalRingSliceEquals(TodayState a, TodayState b) =>
+    _GoalRingViewModel.fromState(a) == _GoalRingViewModel.fromState(b);
+
+@visibleForTesting
+Object todayGoalRingSelectorSlice(TodayState state) =>
+    _GoalRingViewModel.fromState(state);
+
+bool _sameLocalDay(DateTime? a, DateTime? b) {
+  if (identical(a, b)) {
+    return true;
+  }
+  if (a == null || b == null) {
+    return a == b;
+  }
+  return a.year == b.year && a.month == b.month && a.day == b.day;
+}
+
+@immutable
+final class _WeekProgressViewModel {
+  const _WeekProgressViewModel({
+    required this.weekDays,
+    required this.selectedLocalDay,
+  });
+
+  final List<WeekDayStatus> weekDays;
+  final DateTime? selectedLocalDay;
+
+  static _WeekProgressViewModel fromState(TodayState state) =>
+      _WeekProgressViewModel(
+        weekDays: state.weekDays,
+        selectedLocalDay: state.selectedLocalDay,
+      );
+
+  @override
+  bool operator ==(Object other) {
+    if (identical(this, other)) {
+      return true;
+    }
+    return other is _WeekProgressViewModel &&
+        listEquals(weekDays, other.weekDays) &&
+        _sameLocalDay(selectedLocalDay, other.selectedLocalDay);
+  }
+
+  @override
+  int get hashCode => Object.hash(Object.hashAll(weekDays), selectedLocalDay);
+}
+
+@immutable
+final class _ActivityStatsViewModel {
+  const _ActivityStatsViewModel({required this.status, required this.metrics});
+
+  final TodayStatus status;
+  final ActivityMetricsSnapshot metrics;
+
+  static _ActivityStatsViewModel fromState(TodayState state) =>
+      _ActivityStatsViewModel(
+        status: state.status,
+        metrics: state.activityMetrics,
+      );
+
+  @override
+  bool operator ==(Object other) {
+    if (identical(this, other)) {
+      return true;
+    }
+    if (other is! _ActivityStatsViewModel) {
+      return false;
+    }
+    return status == other.status &&
+        metrics.distanceKm == other.metrics.distanceKm &&
+        metrics.kcal == other.metrics.kcal &&
+        metrics.walkingDuration == other.metrics.walkingDuration;
+  }
+
+  @override
+  int get hashCode =>
+      Object.hash(status, metrics.distanceKm, metrics.kcal, metrics.walkingDuration);
+}
+
+@immutable
+final class _GoalRingViewModel {
+  const _GoalRingViewModel({
+    required this.status,
+    required this.steps,
+    required this.goal,
+    required this.foregroundCatchUp,
+    required this.catchUpTargetSteps,
+    required this.lastDisplayedSteps,
+    required this.lastDisplayedStepsLoaded,
+    required this.selectedLocalDay,
+    required this.showCelebration,
+  });
+
+  final TodayStatus status;
+  final int steps;
+  final int goal;
+  final bool foregroundCatchUp;
+  final int? catchUpTargetSteps;
+  final int? lastDisplayedSteps;
+  final bool lastDisplayedStepsLoaded;
+  final DateTime? selectedLocalDay;
+  final bool showCelebration;
+
+  static _GoalRingViewModel fromState(TodayState state) => _GoalRingViewModel(
+        status: state.status,
+        steps: state.steps,
+        goal: state.goal,
+        foregroundCatchUp: state.foregroundCatchUp,
+        catchUpTargetSteps: state.catchUpTargetSteps,
+        lastDisplayedSteps: state.lastDisplayedSteps,
+        lastDisplayedStepsLoaded: state.lastDisplayedStepsLoaded,
+        selectedLocalDay: state.selectedLocalDay,
+        showCelebration: state.showCelebration,
+      );
+
+  TodayState toTodayState() => TodayState(
+        status: status,
+        steps: steps,
+        goal: goal,
+        showCelebration: showCelebration,
+        foregroundCatchUp: foregroundCatchUp,
+        catchUpTargetSteps: catchUpTargetSteps,
+        selectedLocalDay: selectedLocalDay,
+        lastDisplayedSteps: lastDisplayedSteps,
+        lastDisplayedStepsLoaded: lastDisplayedStepsLoaded,
+      );
+
+  @override
+  bool operator ==(Object other) {
+    if (identical(this, other)) {
+      return true;
+    }
+    if (other is! _GoalRingViewModel) {
+      return false;
+    }
+    return status == other.status &&
+        steps == other.steps &&
+        goal == other.goal &&
+        foregroundCatchUp == other.foregroundCatchUp &&
+        catchUpTargetSteps == other.catchUpTargetSteps &&
+        lastDisplayedSteps == other.lastDisplayedSteps &&
+        lastDisplayedStepsLoaded == other.lastDisplayedStepsLoaded &&
+        _sameLocalDay(selectedLocalDay, other.selectedLocalDay) &&
+        showCelebration == other.showCelebration;
+  }
+
+  @override
+  int get hashCode => Object.hash(
+        status,
+        steps,
+        goal,
+        foregroundCatchUp,
+        catchUpTargetSteps,
+        lastDisplayedSteps,
+        lastDisplayedStepsLoaded,
+        selectedLocalDay,
+        showCelebration,
+      );
+}
+
+class _StaleBannerSlot extends StatelessWidget {
+  const _StaleBannerSlot();
+
+  static const sectionKey = Key('today_stale_banner_slot');
+
+  @override
+  Widget build(BuildContext context) {
+    return BlocSelector<TodayCubit, TodayState, bool>(
+      key: sectionKey,
+      selector: (state) => state.isStale,
+      builder: (context, isStale) {
+        if (!isStale) {
+          return const SizedBox.shrink();
+        }
+        return const Column(
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          children: [
+            SizedBox(height: AstraSpacing.kSpaceMd),
+            StatusBanner(variant: StatusBannerVariant.staleCompact),
+          ],
+        );
+      },
+    );
+  }
+}
+
+class _WeekSection extends StatelessWidget {
+  const _WeekSection();
+
+  static const sectionKey = Key('today_week_section');
+
+  @override
+  Widget build(BuildContext context) {
+    return BlocSelector<TodayCubit, TodayState, _WeekProgressViewModel>(
+      key: sectionKey,
+      selector: _WeekProgressViewModel.fromState,
+      builder: (context, vm) {
+        _probeSectionBuild('week');
+        return SectionCard(
+          headline: 'This week',
+          trailing: vm.weekDays.isEmpty
+              ? null
+              : WeekTrophyBadge(
+                  goalsMetCount: countWeekGoalsMet(vm.weekDays),
+                ),
+          child: vm.weekDays.isEmpty
+              ? const SizedBox(
+                  height: 72,
+                  child: Center(child: CircularProgressIndicator()),
+                )
+              : WeekProgressRow(
+                  days: vm.weekDays,
+                  selectedLocalDay: vm.selectedLocalDay ??
+                      vm.weekDays
+                          .firstWhere(
+                            (day) => day.isToday,
+                            orElse: () => vm.weekDays.first,
+                          )
+                          .localDay,
+                  onDayTap: context.read<TodayCubit>().selectLocalDay,
+                ),
+        );
+      },
+    );
+  }
+}
+
+class _PermissionCta extends StatelessWidget {
+  const _PermissionCta();
+
+  static const sectionKey = Key('today_permission_cta');
+
+  @override
+  Widget build(BuildContext context) {
+    return BlocSelector<TodayCubit, TodayState, bool>(
+      key: sectionKey,
+      selector: (state) => state.status == TodayStatus.noPermission,
+      builder: (context, showCta) {
+        if (!showCta) {
+          return const SizedBox.shrink();
+        }
+        final colors = context.astraColors;
+        return Column(
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          children: [
+            const SizedBox(height: AstraSpacing.kSpaceSm),
+            TextButton(
+              onPressed: () => openAppSettings(),
+              child: Text(
+                'Open settings to allow step access',
+                style: AstraTypography.captionFor(colors),
+              ),
+            ),
+          ],
+        );
+      },
+    );
+  }
+}
+
+class _ActivityStatsSection extends StatelessWidget {
+  const _ActivityStatsSection();
+
+  static const sectionKey = Key('today_activity_stats_section');
+
+  @override
+  Widget build(BuildContext context) {
+    return BlocSelector<TodayCubit, TodayState, _ActivityStatsViewModel>(
+      key: sectionKey,
+      selector: _ActivityStatsViewModel.fromState,
+      builder: (context, vm) {
+        return ElevatedCard(
+          child: ActivityStatsRow(
+            status: vm.status,
+            metrics: vm.metrics,
+          ),
+        );
+      },
+    );
+  }
+}
+
+class _GoalRingCard extends StatelessWidget {
+  const _GoalRingCard();
+
+  static const sectionKey = Key('today_goal_ring_card');
 
   @override
   Widget build(BuildContext context) {
     final colors = context.astraColors;
-    final cubit = context.read<TodayCubit>();
 
     return ElevatedCard(
+      key: sectionKey,
       padding: AstraSpacing.kSpaceLg,
       child: Column(
         children: [
-          Center(
-            child: state.showCelebration
-                ? GoalCelebration(
-                    state: state,
-                    onComplete: () => cubit.dismissCelebration(),
-                  )
-                : GoalRing(
-                    state: state,
-                    onForegroundCatchUpHandled: cubit.clearForegroundCatchUp,
-                    onLastDisplayedStepsChanged: cubit.recordLastDisplayedSteps,
-                  ),
+          BlocSelector<TodayCubit, TodayState, _GoalRingViewModel>(
+            selector: _GoalRingViewModel.fromState,
+            builder: (context, vm) {
+              _probeSectionBuild('goalRing');
+              final cubit = context.read<TodayCubit>();
+              final ringState = vm.toTodayState();
+              return Center(
+                child: vm.showCelebration
+                    ? GoalCelebration(
+                        state: ringState,
+                        onComplete: cubit.dismissCelebration,
+                      )
+                    : GoalRing(
+                        state: ringState,
+                        onForegroundCatchUpHandled: cubit.clearForegroundCatchUp,
+                        onLastDisplayedStepsChanged:
+                            cubit.recordLastDisplayedSteps,
+                      ),
+              );
+            },
           ),
           const SizedBox(height: AstraSpacing.kSpaceLg),
           Center(
@@ -202,3 +458,10 @@ class _GoalRingCard extends StatelessWidget {
     }
   }
 }
+
+/// Test hooks for build-isolation widget tests (Story 16-5).
+@visibleForTesting
+Widget buildTodayWeekSectionForTest() => const _WeekSection();
+
+@visibleForTesting
+Widget buildTodayGoalRingCardForTest() => const _GoalRingCard();

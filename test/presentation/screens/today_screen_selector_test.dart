@@ -1,0 +1,311 @@
+import 'package:astra_app/core/constants/astra_theme.dart';
+import 'package:astra_app/core/database/app_database.dart';
+import 'package:astra_app/core/time/calendar_week.dart';
+import 'package:astra_app/data/repositories/step_repository.dart';
+import 'package:astra_app/data/repositories/user_preferences_repository.dart';
+import 'package:astra_app/presentation/cubits/today_cubit.dart';
+import 'package:astra_app/presentation/cubits/today_state.dart';
+import 'package:astra_app/presentation/models/week_day_status.dart';
+import 'package:astra_app/presentation/screens/today_screen.dart';
+import 'package:flutter/material.dart';
+import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:flutter_test/flutter_test.dart';
+import 'package:sqflite/sqflite.dart';
+
+import '../../core/time/fake_time_provider.dart';
+import '../../helpers/sqflite_test_helper.dart';
+
+class _SeededTodayCubit extends TodayCubit {
+  _SeededTodayCubit({
+    required super.stepRepository,
+    required super.userPreferences,
+    required super.clock,
+    required TodayState initial,
+  }) : super(activityPermissionGranted: () async => true) {
+    emit(_displayReady(initial));
+  }
+
+  static TodayState _displayReady(TodayState state) {
+    if (state.lastDisplayedStepsLoaded ||
+        state.status == TodayStatus.loading ||
+        state.status == TodayStatus.noPermission) {
+      return state;
+    }
+    return state.copyWith(
+      lastDisplayedSteps: state.steps,
+      lastDisplayedStepsLoaded: true,
+    );
+  }
+
+  @override
+  Future<void> refresh({bool silent = true}) async {}
+}
+
+void main() {
+  setUpAll(() async {
+    await setUpSqfliteFfi();
+  });
+
+  group('Today selector slice equality', () {
+    List<WeekDayStatus> sampleWeekDays() {
+      final reference = DateTime.utc(2026, 6, 3);
+      return [
+        for (final day in CalendarWeek.daysContaining(reference))
+          WeekDayStatus(
+            localDay: day,
+            weekdayLabel: CalendarWeek.weekdayLabelFor(day),
+            dayNumber: day.day,
+            isToday: day == reference,
+            isFuture: day.isAfter(reference),
+            goalMet: false,
+          ),
+      ];
+    }
+
+    test('week slice unchanged when only steps and metrics tick', () {
+      final weekDays = sampleWeekDays();
+      final before = TodayState.fromData(
+        steps: 1200,
+        goal: 8000,
+        isStale: false,
+        weekDays: weekDays,
+      );
+      final after = before.copyWith(
+        steps: 1201,
+        activityMetrics: const ActivityMetricsSnapshot(
+          distanceKm: 0.91,
+          walkingDuration: Duration(minutes: 12),
+          kcal: 49,
+        ),
+      );
+
+      expect(todayWeekSliceEquals(before, after), isTrue);
+      expect(todayGoalRingSliceEquals(before, after), isFalse);
+    });
+
+    test('week slice changes when today goalMet toggles with new list', () {
+      final weekDays = sampleWeekDays();
+      final before = TodayState.fromData(
+        steps: 7999,
+        goal: 8000,
+        isStale: false,
+        weekDays: weekDays,
+      );
+      final patchedDays = [
+        for (final day in weekDays)
+          day.isToday
+              ? WeekDayStatus(
+                  localDay: day.localDay,
+                  weekdayLabel: day.weekdayLabel,
+                  dayNumber: day.dayNumber,
+                  isToday: day.isToday,
+                  isFuture: day.isFuture,
+                  goalMet: true,
+                )
+              : day,
+      ];
+      final after = before.copyWith(
+        steps: 8000,
+        status: TodayStatus.goalMet,
+        weekDays: patchedDays,
+      );
+
+      expect(todayWeekSliceEquals(before, after), isFalse);
+    });
+  });
+
+  group('TodayScreen BlocSelector build isolation', () {
+    late Database db;
+    late UserPreferencesRepository userPreferences;
+    late StepRepository stepRepository;
+    late FakeTimeProvider clock;
+    final buildCounts = <String, int>{};
+
+    setUp(() async {
+      clock = FakeTimeProvider(
+        fixedNowUtc: DateTime.utc(2026, 6, 3, 12),
+        zoneOffset: const Duration(hours: 2),
+      );
+      db = await openAstraDatabase(databasePath: inMemoryDatabasePath);
+      userPreferences = UserPreferencesRepository(db);
+      stepRepository = StepRepository(db: db, clock: clock);
+      buildCounts.clear();
+      todaySectionBuildProbe = (section) {
+        buildCounts[section] = (buildCounts[section] ?? 0) + 1;
+      };
+    });
+
+    tearDown(() async {
+      todaySectionBuildProbe = null;
+      await db.close();
+    });
+
+    List<WeekDayStatus> sampleWeekDays() {
+      final reference = DateTime.utc(2026, 6, 3);
+      return [
+        for (final day in CalendarWeek.daysContaining(reference))
+          WeekDayStatus(
+            localDay: day,
+            weekdayLabel: CalendarWeek.weekdayLabelFor(day),
+            dayNumber: day.day,
+            isToday: day == reference,
+            isFuture: day.isAfter(reference),
+            goalMet: false,
+          ),
+      ];
+    }
+
+    _SeededTodayCubit buildCubit(TodayState state) {
+      return _SeededTodayCubit(
+        stepRepository: stepRepository,
+        userPreferences: userPreferences,
+        clock: clock,
+        initial: state,
+      );
+    }
+
+    Future<_SeededTodayCubit> pumpWeekSection(
+      WidgetTester tester, {
+      required TodayState initial,
+    }) async {
+      final cubit = buildCubit(initial);
+      addTearDown(cubit.close);
+
+      await tester.pumpWidget(
+        MaterialApp(
+          theme: buildAstraLightTheme(),
+          home: MediaQuery(
+            data: const MediaQueryData(disableAnimations: true),
+            child: BlocProvider<TodayCubit>.value(
+              value: cubit,
+              child: buildTodayWeekSectionForTest(),
+            ),
+          ),
+        ),
+      );
+      await tester.pump();
+      return cubit;
+    }
+
+    testWidgets('GoalRing view-model selector rebuilds on step emit', (
+      tester,
+    ) async {
+      var builds = 0;
+      final cubit = buildCubit(
+        TodayState.fromData(
+          steps: 1200,
+          goal: 8000,
+          isStale: false,
+          weekDays: sampleWeekDays(),
+        ),
+      );
+      addTearDown(cubit.close);
+
+      await tester.pumpWidget(
+        MaterialApp(
+          home: BlocProvider<TodayCubit>.value(
+            value: cubit,
+            child: BlocSelector<TodayCubit, TodayState, Object>(
+              selector: todayGoalRingSelectorSlice,
+              builder: (context, slice) {
+                builds++;
+                return Text('$slice');
+              },
+            ),
+          ),
+        ),
+      );
+      expect(builds, 1);
+
+      cubit.emit(cubit.state.copyWith(steps: 1201));
+      await tester.pump();
+      expect(builds, 2);
+    });
+
+    testWidgets('live step tick does not rebuild week selector', (tester) async {
+      const initialSteps = 1200;
+      final cubit = await pumpWeekSection(
+        tester,
+        initial: TodayState.fromData(
+          steps: initialSteps,
+          goal: 8000,
+          isStale: false,
+          weekDays: sampleWeekDays(),
+        ),
+      );
+
+      final weekBuildsAfterPump = buildCounts['week'] ?? 0;
+      expect(weekBuildsAfterPump, greaterThan(0));
+
+      final before = cubit.state;
+      final nextState = before.copyWith(steps: initialSteps + 1);
+      expect(todayWeekSliceEquals(before, nextState), isTrue);
+
+      cubit.emit(nextState);
+      await tester.pump();
+
+      expect(buildCounts['week'], weekBuildsAfterPump);
+    });
+
+    testWidgets('week selector rebuilds when week slice changes', (tester) async {
+      var builds = 0;
+      final weekDays = sampleWeekDays();
+      final cubit = buildCubit(
+        TodayState.fromData(
+          steps: 7999,
+          goal: 8000,
+          isStale: false,
+          weekDays: weekDays,
+        ),
+      );
+      addTearDown(cubit.close);
+
+      await tester.pumpWidget(
+        MaterialApp(
+          home: BlocProvider<TodayCubit>.value(
+            value: cubit,
+            child: BlocSelector<TodayCubit, TodayState, Object>(
+              selector: (state) => todayWeekSliceEquals(
+                TodayState.fromData(
+                  steps: 7999,
+                  goal: 8000,
+                  isStale: false,
+                  weekDays: weekDays,
+                ),
+                state,
+              ),
+              builder: (context, changed) {
+                builds++;
+                return Text('$changed');
+              },
+            ),
+          ),
+        ),
+      );
+      expect(builds, 1);
+
+      final patchedDays = [
+        for (final day in weekDays)
+          day.isToday
+              ? WeekDayStatus(
+                  localDay: day.localDay,
+                  weekdayLabel: day.weekdayLabel,
+                  dayNumber: day.dayNumber,
+                  isToday: day.isToday,
+                  isFuture: day.isFuture,
+                  goalMet: true,
+                )
+              : day,
+      ];
+      cubit.emit(
+        cubit.state.copyWith(
+          steps: 8000,
+          status: TodayStatus.goalMet,
+          weekDays: patchedDays,
+        ),
+      );
+      await tester.pump();
+      expect(builds, 2);
+    });
+  });
+}
