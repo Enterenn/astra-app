@@ -96,13 +96,13 @@ So that each class stays under ~250 lines and is easier to test.
   - [x] Update `lib/data/contracts/contracts.dart` — export new contracts; **remove** `step_repository_contract.dart` after migration
   - [x] Delete `lib/data/repositories/step_repository.dart` once call sites compile
   - [x] Run `flutter analyze` on new files
-  - [ ] **Stop → review brief → wait for Baptiste OK → commit**
+  - [x] **Stop → review brief → wait for Baptiste OK → commit** (`e96bb32`)
 
 - [x] **Sub-task C — Update DI and services** (AC: #4, #6)
   - [x] Update `AppDependencies`: replace `stepRepository` with `stepIngestion`, `stepAggregation`, `csvService`; fix `create()`, `test()`, `_buildDependencies()`
   - [x] Update `BackgroundCollector` (+ factory), `LiveStepMonitor`, `DataLifecycleService`, `runMaintenanceOnConnection`, `workmanager_callback.dart`, `background_collector_factory.dart`
   - [x] Run `flutter analyze`
-  - [ ] **Stop → review brief → wait for Baptiste OK → commit**
+  - [x] **Stop → review brief → wait for Baptiste OK → commit** (`12efd70`)
 
 - [x] **Sub-task D — Update cubits and contract test fakes** (AC: #3, #4) — lib/ wiring only
   - [x] `TodayCubit`: inject `StepAggregationRepositoryContract` only
@@ -111,7 +111,7 @@ So that each class stays under ~250 lines and is easier to test.
   - [x] Update `AppScaffold` cubit construction wiring
   - [ ] Split `_FakeStepRepository` in `today_cubit_contract_test.dart` → `_FakeStepAggregationRepository` (+ update any other contract fakes)
   - [ ] Run cubit tests: `flutter test test/presentation/cubits/today_cubit_test.dart test/presentation/cubits/history_cubit_test.dart test/presentation/cubits/my_data_cubit_test.dart test/presentation/cubits/today_cubit_contract_test.dart`
-  - [ ] **Stop → review brief → wait for Baptiste OK → commit**
+  - [x] **Stop → review brief → wait for Baptiste OK → commit** (`eaed703` — lib/ cubits only; test fakes pending Sub-task E)
 
 - [ ] **Sub-task E — Split repository tests + full regression** (AC: #5, #7, #8)
   - [ ] Split `test/data/repositories/step_repository_*_test.dart` files by domain (ingestion / aggregation / csv)
@@ -461,7 +461,9 @@ final aggregates = await stepAggregation.getChartDailyAggregates(days: 7);
 ### Completion Notes List
 
 - Sub-task A: design approved and committed (`05c866e`).
-- Sub-task B–D (lib/): mechanical split complete — 3 contracts, 5 implementation files, monolith removed; `flutter analyze lib` — 0 errors (7 pre-existing info lints in unrelated files). Tests not migrated yet (Sub-task E).
+- Sub-task B: committed `e96bb32` — split repos, contracts, delete monolith.
+- Sub-task C: committed `12efd70` — AppDependencies + services wiring.
+- Sub-task D (lib/): committed `eaed703` — cubit + AppScaffold wiring; test fakes still pending Sub-task E.
 
 ### File List
 
