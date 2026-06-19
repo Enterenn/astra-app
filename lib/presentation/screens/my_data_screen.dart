@@ -7,7 +7,6 @@ import '../../core/constants/astra_spacing.dart';
 import '../../core/constants/astra_typography.dart';
 import '../cubits/my_data_cubit.dart';
 import '../cubits/my_data_state.dart';
-import '../utils/share_position_origin.dart';
 import '../widgets/background_status_card.dart';
 import '../widgets/confirm_dialog.dart';
 import '../widgets/data_export_button.dart';
@@ -127,9 +126,7 @@ class _MyDataScreenBody extends StatelessWidget {
             StatusBanner(
               variant: StatusBannerVariant.error,
               message: state.exportErrorMessage,
-              onTap: () => cubit.exportAndShare(
-                sharePositionOrigin: sharePositionOriginFor(context),
-              ),
+              onTap: () => cubit.exportAndShare(),
             ),
           ],
           if (state.importErrorMessage != null) ...[
@@ -203,10 +200,7 @@ class _MyDataScreenBody extends StatelessWidget {
                           isLoading: state.isExporting,
                           onPressed: dataActionInFlight
                               ? null
-                              : () => cubit.exportAndShare(
-                                    sharePositionOrigin:
-                                        sharePositionOriginFor(buttonContext),
-                                  ),
+                              : () => cubit.exportAndShare(),
                         ),
                       ),
                       const SizedBox(height: AstraSpacing.kSpaceSm),
@@ -262,9 +256,7 @@ Future<void> _confirmAndPurge(
 }) async {
   final action = await showPurgeConfirmDialog(
     context,
-    onExportFirst: () => cubit.exportAndShare(
-      sharePositionOrigin: sharePositionOriginFor(shareContext ?? context),
-    ),
+    onExportFirst: () => cubit.exportAndShare(),
   );
   if (action == PurgeConfirmAction.deleteConfirmed) {
     await cubit.confirmAndPurge(
