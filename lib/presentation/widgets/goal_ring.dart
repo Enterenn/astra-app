@@ -579,13 +579,25 @@ class _GoalRingState extends State<GoalRing> with TickerProviderStateMixin {
   @override
   void dispose() {
     _liveCoalesceTimer?.cancel();
+    _liveCoalesceTimer = null;
     _foregroundCatchUpTimer?.cancel();
+    _foregroundCatchUpTimer = null;
     _releasePulseController();
     _releaseCountUpController();
     _releaseMicroTickController();
     _releaseLiveArcController();
     _releaseOverflowController();
     _insetShadowCache.dispose();
+    assert(() {
+      assert(_pulseController == null);
+      assert(_countUpController == null);
+      assert(_microTickController == null);
+      assert(_liveArcController == null);
+      assert(_overflowController == null);
+      assert(_liveCoalesceTimer == null);
+      assert(_foregroundCatchUpTimer == null);
+      return true;
+    }());
     super.dispose();
   }
 
@@ -594,36 +606,38 @@ class _GoalRingState extends State<GoalRing> with TickerProviderStateMixin {
     final colors = context.astraColors;
     final reduceMotion = MediaQuery.disableAnimationsOf(context);
 
-    return LayoutBuilder(
-      builder: (context, constraints) {
-        final diameter = (constraints.maxWidth * kGoalRingWidthFactor).clamp(
-          kGoalRingMinDiameter,
-          kGoalRingMaxDiameter,
-        );
-        final size = Size.square(diameter);
+    return RepaintBoundary(
+      child: LayoutBuilder(
+        builder: (context, constraints) {
+          final diameter = (constraints.maxWidth * kGoalRingWidthFactor).clamp(
+            kGoalRingMinDiameter,
+            kGoalRingMaxDiameter,
+          );
+          final size = Size.square(diameter);
 
-        return Semantics(
-          label: _semanticsLabel,
-          value: _semanticsValue,
-          increasedValue: _semanticsMaxValue,
-          decreasedValue: _semanticsDecreasedValue,
-          container: true,
-          child: ExcludeSemantics(
-            child: SizedBox(
-              width: diameter,
-              height: diameter,
-              child: Stack(
-                alignment: Alignment.center,
-                children: [
-                  if (widget.showRing)
-                    _buildRing(size, colors, reduceMotion),
-                  _buildCenterContent(colors, reduceMotion),
-                ],
+          return Semantics(
+            label: _semanticsLabel,
+            value: _semanticsValue,
+            increasedValue: _semanticsMaxValue,
+            decreasedValue: _semanticsDecreasedValue,
+            container: true,
+            child: ExcludeSemantics(
+              child: SizedBox(
+                width: diameter,
+                height: diameter,
+                child: Stack(
+                  alignment: Alignment.center,
+                  children: [
+                    if (widget.showRing)
+                      _buildRing(size, colors, reduceMotion),
+                    _buildCenterContent(colors, reduceMotion),
+                  ],
+                ),
               ),
             ),
-          ),
-        );
-      },
+          );
+        },
+      ),
     );
   }
 

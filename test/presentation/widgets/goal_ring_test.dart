@@ -10,6 +10,40 @@ import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import '../../helpers/astra_theme_test_helper.dart';
 
+class _LiveCoalesceHarness extends StatefulWidget {
+  const _LiveCoalesceHarness({super.key});
+
+  @override
+  State<_LiveCoalesceHarness> createState() => _LiveCoalesceHarnessState();
+}
+
+class _LiveCoalesceHarnessState extends State<_LiveCoalesceHarness> {
+  late TodayState ringState;
+
+  @override
+  void initState() {
+    super.initState();
+    ringState = TodayState.fromData(
+      steps: 100,
+      goal: 8000,
+      isStale: false,
+      lastDisplayedSteps: 100,
+      lastDisplayedStepsLoaded: true,
+    );
+  }
+
+  void bumpByMicroTickDelta() {
+    setState(() {
+      ringState = ringState.copyWith(steps: ringState.steps + 5);
+    });
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return GoalRing(state: ringState);
+  }
+}
+
 class _ForegroundCatchUpHarness extends StatefulWidget {
   const _ForegroundCatchUpHarness({super.key});
 
@@ -103,6 +137,28 @@ void main() {
         }
       }
       throw StateError('GoalRingPainter not found');
+    }
+
+    bool hasOverflowAmbientPainter(WidgetTester tester) {
+      return tester
+          .widgetList<CustomPaint>(
+            find.descendant(
+              of: find.byType(GoalRing),
+              matching: find.byType(CustomPaint),
+            ),
+          )
+          .any((p) => p.painter is GoalRingOverflowAmbientPainter);
+    }
+
+    Future<void> unmountGoalRingAndAssertNoLateTimers(
+      WidgetTester tester,
+    ) async {
+      expect(find.byType(GoalRing), findsOneWidget);
+      await tester.pumpWidget(const SizedBox.shrink());
+      await tester.pump();
+      expect(find.byType(GoalRing), findsNothing);
+      await tester.pump(const Duration(seconds: 2));
+      expect(tester.takeException(), isNull);
     }
 
     test('ringProgressFor caps overflow at 100%', () {
@@ -454,6 +510,126 @@ void main() {
       );
 
       handle.dispose();
+    });
+
+    testWidgets('build returns RepaintBoundary as direct render root', (
+      tester,
+    ) async {
+      await pumpGoalRing(
+        tester,
+        state: TodayState.fromData(
+          steps: 3200,
+          goal: 8000,
+          isStale: false,
+        ),
+      );
+
+      late Widget firstBuiltChild;
+      var visited = false;
+      tester.element(find.byType(GoalRing)).visitChildren((element) {
+        if (!visited) {
+          firstBuiltChild = element.widget;
+          visited = true;
+        }
+      });
+      expect(visited, isTrue);
+      expect(firstBuiltChild, isA<RepaintBoundary>());
+      expect(
+        (firstBuiltChild as RepaintBoundary).child,
+        isA<LayoutBuilder>(),
+      );
+    });
+
+    testWidgets('dispose releases pulse animation without pending timers', (
+      tester,
+    ) async {
+      await pumpGoalRing(
+        tester,
+        state: const TodayState.loading(),
+      );
+      await tester.pump(const Duration(milliseconds: 100));
+
+      expect(
+        find.descendant(
+          of: find.byType(GoalRing),
+          matching: find.byType(FadeTransition),
+        ),
+        findsOneWidget,
+      );
+
+      await unmountGoalRingAndAssertNoLateTimers(tester);
+    });
+
+    testWidgets('dispose releases overflow animation without pending timers', (
+      tester,
+    ) async {
+      await pumpGoalRing(
+        tester,
+        state: TodayState.fromData(
+          steps: 10_847,
+          goal: 8000,
+          isStale: false,
+        ),
+      );
+      await tester.pump(const Duration(milliseconds: 100));
+
+      expect(hasOverflowAmbientPainter(tester), isTrue);
+
+      await unmountGoalRingAndAssertNoLateTimers(tester);
+    });
+
+    testWidgets('dispose cancels live coalesce timer before it fires', (
+      tester,
+    ) async {
+      final harnessKey = GlobalKey<_LiveCoalesceHarnessState>();
+
+      await tester.pumpWidget(
+        wrapWithAstraTheme(
+          Center(
+            child: SizedBox(
+              width: 400,
+              child: _LiveCoalesceHarness(key: harnessKey),
+            ),
+          ),
+        ),
+      );
+      await tester.pump();
+      await tester.pumpAndSettle();
+
+      expect(ringPainter(tester).progress, closeTo(100 / 8000, 0.001));
+
+      harnessKey.currentState!.bumpByMicroTickDelta();
+      await tester.pump(const Duration(milliseconds: 50));
+
+      expect(ringPainter(tester).progress, closeTo(100 / 8000, 0.001));
+
+      await unmountGoalRingAndAssertNoLateTimers(tester);
+    });
+
+    testWidgets('dispose cancels foreground catch-up timer before it fires', (
+      tester,
+    ) async {
+      final harnessKey = GlobalKey<_ForegroundCatchUpHarnessState>();
+
+      await tester.pumpWidget(
+        wrapWithAstraTheme(
+          Center(
+            child: SizedBox(
+              width: 400,
+              child: _ForegroundCatchUpHarness(key: harnessKey),
+            ),
+          ),
+        ),
+      );
+      await tester.pump();
+      await tester.pump();
+
+      harnessKey.currentState!.triggerForegroundCatchUp();
+      await tester.pump(const Duration(milliseconds: 500));
+
+      expect(harnessKey.currentState!.catchUpHandled, isFalse);
+
+      await unmountGoalRingAndAssertNoLateTimers(tester);
     });
 
     testWidgets('ring diameter clamps to kGoalRingMaxDiameter', (
