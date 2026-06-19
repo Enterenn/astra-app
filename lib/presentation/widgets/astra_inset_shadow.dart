@@ -10,13 +10,66 @@ const kAstraInsetShadowOpacity = 0.08;
 const kAstraInsetShadowOffsetY = 4.0;
 const kAstraInsetShadowBlur = 8.0;
 
+/// Bitmap cache for inset shadows in [AstraInsetShadowSurface].
+class _InsetShadowCache {
+  ui.Image? _image;
+  Size? _size;
+  BorderRadius? _borderRadius;
+
+  bool isValid(Size size, BorderRadius borderRadius) =>
+      _image != null && _size == size && _borderRadius == borderRadius;
+
+  void update(ui.Image image, Size size, BorderRadius borderRadius) {
+    _image?.dispose();
+    _image = image;
+    _size = size;
+    _borderRadius = borderRadius;
+  }
+
+  void dispose() {
+    _image?.dispose();
+    _image = null;
+    _size = null;
+    _borderRadius = null;
+  }
+}
+
 /// Paints an inset shadow clipped to [clipPath].
 ///
-/// Technique: clip to shape → draw the shape's own outline as a thick stroke,
-/// translated by [kAstraInsetShadowOffsetY] downward, with an [ImageFilter.blur]
-/// so it bleeds inward from the top edge only.  Drawn as a background layer so
-/// opaque children (e.g. the segmented-control thumb) cover it naturally.
+/// No-cache fallback for direct calls without a [AstraInsetShadowSurface] context.
 void paintAstraInsetShadowOnPath(Canvas canvas, Path clipPath) {
+  final bounds = clipPath.getBounds();
+  if (bounds.isEmpty) return;
+
+  _renderAstraInsetShadow(canvas, clipPath);
+}
+
+void _paintAstraInsetShadowOnPathCached(
+  Canvas canvas,
+  Path clipPath,
+  Size size,
+  BorderRadius borderRadius,
+  _InsetShadowCache cache,
+) {
+  if (size.isEmpty) return;
+
+  if (cache.isValid(size, borderRadius)) {
+    canvas.drawImage(cache._image!, Offset.zero, Paint());
+    return;
+  }
+
+  final recorder = ui.PictureRecorder();
+  final tmpCanvas = Canvas(recorder);
+  _renderAstraInsetShadow(tmpCanvas, clipPath);
+  final picture = recorder.endRecording();
+  final image = picture.toImageSync(size.width.ceil(), size.height.ceil());
+  picture.dispose();
+  cache.update(image, size, borderRadius);
+
+  canvas.drawImage(image, Offset.zero, Paint());
+}
+
+void _renderAstraInsetShadow(Canvas canvas, Path clipPath) {
   final bounds = clipPath.getBounds();
   if (bounds.isEmpty) return;
 
@@ -36,10 +89,10 @@ void paintAstraInsetShadowOnPath(Canvas canvas, Path clipPath) {
     ..addRect(bounds.inflate(40.0));
 
   canvas.save();
-  canvas.clipPath(clipPath); // constrain shadow inside the shape
+  canvas.clipPath(clipPath);
 
   canvas.save();
-  canvas.translate(0, kAstraInsetShadowOffsetY); // Y offset
+  canvas.translate(0, kAstraInsetShadowOffsetY);
   canvas.drawPath(shadowPath, shadowPaint);
   canvas.restore();
 
@@ -48,7 +101,7 @@ void paintAstraInsetShadowOnPath(Canvas canvas, Path clipPath) {
 
 /// Surface with bgSubtle fill + Figma inset shadow rendered as a background
 /// painter — opaque children (thumb, etc.) naturally cover the shadow.
-class AstraInsetShadowSurface extends StatelessWidget {
+class AstraInsetShadowSurface extends StatefulWidget {
   const AstraInsetShadowSurface({
     required this.color,
     required this.child,
@@ -61,23 +114,42 @@ class AstraInsetShadowSurface extends StatelessWidget {
   final BorderRadius? borderRadius;
 
   @override
+  State<AstraInsetShadowSurface> createState() => _AstraInsetShadowSurfaceState();
+}
+
+class _AstraInsetShadowSurfaceState extends State<AstraInsetShadowSurface> {
+  final _shadowCache = _InsetShadowCache();
+
+  @override
+  void dispose() {
+    _shadowCache.dispose();
+    super.dispose();
+  }
+
+  @override
   Widget build(BuildContext context) {
-    final br = borderRadius ?? BorderRadius.circular(AstraSpacing.kRadiusFull);
+    final br = widget.borderRadius ?? BorderRadius.circular(AstraSpacing.kRadiusFull);
     return CustomPaint(
-      painter: _AstraInsetShadowSurfacePainter(color: color, borderRadius: br),
-      child: child,
+      painter: _AstraInsetShadowSurfacePainter(
+        color: widget.color,
+        borderRadius: br,
+        shadowCache: _shadowCache,
+      ),
+      child: widget.child,
     );
   }
 }
 
 class _AstraInsetShadowSurfacePainter extends CustomPainter {
-  const _AstraInsetShadowSurfacePainter({
+  _AstraInsetShadowSurfacePainter({
     required this.color,
     required this.borderRadius,
+    required this.shadowCache,
   });
 
   final Color color;
   final BorderRadius borderRadius;
+  final _InsetShadowCache shadowCache;
 
   @override
   void paint(Canvas canvas, Size size) {
@@ -88,11 +160,15 @@ class _AstraInsetShadowSurfacePainter extends CustomPainter {
     );
     final path = Path()..addRRect(rrect);
 
-    // Background fill
     canvas.drawRRect(rrect, Paint()..color = color);
 
-    // Inset shadow on top of fill, behind child
-    paintAstraInsetShadowOnPath(canvas, path);
+    _paintAstraInsetShadowOnPathCached(
+      canvas,
+      path,
+      size,
+      borderRadius,
+      shadowCache,
+    );
   }
 
   @override
