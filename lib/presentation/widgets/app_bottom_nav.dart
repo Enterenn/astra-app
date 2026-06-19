@@ -200,7 +200,7 @@ class _BottomNavSquircleClipper extends CustomClipper<Path> {
   @override
   Path getClip(Size size) {
     final rect = Offset.zero & size;
-    return ContinuousRectangleBorder(
+    return RoundedSuperellipseBorder(
       borderRadius: BorderRadius.circular(radius),
     ).getOuterPath(rect);
   }
