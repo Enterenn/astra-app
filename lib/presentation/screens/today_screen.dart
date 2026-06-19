@@ -51,9 +51,14 @@ class TodayScreen extends StatelessWidget {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.stretch,
               children: [
-                Text(
-                  _kScreenTitle,
-                  style: AstraTypography.screenTitleFor(colors),
+                Builder(
+                  builder: (context) {
+                    _probeSectionBuild('staticTitle');
+                    return Text(
+                      _kScreenTitle,
+                      style: AstraTypography.screenTitleFor(colors),
+                    );
+                  },
                 ),
                 const _StaleBannerSlot(),
                 const SizedBox(height: AstraSpacing.kSpaceMd),
@@ -90,6 +95,14 @@ bool todayGoalRingSliceEquals(TodayState a, TodayState b) =>
     _GoalRingViewModel.fromState(a) == _GoalRingViewModel.fromState(b);
 
 @visibleForTesting
+Object todayWeekSelectorSlice(TodayState state) =>
+    _WeekProgressViewModel.fromState(state);
+
+@visibleForTesting
+Object todayActivityStatsSelectorSlice(TodayState state) =>
+    _ActivityStatsViewModel.fromState(state);
+
+@visibleForTesting
 Object todayGoalRingSelectorSlice(TodayState state) =>
     _GoalRingViewModel.fromState(state);
 
@@ -101,6 +114,13 @@ bool _sameLocalDay(DateTime? a, DateTime? b) {
     return a == b;
   }
   return a.year == b.year && a.month == b.month && a.day == b.day;
+}
+
+int _localDayHash(DateTime? day) {
+  if (day == null) {
+    return 0;
+  }
+  return Object.hash(day.year, day.month, day.day);
 }
 
 @immutable
@@ -130,7 +150,8 @@ final class _WeekProgressViewModel {
   }
 
   @override
-  int get hashCode => Object.hash(Object.hashAll(weekDays), selectedLocalDay);
+  int get hashCode =>
+      Object.hash(Object.hashAll(weekDays), _localDayHash(selectedLocalDay));
 }
 
 @immutable
@@ -241,7 +262,7 @@ final class _GoalRingViewModel {
         catchUpTargetSteps,
         lastDisplayedSteps,
         lastDisplayedStepsLoaded,
-        selectedLocalDay,
+        _localDayHash(selectedLocalDay),
         showCelebration,
       );
 }
@@ -353,10 +374,12 @@ class _ActivityStatsSection extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return BlocSelector<TodayCubit, TodayState, _ActivityStatsViewModel>(
+    return BlocSelector<TodayCubit, TodayState, Object>(
       key: sectionKey,
-      selector: _ActivityStatsViewModel.fromState,
-      builder: (context, vm) {
+      selector: todayActivityStatsSelectorSlice,
+      builder: (context, slice) {
+        _probeSectionBuild('activityStats');
+        final vm = slice as _ActivityStatsViewModel;
         return ElevatedCard(
           child: ActivityStatsRow(
             status: vm.status,
@@ -404,27 +427,34 @@ class _GoalRingCard extends StatelessWidget {
             },
           ),
           const SizedBox(height: AstraSpacing.kSpaceLg),
-          Center(
-            child: AstraPressable(
-              child: Material(
-                color: colors.bgSubtle,
-                borderRadius: BorderRadius.circular(AstraSpacing.kRadiusFull),
-                child: InkWell(
-                  onTap: () => _onSetGoalTapped(context),
-                  borderRadius: BorderRadius.circular(AstraSpacing.kRadiusFull),
-                  child: Padding(
-                    padding: const EdgeInsets.symmetric(
-                      horizontal: AstraSpacing.kSpaceLg,
-                      vertical: AstraSpacing.kSpaceSm,
-                    ),
-                    child: Text(
-                      TodayScreen._kSetGoalLabel,
-                      style: AstraTypography.labelFor(colors),
+          Builder(
+            builder: (context) {
+              _probeSectionBuild('staticSetGoal');
+              return Center(
+                child: AstraPressable(
+                  child: Material(
+                    color: colors.bgSubtle,
+                    borderRadius:
+                        BorderRadius.circular(AstraSpacing.kRadiusFull),
+                    child: InkWell(
+                      onTap: () => _onSetGoalTapped(context),
+                      borderRadius:
+                          BorderRadius.circular(AstraSpacing.kRadiusFull),
+                      child: Padding(
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: AstraSpacing.kSpaceLg,
+                          vertical: AstraSpacing.kSpaceSm,
+                        ),
+                        child: Text(
+                          TodayScreen._kSetGoalLabel,
+                          style: AstraTypography.labelFor(colors),
+                        ),
+                      ),
                     ),
                   ),
                 ),
-              ),
-            ),
+              );
+            },
           ),
         ],
       ),
@@ -464,4 +494,10 @@ class _GoalRingCard extends StatelessWidget {
 Widget buildTodayWeekSectionForTest() => const _WeekSection();
 
 @visibleForTesting
-Widget buildTodayGoalRingCardForTest() => const _GoalRingCard();
+Widget buildTodayActivityStatsSectionForTest() => const _ActivityStatsSection();
+
+@visibleForTesting
+Widget buildActivityStatsRowForSelectorSlice(Object slice) {
+  final vm = slice as _ActivityStatsViewModel;
+  return ActivityStatsRow(status: vm.status, metrics: vm.metrics);
+}

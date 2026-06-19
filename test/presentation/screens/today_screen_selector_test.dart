@@ -5,8 +5,10 @@ import 'package:astra_app/data/repositories/step_repository.dart';
 import 'package:astra_app/data/repositories/user_preferences_repository.dart';
 import 'package:astra_app/presentation/cubits/today_cubit.dart';
 import 'package:astra_app/presentation/cubits/today_state.dart';
+import 'package:astra_app/presentation/cubits/units_cubit.dart';
 import 'package:astra_app/presentation/models/week_day_status.dart';
 import 'package:astra_app/presentation/screens/today_screen.dart';
+import 'package:astra_app/presentation/widgets/elevated_card.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:flutter_test/flutter_test.dart';
@@ -112,6 +114,28 @@ void main() {
 
       expect(todayWeekSliceEquals(before, after), isFalse);
     });
+
+    test('activity stats slice changes when only steps and metrics tick', () {
+      final before = TodayState.fromData(
+        steps: 1200,
+        goal: 8000,
+        isStale: false,
+      );
+      final after = before.copyWith(
+        steps: 1201,
+        activityMetrics: const ActivityMetricsSnapshot(
+          distanceKm: 0.91,
+          walkingDuration: Duration(minutes: 12),
+          kcal: 49,
+        ),
+      );
+
+      expect(
+        todayActivityStatsSelectorSlice(before) ==
+            todayActivityStatsSelectorSlice(after),
+        isFalse,
+      );
+    });
   });
 
   group('TodayScreen BlocSelector build isolation', () {
@@ -119,6 +143,7 @@ void main() {
     late UserPreferencesRepository userPreferences;
     late StepRepository stepRepository;
     late FakeTimeProvider clock;
+    late UnitsCubit unitsCubit;
     final buildCounts = <String, int>{};
 
     setUp(() async {
@@ -129,6 +154,7 @@ void main() {
       db = await openAstraDatabase(databasePath: inMemoryDatabasePath);
       userPreferences = UserPreferencesRepository(db);
       stepRepository = StepRepository(db: db, clock: clock);
+      unitsCubit = UnitsCubit(userPreferences: userPreferences);
       buildCounts.clear();
       todaySectionBuildProbe = (section) {
         buildCounts[section] = (buildCounts[section] ?? 0) + 1;
@@ -137,6 +163,7 @@ void main() {
 
     tearDown(() async {
       todaySectionBuildProbe = null;
+      await unitsCubit.close();
       await db.close();
     });
 
@@ -186,6 +213,129 @@ void main() {
       await tester.pump();
       return cubit;
     }
+
+    Future<_SeededTodayCubit> pumpActivityStatsSection(
+      WidgetTester tester, {
+      required TodayState initial,
+    }) async {
+      final cubit = buildCubit(initial);
+      addTearDown(cubit.close);
+
+      await tester.pumpWidget(
+        MaterialApp(
+          theme: buildAstraLightTheme(),
+          home: MediaQuery(
+            data: const MediaQueryData(disableAnimations: true),
+            child: MultiBlocProvider(
+              providers: [
+                BlocProvider<TodayCubit>.value(value: cubit),
+                BlocProvider<UnitsCubit>.value(value: unitsCubit),
+              ],
+              child: buildTodayActivityStatsSectionForTest(),
+            ),
+          ),
+        ),
+      );
+      return cubit;
+    }
+
+    testWidgets('activity stats selector rebuilds on live metrics emit', (
+      tester,
+    ) async {
+      var builds = 0;
+      final cubit = buildCubit(
+        TodayState.fromData(
+          steps: 1200,
+          goal: 8000,
+          isStale: false,
+          activityMetrics: const ActivityMetricsSnapshot(
+            distanceKm: 0.9,
+            walkingDuration: Duration(minutes: 12),
+            kcal: 48,
+          ),
+        ),
+      );
+      addTearDown(cubit.close);
+
+      await tester.pumpWidget(
+        MaterialApp(
+          theme: buildAstraLightTheme(),
+          home: MediaQuery(
+            data: const MediaQueryData(disableAnimations: true),
+            child: MultiBlocProvider(
+              providers: [
+                BlocProvider<TodayCubit>.value(value: cubit),
+                BlocProvider<UnitsCubit>.value(value: unitsCubit),
+              ],
+              child: BlocSelector<TodayCubit, TodayState, Object>(
+                selector: todayActivityStatsSelectorSlice,
+                builder: (context, slice) {
+                  builds++;
+                  todaySectionBuildProbe?.call('activityStats');
+                  return ElevatedCard(
+                    child: buildActivityStatsRowForSelectorSlice(slice),
+                  );
+                },
+              ),
+            ),
+          ),
+        ),
+      );
+      expect(builds, 1);
+
+      cubit.emit(
+        cubit.state.copyWith(
+          steps: 1201,
+          activityMetrics: const ActivityMetricsSnapshot(
+            distanceKm: 0.91,
+            walkingDuration: Duration(minutes: 12),
+            kcal: 49,
+          ),
+        ),
+      );
+      await tester.pump();
+      expect(builds, 2);
+      expect(buildCounts['activityStats'], 2);
+      expect(find.text('49'), findsOneWidget);
+    });
+
+    testWidgets('production activity stats section probe rebuilds on emit', (
+      tester,
+    ) async {
+      const initialSteps = 1200;
+      final cubit = await pumpActivityStatsSection(
+        tester,
+        initial: TodayState.fromData(
+          steps: initialSteps,
+          goal: 8000,
+          isStale: false,
+          activityMetrics: const ActivityMetricsSnapshot(
+            distanceKm: 0.9,
+            walkingDuration: Duration(minutes: 12),
+            kcal: 48,
+          ),
+        ),
+      );
+
+      final activityBuilds = buildCounts['activityStats'] ?? 0;
+      expect(activityBuilds, greaterThan(0));
+      expect(find.text('48'), findsOneWidget);
+
+      cubit.emit(
+        cubit.state.copyWith(
+          steps: initialSteps + 1,
+          activityMetrics: const ActivityMetricsSnapshot(
+            distanceKm: 0.91,
+            walkingDuration: Duration(minutes: 12),
+            kcal: 49,
+          ),
+        ),
+      );
+      await tester.pump();
+
+      expect(buildCounts['activityStats'], greaterThan(activityBuilds));
+      expect(find.text('49'), findsOneWidget);
+    });
 
     testWidgets('GoalRing view-model selector rebuilds on step emit', (
       tester,
@@ -265,18 +415,10 @@ void main() {
           home: BlocProvider<TodayCubit>.value(
             value: cubit,
             child: BlocSelector<TodayCubit, TodayState, Object>(
-              selector: (state) => todayWeekSliceEquals(
-                TodayState.fromData(
-                  steps: 7999,
-                  goal: 8000,
-                  isStale: false,
-                  weekDays: weekDays,
-                ),
-                state,
-              ),
-              builder: (context, changed) {
+              selector: todayWeekSelectorSlice,
+              builder: (context, slice) {
                 builds++;
-                return Text('$changed');
+                return Text('$slice');
               },
             ),
           ),
@@ -307,5 +449,76 @@ void main() {
       await tester.pump();
       expect(builds, 2);
     });
+
+    testWidgets(
+      'full TodayScreen live tick rebuilds activity stats but not static shell or week',
+      (tester) async {
+        const initialSteps = 1200;
+        final cubit = buildCubit(
+          TodayState.fromData(
+            steps: initialSteps,
+            goal: 8000,
+            isStale: false,
+            weekDays: sampleWeekDays(),
+            activityMetrics: const ActivityMetricsSnapshot(
+              distanceKm: 0.9,
+              walkingDuration: Duration(minutes: 12),
+              kcal: 48,
+            ),
+          ),
+        );
+        addTearDown(cubit.close);
+
+        await tester.pumpWidget(
+          MaterialApp(
+            theme: buildAstraLightTheme(),
+            home: MediaQuery(
+              data: const MediaQueryData(disableAnimations: true),
+              child: MultiBlocProvider(
+                providers: [
+                  BlocProvider<TodayCubit>.value(value: cubit),
+                  BlocProvider<UnitsCubit>.value(value: unitsCubit),
+                ],
+                child: const TodayScreen(),
+              ),
+            ),
+          ),
+        );
+        final titleBuilds = buildCounts['staticTitle'] ?? 0;
+        final setGoalBuilds = buildCounts['staticSetGoal'] ?? 0;
+        final weekBuilds = buildCounts['week'] ?? 0;
+        final activityBuilds = buildCounts['activityStats'] ?? 0;
+
+        expect(titleBuilds, greaterThan(0));
+        expect(setGoalBuilds, greaterThan(0));
+        expect(weekBuilds, greaterThan(0));
+        expect(activityBuilds, greaterThan(0));
+        expect(find.text('48'), findsOneWidget);
+
+        final beforeStatsSlice = todayActivityStatsSelectorSlice(cubit.state);
+        final nextMetrics = const ActivityMetricsSnapshot(
+          distanceKm: 0.91,
+          walkingDuration: Duration(minutes: 12),
+          kcal: 49,
+        );
+        cubit.emit(
+          cubit.state.copyWith(
+            steps: initialSteps + 1,
+            activityMetrics: nextMetrics,
+          ),
+        );
+        expect(
+          todayActivityStatsSelectorSlice(cubit.state) == beforeStatsSlice,
+          isFalse,
+        );
+        await tester.pump();
+
+        expect(buildCounts['staticTitle'], titleBuilds);
+        expect(buildCounts['staticSetGoal'], setGoalBuilds);
+        expect(buildCounts['week'], weekBuilds);
+        expect(buildCounts['activityStats'], greaterThan(activityBuilds));
+        expect(find.text('49'), findsOneWidget);
+      },
+    );
   });
 }

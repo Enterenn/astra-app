@@ -1,6 +1,6 @@
 # Story 16.5: Granular BlocSelector on TodayScreen
 
-Status: review
+Status: done
 
 <!-- Refacto Epic 16 — branch `refacto` only until merge review -->
 <!-- Source: epics-refacto.md Story 16-5 · refactoring-audit-master-v0.6.1.md §3.1 · REF-11 · NFR-REF-01 -->
@@ -410,11 +410,12 @@ Composer (dev-story workflow)
 - Replaced global `BlocBuilder` with static shell (`Steps` title, scroll padding) and five targeted `BlocSelector` sections: stale banner, week, goal ring, permission CTA, activity stats.
 - Added private view-models (`_WeekProgressViewModel`, `_ActivityStatsViewModel`, `_GoalRingViewModel`) with manual `==`/`hashCode` for selective rebuild.
 - `_GoalRingCard` is self-contained: internal `BlocSelector` for ring/celebration; Set goal pill remains static outside selector builder.
-- `@visibleForTesting` hooks: `todaySectionBuildProbe`, slice equality helpers, section builders for tests.
-- New `today_screen_selector_test.dart`: slice equality unit tests + BlocSelector rebuild isolation (week cold on step tick; goal-ring VM hot on step tick).
+- `@visibleForTesting` hooks: `todaySectionBuildProbe`, slice equality helpers, `todayWeekSelectorSlice`, section builders for tests.
+- New `today_screen_selector_test.dart`: slice equality unit tests + BlocSelector rebuild isolation (week cold on step tick; goal-ring VM hot on step tick; production week selector; full-screen static shell + activity stats probes).
+- **Code review follow-up (2026-06-19):** `_localDayHash` aligns `hashCode` with `_sameLocalDay` on view-models; removed unused `buildTodayGoalRingCardForTest`; week selector test uses `todayWeekSelectorSlice`; `_ActivityStatsSection` uses `todayActivityStatsSelectorSlice` (Object-typed selector — tear-off on `_ActivityStatsViewModel.fromState` prevented BlocSelector listener updates in widget tests); static shell probes (`staticTitle`, `staticSetGoal`) + activity stats probe; integration test asserts activity stats hot and static title/Set goal cold on realistic live tick emit (no pre-baseline `pump()` — extra frame desyncs activity selector).
 - `flutter analyze` clean on `today_screen.dart`. Story-specific tests pass (smoke, scaffold, goal_ring, trophy). Full suite: 771 pass; 1 pre-existing flaky cubit test (`past-day select…`) fails only in batch order, passes in isolation — unrelated to this story.
 - **DevTools (manual AC #2):** Profile/debug → DevTools → Performance → Track Widget Rebuilds. On live step tick, expect `"Steps"` title and week strip cold; GoalRing + stats row hot. Tap past-day pill → week + ring spike only.
-- No version bump (Epic 16 close policy). Review-before-commit: 3 sub-task commits pending Baptiste OK.
+- No version bump (Epic 16 close policy). Story marked done after code-review fixes.
 
 ### File List
 
@@ -426,4 +427,4 @@ Composer (dev-story workflow)
 ## Change Log
 
 - 2026-06-19: Story context created (create-story workflow) — ready-for-dev. Ultimate context engine analysis completed — comprehensive developer guide created.
-- 2026-06-19: Implemented granular BlocSelector refactor on TodayScreen (Sub-tasks A–C). Status → review.
+- 2026-06-19: Code review fixes — hashCode contract, hardened selector tests, static shell probes. Status → done.

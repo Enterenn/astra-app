@@ -1,5 +1,5 @@
 # generated: 2026-06-18
-# last_updated: 2026-06-19 (Story 16-5 review)
+# last_updated: 2026-06-19 (Story 16-5 done)
 # NEXT: dev-story 16-5-granular-bloc-selector-on-today-screen
 # Ref: planning-artifacts/epics-refacto.md · planning-artifacts/refactoring-audit-master-v0.6.1.md
 # branch: refacto
@@ -58,7 +58,7 @@
 # NAVIGATION: _bmad-output/README.md · planning-artifacts/epics-refacto.md
 
 generated: 2026-06-18
-last_updated: 2026-06-19 (Story 16-5 ready-for-dev)
+last_updated: 2026-06-19 (Story 16-5 done)
 project: astra-app
 project_key: NOKEY
 tracking_system: file-system
@@ -84,7 +84,7 @@ development_status:
   16-2-cache-static-gpu-inset-shadows: done
   16-3-tab-repaint-isolation-in-app-scaffold: done
   16-4-goal-ring-repaint-boundary-and-controller-lifecycle-audit: done
-  16-5-granular-bloc-selector-on-today-screen: review
+  16-5-granular-bloc-selector-on-today-screen: done
   16-6-collection-health-indicator-and-stale-banner-cta: backlog
   16-7-cold-start-loading-shimmer-for-today: backlog
   epic-16-retrospective: optional
