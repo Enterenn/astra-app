@@ -469,6 +469,14 @@ void main() {
           AstraSpacing.kBottomNavItemGap * 2;
       expect(pillBox.width, expectedPillWidth);
 
+      expect(
+        find.descendant(
+          of: find.byType(AppBottomNav),
+          matching: find.byType(ClipPath),
+        ),
+        findsOneWidget,
+      );
+
       await _disposeScaffold(tester);
     });
 
