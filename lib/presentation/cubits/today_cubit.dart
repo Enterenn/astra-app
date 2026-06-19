@@ -233,6 +233,19 @@ class TodayCubit extends Cubit<TodayState> {
     if (state.status == TodayStatus.noPermission) {
       return;
     }
+    if (!state.lastDisplayedStepsLoaded) {
+      // Cold bind / day switch: keep UI in loading until display prefs resolve.
+      var goal = _todayGoal;
+      if (goal == null) {
+        goal = await _resolveTodayGoal();
+        if (isClosed) {
+          return;
+        }
+      }
+      _todaySteps = steps;
+      _todayGoal = goal;
+      return;
+    }
 
     if (foregroundCatchUp) {
       if (!_isViewingToday()) {
@@ -599,6 +612,7 @@ class TodayCubit extends Cubit<TodayState> {
     _hasUserSelectedLocalDay = true;
     emit(
       state.copyWith(
+        status: TodayStatus.loading,
         selectedLocalDay: normalizedDay,
         lastDisplayedSteps: null,
         lastDisplayedStepsLoaded: false,
@@ -936,11 +950,11 @@ class TodayCubit extends Cubit<TodayState> {
     final todayIso = formatLocalDayIso(clock.snapshot());
     var effectiveSteps = steps;
     if (!allowDecrease &&
-        _lastAppliedLocalDay == todayIso &&
-        state.status != TodayStatus.loading &&
         state.status != TodayStatus.noPermission &&
         _todaySteps != null &&
-        steps < _todaySteps!) {
+        steps < _todaySteps! &&
+        (state.status == TodayStatus.loading ||
+            _lastAppliedLocalDay == todayIso)) {
       effectiveSteps = _todaySteps!;
     } else if (!allowDecrease &&
         _lastAppliedLocalDay == todayIso &&
@@ -967,6 +981,12 @@ class TodayCubit extends Cubit<TodayState> {
     _todayMetrics = resolvedMetrics;
 
     if (!_isViewingToday()) {
+      return;
+    }
+
+    final resolvedLoaded =
+        lastDisplayedStepsLoaded ?? state.lastDisplayedStepsLoaded;
+    if (!resolvedLoaded) {
       return;
     }
 

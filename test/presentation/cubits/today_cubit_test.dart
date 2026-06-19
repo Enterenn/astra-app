@@ -476,6 +476,7 @@ void main() {
         emitThrottle: Duration.zero,
       );
       final cubit = buildCubit();
+      await cubit.refresh();
       cubit.attachLiveMonitor(monitor);
       await monitor.start();
       await monitor.reconcileFromDatabase();
@@ -525,10 +526,14 @@ void main() {
       );
       await Future<void>.delayed(const Duration(milliseconds: 10));
 
-      expect(cubit.state.steps, 490);
-      expect(cubit.state.status, isNot(TodayStatus.loading));
+      expect(cubit.state.steps, 0);
+      expect(cubit.state.status, TodayStatus.loading);
+      expect(cubit.state.lastDisplayedStepsLoaded, isFalse);
 
       permissionGate.complete(true);
+      await cubit.refresh();
+      expect(cubit.state.status, isNot(TodayStatus.loading));
+      expect(cubit.state.steps, 490);
       await cubit.close();
       await monitor.stop();
       monitor.dispose();
@@ -588,6 +593,37 @@ void main() {
       await cubit.syncSteps(4292, clampStaleDisplay: true);
       expect(await userPreferences.getLastDisplayedSteps(localDay), 4292);
       expect(cubit.state.lastDisplayedSteps, 4292);
+      cubit.close();
+    });
+
+    test('cold start stays loading until steps and lastDisplayedSteps load', () async {
+      final permissionGate = Completer<bool>();
+      final localDay = formatLocalDayIso(clock.snapshot());
+      await userPreferences.setLastDisplayedSteps(
+        localDayIso: localDay,
+        steps: 1200,
+      );
+      await stepRepository.upsertIngestionBucket(
+        _bucket(
+          startTimeUtc: DateTime.utc(2026, 6, 2, 10),
+          value: 3500,
+          zoneOffset: '+02:00',
+        ),
+      );
+
+      final cubit = buildCubit(
+        activityPermissionGranted: () => permissionGate.future,
+      );
+      expect(cubit.state.status, TodayStatus.loading);
+      expect(cubit.state.lastDisplayedStepsLoaded, isFalse);
+
+      permissionGate.complete(true);
+      await cubit.refresh();
+
+      expect(cubit.state.lastDisplayedStepsLoaded, isTrue);
+      expect(cubit.state.lastDisplayedSteps, 1200);
+      expect(cubit.state.steps, 3500);
+      expect(cubit.state.status, TodayStatus.progress);
       cubit.close();
     });
 
@@ -652,6 +688,7 @@ void main() {
         emitThrottle: Duration.zero,
       );
       final cubit = buildCubit();
+      await cubit.refresh();
       cubit.attachLiveMonitor(monitor);
       await monitor.start();
       await monitor.reconcileFromDatabase();
@@ -755,6 +792,7 @@ void main() {
           final pastDay = cubit.state.weekDays.firstWhere((day) => !day.isToday);
           cubit.selectLocalDay(pastDay.localDay);
 
+          expect(cubit.state.status, TodayStatus.loading);
           expect(cubit.state.lastDisplayedStepsLoaded, isFalse);
           expect(cubit.state.lastDisplayedSteps, isNull);
 
