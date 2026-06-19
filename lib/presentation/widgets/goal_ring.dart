@@ -574,6 +574,8 @@ class _GoalRingState extends State<GoalRing> with TickerProviderStateMixin {
     return (steps / goal).clamp(0.0, 1.0);
   }
 
+  final _insetShadowCache = GoalRingInsetShadowCache();
+
   @override
   void dispose() {
     _liveCoalesceTimer?.cancel();
@@ -583,6 +585,7 @@ class _GoalRingState extends State<GoalRing> with TickerProviderStateMixin {
     _releaseMicroTickController();
     _releaseLiveArcController();
     _releaseOverflowController();
+    _insetShadowCache.dispose();
     super.dispose();
   }
 
@@ -639,6 +642,7 @@ class _GoalRingState extends State<GoalRing> with TickerProviderStateMixin {
         progressColor: progressColor,
         strokeWidth: kGoalRingStrokeWidth,
         dashedTrack: status == TodayStatus.noPermission,
+        shadowCache: status != TodayStatus.noPermission ? _insetShadowCache : null,
       ),
     );
 
@@ -779,6 +783,7 @@ class GoalRingPainter extends CustomPainter {
     required this.progressColor,
     required this.strokeWidth,
     required this.dashedTrack,
+    this.shadowCache,
   });
 
   final double progress;
@@ -786,6 +791,8 @@ class GoalRingPainter extends CustomPainter {
   final Color progressColor;
   final double strokeWidth;
   final bool dashedTrack;
+  /// Nullable: null when [dashedTrack] is true (dashed track has no inset shadow).
+  final GoalRingInsetShadowCache? shadowCache;
 
   static const _startAngle = -math.pi / 2;
   static const _fullSweep = math.pi * 2;
@@ -812,7 +819,12 @@ class GoalRingPainter extends CustomPainter {
         ..addOval(Rect.fromCircle(center: center, radius: innerRadius));
 
       canvas.drawPath(annulus, Paint()..color = trackColor);
-      paintGoalRingTrackInnerShadow(canvas, annulus, center, innerRadius, outerRadius);
+      if (shadowCache != null) {
+        paintGoalRingTrackInnerShadow(
+          canvas, annulus, center, innerRadius, outerRadius,
+          size, shadowCache!,
+        );
+      }
     }
 
     if (progress <= 0) {
