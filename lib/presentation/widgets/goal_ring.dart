@@ -629,6 +629,7 @@ class _GoalRingState extends State<GoalRing> with TickerProviderStateMixin {
 
   Widget _buildRing(Size size, AstraColors colors, bool reduceMotion) {
     final status = widget.state.status;
+    final devicePixelRatio = View.of(context).devicePixelRatio;
     final goalReached =
         status == TodayStatus.goalMet || status == TodayStatus.overflow;
     final progressColor = colors.accentPrimary.withValues(
@@ -643,6 +644,7 @@ class _GoalRingState extends State<GoalRing> with TickerProviderStateMixin {
         strokeWidth: kGoalRingStrokeWidth,
         dashedTrack: status == TodayStatus.noPermission,
         shadowCache: status != TodayStatus.noPermission ? _insetShadowCache : null,
+        devicePixelRatio: devicePixelRatio,
       ),
     );
 
@@ -784,6 +786,7 @@ class GoalRingPainter extends CustomPainter {
     required this.strokeWidth,
     required this.dashedTrack,
     this.shadowCache,
+    this.devicePixelRatio = 1.0,
   });
 
   final double progress;
@@ -793,6 +796,7 @@ class GoalRingPainter extends CustomPainter {
   final bool dashedTrack;
   /// Nullable: null when [dashedTrack] is true (dashed track has no inset shadow).
   final GoalRingInsetShadowCache? shadowCache;
+  final double devicePixelRatio;
 
   static const _startAngle = -math.pi / 2;
   static const _fullSweep = math.pi * 2;
@@ -822,7 +826,7 @@ class GoalRingPainter extends CustomPainter {
       if (shadowCache != null) {
         paintGoalRingTrackInnerShadow(
           canvas, annulus, center, innerRadius, outerRadius,
-          size, shadowCache!,
+          size, devicePixelRatio, shadowCache!,
         );
       }
     }

@@ -15,15 +15,30 @@ class _InsetShadowCache {
   ui.Image? _image;
   Size? _size;
   BorderRadius? _borderRadius;
+  double? _devicePixelRatio;
 
-  bool isValid(Size size, BorderRadius borderRadius) =>
-      _image != null && _size == size && _borderRadius == borderRadius;
+  bool isValid(Size size, BorderRadius borderRadius, double devicePixelRatio) =>
+      insetShadowCacheMatches(
+        size: size,
+        borderRadius: borderRadius,
+        devicePixelRatio: devicePixelRatio,
+        cachedSize: _size,
+        cachedBorderRadius: _borderRadius,
+        cachedDevicePixelRatio: _devicePixelRatio,
+        hasImage: _image != null,
+      );
 
-  void update(ui.Image image, Size size, BorderRadius borderRadius) {
+  void update(
+    ui.Image image,
+    Size size,
+    BorderRadius borderRadius,
+    double devicePixelRatio,
+  ) {
     _image?.dispose();
     _image = image;
     _size = size;
     _borderRadius = borderRadius;
+    _devicePixelRatio = devicePixelRatio;
   }
 
   void dispose() {
@@ -31,7 +46,46 @@ class _InsetShadowCache {
     _image = null;
     _size = null;
     _borderRadius = null;
+    _devicePixelRatio = null;
   }
+}
+
+/// Shared cache-key logic for [_InsetShadowCache] — exposed for unit tests.
+@visibleForTesting
+bool insetShadowCacheMatches({
+  required Size size,
+  required BorderRadius borderRadius,
+  required double devicePixelRatio,
+  required Size? cachedSize,
+  required BorderRadius? cachedBorderRadius,
+  required double? cachedDevicePixelRatio,
+  required bool hasImage,
+}) =>
+    hasImage &&
+    cachedSize == size &&
+    cachedBorderRadius == borderRadius &&
+    cachedDevicePixelRatio == devicePixelRatio;
+
+ui.Image _rasterizeInsetShadowPicture({
+  required ui.Picture picture,
+  required Size logicalSize,
+  required double devicePixelRatio,
+}) {
+  final image = picture.toImageSync(
+    (logicalSize.width * devicePixelRatio).ceil(),
+    (logicalSize.height * devicePixelRatio).ceil(),
+  );
+  picture.dispose();
+  return image;
+}
+
+void _blitInsetShadowImage(Canvas canvas, ui.Image image, Size logicalSize) {
+  canvas.drawImageRect(
+    image,
+    Rect.fromLTWH(0, 0, image.width.toDouble(), image.height.toDouble()),
+    Rect.fromLTWH(0, 0, logicalSize.width, logicalSize.height),
+    Paint(),
+  );
 }
 
 /// Paints an inset shadow clipped to [clipPath].
@@ -49,24 +103,28 @@ void _paintAstraInsetShadowOnPathCached(
   Path clipPath,
   Size size,
   BorderRadius borderRadius,
+  double devicePixelRatio,
   _InsetShadowCache cache,
 ) {
   if (size.isEmpty) return;
 
-  if (cache.isValid(size, borderRadius)) {
-    canvas.drawImage(cache._image!, Offset.zero, Paint());
+  if (cache.isValid(size, borderRadius, devicePixelRatio)) {
+    _blitInsetShadowImage(canvas, cache._image!, size);
     return;
   }
 
   final recorder = ui.PictureRecorder();
-  final tmpCanvas = Canvas(recorder);
+  final tmpCanvas = Canvas(recorder)..scale(devicePixelRatio);
   _renderAstraInsetShadow(tmpCanvas, clipPath);
   final picture = recorder.endRecording();
-  final image = picture.toImageSync(size.width.ceil(), size.height.ceil());
-  picture.dispose();
-  cache.update(image, size, borderRadius);
+  final image = _rasterizeInsetShadowPicture(
+    picture: picture,
+    logicalSize: size,
+    devicePixelRatio: devicePixelRatio,
+  );
+  cache.update(image, size, borderRadius, devicePixelRatio);
 
-  canvas.drawImage(image, Offset.zero, Paint());
+  _blitInsetShadowImage(canvas, image, size);
 }
 
 void _renderAstraInsetShadow(Canvas canvas, Path clipPath) {
@@ -129,10 +187,12 @@ class _AstraInsetShadowSurfaceState extends State<AstraInsetShadowSurface> {
   @override
   Widget build(BuildContext context) {
     final br = widget.borderRadius ?? BorderRadius.circular(AstraSpacing.kRadiusFull);
+    final devicePixelRatio = View.of(context).devicePixelRatio;
     return CustomPaint(
       painter: _AstraInsetShadowSurfacePainter(
         color: widget.color,
         borderRadius: br,
+        devicePixelRatio: devicePixelRatio,
         shadowCache: _shadowCache,
       ),
       child: widget.child,
@@ -144,11 +204,13 @@ class _AstraInsetShadowSurfacePainter extends CustomPainter {
   _AstraInsetShadowSurfacePainter({
     required this.color,
     required this.borderRadius,
+    required this.devicePixelRatio,
     required this.shadowCache,
   });
 
   final Color color;
   final BorderRadius borderRadius;
+  final double devicePixelRatio;
   final _InsetShadowCache shadowCache;
 
   @override
@@ -167,11 +229,27 @@ class _AstraInsetShadowSurfacePainter extends CustomPainter {
       path,
       size,
       borderRadius,
+      devicePixelRatio,
       shadowCache,
     );
   }
 
   @override
   bool shouldRepaint(covariant _AstraInsetShadowSurfacePainter old) =>
-      color != old.color || borderRadius != old.borderRadius;
+      astraInsetShadowPainterShouldRepaint(
+        oldColor: old.color,
+        newColor: color,
+        oldBorderRadius: old.borderRadius,
+        newBorderRadius: borderRadius,
+      );
 }
+
+/// Shared repaint decision for [_AstraInsetShadowSurfacePainter] — exposed for unit tests.
+@visibleForTesting
+bool astraInsetShadowPainterShouldRepaint({
+  required Color oldColor,
+  required Color newColor,
+  required BorderRadius oldBorderRadius,
+  required BorderRadius newBorderRadius,
+}) =>
+    oldColor != newColor || oldBorderRadius != newBorderRadius;

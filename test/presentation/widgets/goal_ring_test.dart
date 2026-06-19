@@ -482,6 +482,7 @@ void main() {
   group('paintGoalRingTrackInnerShadow', () {
     late GoalRingInsetShadowCache cache;
     const size = Size.square(280);
+    const devicePixelRatio = 1.0;
 
     setUp(() => cache = GoalRingInsetShadowCache());
     tearDown(() => cache.dispose());
@@ -515,10 +516,11 @@ void main() {
         innerRadius,
         outerRadius,
         size,
+        devicePixelRatio,
         cache,
       );
 
-      expect(cache.isValid(size), isTrue);
+      expect(cache.isValid(size, devicePixelRatio), isTrue);
     });
 
     test('cache hit on second call with same size', () {
@@ -537,9 +539,10 @@ void main() {
         innerRadius,
         outerRadius,
         size,
+        devicePixelRatio,
         cache,
       );
-      expect(cache.isValid(size), isTrue);
+      expect(cache.isValid(size, devicePixelRatio), isTrue);
 
       final recorder2 = PictureRecorder();
       paintGoalRingTrackInnerShadow(
@@ -549,9 +552,10 @@ void main() {
         innerRadius,
         outerRadius,
         size,
+        devicePixelRatio,
         cache,
       );
-      expect(cache.isValid(size), isTrue);
+      expect(cache.isValid(size, devicePixelRatio), isTrue);
     });
 
     test('cache invalidates on size change', () {
@@ -569,12 +573,13 @@ void main() {
         innerRadius,
         outerRadius,
         size,
+        devicePixelRatio,
         cache,
       );
-      expect(cache.isValid(size), isTrue);
+      expect(cache.isValid(size, devicePixelRatio), isTrue);
 
       const newSize = Size.square(320);
-      expect(cache.isValid(newSize), isFalse);
+      expect(cache.isValid(newSize, devicePixelRatio), isFalse);
     });
   });
 }

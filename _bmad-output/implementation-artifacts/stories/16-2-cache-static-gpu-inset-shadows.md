@@ -1,6 +1,6 @@
 # Story 16.2: Cache Static GPU Inset Shadows
 
-Status: review
+Status: done
 
 <!-- Refacto Epic 16 — branch `refacto` only until merge review -->
 <!-- Source: epics-refacto.md Story 16-2 · refactoring-audit-master-v0.6.1.md §2.2 · REF-08 · NFR-REF-01 -->
@@ -307,6 +307,18 @@ Add `shadowCache: _insetShadowCache` — painter holds a reference to the State-
 
 Do **not** use `picture.toImage()` (async) — it cannot be awaited inside `paint()`.
 
+### `devicePixelRatio` — high-DPI rasterization (code review fix)
+
+Bitmaps are rasterized at **physical** resolution (`logicalSize × devicePixelRatio`) and blitted back with `canvas.drawImageRect` into the logical canvas bounds. `View.of(context).devicePixelRatio` supplies the ratio in widget `build()`; `GoalRingPainter` and `_AstraInsetShadowSurfacePainter` receive it as a constructor field. The cache key includes `devicePixelRatio` so moving the window across displays invalidates stale bitmaps.
+
+### Performance trade-off — synchronous `toImageSync` on the UI isolate
+
+**Decision (accepted):** First paint after layout (or after cache invalidation on size / `borderRadius` / DPR change) calls `Picture.toImageSync` **synchronously on the UI thread**. This may cause a single-frame hitch when the ring or segmented-control track first appears or is resized.
+
+**Why accepted:** The shadow is geometrically static between layout changes; amortizing one raster pass over hundreds of subsequent `drawImageRect` blits at 120 Hz is the intended REF-08 win. An async `picture.toImage()` cannot be awaited inside `paint()`. A deferred warm-up pass would add state-machine complexity for marginal gain on a sub-millisecond bitmap at typical ring sizes.
+
+**Mitigation:** Cache hits on all frames after the first; invalidation is limited to layout-affecting changes only. Revisit only if profiling shows visible jank on low-end devices at cold start.
+
 ### Animated painters in `goal_ring_effects.dart` — must NOT be cached
 
 `GoalRingShimmerPainter`, `GoalRingArcSweepPainter`, and `GoalRingOverflowAmbientPainter` are **animation-driven** (their `paint()` inputs change every frame). They must **not** be cached — leave them completely unchanged.
@@ -423,6 +435,7 @@ Composer
 - `_GoalRingState` owns and disposes the cache; `GoalRingPainter` receives optional `shadowCache` (null for dashed/no-permission track).
 - Added `_InsetShadowCache` in `astra_inset_shadow.dart`; converted `AstraInsetShadowSurface` to `StatefulWidget` with cache keyed on size + borderRadius (AC #1, #2).
 - Updated `goal_ring_test.dart` with cache validity assertions including size-change invalidation (AC #4).
+- Code review follow-up: DPR-aware `toImageSync` + `drawImageRect` blit; `astra_inset_shadow_test.dart` for borderRadius cache invalidation; documented synchronous UI-thread rasterization trade-off.
 - No version bump per AC #6 — Epic 16 closes with minor+1.
 
 ### File List
@@ -435,9 +448,11 @@ Composer
 - `_bmad-output/implementation-artifacts/sprint-status-refacto.yaml`
 
 **Created:**
-_none expected_
+- `test/presentation/widgets/astra_inset_shadow_test.dart`
 
 ## Change Log
 
 - 2026-06-19: Story context created (create-story workflow) — ready-for-dev. Ultimate context engine analysis completed — comprehensive developer guide created.
 - 2026-06-19: Story implemented — GPU inset shadow bitmap caching for GoalRing and AstraInsetShadowSurface (REF-08, NFR-REF-01). Status → review.
+- 2026-06-19: Code review fixes — DPR-aware rasterization, AstraInsetShadowSurface cache tests, documented `toImageSync` UI-thread trade-off.
+- 2026-06-19: Story marked done after code review fixes (AC #1–#6).

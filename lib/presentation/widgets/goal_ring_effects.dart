@@ -14,15 +14,20 @@ import 'astra_inset_shadow.dart';
 class GoalRingInsetShadowCache {
   ui.Image? _image;
   Size? _size;
+  double? _devicePixelRatio;
 
-  /// Returns true when the cached bitmap matches [size] and can be reused.
-  bool isValid(Size size) => _image != null && _size == size;
+  /// Returns true when the cached bitmap matches [size] and [devicePixelRatio].
+  bool isValid(Size size, double devicePixelRatio) =>
+      _image != null &&
+      _size == size &&
+      _devicePixelRatio == devicePixelRatio;
 
   /// Stores [image] as the cached bitmap for [size], disposing the previous one.
-  void update(ui.Image image, Size size) {
+  void update(ui.Image image, Size size, double devicePixelRatio) {
     _image?.dispose();
     _image = image;
     _size = size;
+    _devicePixelRatio = devicePixelRatio;
   }
 
   /// Releases the cached bitmap. Call from [State.dispose].
@@ -30,7 +35,30 @@ class GoalRingInsetShadowCache {
     _image?.dispose();
     _image = null;
     _size = null;
+    _devicePixelRatio = null;
   }
+}
+
+ui.Image _rasterizeInsetShadowPicture({
+  required ui.Picture picture,
+  required Size logicalSize,
+  required double devicePixelRatio,
+}) {
+  final image = picture.toImageSync(
+    (logicalSize.width * devicePixelRatio).ceil(),
+    (logicalSize.height * devicePixelRatio).ceil(),
+  );
+  picture.dispose();
+  return image;
+}
+
+void _blitInsetShadowImage(Canvas canvas, ui.Image image, Size logicalSize) {
+  canvas.drawImageRect(
+    image,
+    Rect.fromLTWH(0, 0, image.width.toDouble(), image.height.toDouble()),
+    Rect.fromLTWH(0, 0, logicalSize.width, logicalSize.height),
+    Paint(),
+  );
 }
 
 /// Paints an inset shadow at the top of the goal ring track (annulus).
@@ -50,25 +78,29 @@ void paintGoalRingTrackInnerShadow(
   double innerRadius,
   double outerRadius,
   Size size,
+  double devicePixelRatio,
   GoalRingInsetShadowCache cache,
 ) {
   if (size.isEmpty) return;
 
-  if (cache.isValid(size)) {
-    canvas.drawImage(cache._image!, Offset.zero, Paint());
+  if (cache.isValid(size, devicePixelRatio)) {
+    _blitInsetShadowImage(canvas, cache._image!, size);
     return;
   }
 
-  // First paint (or after size change): render shadow into an offscreen bitmap.
+  // First paint (or after size / DPR change): render shadow into an offscreen bitmap.
   final recorder = ui.PictureRecorder();
-  final tmpCanvas = Canvas(recorder);
+  final tmpCanvas = Canvas(recorder)..scale(devicePixelRatio);
   _renderGoalRingInsetShadow(tmpCanvas, annulusPath, center, innerRadius, outerRadius);
   final picture = recorder.endRecording();
-  final image = picture.toImageSync(size.width.ceil(), size.height.ceil());
-  picture.dispose();
-  cache.update(image, size);
+  final image = _rasterizeInsetShadowPicture(
+    picture: picture,
+    logicalSize: size,
+    devicePixelRatio: devicePixelRatio,
+  );
+  cache.update(image, size, devicePixelRatio);
 
-  canvas.drawImage(image, Offset.zero, Paint());
+  _blitInsetShadowImage(canvas, image, size);
 }
 
 /// Renders the inset shadow onto [canvas].
