@@ -37,6 +37,7 @@ class StepRepository implements StepRepositoryContract {
        assert(session != null || db != null);
 
   final AstraDatabaseSession _session;
+  @override
   final TimeProvider clock;
 
   Database get db => _session.database;
@@ -96,6 +97,7 @@ class StepRepository implements StepRepositoryContract {
     );
   }
 
+  @override
   Future<int> getTodaySteps() async {
     final bounds = _todaySampleUtcBounds();
     final rows = await _run(
@@ -136,6 +138,7 @@ class StepRepository implements StepRepositoryContract {
   /// Only `resolution = '5min'` rows are included; coarser tiers for the same
   /// local day are excluded to prevent double-counting. The activity threshold
   /// (40 steps) is applied in [DerivedActivityMetrics], not in SQL.
+  @override
   Future<List<TimeseriesSampleModel>> getTodayActiveBuckets() async {
     final bounds = _todaySampleUtcBounds();
     return getActiveBucketsForLocalDay(bounds.referenceToday);
@@ -145,6 +148,7 @@ class StepRepository implements StepRepositoryContract {
   ///
   /// Same SQL filters as [getTodayActiveBuckets]; per-row [LocalDayCalculator]
   /// filter uses the **parameter** day (not clock today).
+  @override
   Future<List<TimeseriesSampleModel>> getActiveBucketsForLocalDay(
     DateTime localDay,
   ) async {
@@ -235,6 +239,7 @@ class StepRepository implements StepRepositoryContract {
   ///
   /// Aggregation runs in Dart using each row's stored [TimeseriesSampleModel.zoneOffset].
   /// Results are zero-filled for every calendar day in the window and sorted newest-first.
+  @override
   Future<List<ChartDayAggregate>> getChartDailyAggregates({
     required int days,
   }) async {
@@ -300,6 +305,7 @@ class StepRepository implements StepRepositoryContract {
   ///
   /// Aggregation runs in Dart using each row's stored [TimeseriesSampleModel.zoneOffset].
   /// Results include every calendar month in the rolling window and are sorted newest-first.
+  @override
   Future<List<ChartMonthAggregate>> getChartMonthlyAggregates({
     required int months,
   }) async {
@@ -424,6 +430,7 @@ class StepRepository implements StepRepositoryContract {
   /// Read-only footprint snapshot for My Data display (FR13).
   ///
   /// Does not trigger VACUUM or any write operations.
+  @override
   Future<DatabaseFootprint> getFootprint({required String databasePath}) async {
     final sampleCount = await countStepSamples();
     final fileSizeBytes = _readDatabaseFileSize(databasePath);
@@ -447,6 +454,7 @@ class StepRepository implements StepRepositoryContract {
   }
 
   /// Returns the total number of step samples in the database.
+  @override
   Future<int> countStepSamples() async {
     final rows = await _run(
       (db) => db.rawQuery(
@@ -517,6 +525,7 @@ class StepRepository implements StepRepositoryContract {
   }
 
   /// Latest step sample end time in UTC, or null when no step samples exist.
+  @override
   Future<DateTime?> getLastIngestionUtc() async {
     final rows = await _run(
       (db) => db.rawQuery(
@@ -538,6 +547,7 @@ class StepRepository implements StepRepositoryContract {
   /// Writes to [outputDirectory] with filename `astra-export-{yyyy-MM-dd}.csv`
   /// using the local calendar date from [clock]. Returns the absolute file path.
   /// Empty databases produce a header-only CSV.
+  @override
   Future<String> exportCsv({required String outputDirectory}) async {
     // Yield so synchronous IO errors surface through the returned Future.
     await Future<void>.value();
@@ -612,6 +622,7 @@ class StepRepository implements StepRepositoryContract {
   }
 
   /// Persists pre-validated samples in a single transaction (used after parse/confirm).
+  @override
   Future<ImportResult> importSamples(List<TimeseriesSampleModel> samples) async {
     if (samples.isEmpty) {
       return const ImportResult(
@@ -652,6 +663,7 @@ class StepRepository implements StepRepositoryContract {
   ///
   /// Preserves setup preferences: daily goal, theme, onboarding, and future non-health keys.
   /// VACUUM / file shrink is the caller's responsibility via [DataLifecycleService].
+  @override
   Future<void> purge({
     @visibleForTesting Future<void> Function(Transaction txn)? testHookAfterDeleteSamples,
   }) async {

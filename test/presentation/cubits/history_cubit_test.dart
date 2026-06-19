@@ -206,7 +206,7 @@ void main() {
 
     HistoryCubit buildCubit({
       StepRepositoryContract? repository,
-      UserPreferencesRepository? preferences,
+      UserPreferencesRepositoryContract? preferences,
     }) {
       return HistoryCubit(
         stepRepository: repository ?? stepRepository,

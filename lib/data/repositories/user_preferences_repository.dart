@@ -28,6 +28,7 @@ class UserPreferencesRepository implements UserPreferencesRepositoryContract {
   final AstraDatabaseSession _session;
   final TimeProvider _clock;
 
+  @override
   bool get isDatabaseOpen => _session.database.isOpen;
 
   Future<int> getDailyStepGoal() async {
@@ -43,6 +44,7 @@ class UserPreferencesRepository implements UserPreferencesRepositoryContract {
   ///
   /// Returns the latest journal row where `effective_from_local_day ≤ localDayIso`,
   /// or [kDefaultStepGoal] when no row applies.
+  @override
   Future<int> getGoalForLocalDay(String localDayIso) async {
     return _session.withRetry((db) async {
       final rows = await db.rawQuery(
@@ -66,6 +68,7 @@ class UserPreferencesRepository implements UserPreferencesRepositoryContract {
   ///
   /// Returns a map keyed by each requested ISO day. Semantics match [getGoalForLocalDay]
   /// for every day in [localDayIsos].
+  @override
   Future<Map<String, int>> getGoalsForLocalDays(
     List<String> localDayIsos,
   ) async {
@@ -106,6 +109,7 @@ class UserPreferencesRepository implements UserPreferencesRepositoryContract {
     });
   }
 
+  @override
   Future<void> setDailyStepGoal(int goal) async {
     if (goal <= 0) {
       throw ArgumentError.value(goal, 'goal', 'must be a positive integer');
@@ -187,6 +191,7 @@ class UserPreferencesRepository implements UserPreferencesRepositoryContract {
     return trimmed.isEmpty ? null : trimmed;
   }
 
+  @override
   Future<int?> getHeightCm() async {
     final value = await _readValue(kHeightCmKey);
     if (value == null) {
@@ -210,6 +215,7 @@ class UserPreferencesRepository implements UserPreferencesRepositoryContract {
     await _writeValue(kHeightCmKey, heightCm.toString());
   }
 
+  @override
   Future<double?> getWeightKg() async {
     final value = await _readValue(kWeightKgKey);
     if (value == null) {
@@ -277,6 +283,7 @@ class UserPreferencesRepository implements UserPreferencesRepositoryContract {
     await _writeValue(kHeightDisplayUnitKey, unit.storageValue);
   }
 
+  @override
   Future<void> setDisplayName(String? name) async {
     if (name == null) {
       await _deleteValue(kDisplayNameKey);
@@ -349,6 +356,7 @@ class UserPreferencesRepository implements UserPreferencesRepositoryContract {
   }
 
   /// Last step count displayed on Today for the given local day, or null when unset.
+  @override
   Future<int?> getLastDisplayedSteps(String localDayIso) async {
     final storedDay = await _readValue(kLastDisplayedStepsLocalDayKey);
     if (storedDay != localDayIso) {
@@ -358,6 +366,7 @@ class UserPreferencesRepository implements UserPreferencesRepositoryContract {
     return int.tryParse(value ?? '');
   }
 
+  @override
   Future<void> setLastDisplayedSteps({
     required String localDayIso,
     required int steps,
@@ -375,6 +384,7 @@ class UserPreferencesRepository implements UserPreferencesRepositoryContract {
   }
 
   /// UTC instant of the last successful `PRAGMA optimize` / `VACUUM` run.
+  @override
   Future<DateTime?> getLastDatabaseOptimizedAt() async {
     final value = await _readValue(kLastDatabaseOptimizedAtKey);
     if (value == null) {
@@ -394,6 +404,7 @@ class UserPreferencesRepository implements UserPreferencesRepositoryContract {
   ///
   /// Returns `true` when this caller claimed the day (celebration may proceed).
   /// Returns `false` when today was already claimed.
+  @override
   Future<bool> tryClaimCelebrationShownDate(String localDayIso) async {
     return _session.withRetry(
       (db) => db.transaction((txn) async {

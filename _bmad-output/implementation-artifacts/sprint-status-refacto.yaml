@@ -80,7 +80,7 @@ development_status:
   epic-15-retrospective: optional
 
   epic-16: in-progress
-  16-1-introduce-repository-abstraction-contracts: review
+  16-1-introduce-repository-abstraction-contracts: done
   16-2-cache-static-gpu-inset-shadows: backlog
   16-3-tab-repaint-isolation-in-app-scaffold: backlog
   16-4-goal-ring-repaint-boundary-and-controller-lifecycle-audit: backlog

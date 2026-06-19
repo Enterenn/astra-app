@@ -1,6 +1,6 @@
 # Story 16.1: Introduce Repository Abstraction Contracts
 
-Status: review
+Status: done
 
 <!-- Refacto Epic 16 — branch `refacto` only until merge review -->
 <!-- Source: epics-refacto.md Story 16-1 · refactoring-audit-master-v0.6.1.md §1.3 · REF-07 · NFR-REF-04 -->
@@ -342,3 +342,4 @@ claude-4.6-sonnet-medium-thinking
 
 - 2026-06-19: Story context created (create-story workflow) — ready-for-dev. Ultimate context engine analysis completed — comprehensive developer guide created.
 - 2026-06-19: Implementation complete — repository abstraction contracts, cubit refactor, fast contract test, spy migration. Status → review.
+- 2026-06-19: Code review polish — `@override` on concrete repos, `buildCubit` preferences param uses contract. Status → done.
