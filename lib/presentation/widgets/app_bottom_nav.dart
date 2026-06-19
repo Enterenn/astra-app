@@ -1,4 +1,3 @@
-import 'package:figma_squircle/figma_squircle.dart';
 import 'package:flutter/material.dart';
 import 'package:phosphoricons_flutter/phosphoricons_flutter.dart';
 
@@ -162,17 +161,14 @@ class _NavItem extends StatelessWidget {
     );
 
     final squircleChild = selected
-        ? DecoratedBox(
-            decoration: ShapeDecoration(
-              color: squircleFill,
-              shape: SmoothRectangleBorder(
-                borderRadius: SmoothBorderRadius(
-                  cornerRadius: AstraSpacing.kBottomNavSquircleRadius,
-                  cornerSmoothing: AstraSpacing.kBottomNavSquircleSmoothing,
-                ),
-              ),
+        ? ClipPath(
+            clipper: const _BottomNavSquircleClipper(
+              radius: AstraSpacing.kBottomNavSquircleRadius,
             ),
-            child: hitTarget,
+            child: ColoredBox(
+              color: squircleFill,
+              child: hitTarget,
+            ),
           )
         : hitTarget;
 
@@ -193,4 +189,23 @@ class _NavItem extends StatelessWidget {
       ),
     );
   }
+}
+
+/// Native squircle mask for the active nav tab (Story 17-3, REF-16).
+class _BottomNavSquircleClipper extends CustomClipper<Path> {
+  const _BottomNavSquircleClipper({required this.radius});
+
+  final double radius;
+
+  @override
+  Path getClip(Size size) {
+    final rect = Offset.zero & size;
+    return ContinuousRectangleBorder(
+      borderRadius: BorderRadius.circular(radius),
+    ).getOuterPath(rect);
+  }
+
+  @override
+  bool shouldReclip(covariant _BottomNavSquircleClipper oldClipper) =>
+      oldClipper.radius != radius;
 }
