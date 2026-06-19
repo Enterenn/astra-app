@@ -8,7 +8,7 @@ import '../../data/datasources/phone_pedometer_source.dart';
 import '../../data/datasources/step_increment_calculator.dart';
 import '../../data/models/step_reading.dart';
 import '../../data/repositories/ingestion_baseline_repository.dart';
-import '../../data/repositories/step_repository.dart';
+import '../../data/repositories/step/step_aggregation_repository.dart';
 import '../debug/live_pipeline_log.dart';
 import '../time/local_day_formatter.dart';
 import '../time/time_provider.dart';
@@ -23,7 +23,7 @@ const kActivityIdleFlushDelay = Duration(seconds: 15);
 /// Persists via [BackgroundCollector]; this class never writes buckets.
 class LiveStepMonitor {
   LiveStepMonitor({
-    required this.stepRepository,
+    required this.stepAggregation,
     required this.baselineRepository,
     required this.clock,
     this.incrementCalculator = const StepIncrementCalculator(),
@@ -36,7 +36,7 @@ class LiveStepMonitor {
   }) : _stepEventStreamFactory =
            stepEventStreamFactory ?? PhonePedometerSource.defaultStepEventStreamFactory;
 
-  final StepRepository stepRepository;
+  final StepAggregationRepository stepAggregation;
   final IngestionBaselineRepository baselineRepository;
   final TimeProvider clock;
   final StepIncrementCalculator incrementCalculator;
@@ -87,7 +87,7 @@ class LiveStepMonitor {
       return;
     }
     await _syncMemoryBaselineFromRepository();
-    _persistedTodaySteps = await stepRepository.getTodaySteps();
+    _persistedTodaySteps = await stepAggregation.getTodaySteps();
     _trackedLocalDay = formatLocalDayIso(clock.snapshot());
     _running = true;
     livePipelineLog(
@@ -223,7 +223,7 @@ class LiveStepMonitor {
     final crossDay =
         _trackedLocalDay != null && _trackedLocalDay != todayIso;
     final floorDisplay = crossDay ? 0 : currentTodaySteps;
-    _persistedTodaySteps = await stepRepository.getTodaySteps();
+    _persistedTodaySteps = await stepAggregation.getTodaySteps();
     await _syncMemoryBaselineFromRepository();
 
     final syncedTotal = _persistedTodaySteps;
@@ -252,7 +252,7 @@ class LiveStepMonitor {
     _pendingDelta = 0;
     _memoryBaseline = null;
     _lastProcessedObservedAtUtc = null;
-    _persistedTodaySteps = await stepRepository.getTodaySteps();
+    _persistedTodaySteps = await stepAggregation.getTodaySteps();
     await _syncMemoryBaselineFromRepository();
     _trackedLocalDay = formatLocalDayIso(clock.snapshot());
     _flushBufferedReadingsToDelta(currentLocalDayOnly: true);

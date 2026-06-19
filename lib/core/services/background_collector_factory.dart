@@ -5,7 +5,8 @@ import '../../data/datasources/data_ingestion_source.dart';
 import '../../data/datasources/phone_pedometer_source.dart';
 import '../../data/datasources/step_normalizer.dart';
 import '../../data/repositories/ingestion_baseline_repository.dart';
-import '../../data/repositories/step_repository.dart';
+import '../../data/repositories/step/step_aggregation_repository.dart';
+import '../../data/repositories/step/step_ingestion_repository.dart';
 import '../../data/repositories/user_health_metrics_repository.dart';
 import '../../data/repositories/user_settings_repository.dart';
 import '../database/astra_database_session.dart';
@@ -39,7 +40,8 @@ Future<BackgroundCollector> createIsolateBackgroundCollector({
   return BackgroundCollector(
     sources: resolvedSources,
     normalizer: StepNormalizer(clock: timeProvider),
-    repository: StepRepository(db: db, clock: timeProvider),
+    repository: StepIngestionRepository(db),
+    stepAggregation: StepAggregationRepository(db, clock: timeProvider),
     baselineRepository: IngestionBaselineRepository(db),
     userSettings: UserSettingsRepository(session),
     userHealthMetrics: UserHealthMetricsRepository(session, clock: timeProvider),

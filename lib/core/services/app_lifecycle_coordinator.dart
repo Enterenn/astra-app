@@ -269,7 +269,7 @@ class AppLifecycleCoordinator {
     if (!_shellVisible()) {
       return;
     }
-    _stepsAtBackground = await deps.stepRepository.getTodaySteps();
+    _stepsAtBackground = await deps.stepAggregation.getTodaySteps();
     _stopStalenessPersistTimer();
     _appInBackground = true;
     _todayCubit?.setLiveStepAppliesPaused(true);
@@ -408,7 +408,7 @@ class AppLifecycleCoordinator {
     try {
       await _runLocalDayBoundaryIfNeeded();
       final monitor = deps.liveStepMonitor;
-      final repo = deps.stepRepository;
+      final repo = deps.stepAggregation;
       final stepsBeforeCollect = await repo.getTodaySteps();
 
       final upsertedFromDrain = await _enqueuePersistCycleReturningCount(

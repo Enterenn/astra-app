@@ -9,9 +9,11 @@ import '../../data/datasources/monitor_drain_source.dart';
 import '../../data/datasources/phone_pedometer_source.dart';
 import '../../data/datasources/step_normalizer.dart';
 import '../../data/repositories/ingestion_baseline_repository.dart';
-import '../../data/repositories/step_repository.dart';
+import '../../data/repositories/step/step_aggregation_repository.dart';
+import '../../data/repositories/step/step_ingestion_repository.dart';
 import '../../data/repositories/user_health_metrics_repository.dart';
 import '../../data/repositories/user_settings_repository.dart';
+import '../../data/services/csv_service.dart';
 import '../../core/constants/astra_accent_preset.dart';
 import '../../core/constants/display_unit_preferences.dart';
 import '../../presentation/cubits/theme_state.dart';
@@ -41,7 +43,9 @@ class AppDependencies {
     required this.timeProvider,
     required this.ingestionSources,
     required this.stepNormalizer,
-    required this.stepRepository,
+    required this.stepIngestion,
+    required this.stepAggregation,
+    required this.csvService,
     required this.backgroundCollector,
     required this.notificationService,
     required this.liveStepMonitor,
@@ -64,7 +68,9 @@ class AppDependencies {
   final TimeProvider timeProvider;
   final List<DataIngestionSource> ingestionSources;
   final StepNormalizer stepNormalizer;
-  final StepRepository stepRepository;
+  final StepIngestionRepository stepIngestion;
+  final StepAggregationRepository stepAggregation;
+  final CsvService csvService;
   final BackgroundCollector backgroundCollector;
   final NotificationService notificationService;
   final LiveStepMonitor liveStepMonitor;
@@ -96,14 +102,16 @@ class AppDependencies {
     final initialWeightUnit = await userSettings.getWeightDisplayUnit();
     final initialHeightUnit = await userSettings.getHeightDisplayUnit();
     final initialOnboardingComplete = await userSettings.getOnboardingComplete();
-    final stepRepository = StepRepository(
-      session: databaseSession,
+    final stepIngestion = StepIngestionRepository(databaseSession);
+    final stepAggregation = StepAggregationRepository(
+      databaseSession,
       clock: timeProvider,
     );
+    final csvService = CsvService(databaseSession, clock: timeProvider);
     final stepNormalizer = StepNormalizer(clock: timeProvider);
     final baselineRepository = IngestionBaselineRepository(databaseSession);
     final liveStepMonitor = LiveStepMonitor(
-      stepRepository: stepRepository,
+      stepAggregation: stepAggregation,
       baselineRepository: baselineRepository,
       clock: timeProvider,
     );
@@ -115,7 +123,8 @@ class AppDependencies {
     final backgroundCollector = BackgroundCollector(
       sources: ingestionSources,
       normalizer: stepNormalizer,
-      repository: stepRepository,
+      repository: stepIngestion,
+      stepAggregation: stepAggregation,
       baselineRepository: baselineRepository,
       userSettings: userSettings,
       userHealthMetrics: userHealthMetrics,
@@ -143,7 +152,7 @@ class AppDependencies {
     final dataLifecycleService = DataLifecycleService(
       session: databaseSession,
       databasePath: databasePath,
-      repository: stepRepository,
+      repository: stepAggregation,
       userSettings: userSettings,
       clock: timeProvider,
     );
@@ -160,7 +169,9 @@ class AppDependencies {
       timeProvider: timeProvider,
       ingestionSources: ingestionSources,
       stepNormalizer: stepNormalizer,
-      stepRepository: stepRepository,
+      stepIngestion: stepIngestion,
+      stepAggregation: stepAggregation,
+      csvService: csvService,
       backgroundCollector: backgroundCollector,
       notificationService: notificationService,
       liveStepMonitor: liveStepMonitor,
@@ -184,7 +195,9 @@ class AppDependencies {
     required TimeProvider timeProvider,
     required List<DataIngestionSource> ingestionSources,
     required StepNormalizer stepNormalizer,
-    required StepRepository stepRepository,
+    required StepIngestionRepository stepIngestion,
+    required StepAggregationRepository stepAggregation,
+    required CsvService csvService,
     required BackgroundCollector backgroundCollector,
     required NotificationService notificationService,
     required LiveStepMonitor liveStepMonitor,
@@ -210,7 +223,9 @@ class AppDependencies {
       timeProvider: timeProvider,
       ingestionSources: ingestionSources,
       stepNormalizer: stepNormalizer,
-      stepRepository: stepRepository,
+      stepIngestion: stepIngestion,
+      stepAggregation: stepAggregation,
+      csvService: csvService,
       backgroundCollector: backgroundCollector,
       notificationService: notificationService,
       liveStepMonitor: liveStepMonitor,
@@ -241,6 +256,9 @@ class AppDependencies {
     String? databasePath,
     AppLifecycleCoordinator? appLifecycleCoordinator,
     BackgroundCollector? backgroundCollector,
+    StepIngestionRepository? stepIngestion,
+    StepAggregationRepository? stepAggregation,
+    CsvService? csvService,
   }) async {
     final clock = timeProvider ?? const SystemTimeProvider();
     final path = databasePath ?? inMemoryDatabasePath;
@@ -258,13 +276,16 @@ class AppDependencies {
     final initialHeightUnit = await settings.getHeightDisplayUnit();
     final onboardingComplete =
         initialOnboardingComplete ?? await settings.getOnboardingComplete();
-    final stepRepository = StepRepository(session: databaseSession, clock: clock);
+    final ingestion = stepIngestion ?? StepIngestionRepository(databaseSession);
+    final aggregation = stepAggregation ??
+        StepAggregationRepository(databaseSession, clock: clock);
+    final csv = csvService ?? CsvService(databaseSession, clock: clock);
     final stepNormalizer = StepNormalizer(clock: clock);
     final baselineRepository = IngestionBaselineRepository(databaseSession);
     final monitor =
         liveStepMonitor ??
         LiveStepMonitor(
-          stepRepository: stepRepository,
+          stepAggregation: aggregation,
           baselineRepository: baselineRepository,
           clock: clock,
           stepEventStreamFactory: () => const Stream<PhoneStepEvent>.empty(),
@@ -302,7 +323,8 @@ class AppDependencies {
         BackgroundCollector(
           sources: sources,
           normalizer: stepNormalizer,
-          repository: stepRepository,
+          repository: ingestion,
+          stepAggregation: aggregation,
           baselineRepository: baselineRepository,
           userSettings: settings,
           userHealthMetrics: health,
@@ -315,7 +337,7 @@ class AppDependencies {
         DataLifecycleService(
           session: databaseSession,
           databasePath: path,
-          repository: stepRepository,
+          repository: aggregation,
           userSettings: settings,
           clock: clock,
         );
@@ -331,7 +353,9 @@ class AppDependencies {
       timeProvider: clock,
       ingestionSources: sources,
       stepNormalizer: stepNormalizer,
-      stepRepository: stepRepository,
+      stepIngestion: ingestion,
+      stepAggregation: aggregation,
+      csvService: csv,
       backgroundCollector: collector,
       notificationService: notifications,
       liveStepMonitor: monitor,

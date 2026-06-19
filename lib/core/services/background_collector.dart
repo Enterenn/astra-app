@@ -6,7 +6,8 @@ import '../../data/datasources/data_ingestion_source.dart';
 import '../../data/datasources/step_normalizer.dart';
 import '../../data/models/step_reading.dart';
 import '../../data/repositories/ingestion_baseline_repository.dart';
-import '../../data/repositories/step_repository.dart';
+import '../../data/repositories/step/step_aggregation_repository.dart';
+import '../../data/repositories/step/step_ingestion_repository.dart';
 import '../../data/repositories/user_health_metrics_repository.dart';
 import '../../data/repositories/user_settings_repository.dart';
 import '../time/local_day_formatter.dart';
@@ -19,6 +20,7 @@ class BackgroundCollector {
     required List<DataIngestionSource> sources,
     required this.normalizer,
     required this.repository,
+    required this.stepAggregation,
     required this.baselineRepository,
     this.userSettings,
     this.userHealthMetrics,
@@ -32,7 +34,8 @@ class BackgroundCollector {
 
   final List<DataIngestionSource> _sources;
   final StepNormalizer normalizer;
-  final StepRepository repository;
+  final StepIngestionRepository repository;
+  final StepAggregationRepository stepAggregation;
   final IngestionBaselineRepository baselineRepository;
   final UserSettingsRepository? userSettings;
   final UserHealthMetricsRepository? userHealthMetrics;
@@ -176,7 +179,7 @@ class BackgroundCollector {
       return;
     }
 
-    final steps = await repository.getTodaySteps();
+    final steps = await stepAggregation.getTodaySteps();
     if (steps < goal) {
       return;
     }

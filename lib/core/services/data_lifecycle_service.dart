@@ -6,7 +6,7 @@ import 'package:flutter/foundation.dart';
 import 'package:flutter/services.dart';
 import 'package:sqflite/sqflite.dart';
 
-import '../../data/repositories/step_repository.dart';
+import '../../data/repositories/step/step_aggregation_repository.dart';
 import '../../data/repositories/user_settings_repository.dart';
 import '../lifecycle/sample_compaction_runner.dart';
 import '../time/time_provider.dart';
@@ -41,7 +41,7 @@ typedef DatabaseOptimizeRunner = Future<void> Function(
 Future<LifecycleRunResult> runMaintenanceOnConnection({
   required Database db,
   required String databasePath,
-  required StepRepository repository,
+  required StepAggregationRepository repository,
   required UserSettingsRepository userSettings,
   required TimeProvider clock,
   required bool force,
@@ -91,7 +91,7 @@ Future<LifecycleRunResult> _runFileMaintenanceIsolate(
     return runMaintenanceOnConnection(
       db: db,
       databasePath: request.databasePath,
-      repository: StepRepository(db: db, clock: clock),
+      repository: StepAggregationRepository(db, clock: clock),
       userSettings: UserSettingsRepository(db),
       clock: clock,
       force: request.force,
@@ -113,7 +113,7 @@ Future<LifecycleRunResult> _runFileMaintenanceIsolate(
 class DataLifecycleService {
   DataLifecycleService({
     required String databasePath,
-    required StepRepository repository,
+    required StepAggregationRepository repository,
     required UserSettingsRepository userSettings,
     required TimeProvider clock,
     AstraDatabaseSession? session,
@@ -137,7 +137,7 @@ class DataLifecycleService {
 
   final AstraDatabaseSession _session;
   final String _databasePath;
-  final StepRepository _repository;
+  final StepAggregationRepository _repository;
   final UserSettingsRepository _userSettings;
   final TimeProvider _clock;
   final DatabaseOptimizeRunner _optimizeAndVacuum;
