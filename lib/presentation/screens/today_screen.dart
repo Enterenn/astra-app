@@ -6,7 +6,7 @@ import 'package:permission_handler/permission_handler.dart';
 import '../../core/constants/astra_colors.dart';
 import '../../core/constants/astra_spacing.dart';
 import '../../core/constants/astra_typography.dart';
-import '../../core/health/collection_health_display.dart';
+import '../helpers/collection_health_evaluator.dart';
 import '../cubits/today_cubit.dart';
 import '../cubits/today_state.dart';
 import '../widgets/activity_stats_row.dart';
@@ -116,6 +116,12 @@ bool todayHealthSliceEquals(TodayState a, TodayState b) =>
 @visibleForTesting
 Object todayHealthSelectorSlice(TodayState state) =>
     _CollectionHealthViewModel.fromState(state);
+
+@visibleForTesting
+bool todayStaleBannerVisible(TodayState state) =>
+    state.isStale &&
+    state.status != TodayStatus.noPermission &&
+    state.status != TodayStatus.loading;
 
 bool _sameLocalDay(DateTime? a, DateTime? b) {
   if (identical(a, b)) {
@@ -320,10 +326,10 @@ class _StaleBannerSlot extends StatelessWidget {
   Widget build(BuildContext context) {
     return BlocSelector<TodayCubit, TodayState, bool>(
       key: sectionKey,
-      selector: (state) => state.isStale,
-      builder: (context, isStale) {
+      selector: todayStaleBannerVisible,
+      builder: (context, showStaleBanner) {
         _probeSectionBuild('staleBanner');
-        if (!isStale) {
+        if (!showStaleBanner) {
           return const SizedBox.shrink();
         }
         return Column(
@@ -452,6 +458,9 @@ class _CollectionHealthSlot extends StatelessWidget {
       selector: _CollectionHealthViewModel.fromState,
       builder: (context, vm) {
         _probeSectionBuild('health');
+        if (vm.display == CollectionHealthDisplay.loading) {
+          return const SizedBox.shrink();
+        }
         return Column(
           children: [
             CollectionHealthIndicator(

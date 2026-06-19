@@ -1,9 +1,19 @@
-import 'package:astra_app/core/health/collection_health_display.dart';
 import 'package:astra_app/presentation/cubits/today_state.dart';
+import 'package:astra_app/presentation/helpers/collection_health_evaluator.dart';
 import 'package:flutter_test/flutter_test.dart';
 
 void main() {
   group('deriveCollectionHealthDisplay', () {
+    test('loading takes priority over stale and permission', () {
+      expect(
+        deriveCollectionHealthDisplay(
+          status: TodayStatus.loading,
+          isStale: true,
+        ),
+        CollectionHealthDisplay.loading,
+      );
+    });
+
     test('permission denied takes priority over stale', () {
       expect(
         deriveCollectionHealthDisplay(

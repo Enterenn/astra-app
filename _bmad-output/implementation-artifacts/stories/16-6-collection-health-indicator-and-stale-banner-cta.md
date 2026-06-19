@@ -1,6 +1,6 @@
 # Story 16.6: Collection Health Indicator and Stale Banner CTA
 
-Status: review
+Status: done
 
 <!-- Refacto Epic 16 — branch `refacto` only until merge review -->
 <!-- Source: epics-refacto.md Story 16-6 · refactoring-audit-master-v0.6.1.md §5.2 · REF-12 · UX-REF-01 · UX-REF-02 -->

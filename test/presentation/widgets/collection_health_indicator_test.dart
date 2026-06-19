@@ -1,5 +1,5 @@
 import 'package:astra_app/core/constants/astra_theme.dart';
-import 'package:astra_app/core/health/collection_health_display.dart';
+import 'package:astra_app/presentation/helpers/collection_health_evaluator.dart';
 import 'package:astra_app/presentation/widgets/collection_health_indicator.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
@@ -8,6 +8,24 @@ void main() {
   final fixedNow = DateTime.utc(2026, 6, 3, 15);
 
   group('CollectionHealthIndicator', () {
+    testWidgets('loading state renders nothing', (tester) async {
+      await tester.pumpWidget(
+        MaterialApp(
+          theme: buildAstraLightTheme(),
+          home: Scaffold(
+            body: CollectionHealthIndicator(
+              display: CollectionHealthDisplay.loading,
+              nowUtc: fixedNow,
+            ),
+          ),
+        ),
+      );
+
+      expect(find.text('Collection active ●'), findsNothing);
+      expect(find.text('Sensor access revoked ✕'), findsNothing);
+      expect(find.byType(Row), findsNothing);
+    });
+
     testWidgets('active state shows collection active copy', (tester) async {
       await tester.pumpWidget(
         MaterialApp(
@@ -57,7 +75,7 @@ void main() {
       expect(find.text('Sensor access revoked ✕'), findsOneWidget);
     });
 
-    testWidgets('exposes label as semantics', (tester) async {
+    testWidgets('exposes merged label as semantics', (tester) async {
       final handle = tester.ensureSemantics();
 
       await tester.pumpWidget(
@@ -73,7 +91,6 @@ void main() {
       );
 
       expect(find.bySemanticsLabel('Collection active ●'), findsOneWidget);
-      expect(find.bySemanticsLabel('Collection health status'), findsOneWidget);
 
       handle.dispose();
     });

@@ -163,6 +163,47 @@ void main() {
       expect(todayHealthSliceEquals(before, after), isFalse);
     });
 
+    test('health slice changes when status becomes loading', () {
+      final before = TodayState.fromData(
+        steps: 1200,
+        goal: 8000,
+        isStale: false,
+      );
+      final after = before.copyWith(status: TodayStatus.loading);
+
+      expect(todayHealthSliceEquals(before, after), isFalse);
+    });
+
+    test('stale banner hidden when permission denied even if stale', () {
+      final state = TodayState.fromData(
+        steps: 1200,
+        goal: 8000,
+        isStale: true,
+      ).copyWith(status: TodayStatus.noPermission);
+
+      expect(todayStaleBannerVisible(state), isFalse);
+    });
+
+    test('stale banner hidden when loading even if stale flag set', () {
+      final state = TodayState.fromData(
+        steps: 1200,
+        goal: 8000,
+        isStale: true,
+      ).copyWith(status: TodayStatus.loading);
+
+      expect(todayStaleBannerVisible(state), isFalse);
+    });
+
+    test('stale banner visible when stale and permission granted', () {
+      final state = TodayState.fromData(
+        steps: 1200,
+        goal: 8000,
+        isStale: true,
+      );
+
+      expect(todayStaleBannerVisible(state), isTrue);
+    });
+
     test('activity stats slice changes when only steps and metrics tick', () {
       final before = TodayState.fromData(
         steps: 1200,
@@ -491,6 +532,20 @@ void main() {
       expect(buildCounts['health'], healthBuildsAfterPump);
     });
 
+    testWidgets('health slot hidden during loading state', (tester) async {
+      await pumpHealthSlot(
+        tester,
+        initial: TodayState.fromData(
+          steps: 1200,
+          goal: 8000,
+          isStale: false,
+        ).copyWith(status: TodayStatus.loading),
+      );
+
+      expect(find.text('Collection active ●'), findsNothing);
+      expect(find.text('Sensor access revoked ✕'), findsNothing);
+    });
+
     testWidgets('live step tick does not rebuild stale banner selector', (
       tester,
     ) async {
@@ -512,6 +567,32 @@ void main() {
       await tester.pump();
 
       expect(buildCounts['staleBanner'], staleBannerBuildsAfterPump);
+    });
+
+    testWidgets('stale banner hidden when permission denied', (tester) async {
+      await pumpStaleBannerSlot(
+        tester,
+        initial: TodayState.fromData(
+          steps: 1200,
+          goal: 8000,
+          isStale: true,
+        ).copyWith(status: TodayStatus.noPermission),
+      );
+
+      expect(find.byType(StatusBanner), findsNothing);
+    });
+
+    testWidgets('stale banner hidden during loading state', (tester) async {
+      await pumpStaleBannerSlot(
+        tester,
+        initial: TodayState.fromData(
+          steps: 1200,
+          goal: 8000,
+          isStale: true,
+        ).copyWith(status: TodayStatus.loading),
+      );
+
+      expect(find.byType(StatusBanner), findsNothing);
     });
 
     testWidgets('stale banner tap invokes cubit refresh', (tester) async {

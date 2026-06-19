@@ -85,7 +85,7 @@ development_status:
   16-3-tab-repaint-isolation-in-app-scaffold: done
   16-4-goal-ring-repaint-boundary-and-controller-lifecycle-audit: done
   16-5-granular-bloc-selector-on-today-screen: done
-  16-6-collection-health-indicator-and-stale-banner-cta: review
+  16-6-collection-health-indicator-and-stale-banner-cta: done
   16-7-cold-start-loading-shimmer-for-today: backlog
   epic-16-retrospective: optional
 
