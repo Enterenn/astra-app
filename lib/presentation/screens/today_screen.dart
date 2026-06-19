@@ -6,9 +6,11 @@ import 'package:permission_handler/permission_handler.dart';
 import '../../core/constants/astra_colors.dart';
 import '../../core/constants/astra_spacing.dart';
 import '../../core/constants/astra_typography.dart';
+import '../../core/health/collection_health_display.dart';
 import '../cubits/today_cubit.dart';
 import '../cubits/today_state.dart';
 import '../widgets/activity_stats_row.dart';
+import '../widgets/collection_health_indicator.dart';
 import '../widgets/elevated_card.dart';
 import '../widgets/goal_celebration.dart';
 import '../widgets/goal_editor_sheet.dart';
@@ -106,6 +108,15 @@ Object todayActivityStatsSelectorSlice(TodayState state) =>
 Object todayGoalRingSelectorSlice(TodayState state) =>
     _GoalRingViewModel.fromState(state);
 
+@visibleForTesting
+bool todayHealthSliceEquals(TodayState a, TodayState b) =>
+    _CollectionHealthViewModel.fromState(a) ==
+    _CollectionHealthViewModel.fromState(b);
+
+@visibleForTesting
+Object todayHealthSelectorSlice(TodayState state) =>
+    _CollectionHealthViewModel.fromState(state);
+
 bool _sameLocalDay(DateTime? a, DateTime? b) {
   if (identical(a, b)) {
     return true;
@@ -184,6 +195,39 @@ final class _ActivityStatsViewModel {
   @override
   int get hashCode =>
       Object.hash(status, metrics.distanceKm, metrics.kcal, metrics.walkingDuration);
+}
+
+@immutable
+final class _CollectionHealthViewModel {
+  const _CollectionHealthViewModel({
+    required this.display,
+    required this.lastIngestionUtc,
+  });
+
+  final CollectionHealthDisplay display;
+  final DateTime? lastIngestionUtc;
+
+  static _CollectionHealthViewModel fromState(TodayState state) =>
+      _CollectionHealthViewModel(
+        display: deriveCollectionHealthDisplay(
+          status: state.status,
+          isStale: state.isStale,
+        ),
+        lastIngestionUtc: state.lastIngestionUtc,
+      );
+
+  @override
+  bool operator ==(Object other) {
+    if (identical(this, other)) {
+      return true;
+    }
+    return other is _CollectionHealthViewModel &&
+        display == other.display &&
+        lastIngestionUtc == other.lastIngestionUtc;
+  }
+
+  @override
+  int get hashCode => Object.hash(display, lastIngestionUtc);
 }
 
 @immutable
@@ -391,6 +435,33 @@ class _ActivityStatsSection extends StatelessWidget {
   }
 }
 
+class _CollectionHealthSlot extends StatelessWidget {
+  const _CollectionHealthSlot();
+
+  static const sectionKey = Key('today_health_slot');
+
+  @override
+  Widget build(BuildContext context) {
+    return BlocSelector<TodayCubit, TodayState, _CollectionHealthViewModel>(
+      key: sectionKey,
+      selector: _CollectionHealthViewModel.fromState,
+      builder: (context, vm) {
+        _probeSectionBuild('health');
+        return Column(
+          children: [
+            CollectionHealthIndicator(
+              display: vm.display,
+              lastIngestionUtc: vm.lastIngestionUtc,
+              nowUtc: DateTime.now().toUtc(),
+            ),
+            const SizedBox(height: AstraSpacing.kSpaceMd),
+          ],
+        );
+      },
+    );
+  }
+}
+
 class _GoalRingCard extends StatelessWidget {
   const _GoalRingCard();
 
@@ -405,6 +476,7 @@ class _GoalRingCard extends StatelessWidget {
       padding: AstraSpacing.kSpaceLg,
       child: Column(
         children: [
+          const _CollectionHealthSlot(),
           BlocSelector<TodayCubit, TodayState, _GoalRingViewModel>(
             selector: _GoalRingViewModel.fromState,
             builder: (context, vm) {
@@ -492,6 +564,9 @@ class _GoalRingCard extends StatelessWidget {
 /// Test hooks for build-isolation widget tests (Story 16-5).
 @visibleForTesting
 Widget buildTodayWeekSectionForTest() => const _WeekSection();
+
+@visibleForTesting
+Widget buildTodayHealthSlotForTest() => const _CollectionHealthSlot();
 
 @visibleForTesting
 Widget buildTodayActivityStatsSectionForTest() => const _ActivityStatsSection();
