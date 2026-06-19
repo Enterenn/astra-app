@@ -16,7 +16,7 @@ void main() {
       );
 
       expect(
-        find.text('Steps may be delayed — see My Data'),
+        find.text('Steps may be delayed — tap to refresh'),
         findsOneWidget,
       );
     });
@@ -39,7 +39,7 @@ void main() {
       );
 
       expect(
-        find.bySemanticsLabel('Steps may be delayed — see My Data'),
+        find.bySemanticsLabel('Steps may be delayed — tap to refresh'),
         findsOneWidget,
       );
 

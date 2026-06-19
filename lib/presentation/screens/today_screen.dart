@@ -325,11 +325,15 @@ class _StaleBannerSlot extends StatelessWidget {
         if (!isStale) {
           return const SizedBox.shrink();
         }
-        return const Column(
+        return Column(
           crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
             SizedBox(height: AstraSpacing.kSpaceMd),
-            StatusBanner(variant: StatusBannerVariant.staleCompact),
+            StatusBanner(
+              variant: StatusBannerVariant.staleCompact,
+              onTap: () =>
+                  context.read<TodayCubit>().refresh(silent: false),
+            ),
           ],
         );
       },

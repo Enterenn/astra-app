@@ -36,7 +36,8 @@ class StatusBanner extends StatelessWidget {
   static const _kCompactMinHeight = 40.0;
 
   String get _copy => switch (variant) {
-    StatusBannerVariant.staleCompact => 'Steps may be delayed — see My Data',
+    StatusBannerVariant.staleCompact =>
+      'Steps may be delayed — tap to refresh',
     StatusBannerVariant.staleFull => isIos
         ? 'No new steps in 4+ hours. Steps update when you open the app on this device.'
         : 'No new steps in 12+ hours. Background collection may be delayed on this device.',
