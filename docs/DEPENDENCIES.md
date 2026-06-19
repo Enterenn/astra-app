@@ -124,7 +124,6 @@ Direct dependencies from `pubspec.yaml` (locked versions from `pubspec.lock` as 
 | `path_provider` | 2.1.5 | App documents/temp paths for export | No |
 | `file_picker` | 12.0.0-beta.5 (exact pin) | My Data CSV import/export via OS save/pick dialogs | No data upload; OS picker only |
 | `phosphoricons_flutter` | 1.0.0 | Phosphor icon fonts (bundled in package) | No |
-| `figma_squircle` | 0.6.3 | Figma corner smoothing on nav squircle | No |
 | `package_info_plus` | 10.1.0 | Profile version footer from built manifest (Story 7.3); local platform channel only | No |
 
 ### `flutter_local_notifications` (local only)
@@ -143,7 +142,7 @@ See KGP section below for Android build patches.
 | Package | Notes |
 |---------|-------|
 | `phosphoricons_flutter` 1.0.0 | Figma-aligned Phosphor icons. **Not** `phosphor_flutter` 2.1.0 (incompatible with Dart 3.12). Tab icons: `sneakerMove`, `chartBar`, `database`, `user` |
-| `figma_squircle` 0.6.3 | `SmoothRectangleBorder` on active nav squircle, `cornerRadius` 16, `cornerSmoothing` 1.0 |
+| Active nav squircle | Native `ClipPath` + `CustomClipper<Path>` (`ContinuousRectangleBorder` path, radius 16) — Story 17-3; `figma_squircle` removed |
 | `file_picker` 12.0.0-beta.5 | Exact pin at 12.0.0-beta.5 (REF-15) — CSV import/export via OS dialogs (Story 4.4 import, Story 17-1 export) |
 
 ### Android Built-in Kotlin / KGP (Story 5.5)
