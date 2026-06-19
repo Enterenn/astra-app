@@ -122,19 +122,25 @@ class _AppScaffoldState extends State<AppScaffold> {
     widget.onMyDataCubitReady?.call(_myDataCubit);
     widget.onProfileCubitReady?.call(_profileCubit);
     _tabScreens = [
-      BlocProvider.value(
-        value: _todayCubit,
-        child: const TodayScreen(),
+      RepaintBoundary(
+        child: BlocProvider.value(
+          value: _todayCubit,
+          child: const TodayScreen(),
+        ),
       ),
-      BlocProvider.value(
-        value: _historyCubit,
-        child: const HistoryScreen(),
+      RepaintBoundary(
+        child: BlocProvider.value(
+          value: _historyCubit,
+          child: const HistoryScreen(),
+        ),
       ),
-      Navigator(
-        key: _menuNavigatorKey,
-        onGenerateRoute: (_) => MaterialPageRoute<void>(
-          builder: (context) => MenuHubScreen(
-            onDestinationSelected: _onMenuDestinationSelected,
+      RepaintBoundary(
+        child: Navigator(
+          key: _menuNavigatorKey,
+          onGenerateRoute: (_) => MaterialPageRoute<void>(
+            builder: (context) => MenuHubScreen(
+              onDestinationSelected: _onMenuDestinationSelected,
+            ),
           ),
         ),
       ),
