@@ -9,9 +9,10 @@ import '../../core/time/system_time_provider.dart';
 import '../../core/time/time_provider.dart';
 import '../../core/time/timestamp_codec.dart';
 import '../../presentation/cubits/theme_state.dart';
+import '../contracts/user_preferences_repository_contract.dart';
 
 /// Sole writer to the `user_preferences` table.
-class UserPreferencesRepository {
+class UserPreferencesRepository implements UserPreferencesRepositoryContract {
   UserPreferencesRepository(
     Object sessionOrDatabase, {
     String databasePath = inMemoryDatabasePath,

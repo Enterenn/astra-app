@@ -19,9 +19,10 @@ import '../models/database_footprint.dart';
 import '../models/import_result.dart';
 import '../models/normalized_step_bucket.dart';
 import '../models/timeseries_sample_model.dart';
+import '../contracts/step_repository_contract.dart';
 import 'ingestion_baseline_repository.dart';
 
-class StepRepository {
+class StepRepository implements StepRepositoryContract {
   StepRepository({
     required this.clock,
     AstraDatabaseSession? session,
