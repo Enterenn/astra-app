@@ -10,6 +10,34 @@ import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import '../../helpers/astra_theme_test_helper.dart';
 
+class _LoadingToReadyHarness extends StatefulWidget {
+  const _LoadingToReadyHarness({super.key});
+
+  @override
+  State<_LoadingToReadyHarness> createState() => _LoadingToReadyHarnessState();
+}
+
+class _LoadingToReadyHarnessState extends State<_LoadingToReadyHarness> {
+  TodayState ringState = const TodayState.loading();
+
+  void resolveLoading() {
+    setState(() {
+      ringState = TodayState.fromData(
+        steps: 520,
+        goal: 8000,
+        isStale: false,
+        lastDisplayedSteps: 470,
+        lastDisplayedStepsLoaded: true,
+      );
+    });
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return GoalRing(state: ringState);
+  }
+}
+
 class _LiveCoalesceHarness extends StatefulWidget {
   const _LiveCoalesceHarness({super.key});
 
@@ -336,6 +364,43 @@ void main() {
         painters.any((p) => p.painter is GoalRingOverflowAmbientPainter),
         isFalse,
       );
+    });
+
+    testWidgets('loading to ready triggers cold-start count-up', (
+      tester,
+    ) async {
+      final harnessKey = GlobalKey<_LoadingToReadyHarnessState>();
+
+      await tester.pumpWidget(
+        wrapWithAstraTheme(
+          Center(
+            child: SizedBox(
+              width: 400,
+              child: _LoadingToReadyHarness(key: harnessKey),
+            ),
+          ),
+        ),
+      );
+      await tester.pump();
+
+      expect(find.byKey(const Key('goal_ring_loading_skeleton')), findsOneWidget);
+
+      harnessKey.currentState!.resolveLoading();
+      await tester.pump();
+      await tester.pump();
+      await tester.pump(const Duration(milliseconds: 50));
+
+      expect(find.byKey(const Key('goal_ring_loading_skeleton')), findsNothing);
+      expect(find.textContaining('/'), findsOneWidget);
+
+      final initialProgress = ringPainter(tester).progress;
+      expect(initialProgress, closeTo(470 / 8000, 0.02));
+      expect(initialProgress, lessThan(520 / 8000));
+
+      await tester.pump(const Duration(milliseconds: 400));
+      await tester.pump();
+
+      expect(ringPainter(tester).progress, greaterThan(initialProgress));
     });
 
     testWidgets('cold start shows stored count before animating to target', (
