@@ -129,7 +129,7 @@ Full decisions: [`_bmad-output/planning-artifacts/architecture.md`](_bmad-output
 | Sensors | `pedometer` |
 | Charts | `fl_chart` |
 | Notifications | `flutter_local_notifications` (local only) |
-| Export | `share_plus` |
+| Export | `file_picker` (OS save dialog) |
 | State | Cubit (`flutter_bloc`) |
 | Bundle ID | `com.astraapp` |
 

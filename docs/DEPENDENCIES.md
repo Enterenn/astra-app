@@ -121,9 +121,8 @@ Direct dependencies from `pubspec.yaml` (locked versions from `pubspec.lock` as 
 | `permission_handler` | 12.0.1 | OS permission dialogs (`ACTIVITY_RECOGNITION`, notifications) | No (OS UI only) |
 | `fl_chart` | 1.2.0 | Trends bar chart | No |
 | `flutter_local_notifications` | 21.0.0 | Local goal-reached and FGS ongoing notifications, **no FCM/Firebase** | No (local channels only) |
-| `share_plus` | 13.1.0 | CSV export share sheet (user-initiated, local file) | No data upload |
 | `path_provider` | 2.1.5 | App documents/temp paths for export | No |
-| `file_picker` | 12.0.0-beta.5 | My Data CSV import, local file selection | No data upload; OS picker only |
+| `file_picker` | 12.0.0-beta.5 | My Data CSV import/export via OS save/pick dialogs | No data upload; OS picker only |
 | `phosphoricons_flutter` | 1.0.0 | Phosphor icon fonts (bundled in package) | No |
 | `figma_squircle` | 0.6.3 | Figma corner smoothing on nav squircle | No |
 | `package_info_plus` | 10.1.0 | Profile version footer from built manifest (Story 7.3); local platform channel only | No |
@@ -145,16 +144,15 @@ See KGP section below for Android build patches.
 |---------|-------|
 | `phosphoricons_flutter` 1.0.0 | Figma-aligned Phosphor icons. **Not** `phosphor_flutter` 2.1.0 (incompatible with Dart 3.12). Tab icons: `sneakerMove`, `chartBar`, `database`, `user` |
 | `figma_squircle` 0.6.3 | `SmoothRectangleBorder` on active nav squircle, `cornerRadius` 16, `cornerSmoothing` 1.0 |
-| `file_picker` 12.0.0-beta.5 | Beta pin for `win32` ^6 compat with `share_plus` ^13.1 (Story 4.4 import) |
+| `file_picker` 12.0.0-beta.5 | Beta pin for CSV import/export via OS dialogs (Story 4.4 import, Story 17-1 export) |
 
 ### Android Built-in Kotlin / KGP (Story 5.5)
 
-AGP 9.0.1 + Flutter 3.44.0 use **built-in Kotlin** (no `kotlin-android` on the app module). Three Phase 0 plugins still shipped KGP on pub.dev at audit time (2026-06-03); no newer pub release fixes them.
+AGP 9.0.1 + Flutter 3.44.0 use **built-in Kotlin** (no `kotlin-android` on the app module). Two Phase 0 plugins still shipped KGP on pub.dev at audit time (2026-06-03); no newer pub release fixes them.
 
 | Plugin | Locked version | Upstream | ASTRA workaround |
 |--------|----------------|----------|------------------|
 | `pedometer` | 4.2.0 | [carp-dk/flutter-plugins](https://github.com/carp-dk/flutter-plugins), no built-in Kotlin release; track [Flutter AGP 9 umbrella #181383](https://github.com/flutter/flutter/issues/181383) | `scripts/kgp-patches/pedometer-4.2.0-build.gradle` |
-| `share_plus` | 13.1.0 | [plus_plugins#3745](https://github.com/fluttercommunity/plus_plugins/issues/3745) | `scripts/kgp-patches/share_plus-13.1.0-build.gradle` |
 | `workmanager_android` | 0.9.0+2 (via `workmanager` 0.9.0+3) | [flutter_workmanager](https://github.com/fluttercommunity/flutter_workmanager), track AGP 9 / built-in Kotlin | `scripts/kgp-patches/workmanager_android-0.9.0+2-build.gradle` |
 
 **Patch application (Story 5.5):**
@@ -174,7 +172,7 @@ AGP 9.0.1 + Flutter 3.44.0 use **built-in Kotlin** (no `kotlin-android` on the a
 
 **App-level migration (Story 5.5):** `org.jetbrains.kotlin.android` removed from `android/settings.gradle.kts`; `kotlin.incremental=false` removed from `android/gradle.properties`. **Flutter migrator re-adds** `android.builtInKotlin=false` and `android.newDsl=false` on upgrade — these flags remain in `gradle.properties` as of Story 7.2; Phase 0 plugin KGP patches in `settings.gradle.kts` handle legacy plugins until upstream migrates. Do not remove migrator flags without a dedicated follow-up. **Kotlin toolchain:** AGP 9 defaults to KGP 2.2.10; ASTRA pins `kotlin_version=2.3.20` in `gradle.properties` (Flutter minimum 2.2.20; KGP 2.3.10+ compatible with AGP 9.0.x per Kotlin docs).
 
-**Pub upgrades skipped for KGP:** `pedometer`, `share_plus`, `workmanager`, `file_picker` already at latest compatible versions; `permission_handler` / `sqflite` minor bumps are unrelated to KGP (deferred).
+**Pub upgrades skipped for KGP:** `pedometer`, `workmanager`, `file_picker` already at latest compatible versions; `permission_handler` / `sqflite` minor bumps are unrelated to KGP (deferred).
 
 **`file_picker` 12.0.0-beta.5:** AGP9-aware, applies KGP only when `android.builtInKotlin=false`; no patch required once built-in Kotlin is enabled.
 
