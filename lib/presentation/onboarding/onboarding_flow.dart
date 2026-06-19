@@ -4,7 +4,6 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 import '../../core/constants/astra_colors.dart';
 import '../../core/constants/astra_spacing.dart';
 import '../../core/di/app_dependencies.dart';
-import '../../data/repositories/user_preferences_repository.dart';
 import '../cubits/onboarding_cubit.dart';
 import '../cubits/onboarding_state.dart';
 import 'onboarding_height_page.dart';
@@ -22,15 +21,17 @@ class OnboardingFlow extends StatelessWidget {
 
   final AppDependencies deps;
   final VoidCallback onComplete;
-  final OnboardingCubit Function(UserPreferencesRepository userPreferences)?
-      createCubit;
+  final OnboardingCubit Function(AppDependencies deps)? createCubit;
 
   @override
   Widget build(BuildContext context) {
     return BlocProvider(
       create: (_) =>
-          createCubit?.call(deps.userPreferences) ??
-          OnboardingCubit(userPreferences: deps.userPreferences),
+          createCubit?.call(deps) ??
+          OnboardingCubit(
+            userSettings: deps.userSettings,
+            userHealthMetrics: deps.userHealthMetrics,
+          ),
       child: BlocListener<OnboardingCubit, OnboardingState>(
         listenWhen: (previous, current) =>
             previous.status != current.status &&

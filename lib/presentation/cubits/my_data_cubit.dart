@@ -35,7 +35,8 @@ typedef PostDisplayNameUpdateCallback = Future<void> Function();
 class MyDataCubit extends Cubit<MyDataState> {
   MyDataCubit({
     required this.stepRepository,
-    required this.userPreferences,
+    required this.userSettings,
+    required this.userHealthMetrics,
     required this.clock,
     required this.databasePath,
     ActivityPermissionChecker? activityPermissionGranted,
@@ -58,7 +59,8 @@ class MyDataCubit extends Cubit<MyDataState> {
        super(const MyDataState.loading());
 
   final StepRepositoryContract stepRepository;
-  final UserPreferencesRepositoryContract userPreferences;
+  final UserSettingsRepositoryContract userSettings;
+  final UserHealthMetricsRepositoryContract userHealthMetrics;
   final TimeProvider clock;
   final String databasePath;
   final ActivityPermissionChecker _activityPermissionGranted;
@@ -431,7 +433,7 @@ class MyDataCubit extends Cubit<MyDataState> {
     }
 
     try {
-      await userPreferences.setDailyStepGoal(parsed);
+      await userHealthMetrics.setDailyStepGoal(parsed);
     } catch (error, stackTrace) {
       if (kDebugMode) {
         debugPrint('MyDataCubit.updateDailyStepGoal persist failed: $error');
@@ -479,7 +481,7 @@ class MyDataCubit extends Cubit<MyDataState> {
     }
 
     try {
-      await userPreferences.setDisplayName(trimmed.isEmpty ? null : trimmed);
+      await userHealthMetrics.setDisplayName(trimmed.isEmpty ? null : trimmed);
     } catch (error, stackTrace) {
       if (kDebugMode) {
         debugPrint('MyDataCubit.updateDisplayName persist failed: $error');
@@ -544,7 +546,7 @@ class MyDataCubit extends Cubit<MyDataState> {
         stepRepository.getFootprint(databasePath: databasePath),
         stepRepository.getLastIngestionUtc(),
         _activityPermissionGranted(),
-        userPreferences.getLastDatabaseOptimizedAt(),
+        userSettings.getLastDatabaseOptimizedAt(),
       ]);
 
       if (isClosed) {

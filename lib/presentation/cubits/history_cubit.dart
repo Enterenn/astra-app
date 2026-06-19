@@ -12,11 +12,11 @@ import 'history_state.dart';
 class HistoryCubit extends Cubit<HistoryState> {
   HistoryCubit({
     required this.stepRepository,
-    required this.userPreferences,
+    required this.userHealthMetrics,
   }) : super(const HistoryState.loading());
 
   final StepRepositoryContract stepRepository;
-  final UserPreferencesRepositoryContract userPreferences;
+  final UserHealthMetricsRepositoryContract userHealthMetrics;
 
   List<ChartDayAggregate> _cachedAggregates30d = const [];
   List<ChartMonthAggregate> _cachedMonthlyAggregates12 = const [];
@@ -143,8 +143,8 @@ class HistoryCubit extends Cubit<HistoryState> {
       }
 
       final profileResults = await Future.wait<Object?>([
-        userPreferences.getHeightCm(),
-        userPreferences.getWeightKg(),
+        userHealthMetrics.getHeightCm(),
+        userHealthMetrics.getWeightKg(),
       ]);
       if (isClosed) {
         return;
@@ -340,7 +340,7 @@ class HistoryCubit extends Cubit<HistoryState> {
 
   Future<int> _resolveTodayGoal() async {
     final todayIso = formatLocalDayIso(stepRepository.clock.snapshot());
-    return userPreferences.getGoalForLocalDay(todayIso);
+    return userHealthMetrics.getGoalForLocalDay(todayIso);
   }
 
   Future<Map<String, int>> _resolveGoalsForAggregates(
@@ -354,7 +354,7 @@ class HistoryCubit extends Cubit<HistoryState> {
       return const {};
     }
 
-    return userPreferences.getGoalsForLocalDays(distinctIsos);
+    return userHealthMetrics.getGoalsForLocalDays(distinctIsos);
   }
 
   /// When 7d is selected but the last 7 days have no steps while older days do,

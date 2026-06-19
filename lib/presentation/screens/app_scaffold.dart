@@ -75,7 +75,8 @@ class _AppScaffoldState extends State<AppScaffold> {
         widget.createTodayCubit?.call(widget.deps) ??
         TodayCubit(
           stepRepository: widget.deps.stepRepository,
-          userPreferences: widget.deps.userPreferences,
+          userSettings: widget.deps.userSettings,
+          userHealthMetrics: widget.deps.userHealthMetrics,
           clock: widget.deps.timeProvider,
           activityPermissionGranted: widget.deps.activityPermissionGranted,
           postGoalUpdate: () async {
@@ -87,13 +88,14 @@ class _AppScaffoldState extends State<AppScaffold> {
         widget.createHistoryCubit?.call(widget.deps) ??
         HistoryCubit(
           stepRepository: widget.deps.stepRepository,
-          userPreferences: widget.deps.userPreferences,
+          userHealthMetrics: widget.deps.userHealthMetrics,
         );
     _myDataCubit =
         widget.createMyDataCubit?.call(widget.deps) ??
         MyDataCubit(
           stepRepository: widget.deps.stepRepository,
-          userPreferences: widget.deps.userPreferences,
+          userSettings: widget.deps.userSettings,
+          userHealthMetrics: widget.deps.userHealthMetrics,
           clock: widget.deps.timeProvider,
           databasePath: widget.deps.databasePath,
           activityPermissionGranted: widget.deps.activityPermissionGranted,
@@ -111,7 +113,8 @@ class _AppScaffoldState extends State<AppScaffold> {
     _profileCubit =
         widget.createProfileCubit?.call(widget.deps) ??
         ProfileCubit(
-          userPreferences: widget.deps.userPreferences,
+          userSettings: widget.deps.userSettings,
+          userHealthMetrics: widget.deps.userHealthMetrics,
           notificationService: widget.deps.notificationService,
           postDisplayNameUpdate: () async {
             await _todayCubit.refreshMetadata();
@@ -162,7 +165,7 @@ class _AppScaffoldState extends State<AppScaffold> {
     var phase = '';
     try {
       phase = 'clearLastDisplayedSteps';
-      await widget.deps.userPreferences.clearLastDisplayedSteps();
+      await widget.deps.userSettings.clearLastDisplayedSteps();
       // TODO(refactor): If the widget is unmounted mid-flux, we return silently to avoid StateError.
       // Trade-off: MyDataCubit might assume a full success while some late refreshes were skipped.
       // Considered acceptable as the database purge itself is already complete at this stage.

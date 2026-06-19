@@ -28,7 +28,8 @@ typedef PostGoalUpdateCallback = Future<void> Function();
 class TodayCubit extends Cubit<TodayState> {
   TodayCubit({
     required this.stepRepository,
-    required this.userPreferences,
+    required this.userSettings,
+    required this.userHealthMetrics,
     required this.clock,
     ActivityPermissionChecker? activityPermissionGranted,
     bool? isIos,
@@ -39,7 +40,8 @@ class TodayCubit extends Cubit<TodayState> {
        super(const TodayState.loading());
 
   final StepRepositoryContract stepRepository;
-  final UserPreferencesRepositoryContract userPreferences;
+  final UserSettingsRepositoryContract userSettings;
+  final UserHealthMetricsRepositoryContract userHealthMetrics;
   final TimeProvider clock;
   final ActivityPermissionChecker _activityPermissionGranted;
   final bool _isIos;
@@ -161,7 +163,7 @@ class TodayCubit extends Cubit<TodayState> {
     }
 
     try {
-      await userPreferences.setDailyStepGoal(parsed);
+      await userHealthMetrics.setDailyStepGoal(parsed);
     } catch (error, stackTrace) {
       if (kDebugMode) {
         debugPrint('TodayCubit.updateDailyStepGoal persist failed: $error');
@@ -220,7 +222,7 @@ class TodayCubit extends Cubit<TodayState> {
   /// from the last displayed value instead of live micro-ticks.
   ///
   /// [clampStaleDisplay] on live-pipeline bind lowers inflated
-  /// [UserPreferencesRepository.getLastDisplayedSteps] when they exceed the
+  /// [UserSettingsRepository.getLastDisplayedSteps] when they exceed the
   /// monitor/SQLite truth so live increments are visible immediately.
   Future<void> syncSteps(
     int steps, {
@@ -334,7 +336,7 @@ class TodayCubit extends Cubit<TodayState> {
     if (state.lastDisplayedSteps == steps) {
       return;
     }
-    if (!userPreferences.isDatabaseOpen) {
+    if (!userSettings.isDatabaseOpen) {
       return;
     }
     emit(
@@ -352,7 +354,7 @@ class TodayCubit extends Cubit<TodayState> {
     required int steps,
   }) async {
     try {
-      await userPreferences.setLastDisplayedSteps(
+      await userSettings.setLastDisplayedSteps(
         localDayIso: localDayIso,
         steps: steps,
       );
@@ -429,8 +431,8 @@ class TodayCubit extends Cubit<TodayState> {
       _resolveTodayGoal(),
       stepRepository.getLastIngestionUtc(),
       stepRepository.getTodayActiveBuckets(),
-      userPreferences.getHeightCm(),
-      userPreferences.getWeightKg(),
+      userHealthMetrics.getHeightCm(),
+      userHealthMetrics.getWeightKg(),
     ]);
     if (isClosed) {
       return;
@@ -523,9 +525,9 @@ class TodayCubit extends Cubit<TodayState> {
       _resolveTodayGoal(),
       stepRepository.getLastIngestionUtc(),
       stepRepository.getTodayActiveBuckets(),
-      userPreferences.getHeightCm(),
-      userPreferences.getWeightKg(),
-      userPreferences.getLastDisplayedSteps(todayIso),
+      userHealthMetrics.getHeightCm(),
+      userHealthMetrics.getWeightKg(),
+      userSettings.getLastDisplayedSteps(todayIso),
     ]);
     if (isClosed) {
       return;
@@ -654,7 +656,7 @@ class TodayCubit extends Cubit<TodayState> {
           ),
         )
         .totalSteps;
-    final goal = await userPreferences.getGoalForLocalDay(
+    final goal = await userHealthMetrics.getGoalForLocalDay(
       localDayIsoFromDateOnly(normalizedDay),
     );
     final buckets = await stepRepository.getActiveBucketsForLocalDay(
@@ -721,7 +723,7 @@ class TodayCubit extends Cubit<TodayState> {
     }
     final dayIso = localDayIsoFromDateOnly(day);
     final lastDisplayedSteps =
-        await userPreferences.getLastDisplayedSteps(dayIso);
+        await userSettings.getLastDisplayedSteps(dayIso);
     if (isClosed) {
       return;
     }
@@ -804,7 +806,7 @@ class TodayCubit extends Cubit<TodayState> {
 
   Future<int> _resolveTodayGoal() async {
     final todayIso = formatLocalDayIso(clock.snapshot());
-    return userPreferences.getGoalForLocalDay(todayIso);
+    return userHealthMetrics.getGoalForLocalDay(todayIso);
   }
 
   List<WeekDayStatus> _patchTodayGoalMetForLiveSteps(
@@ -855,7 +857,7 @@ class TodayCubit extends Cubit<TodayState> {
 
     final goals = await Future.wait<int>([
       for (final day in weekDayKeys)
-        userPreferences.getGoalForLocalDay(localDayIsoFromDateOnly(day)),
+        userHealthMetrics.getGoalForLocalDay(localDayIsoFromDateOnly(day)),
     ]);
 
     return [
@@ -874,7 +876,7 @@ class TodayCubit extends Cubit<TodayState> {
 
   Future<void> _clampStaleLastDisplayed(int truthSteps) async {
     final todayIso = formatLocalDayIso(clock.snapshot());
-    final lastDisplayed = await userPreferences.getLastDisplayedSteps(todayIso);
+    final lastDisplayed = await userSettings.getLastDisplayedSteps(todayIso);
     if (lastDisplayed == null || lastDisplayed <= truthSteps) {
       return;
     }
@@ -886,7 +888,7 @@ class TodayCubit extends Cubit<TodayState> {
         'to': truthSteps,
       },
     );
-    await userPreferences.setLastDisplayedSteps(
+    await userSettings.setLastDisplayedSteps(
       localDayIso: todayIso,
       steps: truthSteps,
     );
@@ -910,7 +912,7 @@ class TodayCubit extends Cubit<TodayState> {
   }
 
   Future<int?> _loadLastDisplayedStepsForDisplayDay() {
-    return userPreferences.getLastDisplayedSteps(_displayLocalDayIso());
+    return userSettings.getLastDisplayedSteps(_displayLocalDayIso());
   }
 
   ActivityMetricsSnapshot _liveMetricsForSteps(int steps) {
@@ -1075,7 +1077,7 @@ class TodayCubit extends Cubit<TodayState> {
     if (isClosed) {
       return;
     }
-    if (!await userPreferences.tryClaimCelebrationShownDate(todayIso)) {
+    if (!await userSettings.tryClaimCelebrationShownDate(todayIso)) {
       // Keep an in-flight celebration alive across silent refresh / ingestion.
       if (!_isViewingToday()) {
         return;

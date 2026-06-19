@@ -6,7 +6,6 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 import 'core/constants/astra_theme.dart';
 import 'core/di/app_dependencies.dart';
 import 'core/services/app_lifecycle_coordinator.dart';
-import 'data/repositories/user_preferences_repository.dart';
 import 'presentation/cubits/onboarding_cubit.dart';
 import 'presentation/cubits/theme_cubit.dart';
 import 'presentation/cubits/theme_state.dart';
@@ -41,8 +40,7 @@ class AstraApp extends StatefulWidget {
   });
 
   final AppDependencies deps;
-  final OnboardingCubit Function(UserPreferencesRepository userPreferences)?
-  createOnboardingCubit;
+  final OnboardingCubit Function(AppDependencies deps)? createOnboardingCubit;
   final TodayCubit Function(AppDependencies deps)? createTodayCubit;
   final HistoryCubit Function(AppDependencies deps)? createHistoryCubit;
   final MyDataCubit Function(AppDependencies deps)? createMyDataCubit;
@@ -121,14 +119,14 @@ class _AstraAppState extends State<AstraApp> with WidgetsBindingObserver {
       providers: [
         BlocProvider(
           create: (_) => ThemeCubit(
-            userPreferences: widget.deps.userPreferences,
+            userSettings: widget.deps.userSettings,
             initialPreference: widget.deps.initialTheme,
             initialAccentPreset: widget.deps.initialAccentPreset,
           ),
         ),
         BlocProvider(
           create: (_) => UnitsCubit(
-            userPreferences: widget.deps.userPreferences,
+            userSettings: widget.deps.userSettings,
             initialDistanceUnit: widget.deps.initialDistanceUnit,
             initialWeightUnit: widget.deps.initialWeightUnit,
             initialHeightUnit: widget.deps.initialHeightUnit,

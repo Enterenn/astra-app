@@ -5,14 +5,16 @@ import 'package:permission_handler/permission_handler.dart';
 import '../../core/constants/display_unit_preferences.dart';
 import '../../core/constants/preference_keys.dart';
 import '../../core/permissions/activity_permission_resolver.dart';
-import '../../data/repositories/user_preferences_repository.dart';
+import '../../data/repositories/user_health_metrics_repository.dart';
+import '../../data/repositories/user_settings_repository.dart';
 import 'onboarding_state.dart';
 
 typedef PermissionRequester = Future<PermissionStatus> Function(Permission);
 
 class OnboardingCubit extends Cubit<OnboardingState> {
   OnboardingCubit({
-    required this.userPreferences,
+    required this.userSettings,
+    required this.userHealthMetrics,
     PermissionRequester? permissionRequester,
     ActivityPermissionResolver? activityPermissionResolver,
   }) : _requestPermission = permissionRequester ?? _defaultRequestPermission,
@@ -20,7 +22,8 @@ class OnboardingCubit extends Cubit<OnboardingState> {
            activityPermissionResolver ?? resolveActivityPermission,
        super(const OnboardingState());
 
-  final UserPreferencesRepository userPreferences;
+  final UserSettingsRepository userSettings;
+  final UserHealthMetricsRepository userHealthMetrics;
   final PermissionRequester _requestPermission;
   final ActivityPermissionResolver _activityPermissionResolver;
 
@@ -77,10 +80,10 @@ class OnboardingCubit extends Cubit<OnboardingState> {
     final weightToSave = state.weightSkipped ? null : state.weightKg;
     final heightToSave = state.heightSkipped ? null : (state.heightCm ?? 170);
 
-    await userPreferences.setDailyStepGoal(kDefaultStepGoal);
-    await userPreferences.setWeightKg(weightToSave);
-    await userPreferences.setHeightCm(heightToSave);
-    await userPreferences.setOnboardingComplete(true);
+    await userHealthMetrics.setDailyStepGoal(kDefaultStepGoal);
+    await userHealthMetrics.setWeightKg(weightToSave);
+    await userHealthMetrics.setHeightCm(heightToSave);
+    await userSettings.setOnboardingComplete(true);
     emit(state.copyWith(status: OnboardingStatus.completed));
   }
 
