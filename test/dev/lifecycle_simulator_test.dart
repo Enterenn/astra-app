@@ -1,3 +1,6 @@
+@Tags(['slow'])
+library;
+
 import 'package:astra_app/core/database/app_database.dart';
 import 'package:astra_app/core/time/timestamp_codec.dart';
 import 'package:astra_app/data/datasources/data_ingestion_source.dart';

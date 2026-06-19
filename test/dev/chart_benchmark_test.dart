@@ -1,3 +1,6 @@
+@Tags(['slow'])
+library;
+
 import 'package:astra_app/core/database/app_database.dart';
 import 'package:astra_app/data/repositories/step_repository.dart';
 import 'package:astra_app/data/repositories/user_preferences_repository.dart';
