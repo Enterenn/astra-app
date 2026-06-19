@@ -1,6 +1,6 @@
 # Story 17.2: Pin file_picker to Exact Beta Version
 
-Status: review
+Status: done
 
 <!-- Refacto Epic 17 — branch `refacto` only until merge review -->
 <!-- Source: epics-refacto.md Story 17-2 · refactoring-audit-master-v0.6.1.md §6.2 · REF-15 -->
@@ -275,16 +275,17 @@ Claude (Cursor Agent)
 - Sub-task A: Removed `^` from `file_picker` in `pubspec.yaml` — exact pin `12.0.0-beta.5`. Lockfile unchanged (already at beta.5). `flutter pub upgrade file_picker` confirms pin blocks beta.6/beta.7.
 - Sub-task B: Updated `docs/DEPENDENCIES.md` — exact pin policy, REF-15 note, upgrade criteria, beta.7 informational. Grep clean in `docs/` and `README.md`.
 - Sub-task C: All CSV regression tests pass; full suite 802 passed. No runtime code changes.
-- Awaiting Baptiste OK for 3 commits per review-before-commit workflow.
+- Code review approved; story marked done.
 
 ### File List
 
 - `pubspec.yaml` — exact pin `file_picker: 12.0.0-beta.5`
 - `docs/DEPENDENCIES.md` — exact pin policy and upgrade criteria
-- `_bmad-output/implementation-artifacts/sprint-status-refacto.yaml` — status in-progress → review
+- `_bmad-output/implementation-artifacts/sprint-status-refacto.yaml` — status review → done
 - `_bmad-output/implementation-artifacts/stories/17-2-pin-file-picker-to-exact-beta-version.md` — story tracking
 
 ## Change Log
 
 - 2026-06-19: Story context created (create-story workflow) — ready-for-dev. Ultimate context engine analysis completed — comprehensive developer guide created.
 - 2026-06-19: Story implemented — exact pin applied, docs updated, 802 tests pass. Status → review.
+- 2026-06-19: Code review approved. Status → done.
