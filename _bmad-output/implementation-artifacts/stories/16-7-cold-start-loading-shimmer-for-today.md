@@ -1,6 +1,6 @@
 # Story 16.7: Cold-Start Loading Shimmer for Today
 
-Status: review
+Status: done
 
 <!-- Refacto Epic 16 — branch `refacto` only until merge review -->
 <!-- Source: epics-refacto.md Story 16-7 · refactoring-audit-master-v0.6.1.md §5.2 · REF-13 · UX-REF-03 -->
@@ -345,6 +345,7 @@ Composer
 - **Sub-task B:** `_isLoadingPlaceholder` + `_GoalRingCenterSkeleton` hide step digits and `/goal` fraction; pulse on ring + skeleton bars (static when reduce motion).
 - **Sub-task C:** Cold-start count-up preserved via existing `_handleStepChange` / `_afterDisplayStateLoaded`; no AnimatedSwitcher added.
 - **Sub-task D:** New widget + cubit tests; full `flutter test --exclude-tags slow` green (1934 tests).
+- **Code review follow-up:** `selectLocalDay` early return on same day; reduce-motion loading skeleton widget test (AC #4).
 
 ### File List
 
@@ -352,9 +353,13 @@ Composer
 - `lib/presentation/widgets/goal_ring.dart`
 - `test/presentation/cubits/today_cubit_test.dart`
 - `test/presentation/widgets/goal_ring_test.dart`
+- `test/presentation/screens/today_screen_selector_test.dart`
 - `_bmad-output/implementation-artifacts/sprint-status-refacto.yaml`
+- `pubspec.yaml`
+- `README.md`
 
 ## Change Log
 
 - 2026-06-19: Story context created (create-story workflow) — ready-for-dev. Ultimate context engine analysis completed — comprehensive developer guide created.
 - 2026-06-19: Implemented cold-start loading shimmer — cubit loading gate, GoalRing center skeleton, tests (status → review).
+- 2026-06-19: Code review fixes — selectLocalDay same-day guard, reduce-motion skeleton test; Epic 16 close bump 0.7.0+15 (status → done).

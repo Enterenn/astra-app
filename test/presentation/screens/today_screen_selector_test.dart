@@ -9,6 +9,7 @@ import 'package:astra_app/presentation/cubits/units_cubit.dart';
 import 'package:astra_app/presentation/models/week_day_status.dart';
 import 'package:astra_app/presentation/screens/today_screen.dart';
 import 'package:astra_app/presentation/widgets/elevated_card.dart';
+import 'package:astra_app/presentation/widgets/goal_ring.dart';
 import 'package:astra_app/presentation/widgets/status_banner.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
@@ -16,7 +17,23 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:sqflite/sqflite.dart';
 
 import '../../core/time/fake_time_provider.dart';
+import '../../helpers/astra_theme_test_helper.dart';
 import '../../helpers/sqflite_test_helper.dart';
+
+Color? goalRingLoadingSkeletonPrimaryBarColor(WidgetTester tester) {
+  final skeleton = find.byKey(const Key('goal_ring_loading_skeleton'));
+  expect(skeleton, findsOneWidget);
+  final containers = tester.widgetList<Container>(
+    find.descendant(
+      of: skeleton,
+      matching: find.byType(Container),
+    ),
+  );
+  expect(containers.length, greaterThanOrEqualTo(1));
+  final decoration = containers.first.decoration;
+  expect(decoration, isA<BoxDecoration>());
+  return (decoration! as BoxDecoration).color;
+}
 
 class _SeededTodayCubit extends TodayCubit {
   _SeededTodayCubit({
@@ -781,6 +798,51 @@ void main() {
         expect(buildCounts['staleBanner'], staleBannerBuilds);
         expect(buildCounts['activityStats'], greaterThan(activityBuilds));
         expect(find.text('49'), findsOneWidget);
+      },
+    );
+  });
+
+  group('GoalRing loading skeleton reduce motion', () {
+    testWidgets(
+      'static center skeleton when OS reduce motion is enabled (AC #4)',
+      (tester) async {
+        await tester.pumpWidget(
+          wrapWithAstraTheme(
+            MediaQuery(
+              data: const MediaQueryData(disableAnimations: true),
+              child: Center(
+                child: SizedBox(
+                  width: 400,
+                  child: GoalRing(state: const TodayState.loading()),
+                ),
+              ),
+            ),
+          ),
+        );
+        await tester.pump();
+
+        expect(
+          find.byKey(const Key('goal_ring_loading_skeleton')),
+          findsOneWidget,
+        );
+        expect(find.textContaining('/'), findsNothing);
+
+        // No ring pulse layer — pulseController stays null when reduce motion is on.
+        expect(
+          find.descendant(
+            of: find.byType(GoalRing),
+            matching: find.byType(FadeTransition),
+          ),
+          findsNothing,
+        );
+
+        final colorBefore = goalRingLoadingSkeletonPrimaryBarColor(tester);
+        expect(colorBefore, isNotNull);
+
+        await tester.pump(const Duration(seconds: 2));
+        await tester.pump();
+
+        expect(goalRingLoadingSkeletonPrimaryBarColor(tester), colorBefore);
       },
     );
   });

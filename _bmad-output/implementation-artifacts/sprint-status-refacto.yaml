@@ -1,6 +1,6 @@
 # generated: 2026-06-18
-# last_updated: 2026-06-19 (Story 16-7 review)
-# NEXT: dev-story 16-7-cold-start-loading-shimmer-for-today
+# last_updated: 2026-06-19 (Epic 16 done — Story 16-7)
+# NEXT: epic-17 or epic-16-retrospective
 # Ref: planning-artifacts/epics-refacto.md · planning-artifacts/refactoring-audit-master-v0.6.1.md
 # branch: refacto
 # base_version: 0.6.2+13
@@ -58,7 +58,7 @@
 # NAVIGATION: _bmad-output/README.md · planning-artifacts/epics-refacto.md
 
 generated: 2026-06-18
-last_updated: 2026-06-19 (Story 16-7 review)
+last_updated: 2026-06-19 (Epic 16 done — Story 16-7)
 project: astra-app
 project_key: NOKEY
 tracking_system: file-system
@@ -79,14 +79,14 @@ development_status:
   15-4-replace-uuid-with-timestamp-based-bucket-ids: done
   epic-15-retrospective: optional
 
-  epic-16: in-progress
+  epic-16: done
   16-1-introduce-repository-abstraction-contracts: done
   16-2-cache-static-gpu-inset-shadows: done
   16-3-tab-repaint-isolation-in-app-scaffold: done
   16-4-goal-ring-repaint-boundary-and-controller-lifecycle-audit: done
   16-5-granular-bloc-selector-on-today-screen: done
   16-6-collection-health-indicator-and-stale-banner-cta: done
-  16-7-cold-start-loading-shimmer-for-today: review
+  16-7-cold-start-loading-shimmer-for-today: done
   epic-16-retrospective: optional
 
   epic-17: backlog

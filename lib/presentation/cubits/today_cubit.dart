@@ -609,6 +609,10 @@ class TodayCubit extends Cubit<TodayState> {
     if (match == null || match.isFuture) {
       return;
     }
+    if (state.selectedLocalDay != null &&
+        _isSameLocalDay(state.selectedLocalDay!, normalizedDay)) {
+      return;
+    }
     _hasUserSelectedLocalDay = true;
     emit(
       state.copyWith(
