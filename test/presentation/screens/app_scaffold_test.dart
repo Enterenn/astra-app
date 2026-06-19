@@ -14,6 +14,8 @@ import 'package:astra_app/presentation/cubits/units_cubit.dart';
 import 'package:astra_app/presentation/widgets/confirm_dialog.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:astra_app/presentation/screens/app_scaffold.dart';
+import 'package:astra_app/presentation/screens/history_screen.dart';
+import 'package:astra_app/presentation/screens/menu_hub_screen.dart';
 import 'package:astra_app/presentation/screens/today_screen.dart';
 import 'package:astra_app/presentation/widgets/accent_preset_selector.dart';
 import 'package:astra_app/presentation/widgets/app_bottom_nav.dart';
@@ -211,6 +213,71 @@ void main() {
     tearDownAll(() async {
       await db.close();
     });
+
+    testWidgets(
+      'IndexedStack tab roots are wrapped in RepaintBoundary',
+      (WidgetTester tester) async {
+        await _pumpAppScaffold(
+          tester,
+          AppScaffold(
+            deps: deps,
+            createTodayCubit: _testTodayCubit,
+            createHistoryCubit: _testHistoryCubit,
+          ),
+          userPreferences: deps.userPreferences,
+        );
+        await tester.pump();
+
+        final stackFinder = find.byType(IndexedStack);
+        final indexedStack = tester.widget<IndexedStack>(stackFinder);
+        expect(indexedStack.children.length, 3);
+
+        expect(indexedStack.children[0], isA<RepaintBoundary>());
+        expect(
+          (indexedStack.children[0] as RepaintBoundary).child,
+          isA<BlocProvider<TodayCubit>>(),
+        );
+        expect(
+          find.descendant(
+            of: stackFinder,
+            matching: find.byType(TodayScreen),
+          ),
+          findsOneWidget,
+        );
+
+        expect(indexedStack.children[1], isA<RepaintBoundary>());
+        expect(
+          (indexedStack.children[1] as RepaintBoundary).child,
+          isA<BlocProvider<HistoryCubit>>(),
+        );
+        await tester.tap(find.byIcon(PhosphorIconsRegular.chartBar));
+        await tester.pump();
+        expect(
+          find.descendant(
+            of: stackFinder,
+            matching: find.byType(HistoryScreen),
+          ),
+          findsOneWidget,
+        );
+
+        expect(indexedStack.children[2], isA<RepaintBoundary>());
+        expect(
+          (indexedStack.children[2] as RepaintBoundary).child,
+          isA<Navigator>(),
+        );
+        await tester.tap(find.byIcon(PhosphorIconsRegular.list));
+        await tester.pump();
+        expect(
+          find.descendant(
+            of: stackFinder,
+            matching: find.byType(MenuHubScreen),
+          ),
+          findsOneWidget,
+        );
+
+        await _disposeScaffold(tester);
+      },
+    );
 
     testWidgets(
       'tab switch with reduce motion completes without hanging',
