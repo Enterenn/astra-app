@@ -57,32 +57,59 @@ void main() {
       );
     }
 
-    test('starts in loading state', () {
+    // ── Initial state, empty refresh, null ingestion, and coalesced refresh ──
+
+    test('loading state, empty refresh, null ingestion not stale, and coalesced refresh', () async {
+      // starts in loading
+      final c0 = buildCubit();
+      expect(c0.state.status, TodayStatus.loading);
+      c0.close();
+
+      // empty DB: empty status, zero steps, default goal, not stale, no ingestion
       final cubit = buildCubit();
-      expect(cubit.state.status, TodayStatus.loading);
-      cubit.close();
-    });
-
-    test('refresh emits noPermission when activity permission denied', () async {
-      final cubit = buildCubit(activityPermissionGranted: () async => false);
-
       await cubit.refresh();
-
-      expect(cubit.state.status, TodayStatus.noPermission);
-      cubit.close();
-    });
-
-    test('refresh emits empty when permission granted and no steps', () async {
-      final cubit = buildCubit();
-
-      await cubit.refresh();
-
       expect(cubit.state.status, TodayStatus.empty);
       expect(cubit.state.steps, 0);
       expect(cubit.state.goal, kDefaultStepGoal);
       expect(cubit.state.isStale, isFalse);
+      expect(cubit.state.lastIngestionUtc, isNull);
+      cubit.close();
+
+      // coalesced: two concurrent refresh() share one in-flight operation
+      final permissionGate = Completer<bool>();
+      final c2 = buildCubit(
+        activityPermissionGranted: () => permissionGate.future,
+      );
+      final first = c2.refresh();
+      final second = c2.refresh();
+      permissionGate.complete(true);
+      await Future.wait([first, second]);
+      expect(c2.state.status, TodayStatus.empty);
+      c2.close();
+    });
+
+    // ── noPermission: status, week strip populated, zero metrics, no celebration ──
+
+    test('noPermission: status, weekDays populated, zero metrics, no celebration even with steps at goal', () async {
+      await userPreferences.setDailyStepGoal(5000);
+      await stepRepository.upsertIngestionBucket(
+        _bucket(
+          startTimeUtc: DateTime.utc(2026, 6, 2, 10),
+          value: 5000,
+          zoneOffset: '+02:00',
+        ),
+      );
+      final cubit = buildCubit(activityPermissionGranted: () async => false);
+      await cubit.refresh();
+
+      expect(cubit.state.status, TodayStatus.noPermission);
+      expect(cubit.state.weekDays, hasLength(7));
+      expect(cubit.state.activityMetrics, ActivityMetricsSnapshot.zero);
+      expect(cubit.state.showCelebration, isFalse);
       cubit.close();
     });
+
+    // ── Status transitions ──
 
     test('refresh emits progress when steps are below goal', () async {
       await stepRepository.upsertIngestionBucket(
@@ -93,7 +120,6 @@ void main() {
         ),
       );
       final cubit = buildCubit();
-
       await cubit.refresh();
 
       expect(cubit.state.status, TodayStatus.progress);
@@ -102,7 +128,7 @@ void main() {
       cubit.close();
     });
 
-    test('refresh emits goalMet when steps equal goal', () async {
+    test('refresh status goalMet and overflow: both clamp progressRatio to 1', () async {
       await userPreferences.setDailyStepGoal(5000);
       await stepRepository.upsertIngestionBucket(
         _bucket(
@@ -111,36 +137,32 @@ void main() {
           zoneOffset: '+02:00',
         ),
       );
-      final cubit = buildCubit();
+      final c1 = buildCubit();
+      await c1.refresh();
+      expect(c1.state.status, TodayStatus.goalMet);
+      expect(c1.state.steps, 5000);
+      expect(c1.state.progressRatio, 1);
+      c1.close();
 
-      await cubit.refresh();
-
-      expect(cubit.state.status, TodayStatus.goalMet);
-      expect(cubit.state.steps, 5000);
-      expect(cubit.state.progressRatio, 1);
-      cubit.close();
-    });
-
-    test('refresh emits overflow when steps exceed goal', () async {
-      await userPreferences.setDailyStepGoal(5000);
+      // add more steps past the goal → overflow
       await stepRepository.upsertIngestionBucket(
         _bucket(
-          startTimeUtc: DateTime.utc(2026, 6, 2, 10),
-          value: 7500,
+          startTimeUtc: DateTime.utc(2026, 6, 2, 10, 10),
+          value: 2500,
           zoneOffset: '+02:00',
         ),
       );
-      final cubit = buildCubit();
-
-      await cubit.refresh();
-
-      expect(cubit.state.status, TodayStatus.overflow);
-      expect(cubit.state.steps, 7500);
-      expect(cubit.state.progressRatio, 1);
-      cubit.close();
+      final c2 = buildCubit();
+      await c2.refresh();
+      expect(c2.state.status, TodayStatus.overflow);
+      expect(c2.state.steps, 7500);
+      expect(c2.state.progressRatio, 1);
+      c2.close();
     });
 
-    test('refresh is not stale on Android at exactly 12 hours', () async {
+    // ── Stale detection ──
+
+    test('stale detection on Android: boundary (12 h, not stale) and just past (stale)', () async {
       await stepRepository.upsertIngestionBucket(
         _bucket(
           startTimeUtc: DateTime.utc(2026, 6, 2, 0),
@@ -149,15 +171,12 @@ void main() {
           zoneOffset: '+02:00',
         ),
       );
-      final cubit = buildCubit(isIos: false);
+      final c1 = buildCubit(isIos: false);
+      await c1.refresh();
+      expect(c1.state.isStale, isFalse);
+      c1.close();
 
-      await cubit.refresh();
-
-      expect(cubit.state.isStale, isFalse);
-      cubit.close();
-    });
-
-    test('refresh is stale on Android just past 12 hours', () async {
+      await db.delete('timeseries_samples');
       await stepRepository.upsertIngestionBucket(
         _bucket(
           startTimeUtc: DateTime.utc(2026, 6, 1, 23, 59),
@@ -166,15 +185,13 @@ void main() {
           zoneOffset: '+02:00',
         ),
       );
-      final cubit = buildCubit(isIos: false);
-
-      await cubit.refresh();
-
-      expect(cubit.state.isStale, isTrue);
-      cubit.close();
+      final c2 = buildCubit(isIos: false);
+      await c2.refresh();
+      expect(c2.state.isStale, isTrue);
+      c2.close();
     });
 
-    test('refresh is not stale on iOS at exactly 4 hours', () async {
+    test('stale detection on iOS: boundary (4 h, not stale) and just past (stale)', () async {
       await stepRepository.upsertIngestionBucket(
         _bucket(
           startTimeUtc: DateTime.utc(2026, 6, 2, 8),
@@ -183,15 +200,12 @@ void main() {
           zoneOffset: '+02:00',
         ),
       );
-      final cubit = buildCubit(isIos: true);
+      final c1 = buildCubit(isIos: true);
+      await c1.refresh();
+      expect(c1.state.isStale, isFalse);
+      c1.close();
 
-      await cubit.refresh();
-
-      expect(cubit.state.isStale, isFalse);
-      cubit.close();
-    });
-
-    test('refresh is stale on iOS just past 4 hours', () async {
+      await db.delete('timeseries_samples');
       await stepRepository.upsertIngestionBucket(
         _bucket(
           startTimeUtc: DateTime.utc(2026, 6, 2, 7, 59),
@@ -200,23 +214,13 @@ void main() {
           zoneOffset: '+02:00',
         ),
       );
-      final cubit = buildCubit(isIos: true);
-
-      await cubit.refresh();
-
-      expect(cubit.state.isStale, isTrue);
-      cubit.close();
+      final c2 = buildCubit(isIos: true);
+      await c2.refresh();
+      expect(c2.state.isStale, isTrue);
+      c2.close();
     });
 
-    test('refresh is not stale when last ingestion is null', () async {
-      final cubit = buildCubit();
-
-      await cubit.refresh();
-
-      expect(cubit.state.lastIngestionUtc, isNull);
-      expect(cubit.state.isStale, isFalse);
-      cubit.close();
-    });
+    // ── Silent refresh ──
 
     test('silent refresh does not re-emit loading when data is already shown', () async {
       await stepRepository.upsertIngestionBucket(
@@ -228,16 +232,12 @@ void main() {
       );
       final cubit = buildCubit();
       await cubit.refresh();
-
       expect(cubit.state.status, TodayStatus.progress);
 
       var sawLoading = false;
       final subscription = cubit.stream.listen((state) {
-        if (state.status == TodayStatus.loading) {
-          sawLoading = true;
-        }
+        if (state.status == TodayStatus.loading) sawLoading = true;
       });
-
       await cubit.refresh();
       await Future<void>.delayed(Duration.zero);
 
@@ -247,7 +247,9 @@ void main() {
       cubit.close();
     });
 
-    test('refresh triggers celebration when goal met and pref unset', () async {
+    // ── Celebration ──
+
+    test('celebration triggers on goalMet and overflow when pref unset', () async {
       await userPreferences.setDailyStepGoal(5000);
       await stepRepository.upsertIngestionBucket(
         _bucket(
@@ -256,39 +258,39 @@ void main() {
           zoneOffset: '+02:00',
         ),
       );
-      final cubit = buildCubit();
-
-      await cubit.refresh();
-
-      expect(cubit.state.showCelebration, isTrue);
+      final c1 = buildCubit();
+      await c1.refresh();
+      expect(c1.state.showCelebration, isTrue);
       expect(
         await userPreferences.getCelebrationShownDate(),
         formatLocalDayIso(clock.snapshot()),
       );
-      cubit.close();
-    });
+      c1.close();
 
-    test('refresh does not trigger celebration when pref already today', () async {
-      final todayIso = formatLocalDayIso(clock.snapshot());
-      await userPreferences.setCelebrationShownDate(todayIso);
-      await userPreferences.setDailyStepGoal(5000);
+      // overflow also triggers celebration
       await stepRepository.upsertIngestionBucket(
         _bucket(
-          startTimeUtc: DateTime.utc(2026, 6, 2, 10),
-          value: 5000,
+          startTimeUtc: DateTime.utc(2026, 6, 2, 10, 10),
+          value: 2500,
           zoneOffset: '+02:00',
         ),
       );
-      final cubit = buildCubit();
-
-      await cubit.refresh();
-
-      expect(cubit.state.showCelebration, isFalse);
-      cubit.close();
+      // reset celebration pref so it can fire again
+      await db.delete(
+        'user_preferences',
+        where: 'key = ?',
+        whereArgs: [kCelebrationShownDateKey],
+      );
+      final c2 = buildCubit();
+      await c2.refresh();
+      expect(c2.state.showCelebration, isTrue);
+      c2.close();
     });
 
-    test('refresh does not trigger celebration when steps below goal', () async {
+    test('celebration does not trigger when steps below goal or pref already claimed today', () async {
       await userPreferences.setDailyStepGoal(5000);
+
+      // steps below goal
       await stepRepository.upsertIngestionBucket(
         _bucket(
           startTimeUtc: DateTime.utc(2026, 6, 2, 10),
@@ -296,15 +298,68 @@ void main() {
           zoneOffset: '+02:00',
         ),
       );
+      final c1 = buildCubit();
+      await c1.refresh();
+      expect(c1.state.showCelebration, isFalse);
+      c1.close();
+
+      // pref already claimed today
+      final todayIso = formatLocalDayIso(clock.snapshot());
+      await userPreferences.setCelebrationShownDate(todayIso);
+      await db.delete('timeseries_samples');
+      await stepRepository.upsertIngestionBucket(
+        _bucket(
+          startTimeUtc: DateTime.utc(2026, 6, 2, 10),
+          value: 5000,
+          zoneOffset: '+02:00',
+        ),
+      );
+      final c2 = buildCubit();
+      await c2.refresh();
+      expect(c2.state.showCelebration, isFalse);
+      c2.close();
+    });
+
+    test('celebration: dismissCelebration clears flag, in-flight preserved on re-refresh, cleared after explicit dismiss', () async {
+      await userPreferences.setDailyStepGoal(5000);
+      await stepRepository.upsertIngestionBucket(
+        _bucket(
+          startTimeUtc: DateTime.utc(2026, 6, 2, 10),
+          value: 5000,
+          zoneOffset: '+02:00',
+        ),
+      );
       final cubit = buildCubit();
-
       await cubit.refresh();
+      expect(cubit.state.showCelebration, isTrue);
 
+      // dismissCelebration immediately clears the flag
+      cubit.dismissCelebration();
+      expect(cubit.state.showCelebration, isFalse);
+
+      // a re-refresh while pref already marked today re-triggers in-flight
+      await db.delete(
+        'user_preferences',
+        where: 'key = ?',
+        whereArgs: [kCelebrationShownDateKey],
+      );
+      await cubit.refresh();
+      expect(cubit.state.showCelebration, isTrue);
+
+      // another refresh with pref already today preserves in-flight celebration
+      await cubit.refresh();
+      expect(cubit.state.showCelebration, isTrue);
+
+      // after dismiss, another refresh with pref today clears it permanently
+      cubit.dismissCelebration();
+      await cubit.refresh();
       expect(cubit.state.showCelebration, isFalse);
       cubit.close();
     });
 
-    test('refresh uses journal-resolved goal not stale prefs cache', () async {
+    // ── Journal goal ──
+
+    test('journal goal overrides stale prefs cache: progress resolved correctly, overflow when steps exceed journal goal', () async {
       await db.insert('daily_goal_effective', {
         'effective_from_local_day': '2026-06-02',
         'goal': 8000,
@@ -322,136 +377,29 @@ void main() {
           zoneOffset: '+02:00',
         ),
       );
-      final cubit = buildCubit();
+      final c1 = buildCubit();
+      await c1.refresh();
+      expect(c1.state.goal, 8000);
+      expect(c1.state.status, TodayStatus.progress);
+      expect(c1.state.showCelebration, isFalse);
+      c1.close();
 
-      await cubit.refresh();
-
-      expect(cubit.state.goal, 8000);
-      expect(cubit.state.status, TodayStatus.progress);
-      expect(cubit.state.showCelebration, isFalse);
-      cubit.close();
-    });
-
-    test(
-      'refresh emits goalMet when steps meet journal goal despite lower stale cache',
-      () async {
-        await db.insert('daily_goal_effective', {
-          'effective_from_local_day': '2026-06-02',
-          'goal': 8000,
-        });
-        await db.update(
-          'user_preferences',
-          {'value': '5000'},
-          where: 'key = ?',
-          whereArgs: [kDailyStepGoalKey],
-        );
-        await stepRepository.upsertIngestionBucket(
-          _bucket(
-            startTimeUtc: DateTime.utc(2026, 6, 2, 10),
-            value: 8500,
-            zoneOffset: '+02:00',
-          ),
-        );
-        final cubit = buildCubit();
-
-        await cubit.refresh();
-
-        expect(cubit.state.goal, 8000);
-        expect(cubit.state.status, TodayStatus.overflow);
-        cubit.close();
-      },
-    );
-
-    test('refresh triggers celebration on overflow when pref unset', () async {
-      await userPreferences.setDailyStepGoal(5000);
+      // steps exceed journal goal → overflow
       await stepRepository.upsertIngestionBucket(
         _bucket(
-          startTimeUtc: DateTime.utc(2026, 6, 2, 10),
-          value: 7500,
+          startTimeUtc: DateTime.utc(2026, 6, 2, 10, 10),
+          value: 2500,
           zoneOffset: '+02:00',
         ),
       );
-      final cubit = buildCubit();
-
-      await cubit.refresh();
-
-      expect(cubit.state.showCelebration, isTrue);
-      cubit.close();
+      final c2 = buildCubit();
+      await c2.refresh();
+      expect(c2.state.goal, 8000);
+      expect(c2.state.status, TodayStatus.overflow);
+      c2.close();
     });
 
-    test('refresh does not trigger celebration when permission denied', () async {
-      await userPreferences.setDailyStepGoal(5000);
-      await stepRepository.upsertIngestionBucket(
-        _bucket(
-          startTimeUtc: DateTime.utc(2026, 6, 2, 10),
-          value: 5000,
-          zoneOffset: '+02:00',
-        ),
-      );
-      final cubit = buildCubit(activityPermissionGranted: () async => false);
-
-      await cubit.refresh();
-
-      expect(cubit.state.showCelebration, isFalse);
-      cubit.close();
-    });
-
-    test('refresh preserves in-flight celebration when pref already today', () async {
-      await userPreferences.setDailyStepGoal(5000);
-      await stepRepository.upsertIngestionBucket(
-        _bucket(
-          startTimeUtc: DateTime.utc(2026, 6, 2, 10),
-          value: 5000,
-          zoneOffset: '+02:00',
-        ),
-      );
-      final cubit = buildCubit();
-      await cubit.refresh();
-
-      expect(cubit.state.showCelebration, isTrue);
-
-      await cubit.refresh();
-
-      expect(cubit.state.showCelebration, isTrue);
-      cubit.close();
-    });
-
-    test('refresh clears celebration flag after dismiss when pref is today', () async {
-      await userPreferences.setDailyStepGoal(5000);
-      await stepRepository.upsertIngestionBucket(
-        _bucket(
-          startTimeUtc: DateTime.utc(2026, 6, 2, 10),
-          value: 5000,
-          zoneOffset: '+02:00',
-        ),
-      );
-      final cubit = buildCubit();
-      await cubit.refresh();
-      cubit.dismissCelebration();
-
-      await cubit.refresh();
-
-      expect(cubit.state.showCelebration, isFalse);
-      cubit.close();
-    });
-
-    test('dismissCelebration clears showCelebration flag', () async {
-      await userPreferences.setDailyStepGoal(5000);
-      await stepRepository.upsertIngestionBucket(
-        _bucket(
-          startTimeUtc: DateTime.utc(2026, 6, 2, 10),
-          value: 5000,
-          zoneOffset: '+02:00',
-        ),
-      );
-      final cubit = buildCubit();
-      await cubit.refresh();
-
-      expect(cubit.state.showCelebration, isTrue);
-      cubit.dismissCelebration();
-      expect(cubit.state.showCelebration, isFalse);
-      cubit.close();
-    });
+    // ── Live stream ──
 
     test('live stream updates steps without refresh', () async {
       final events = StreamController<PhoneStepEvent>.broadcast();
@@ -587,30 +535,32 @@ void main() {
       await events.close();
     });
 
-    test('syncSteps applies monotonic merge from monitor', () async {
+    // ── syncSteps ──
+
+    test('syncSteps: monotonic merge and foregroundCatchUp flow', () async {
       final cubit = buildCubit();
       await cubit.refresh();
+
+      // monotonic merge: never regresses
       await cubit.syncSteps(1200);
       expect(cubit.state.steps, 1200);
       await cubit.syncSteps(1100);
       expect(cubit.state.steps, 1200);
-      cubit.close();
-    });
 
-    test('syncSteps foregroundCatchUp defers steps until clearForegroundCatchUp', () async {
-      final cubit = buildCubit();
-      await cubit.refresh();
+      // foregroundCatchUp defers steps until clearForegroundCatchUp
       final stepsBeforeCatchUp = cubit.state.steps;
-      await cubit.syncSteps(1200, foregroundCatchUp: true);
+      await cubit.syncSteps(1500, foregroundCatchUp: true);
       expect(cubit.state.steps, stepsBeforeCatchUp);
-      expect(cubit.state.catchUpTargetSteps, 1200);
+      expect(cubit.state.catchUpTargetSteps, 1500);
       expect(cubit.state.foregroundCatchUp, isTrue);
       cubit.clearForegroundCatchUp();
       expect(cubit.state.foregroundCatchUp, isFalse);
       expect(cubit.state.catchUpTargetSteps, isNull);
-      expect(cubit.state.steps, 1200);
+      expect(cubit.state.steps, 1500);
       cubit.close();
     });
+
+    // ── lastDisplayedSteps ──
 
     test('refresh ignores stale-high lastDisplayed prefs in favor of SQLite', () async {
       final localDay = formatLocalDayIso(clock.snapshot());
@@ -676,7 +626,9 @@ void main() {
       cubit.close();
     });
 
-    test('syncSteps monotonic merge keeps distance aligned with display steps', () async {
+    // ── Distance / activity metrics ──
+
+    test('syncSteps distance: monotonic merge keeps metrics aligned', () async {
       final cubit = buildCubit();
       await cubit.refresh();
       await cubit.syncSteps(1200);
@@ -731,7 +683,9 @@ void main() {
       await events.close();
     });
 
-    test('refreshMetadata updates stale without changing steps', () async {
+    // ── refreshMetadata ──
+
+    test('refreshMetadata: updates stale flag and goal without changing steps', () async {
       await stepRepository.upsertIngestionBucket(
         _bucket(
           startTimeUtc: DateTime.utc(2026, 6, 1, 23, 59),
@@ -740,18 +694,6 @@ void main() {
           zoneOffset: '+02:00',
         ),
       );
-      final cubit = buildCubit();
-      await cubit.refresh();
-      final stepsBefore = cubit.state.steps;
-
-      await cubit.refreshMetadata();
-
-      expect(cubit.state.steps, stepsBefore);
-      expect(cubit.state.isStale, isTrue);
-      cubit.close();
-    });
-
-    test('refreshMetadata updates goal without changing steps', () async {
       await userPreferences.setDailyStepGoal(8000);
       final cubit = buildCubit();
       await cubit.refresh();
@@ -764,43 +706,27 @@ void main() {
 
       expect(cubit.state.steps, 5000);
       expect(cubit.state.goal, 4000);
+      expect(cubit.state.isStale, isTrue);
       cubit.close();
     });
 
-    test('coalesced refresh awaits a single in-flight operation', () async {
-      final permissionGate = Completer<bool>();
-      final cubit = buildCubit(
-        activityPermissionGranted: () => permissionGate.future,
-      );
-
-      final first = cubit.refresh();
-      final second = cubit.refresh();
-      permissionGate.complete(true);
-
-      await Future.wait([first, second]);
-
-      expect(cubit.state.status, TodayStatus.empty);
-      cubit.close();
-    });
+    // ── Week strip ──────────────────────────────────────────────────────────
 
     group('week strip', () {
-      test('selected day defaults to today after refresh', () async {
+      test('basics: 7 days loaded, today selected by default, selection changes on tap', () async {
         final cubit = buildCubit();
-
         await cubit.refresh();
 
+        expect(cubit.state.weekDays, hasLength(7));
+        expect(cubit.state.weekDays.first.weekdayLabel, 'MON');
+        expect(cubit.state.weekDays.last.weekdayLabel, 'SUN');
         final today = cubit.state.weekDays.singleWhere((day) => day.isToday);
+        expect(today.dayNumber, 2);
+        expect(today.weekdayLabel, 'TUE');
         expect(_sameDate(cubit.state.selectedLocalDay, today.localDay), isTrue);
-        cubit.close();
-      });
 
-      test('selection changes on explicit day select', () async {
-        final cubit = buildCubit();
-        await cubit.refresh();
         final monday = cubit.state.weekDays.first;
-
         cubit.selectLocalDay(monday.localDay);
-
         expect(_sameDate(cubit.state.selectedLocalDay, monday.localDay), isTrue);
         cubit.close();
       });
@@ -840,64 +766,31 @@ void main() {
         },
       );
 
-      test('refreshMetadata keeps in-session selected day deterministic', () async {
+      test('refreshMetadata and silent refresh both keep in-session selected day', () async {
         final cubit = buildCubit();
         await cubit.refresh();
         final monday = cubit.state.weekDays.first;
         cubit.selectLocalDay(monday.localDay);
 
         await cubit.refreshMetadata();
+        expect(_sameDate(cubit.state.selectedLocalDay, monday.localDay), isTrue);
 
+        await cubit.refresh();
         expect(_sameDate(cubit.state.selectedLocalDay, monday.localDay), isTrue);
         cubit.close();
       });
 
-      test('silent refresh keeps in-session selected day', () async {
-        final cubit = buildCubit();
-        await cubit.refresh();
-        final monday = cubit.state.weekDays.first;
-        cubit.selectLocalDay(monday.localDay);
-
-        await cubit.refresh();
-
-        expect(_sameDate(cubit.state.selectedLocalDay, monday.localDay), isTrue);
-        cubit.close();
-      });
-
-      test('selectLocalDay ignores day outside current week', () async {
+      test('selectLocalDay ignores day outside current week and future day', () async {
         final cubit = buildCubit();
         await cubit.refresh();
         final today = cubit.state.weekDays.singleWhere((day) => day.isToday);
 
         cubit.selectLocalDay(DateTime(2020, 1, 1));
-
         expect(_sameDate(cubit.state.selectedLocalDay, today.localDay), isTrue);
-        cubit.close();
-      });
 
-      test('selectLocalDay ignores future day', () async {
-        final cubit = buildCubit();
-        await cubit.refresh();
-        final today = cubit.state.weekDays.singleWhere((day) => day.isToday);
         final futureDay = cubit.state.weekDays.firstWhere((day) => day.isFuture);
-
         cubit.selectLocalDay(futureDay.localDay);
-
         expect(_sameDate(cubit.state.selectedLocalDay, today.localDay), isTrue);
-        cubit.close();
-      });
-
-      test('refresh loads seven calendar week days', () async {
-        final cubit = buildCubit();
-
-        await cubit.refresh();
-
-        expect(cubit.state.weekDays, hasLength(7));
-        expect(cubit.state.weekDays.first.weekdayLabel, 'MON');
-        expect(cubit.state.weekDays.last.weekdayLabel, 'SUN');
-        final today = cubit.state.weekDays.singleWhere((day) => day.isToday);
-        expect(today.dayNumber, 2);
-        expect(today.weekdayLabel, 'TUE');
         cubit.close();
       });
 
@@ -914,7 +807,6 @@ void main() {
           ),
         );
         final cubit = buildCubit();
-
         await cubit.refresh();
 
         final monday = cubit.state.weekDays.singleWhere(
@@ -922,18 +814,6 @@ void main() {
         );
         expect(monday.goalMet, isTrue);
         expect(monday.isFuture, isFalse);
-        cubit.close();
-      });
-
-      test('noPermission still loads week strip', () async {
-        final cubit = buildCubit(
-          activityPermissionGranted: () async => false,
-        );
-
-        await cubit.refresh();
-
-        expect(cubit.state.status, TodayStatus.noPermission);
-        expect(cubit.state.weekDays, hasLength(7));
         cubit.close();
       });
 
@@ -969,7 +849,6 @@ void main() {
           ),
         );
         final cubit = buildCubit();
-
         await cubit.refresh();
 
         final monday = cubit.state.weekDays.singleWhere(
@@ -989,6 +868,8 @@ void main() {
         cubit.close();
       });
     });
+
+    // ── Selected day display ────────────────────────────────────────────────
 
     group('selected day display', () {
       test('past-day select shows seeded steps and historical goal', () async {
@@ -1127,8 +1008,10 @@ void main() {
       });
     });
 
+    // ── Activity metrics ────────────────────────────────────────────────────
+
     group('activity metrics', () {
-      test('refresh computes distance kcal and duration from buckets', () async {
+      test('refresh computes distance, kcal and duration; syncSteps updates distance only', () async {
         await userPreferences.setHeightCm(175);
         await userPreferences.setWeightKg(70);
         await stepRepository.upsertIngestionBucket(
@@ -1139,7 +1022,6 @@ void main() {
           ),
         );
         final cubit = buildCubit();
-
         await cubit.refresh();
 
         expect(cubit.state.heightCm, 175);
@@ -1150,20 +1032,6 @@ void main() {
           const Duration(minutes: 5),
         );
         expect(cubit.state.activityMetrics.kcal, 21);
-        cubit.close();
-      });
-
-      test('syncSteps updates distance only preserving bucket metrics', () async {
-        await userPreferences.setHeightCm(175);
-        await stepRepository.upsertIngestionBucket(
-          _bucket(
-            startTimeUtc: DateTime.utc(2026, 6, 2, 10),
-            value: 500,
-            zoneOffset: '+02:00',
-          ),
-        );
-        final cubit = buildCubit();
-        await cubit.refresh();
 
         final kcalBefore = cubit.state.activityMetrics.kcal;
         final durationBefore = cubit.state.activityMetrics.walkingDuration;
@@ -1226,63 +1094,33 @@ void main() {
         );
         cubit.close();
       });
-
-      test('noPermission exposes zero metrics', () async {
-        final cubit = buildCubit(
-          activityPermissionGranted: () async => false,
-        );
-
-        await cubit.refresh();
-
-        expect(cubit.state.activityMetrics, ActivityMetricsSnapshot.zero);
-        cubit.close();
-      });
     });
 
+    // ── updateDailyStepGoal ─────────────────────────────────────────────────
+
     group('updateDailyStepGoal', () {
-      test('persists goal and refreshes state', () async {
-        final cubit = buildCubit();
+      test('persists goal, refreshes state, and invokes postGoalUpdate', () async {
+        var callbackCalled = false;
+        final cubit = TodayCubit(
+          stepRepository: stepRepository,
+          userPreferences: userPreferences,
+          clock: clock,
+          activityPermissionGranted: () async => true,
+          postGoalUpdate: () async {
+            callbackCalled = true;
+          },
+        );
 
         await cubit.refresh();
         expect(await cubit.updateDailyStepGoal(15000), isTrue);
 
         expect(cubit.state.goal, 15000);
         expect(await userPreferences.getDailyStepGoal(), 15000);
-        cubit.close();
-      });
-
-      test('invokes postGoalUpdate on successful update', () async {
-        var callbackCalled = false;
-        final cubit = TodayCubit(
-          stepRepository: stepRepository,
-          userPreferences: userPreferences,
-          clock: clock,
-          activityPermissionGranted: () async => true,
-          postGoalUpdate: () async {
-            callbackCalled = true;
-          },
-        );
-
-        await cubit.refresh();
-        expect(await cubit.updateDailyStepGoal(9000), isTrue);
-
         expect(callbackCalled, isTrue);
         cubit.close();
       });
 
-      test('rejects invalid goal', () async {
-        await userPreferences.setDailyStepGoal(8000);
-        final cubit = buildCubit();
-
-        await cubit.refresh();
-        expect(await cubit.updateDailyStepGoal(999), isFalse);
-
-        expect(cubit.state.goal, 8000);
-        expect(await userPreferences.getDailyStepGoal(), 8000);
-        cubit.close();
-      });
-
-      test('no-op when goal unchanged', () async {
+      test('rejects invalid goal and is no-op when goal unchanged', () async {
         var callbackCalled = false;
         await userPreferences.setDailyStepGoal(8000);
         final cubit = TodayCubit(
@@ -1296,8 +1134,14 @@ void main() {
         );
 
         await cubit.refresh();
-        expect(await cubit.updateDailyStepGoal(8000), isFalse);
 
+        // rejects invalid goal
+        expect(await cubit.updateDailyStepGoal(999), isFalse);
+        expect(cubit.state.goal, 8000);
+        expect(await userPreferences.getDailyStepGoal(), 8000);
+
+        // no-op when goal unchanged
+        expect(await cubit.updateDailyStepGoal(8000), isFalse);
         expect(callbackCalled, isFalse);
         cubit.close();
       });
@@ -1341,8 +1185,6 @@ NormalizedStepBucket _bucket({
 );
 
 bool _sameDate(DateTime? a, DateTime b) {
-  if (a == null) {
-    return false;
-  }
+  if (a == null) return false;
   return a.year == b.year && a.month == b.month && a.day == b.day;
 }
