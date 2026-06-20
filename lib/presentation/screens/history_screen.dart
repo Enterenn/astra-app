@@ -11,6 +11,7 @@ import '../widgets/period_toggle.dart';
 import '../widgets/step_bar_chart.dart';
 import '../widgets/trend_chip.dart';
 import '../widgets/trends_average_stats_row.dart';
+import '../widgets/trends_insight_cards.dart';
 import '../widgets/trends_monthly_bar_chart.dart';
 import '../widgets/trends_peak_day_card.dart';
 
@@ -70,14 +71,6 @@ class HistoryScreen extends StatelessWidget {
                           ),
                         ),
                       ],
-                      if (state.trend != null &&
-                          state.period != HistoryPeriod.months12) ...[
-                        const SizedBox(height: AstraSpacing.kSpaceMd),
-                        Align(
-                          alignment: Alignment.centerLeft,
-                          child: TrendChip(trend: state.trend!),
-                        ),
-                      ],
                       const SizedBox(height: AstraSpacing.kSpaceMd),
                       if (state.period == HistoryPeriod.months12) ...[
                         SizedBox(
@@ -109,6 +102,15 @@ class HistoryScreen extends StatelessWidget {
                               period: state.period,
                             ),
                           ],
+                        ],
+                        if (state.insightAvailability != null) ...[
+                          const SizedBox(height: AstraSpacing.kSpaceMd),
+                          TrendsInsightCardsSection(
+                            trend: state.trend,
+                            mostActiveWeekday: state.mostActiveWeekday,
+                            goalStreak: state.goalStreak,
+                            insightAvailability: state.insightAvailability!,
+                          ),
                         ],
                       ],
                     ],
