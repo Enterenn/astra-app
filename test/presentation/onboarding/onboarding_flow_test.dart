@@ -105,8 +105,50 @@ void main() {
         find.text('Your Health. Your Phone. Period.').hitTestable(),
         findsOneWidget,
       );
+      expect(find.text('100% offline').hitTestable(), findsOneWidget);
+      expect(find.text('No account required').hitTestable(), findsOneWidget);
       expect(find.text('Your steps stay on this device.'), findsNothing);
       expect(find.byType(NavigationBar), findsNothing);
+    });
+
+    testWidgets('intro does not request permission before Start tap', (
+      tester,
+    ) async {
+      var permissionRequestCount = 0;
+
+      await tester.pumpWidget(
+        buildFlow(
+          onComplete: () {},
+          createCubit: (deps) => OnboardingCubit(
+            userSettings: deps.userSettings,
+            userHealthMetrics: deps.userHealthMetrics,
+            permissionRequester: (_) async {
+              permissionRequestCount++;
+              return PermissionStatus.granted;
+            },
+          ),
+        ),
+      );
+
+      expect(permissionRequestCount, 0);
+    });
+
+    testWidgets('intro shows French trust badges when locale is fr', (
+      tester,
+    ) async {
+      await tester.pumpWidget(
+        TestMaterialApp(
+          locale: const Locale('fr'),
+          theme: buildAstraLightTheme(),
+          home: OnboardingFlow(
+            deps: deps,
+            onComplete: () {},
+          ),
+        ),
+      );
+
+      expect(find.text('100 % hors ligne').hitTestable(), findsOneWidget);
+      expect(find.text('Aucun compte requis').hitTestable(), findsOneWidget);
     });
 
     testWidgets('intro Continue requests activity permission', (tester) async {
