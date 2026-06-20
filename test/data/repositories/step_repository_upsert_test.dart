@@ -1,31 +1,24 @@
 import 'package:astra_app/core/database/app_database.dart';
 import 'package:astra_app/data/datasources/data_ingestion_source.dart';
 import 'package:astra_app/data/models/normalized_step_bucket.dart';
-import 'package:astra_app/data/repositories/step_repository.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:sqflite/sqflite.dart';
 
-import '../../core/time/fake_time_provider.dart';
 import '../../helpers/sqflite_test_helper.dart';
+import 'package:astra_app/data/repositories/step/step_ingestion_repository.dart';
 
 void main() {
   setUpAll(() async {
     await setUpSqfliteFfi();
   });
 
-  group('StepRepository.upsertIngestionBucket', () {
+  group('StepIngestionRepository.upsertIngestionBucket', () {
     late Database db;
-    late StepRepository repository;
+    late StepIngestionRepository repository;
 
     setUp(() async {
       db = await openAstraDatabase(databasePath: inMemoryDatabasePath);
-      repository = StepRepository(
-        db: db,
-        clock: FakeTimeProvider(
-          fixedNowUtc: DateTime.utc(2026, 6, 2, 8),
-          zoneOffset: const Duration(hours: 2),
-        ),
-      );
+      repository = StepIngestionRepository(db);
     });
 
     tearDown(() async {

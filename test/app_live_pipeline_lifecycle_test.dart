@@ -12,20 +12,21 @@ import 'package:astra_app/data/datasources/monitor_drain_source.dart';
 import 'package:astra_app/data/datasources/phone_pedometer_source.dart';
 import 'package:astra_app/data/models/normalized_step_bucket.dart';
 import 'package:astra_app/data/repositories/ingestion_baseline_repository.dart';
-import 'package:astra_app/data/repositories/step_repository.dart';
+
 import 'package:astra_app/data/repositories/user_health_metrics_repository.dart';
 import 'package:astra_app/data/repositories/user_settings_repository.dart';
+import 'package:flutter/material.dart';
 import 'package:astra_app/presentation/cubits/history_cubit.dart';
 import 'package:astra_app/presentation/cubits/today_cubit.dart';
 import 'package:astra_app/presentation/cubits/today_state.dart';
-import 'package:astra_app/presentation/widgets/goal_ring.dart';
-import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:sqflite/sqflite.dart';
 
 import 'core/time/fake_time_provider.dart';
 import 'helpers/recording_health_fgs.dart';
 import 'helpers/sqflite_test_helper.dart';
+import 'package:astra_app/data/repositories/step/step_aggregation_repository.dart';
+import 'helpers/step_test_fixtures.dart';
 
 // SKIP (full suite): timing races between lifecycle handlers, monitor drain, and
 // cubit refresh; sqflite default-factory side effects when other DB tests run first.
@@ -37,7 +38,7 @@ const _kSkipFlakyLivePipeline =
 
 class _StopCountingMonitor extends LiveStepMonitor {
   _StopCountingMonitor({
-    required super.stepRepository,
+    required super.stepAggregation,
     required super.baselineRepository,
     required super.clock,
     super.stepEventStreamFactory,
@@ -70,7 +71,7 @@ class _TestPhoneStreams {
 
 TodayCubit _testTodayCubit(AppDependencies deps) {
   return TodayCubit(
-    stepRepository: deps.stepRepository,
+    stepAggregation: deps.stepAggregation,
     userSettings: deps.userSettings,
     userHealthMetrics: deps.userHealthMetrics,
     clock: deps.timeProvider,
@@ -80,7 +81,7 @@ TodayCubit _testTodayCubit(AppDependencies deps) {
 
 HistoryCubit _testHistoryCubit(AppDependencies deps) {
   return HistoryCubit(
-    stepRepository: deps.stepRepository,
+    stepAggregation: deps.stepAggregation,
     userHealthMetrics: deps.userHealthMetrics,
   );
 }
@@ -171,7 +172,7 @@ void main() {
       final userHealthMetrics = UserHealthMetricsRepository(db, clock: clock);
       phoneStreams = _TestPhoneStreams();
       monitor = LiveStepMonitor(
-        stepRepository: StepRepository(db: db, clock: clock),
+        stepAggregation: StepTestFixtures.create(db: db, clock: clock).aggregation,
         baselineRepository: IngestionBaselineRepository(db),
         clock: clock,
         stepEventStreamFactory: phoneStreams.factory,
@@ -242,7 +243,7 @@ void main() {
         );
         for (var attempt = 0; attempt < 150; attempt++) {
           await Future<void>.delayed(const Duration(milliseconds: 20));
-          if (await deps.stepRepository.getTodaySteps() >= 50) {
+          if (await deps.stepAggregation.getTodaySteps() >= 50) {
             break;
           }
         }
@@ -319,7 +320,7 @@ void main() {
         );
         for (var attempt = 0; attempt < 150; attempt++) {
           await Future<void>.delayed(const Duration(milliseconds: 20));
-          if (await deps.stepRepository.getTodaySteps() >= 50) {
+          if (await deps.stepAggregation.getTodaySteps() >= 50) {
             break;
           }
         }
@@ -415,11 +416,11 @@ void main() {
         );
         for (var attempt = 0; attempt < 150; attempt++) {
           await Future<void>.delayed(const Duration(milliseconds: 20));
-          if (await deps.stepRepository.getTodaySteps() >= 50) {
+          if (await deps.stepAggregation.getTodaySteps() >= 50) {
             break;
           }
         }
-        expect(await deps.stepRepository.getTodaySteps(), 50);
+        expect(await deps.stepAggregation.getTodaySteps(), 50);
 
         tester.binding.handleAppLifecycleStateChanged(
           AppLifecycleState.resumed,
@@ -533,11 +534,11 @@ void main() {
         );
         for (var attempt = 0; attempt < 100; attempt++) {
           await Future<void>.delayed(const Duration(milliseconds: 20));
-          if (await deps.stepRepository.getTodaySteps() >= 100) {
+          if (await deps.stepAggregation.getTodaySteps() >= 100) {
             break;
           }
         }
-        expect(await deps.stepRepository.getTodaySteps(), 100);
+        expect(await deps.stepAggregation.getTodaySteps(), 100);
       });
       await _unmountAstraApp(tester);
     });
@@ -618,7 +619,7 @@ void main() {
 
         await tester.runAsync(() async {
           countingMonitor = _StopCountingMonitor(
-            stepRepository: StepRepository(db: db, clock: deps.timeProvider),
+            stepAggregation: StepAggregationRepository(db, clock: deps.timeProvider),
             baselineRepository: IngestionBaselineRepository(db),
             clock: deps.timeProvider,
             stepEventStreamFactory: phoneStreams.factory,
@@ -679,7 +680,7 @@ void main() {
           );
           for (var attempt = 0; attempt < 150; attempt++) {
             await Future<void>.delayed(const Duration(milliseconds: 20));
-            if (await countingDeps.stepRepository.getTodaySteps() >= 50) {
+            if (await countingDeps.stepAggregation.getTodaySteps() >= 50) {
               break;
             }
           }
@@ -698,7 +699,7 @@ void main() {
           );
           await countingDeps.backgroundCollector.collectOnce();
           final stepsAfterBackgroundCollect =
-              await countingDeps.stepRepository.getTodaySteps();
+              await countingDeps.stepAggregation.getTodaySteps();
           expect(stepsAfterBackgroundCollect, greaterThan(50));
 
           await Future<void>.delayed(const Duration(milliseconds: 15));
@@ -785,7 +786,7 @@ void main() {
         );
         for (var attempt = 0; attempt < 150; attempt++) {
           await Future<void>.delayed(const Duration(milliseconds: 20));
-          if (await deps.stepRepository.getTodaySteps() >= 50) {
+          if (await deps.stepAggregation.getTodaySteps() >= 50) {
             break;
           }
         }
@@ -928,7 +929,7 @@ void main() {
         );
         for (var attempt = 0; attempt < 150; attempt++) {
           await Future<void>.delayed(const Duration(milliseconds: 20));
-          if (await deps.stepRepository.getTodaySteps() >= 100) {
+          if (await deps.stepAggregation.getTodaySteps() >= 100) {
             break;
           }
         }
@@ -1013,7 +1014,7 @@ void main() {
         );
         for (var attempt = 0; attempt < 150; attempt++) {
           await Future<void>.delayed(const Duration(milliseconds: 20));
-          if (await deps.stepRepository.getTodaySteps() >= 100) {
+          if (await deps.stepAggregation.getTodaySteps() >= 100) {
             break;
           }
         }
@@ -1086,7 +1087,7 @@ void main() {
         );
         for (var attempt = 0; attempt < 150; attempt++) {
           await Future<void>.delayed(const Duration(milliseconds: 20));
-          if (await deps.stepRepository.getTodaySteps() >= 100) {
+          if (await deps.stepAggregation.getTodaySteps() >= 100) {
             break;
           }
         }
@@ -1130,7 +1131,7 @@ void main() {
       final userHealthMetrics = UserHealthMetricsRepository(db, clock: clock);
       phoneStreams = _TestPhoneStreams();
       monitor = LiveStepMonitor(
-        stepRepository: StepRepository(db: db, clock: clock),
+        stepAggregation: StepTestFixtures.create(db: db, clock: clock).aggregation,
         baselineRepository: IngestionBaselineRepository(db),
         clock: clock,
         stepEventStreamFactory: phoneStreams.factory,
@@ -1152,7 +1153,7 @@ void main() {
           ),
         ],
       );
-      await deps.stepRepository.upsertIngestionBucket(
+      await deps.stepIngestion.upsertIngestionBucket(
         NormalizedStepBucket(
           startTimeUtc: DateTime.utc(2026, 6, 2, 6),
           endTimeUtc: DateTime.utc(2026, 6, 2, 6, 5),

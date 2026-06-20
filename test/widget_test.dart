@@ -3,7 +3,7 @@ import 'package:astra_app/core/database/app_database.dart';
 import 'package:astra_app/core/di/app_dependencies.dart';
 import 'package:astra_app/data/datasources/data_ingestion_source.dart';
 import 'package:astra_app/data/models/step_reading.dart';
-import 'package:astra_app/data/repositories/step_repository.dart';
+
 import 'package:astra_app/data/repositories/user_health_metrics_repository.dart';
 import 'package:astra_app/data/repositories/user_settings_repository.dart';
 import 'package:astra_app/presentation/cubits/onboarding_cubit.dart';
@@ -22,10 +22,11 @@ import 'package:sqflite_common_ffi/sqflite_ffi.dart';
 
 import 'helpers/sqflite_test_helper.dart';
 import 'core/time/fake_time_provider.dart';
+import 'package:astra_app/data/repositories/step/step_aggregation_repository.dart';
 
 TodayCubit _testTodayCubit(AppDependencies deps) {
   return TodayCubit(
-    stepRepository: deps.stepRepository,
+    stepAggregation: deps.stepAggregation,
     userSettings: deps.userSettings,
     userHealthMetrics: deps.userHealthMetrics,
     clock: deps.timeProvider,
@@ -35,14 +36,16 @@ TodayCubit _testTodayCubit(AppDependencies deps) {
 
 HistoryCubit _testHistoryCubit(AppDependencies deps) {
   return HistoryCubit(
-    stepRepository: deps.stepRepository,
+    stepAggregation: deps.stepAggregation,
     userHealthMetrics: deps.userHealthMetrics,
   );
 }
 
 MyDataCubit _testMyDataCubit(AppDependencies deps) {
   return MyDataCubit(
-    stepRepository: deps.stepRepository,
+    stepAggregation: deps.stepAggregation,
+    csvService: deps.csvService,
+    stepIngestion: deps.stepIngestion,
     userSettings: deps.userSettings,
     userHealthMetrics: deps.userHealthMetrics,
     clock: deps.timeProvider,
@@ -336,7 +339,7 @@ void main() {
               deps: incompleteDeps,
               createTodayCubit: (deps) {
                 todayCubitRef = TodayCubit(
-                  stepRepository: deps.stepRepository,
+                  stepAggregation: deps.stepAggregation,
                   userSettings: deps.userSettings,
                   userHealthMetrics: deps.userHealthMetrics,
                   clock: deps.timeProvider,
@@ -406,8 +409,6 @@ void main() {
   group('AstraApp foreground backfill', () {
     late Database db;
     late AppDependencies deps;
-    late StepRepository stepRepository;
-
     setUp(() async {
       db = await openAstraDatabase(databasePath: inMemoryDatabasePath);
       final userSettings = UserSettingsRepository(db);
@@ -434,7 +435,6 @@ void main() {
           ]),
         ],
       );
-      stepRepository = StepRepository(db: db, clock: clock);
     });
 
     tearDown(() async {
@@ -457,7 +457,7 @@ void main() {
         );
         await tester.pump();
         final last = await _waitForIngestion(
-          stepRepository,
+          deps.stepAggregation,
           DateTime.utc(2026, 6, 2, 8, 5),
         );
         expect(last, DateTime.utc(2026, 6, 2, 8, 5));
@@ -477,7 +477,7 @@ void main() {
           ),
         );
         await tester.pump();
-        await _waitForIngestion(stepRepository, DateTime.utc(2026, 6, 2, 8, 5));
+        await _waitForIngestion(deps.stepAggregation, DateTime.utc(2026, 6, 2, 8, 5));
 
         final source = deps.ingestionSources.single as _MutableStepSource;
         source.readings = [
@@ -495,7 +495,7 @@ void main() {
           AppLifecycleState.resumed,
         );
         final last = await _waitForIngestion(
-          stepRepository,
+          deps.stepAggregation,
           DateTime.utc(2026, 6, 2, 8, 10),
         );
         expect(last, DateTime.utc(2026, 6, 2, 8, 10));
@@ -515,7 +515,7 @@ void main() {
           ),
         );
         await tester.pump();
-        await _waitForIngestion(stepRepository, DateTime.utc(2026, 6, 2, 8, 5));
+        await _waitForIngestion(deps.stepAggregation, DateTime.utc(2026, 6, 2, 8, 5));
 
         final source = deps.ingestionSources.single as _MutableStepSource;
         source.readings = [
@@ -533,7 +533,7 @@ void main() {
           AppLifecycleState.paused,
         );
         final lastOnPause = await _waitForIngestion(
-          stepRepository,
+          deps.stepAggregation,
           DateTime.utc(2026, 6, 2, 8, 10),
         );
         expect(lastOnPause, DateTime.utc(2026, 6, 2, 8, 10));
@@ -559,7 +559,7 @@ void main() {
         );
         await tester.pump();
         await _waitForIngestion(
-          stepRepository,
+          deps.stepAggregation,
           DateTime.utc(2026, 6, 2, 8, 5),
         );
 
@@ -581,7 +581,7 @@ void main() {
           AppLifecycleState.resumed,
         );
         await _waitForIngestion(
-          stepRepository,
+          deps.stepAggregation,
           DateTime.utc(2026, 6, 2, 8, 10),
         );
 
@@ -619,7 +619,7 @@ Future<int> _waitForStableTodaySteps(
 /// await it directly; polling keeps the assertion deterministic without
 /// arbitrary fixed delays.
 Future<DateTime?> _waitForIngestion(
-  StepRepository repository,
+  StepAggregationRepository repository,
   DateTime expected,
 ) async {
   for (var attempt = 0; attempt < 100; attempt++) {

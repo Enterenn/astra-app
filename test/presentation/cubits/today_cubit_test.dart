@@ -6,11 +6,12 @@ import 'package:astra_app/data/datasources/data_ingestion_source.dart';
 import 'package:astra_app/data/datasources/phone_pedometer_source.dart';
 import 'package:astra_app/data/repositories/ingestion_baseline_repository.dart';
 import 'package:astra_app/data/models/normalized_step_bucket.dart';
-import 'package:astra_app/data/repositories/step_repository.dart';
+
 import 'package:astra_app/data/repositories/user_health_metrics_repository.dart';
 import 'package:astra_app/data/repositories/user_settings_repository.dart';
 import 'package:astra_app/presentation/cubits/today_cubit.dart';
 import 'package:astra_app/presentation/cubits/today_state.dart';
+import 'package:astra_app/presentation/models/week_day_status.dart';
 import 'dart:async';
 
 import 'package:flutter_test/flutter_test.dart';
@@ -18,6 +19,7 @@ import 'package:sqflite/sqflite.dart';
 
 import '../../core/time/fake_time_provider.dart';
 import '../../helpers/sqflite_test_helper.dart';
+import '../../helpers/step_test_fixtures.dart';
 
 void main() {
   setUpAll(() async {
@@ -29,7 +31,7 @@ void main() {
     late UserSettingsRepository userSettings;
     late UserHealthMetricsRepository userHealthMetrics;
     late FakeTimeProvider clock;
-    late StepRepository stepRepository;
+    late StepTestRepos stepRepos;
 
     setUp(() async {
       db = await openAstraDatabase(databasePath: inMemoryDatabasePath);
@@ -39,7 +41,7 @@ void main() {
       );
       userSettings = UserSettingsRepository(db);
       userHealthMetrics = UserHealthMetricsRepository(db, clock: clock);
-      stepRepository = StepRepository(db: db, clock: clock);
+      stepRepos = StepTestFixtures.create(db: db, clock: clock);
     });
 
     tearDown(() async {
@@ -51,7 +53,7 @@ void main() {
       bool isIos = false,
     }) {
       return TodayCubit(
-        stepRepository: stepRepository,
+        stepAggregation: stepRepos.aggregation,
         userSettings: userSettings,
         userHealthMetrics: userHealthMetrics,
         clock: clock,
@@ -96,7 +98,7 @@ void main() {
 
     test('noPermission: status, weekDays populated, zero metrics, no celebration even with steps at goal', () async {
       await userHealthMetrics.setDailyStepGoal(5000);
-      await stepRepository.upsertIngestionBucket(
+      await stepRepos.ingestion.upsertIngestionBucket(
         _bucket(
           startTimeUtc: DateTime.utc(2026, 6, 2, 10),
           value: 5000,
@@ -116,7 +118,7 @@ void main() {
     // ── Status transitions ──
 
     test('refresh emits progress when steps are below goal', () async {
-      await stepRepository.upsertIngestionBucket(
+      await stepRepos.ingestion.upsertIngestionBucket(
         _bucket(
           startTimeUtc: DateTime.utc(2026, 6, 2, 10),
           value: 3000,
@@ -134,7 +136,7 @@ void main() {
 
     test('refresh status goalMet and overflow: both clamp progressRatio to 1', () async {
       await userHealthMetrics.setDailyStepGoal(5000);
-      await stepRepository.upsertIngestionBucket(
+      await stepRepos.ingestion.upsertIngestionBucket(
         _bucket(
           startTimeUtc: DateTime.utc(2026, 6, 2, 10),
           value: 5000,
@@ -149,7 +151,7 @@ void main() {
       c1.close();
 
       // add more steps past the goal → overflow
-      await stepRepository.upsertIngestionBucket(
+      await stepRepos.ingestion.upsertIngestionBucket(
         _bucket(
           startTimeUtc: DateTime.utc(2026, 6, 2, 10, 10),
           value: 2500,
@@ -167,7 +169,7 @@ void main() {
     // ── Stale detection ──
 
     test('stale detection on Android: boundary (12 h, not stale) and just past (stale)', () async {
-      await stepRepository.upsertIngestionBucket(
+      await stepRepos.ingestion.upsertIngestionBucket(
         _bucket(
           startTimeUtc: DateTime.utc(2026, 6, 2, 0),
           endTimeUtc: DateTime.utc(2026, 6, 2, 0),
@@ -181,7 +183,7 @@ void main() {
       c1.close();
 
       await db.delete('timeseries_samples');
-      await stepRepository.upsertIngestionBucket(
+      await stepRepos.ingestion.upsertIngestionBucket(
         _bucket(
           startTimeUtc: DateTime.utc(2026, 6, 1, 23, 59),
           endTimeUtc: DateTime.utc(2026, 6, 1, 23, 59),
@@ -196,7 +198,7 @@ void main() {
     });
 
     test('stale detection on iOS: boundary (4 h, not stale) and just past (stale)', () async {
-      await stepRepository.upsertIngestionBucket(
+      await stepRepos.ingestion.upsertIngestionBucket(
         _bucket(
           startTimeUtc: DateTime.utc(2026, 6, 2, 8),
           endTimeUtc: DateTime.utc(2026, 6, 2, 8),
@@ -210,7 +212,7 @@ void main() {
       c1.close();
 
       await db.delete('timeseries_samples');
-      await stepRepository.upsertIngestionBucket(
+      await stepRepos.ingestion.upsertIngestionBucket(
         _bucket(
           startTimeUtc: DateTime.utc(2026, 6, 2, 7, 59),
           endTimeUtc: DateTime.utc(2026, 6, 2, 7, 59),
@@ -227,7 +229,7 @@ void main() {
     // ── Silent refresh ──
 
     test('silent refresh does not re-emit loading when data is already shown', () async {
-      await stepRepository.upsertIngestionBucket(
+      await stepRepos.ingestion.upsertIngestionBucket(
         _bucket(
           startTimeUtc: DateTime.utc(2026, 6, 2, 10),
           value: 3000,
@@ -255,7 +257,7 @@ void main() {
 
     test('celebration triggers on goalMet and overflow when pref unset', () async {
       await userHealthMetrics.setDailyStepGoal(5000);
-      await stepRepository.upsertIngestionBucket(
+      await stepRepos.ingestion.upsertIngestionBucket(
         _bucket(
           startTimeUtc: DateTime.utc(2026, 6, 2, 10),
           value: 5000,
@@ -272,7 +274,7 @@ void main() {
       c1.close();
 
       // overflow also triggers celebration
-      await stepRepository.upsertIngestionBucket(
+      await stepRepos.ingestion.upsertIngestionBucket(
         _bucket(
           startTimeUtc: DateTime.utc(2026, 6, 2, 10, 10),
           value: 2500,
@@ -295,7 +297,7 @@ void main() {
       await userHealthMetrics.setDailyStepGoal(5000);
 
       // steps below goal
-      await stepRepository.upsertIngestionBucket(
+      await stepRepos.ingestion.upsertIngestionBucket(
         _bucket(
           startTimeUtc: DateTime.utc(2026, 6, 2, 10),
           value: 3000,
@@ -311,7 +313,7 @@ void main() {
       final todayIso = formatLocalDayIso(clock.snapshot());
       await userSettings.setCelebrationShownDate(todayIso);
       await db.delete('timeseries_samples');
-      await stepRepository.upsertIngestionBucket(
+      await stepRepos.ingestion.upsertIngestionBucket(
         _bucket(
           startTimeUtc: DateTime.utc(2026, 6, 2, 10),
           value: 5000,
@@ -326,7 +328,7 @@ void main() {
 
     test('celebration: dismissCelebration clears flag, in-flight preserved on re-refresh, cleared after explicit dismiss', () async {
       await userHealthMetrics.setDailyStepGoal(5000);
-      await stepRepository.upsertIngestionBucket(
+      await stepRepos.ingestion.upsertIngestionBucket(
         _bucket(
           startTimeUtc: DateTime.utc(2026, 6, 2, 10),
           value: 5000,
@@ -374,7 +376,7 @@ void main() {
         where: 'key = ?',
         whereArgs: [kDailyStepGoalKey],
       );
-      await stepRepository.upsertIngestionBucket(
+      await stepRepos.ingestion.upsertIngestionBucket(
         _bucket(
           startTimeUtc: DateTime.utc(2026, 6, 2, 10),
           value: 6000,
@@ -389,7 +391,7 @@ void main() {
       c1.close();
 
       // steps exceed journal goal → overflow
-      await stepRepository.upsertIngestionBucket(
+      await stepRepos.ingestion.upsertIngestionBucket(
         _bucket(
           startTimeUtc: DateTime.utc(2026, 6, 2, 10, 10),
           value: 2500,
@@ -408,7 +410,7 @@ void main() {
     test('live stream updates steps without refresh', () async {
       final events = StreamController<PhoneStepEvent>.broadcast();
       final monitor = LiveStepMonitor(
-        stepRepository: stepRepository,
+        stepAggregation: stepRepos.aggregation,
         baselineRepository: IngestionBaselineRepository(db),
         clock: clock,
         stepEventStreamFactory: () => events.stream,
@@ -441,7 +443,7 @@ void main() {
       await userHealthMetrics.setDailyStepGoal(3000);
       final events = StreamController<PhoneStepEvent>.broadcast();
       final monitor = LiveStepMonitor(
-        stepRepository: stepRepository,
+        stepAggregation: stepRepos.aggregation,
         baselineRepository: IngestionBaselineRepository(db),
         clock: clock,
         stepEventStreamFactory: () => events.stream,
@@ -473,7 +475,7 @@ void main() {
     test('refresh does not lower steps after live stream reported higher', () async {
       final events = StreamController<PhoneStepEvent>.broadcast();
       final monitor = LiveStepMonitor(
-        stepRepository: stepRepository,
+        stepAggregation: stepRepos.aggregation,
         baselineRepository: IngestionBaselineRepository(db),
         clock: clock,
         stepEventStreamFactory: () => events.stream,
@@ -508,7 +510,7 @@ void main() {
       final permissionGate = Completer<bool>();
       final events = StreamController<PhoneStepEvent>.broadcast();
       final monitor = LiveStepMonitor(
-        stepRepository: stepRepository,
+        stepAggregation: stepRepos.aggregation,
         baselineRepository: IngestionBaselineRepository(db),
         clock: clock,
         stepEventStreamFactory: () => events.stream,
@@ -573,7 +575,7 @@ void main() {
 
     test('refresh ignores stale-high lastDisplayed prefs in favor of SQLite', () async {
       final localDay = formatLocalDayIso(clock.snapshot());
-      await stepRepository.upsertIngestionBucket(
+      await stepRepos.ingestion.upsertIngestionBucket(
         NormalizedStepBucket(
           startTimeUtc: DateTime.utc(2026, 6, 2, 6),
           endTimeUtc: DateTime.utc(2026, 6, 2, 6, 5),
@@ -607,7 +609,7 @@ void main() {
         localDayIso: localDay,
         steps: 1200,
       );
-      await stepRepository.upsertIngestionBucket(
+      await stepRepos.ingestion.upsertIngestionBucket(
         _bucket(
           startTimeUtc: DateTime.utc(2026, 6, 2, 10),
           value: 3500,
@@ -637,7 +639,7 @@ void main() {
         localDayIso: localDay,
         steps: 2500,
       );
-      await stepRepository.upsertIngestionBucket(
+      await stepRepos.ingestion.upsertIngestionBucket(
         _bucket(
           startTimeUtc: DateTime.utc(2026, 6, 2, 10),
           value: 1500,
@@ -685,7 +687,7 @@ void main() {
     test('refresh preserves distance when live steps exceed SQLite total', () async {
       final events = StreamController<PhoneStepEvent>.broadcast();
       final monitor = LiveStepMonitor(
-        stepRepository: stepRepository,
+        stepAggregation: stepRepos.aggregation,
         baselineRepository: IngestionBaselineRepository(db),
         clock: clock,
         stepEventStreamFactory: () => events.stream,
@@ -727,7 +729,7 @@ void main() {
     // ── refreshMetadata ──
 
     test('refreshMetadata: updates stale flag and goal without changing steps', () async {
-      await stepRepository.upsertIngestionBucket(
+      await stepRepos.ingestion.upsertIngestionBucket(
         _bucket(
           startTimeUtc: DateTime.utc(2026, 6, 1, 23, 59),
           endTimeUtc: DateTime.utc(2026, 6, 1, 23, 59),
@@ -775,7 +777,7 @@ void main() {
       test(
         'selectLocalDay resets display state before async reload completes',
         () async {
-          await stepRepository.upsertIngestionBucket(
+          await stepRepos.ingestion.upsertIngestionBucket(
             _bucket(
               startTimeUtc: DateTime.utc(2026, 6, 1, 10),
               value: 6000,
@@ -841,7 +843,7 @@ void main() {
           'effective_from_local_day': '2026-06-01',
           'goal': 5000,
         });
-        await stepRepository.upsertIngestionBucket(
+        await stepRepos.ingestion.upsertIngestionBucket(
           _bucket(
             startTimeUtc: DateTime.utc(2026, 6, 1, 10),
             value: 6000,
@@ -869,21 +871,21 @@ void main() {
           'goal': 10000,
         });
         clock.setNowUtc(DateTime.utc(2026, 6, 11, 12));
-        await stepRepository.upsertIngestionBucket(
+        await stepRepos.ingestion.upsertIngestionBucket(
           _bucket(
             startTimeUtc: DateTime.utc(2026, 6, 8, 10),
             value: 8500,
             zoneOffset: '+02:00',
           ),
         );
-        await stepRepository.upsertIngestionBucket(
+        await stepRepos.ingestion.upsertIngestionBucket(
           _bucket(
             startTimeUtc: DateTime.utc(2026, 6, 10, 10),
             value: 8500,
             zoneOffset: '+02:00',
           ),
         );
-        await stepRepository.upsertIngestionBucket(
+        await stepRepos.ingestion.upsertIngestionBucket(
           _bucket(
             startTimeUtc: DateTime.utc(2026, 6, 11, 10),
             value: 5000,
@@ -919,14 +921,14 @@ void main() {
           'effective_from_local_day': '2026-06-01',
           'goal': 5000,
         });
-        await stepRepository.upsertIngestionBucket(
+        await stepRepos.ingestion.upsertIngestionBucket(
           _bucket(
             startTimeUtc: DateTime.utc(2026, 6, 1, 10),
             value: 6000,
             zoneOffset: '+02:00',
           ),
         );
-        await stepRepository.upsertIngestionBucket(
+        await stepRepos.ingestion.upsertIngestionBucket(
           _bucket(
             startTimeUtc: DateTime.utc(2026, 6, 2, 10),
             value: 1000,
@@ -935,10 +937,10 @@ void main() {
         );
         final cubit = buildCubit();
         await cubit.refresh();
-        final monday = cubit.state.weekDays.first;
+        final pastDay = _pastWeekDay(cubit.state.weekDays);
 
-        cubit.selectLocalDay(monday.localDay);
-        await pumpEventQueue();
+        cubit.selectLocalDay(pastDay.localDay);
+        await _waitForSelectedDayLoaded(cubit);
 
         expect(cubit.state.steps, 6000);
         expect(cubit.state.goal, 5000);
@@ -947,14 +949,14 @@ void main() {
       });
 
       test('live tick ignored while past day selected', () async {
-        await stepRepository.upsertIngestionBucket(
+        await stepRepos.ingestion.upsertIngestionBucket(
           _bucket(
             startTimeUtc: DateTime.utc(2026, 6, 1, 10),
             value: 6000,
             zoneOffset: '+02:00',
           ),
         );
-        await stepRepository.upsertIngestionBucket(
+        await stepRepos.ingestion.upsertIngestionBucket(
           _bucket(
             startTimeUtc: DateTime.utc(2026, 6, 2, 10),
             value: 1000,
@@ -963,9 +965,9 @@ void main() {
         );
         final cubit = buildCubit();
         await cubit.refresh();
-        final monday = cubit.state.weekDays.first;
-        cubit.selectLocalDay(monday.localDay);
-        await pumpEventQueue();
+        final pastDay = _pastWeekDay(cubit.state.weekDays);
+        cubit.selectLocalDay(pastDay.localDay);
+        await _waitForSelectedDayLoaded(cubit);
 
         await cubit.syncSteps(5000);
 
@@ -974,14 +976,14 @@ void main() {
       });
 
       test('today re-select applies live today truth', () async {
-        await stepRepository.upsertIngestionBucket(
+        await stepRepos.ingestion.upsertIngestionBucket(
           _bucket(
             startTimeUtc: DateTime.utc(2026, 6, 1, 10),
             value: 6000,
             zoneOffset: '+02:00',
           ),
         );
-        await stepRepository.upsertIngestionBucket(
+        await stepRepos.ingestion.upsertIngestionBucket(
           _bucket(
             startTimeUtc: DateTime.utc(2026, 6, 2, 10),
             value: 1000,
@@ -990,14 +992,14 @@ void main() {
         );
         final cubit = buildCubit();
         await cubit.refresh();
-        final monday = cubit.state.weekDays.first;
+        final pastDay = _pastWeekDay(cubit.state.weekDays);
         final today = cubit.state.weekDays.singleWhere((day) => day.isToday);
-        cubit.selectLocalDay(monday.localDay);
-        await pumpEventQueue();
+        cubit.selectLocalDay(pastDay.localDay);
+        await _waitForSelectedDayLoaded(cubit);
 
         await cubit.syncSteps(5000);
         cubit.selectLocalDay(today.localDay);
-        await pumpEventQueue();
+        await _waitForSelectedDayLoaded(cubit);
 
         expect(cubit.state.steps, 5000);
         cubit.close();
@@ -1006,7 +1008,7 @@ void main() {
       test('celebration blocked when past day selected even if live crosses goal',
           () async {
         await userHealthMetrics.setDailyStepGoal(5000);
-        await stepRepository.upsertIngestionBucket(
+        await stepRepos.ingestion.upsertIngestionBucket(
           _bucket(
             startTimeUtc: DateTime.utc(2026, 6, 1, 10),
             value: 6000,
@@ -1015,9 +1017,9 @@ void main() {
         );
         final cubit = buildCubit();
         await cubit.refresh();
-        final monday = cubit.state.weekDays.first;
-        cubit.selectLocalDay(monday.localDay);
-        await pumpEventQueue();
+        final pastDay = _pastWeekDay(cubit.state.weekDays);
+        cubit.selectLocalDay(pastDay.localDay);
+        await _waitForSelectedDayLoaded(cubit);
 
         await cubit.syncSteps(6000);
 
@@ -1031,7 +1033,7 @@ void main() {
           'goal': 5000,
         });
         await userHealthMetrics.setDailyStepGoal(10000);
-        await stepRepository.upsertIngestionBucket(
+        await stepRepos.ingestion.upsertIngestionBucket(
           _bucket(
             startTimeUtc: DateTime.utc(2026, 6, 1, 10),
             value: 6000,
@@ -1040,9 +1042,9 @@ void main() {
         );
         final cubit = buildCubit();
         await cubit.refresh();
-        final monday = cubit.state.weekDays.first;
-        cubit.selectLocalDay(monday.localDay);
-        await pumpEventQueue();
+        final pastDay = _pastWeekDay(cubit.state.weekDays);
+        cubit.selectLocalDay(pastDay.localDay);
+        await _waitForSelectedDayLoaded(cubit);
 
         expect(cubit.state.goal, 5000);
         expect(await cubit.todayEditableGoal, 10000);
@@ -1056,7 +1058,7 @@ void main() {
       test('refresh computes distance, kcal and duration; syncSteps updates distance only', () async {
         await userHealthMetrics.setHeightCm(175);
         await userHealthMetrics.setWeightKg(70);
-        await stepRepository.upsertIngestionBucket(
+        await stepRepos.ingestion.upsertIngestionBucket(
           _bucket(
             startTimeUtc: DateTime.utc(2026, 6, 2, 10),
             value: 500,
@@ -1088,7 +1090,7 @@ void main() {
       });
 
       test('refreshMetadata reloads buckets for kcal and duration', () async {
-        await stepRepository.upsertIngestionBucket(
+        await stepRepos.ingestion.upsertIngestionBucket(
           _bucket(
             startTimeUtc: DateTime.utc(2026, 6, 2, 10),
             value: 50,
@@ -1099,7 +1101,7 @@ void main() {
         await cubit.refresh();
         expect(cubit.state.activityMetrics.kcal, 2);
 
-        await stepRepository.upsertIngestionBucket(
+        await stepRepos.ingestion.upsertIngestionBucket(
           _bucket(
             startTimeUtc: DateTime.utc(2026, 6, 2, 10, 5),
             value: 500,
@@ -1144,7 +1146,7 @@ void main() {
       test('persists goal, refreshes state, and invokes postGoalUpdate', () async {
         var callbackCalled = false;
         final cubit = TodayCubit(
-          stepRepository: stepRepository,
+          stepAggregation: stepRepos.aggregation,
           userSettings: userSettings,
         userHealthMetrics: userHealthMetrics,
           clock: clock,
@@ -1167,7 +1169,7 @@ void main() {
         var callbackCalled = false;
         await userHealthMetrics.setDailyStepGoal(8000);
         final cubit = TodayCubit(
-          stepRepository: stepRepository,
+          stepAggregation: stepRepos.aggregation,
           userSettings: userSettings,
         userHealthMetrics: userHealthMetrics,
           clock: clock,
@@ -1192,7 +1194,7 @@ void main() {
 
       test('returns false when postGoalUpdate throws', () async {
         final cubit = TodayCubit(
-          stepRepository: stepRepository,
+          stepAggregation: stepRepos.aggregation,
           userSettings: userSettings,
         userHealthMetrics: userHealthMetrics,
           clock: clock,
@@ -1232,4 +1234,17 @@ NormalizedStepBucket _bucket({
 bool _sameDate(DateTime? a, DateTime b) {
   if (a == null) return false;
   return a.year == b.year && a.month == b.month && a.day == b.day;
+}
+
+WeekDayStatus _pastWeekDay(List<WeekDayStatus> weekDays) {
+  return weekDays.firstWhere((day) => !day.isToday);
+}
+
+Future<void> _waitForSelectedDayLoaded(TodayCubit cubit) async {
+  for (var attempt = 0; attempt < 100; attempt++) {
+    if (cubit.state.status != TodayStatus.loading) {
+      return;
+    }
+    await pumpEventQueue();
+  }
 }

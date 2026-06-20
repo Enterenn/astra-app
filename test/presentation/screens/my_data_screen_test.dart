@@ -1,6 +1,6 @@
 import 'package:astra_app/core/constants/astra_theme.dart';
 import 'package:astra_app/core/database/app_database.dart';
-import 'package:astra_app/data/repositories/step_repository.dart';
+
 import 'package:astra_app/data/repositories/user_health_metrics_repository.dart';
 import 'package:astra_app/data/repositories/user_settings_repository.dart';
 import 'package:astra_app/presentation/cubits/my_data_cubit.dart';
@@ -21,11 +21,14 @@ import 'package:sqflite/sqflite.dart';
 
 import '../../core/time/fake_time_provider.dart';
 import '../../helpers/sqflite_test_helper.dart';
+import '../../helpers/step_test_fixtures.dart';
 
 /// Widget tests seed UI state directly — no async refresh / DB reads (see app_scaffold_test).
 class _SeededMyDataCubit extends MyDataCubit {
   _SeededMyDataCubit({
-    required super.stepRepository,
+    required super.stepAggregation,
+    required super.csvService,
+    required super.stepIngestion,
     required super.userSettings,
     required super.userHealthMetrics,
     required super.clock,
@@ -93,7 +96,7 @@ void main() {
   late UserSettingsRepository userSettings;
   late UserHealthMetricsRepository userHealthMetrics;
   late FakeTimeProvider clock;
-  late StepRepository stepRepository;
+  late StepTestRepos stepRepos;
 
   setUp(() async {
     db = await openAstraDatabase(databasePath: inMemoryDatabasePath);
@@ -103,7 +106,7 @@ void main() {
       fixedNowUtc: DateTime.utc(2026, 6, 3, 12),
       zoneOffset: const Duration(hours: 2),
     );
-    stepRepository = StepRepository(db: db, clock: clock);
+    stepRepos = StepTestFixtures.create(db: db, clock: clock);
   });
 
   tearDown(() async {
@@ -112,7 +115,9 @@ void main() {
 
   MyDataCubit buildSeededCubit(MyDataState state) {
     return _SeededMyDataCubit(
-      stepRepository: stepRepository,
+      stepAggregation: stepRepos.aggregation,
+      csvService: stepRepos.csv,
+      stepIngestion: stepRepos.ingestion,
       userSettings: userSettings,
       userHealthMetrics: userHealthMetrics,
       clock: clock,
@@ -376,9 +381,11 @@ void main() {
 
     testWidgets('shows export error banner with retry tap', (tester) async {
       final cubit = _RetryExportMyDataCubit(
-        stepRepository: stepRepository,
+        stepAggregation: stepRepos.aggregation,
+        csvService: stepRepos.csv,
+        stepIngestion: stepRepos.ingestion,
         userSettings: userSettings,
-      userHealthMetrics: userHealthMetrics,
+        userHealthMetrics: userHealthMetrics,
         clock: clock,
         databasePath: inMemoryDatabasePath,
       );
@@ -401,9 +408,11 @@ void main() {
 
     testWidgets('shows import error banner with retry tap', (tester) async {
       final cubit = _RetryImportMyDataCubit(
-        stepRepository: stepRepository,
+        stepAggregation: stepRepos.aggregation,
+        csvService: stepRepos.csv,
+        stepIngestion: stepRepos.ingestion,
         userSettings: userSettings,
-      userHealthMetrics: userHealthMetrics,
+        userHealthMetrics: userHealthMetrics,
         clock: clock,
         databasePath: inMemoryDatabasePath,
       );
@@ -467,9 +476,11 @@ void main() {
 
     testWidgets('shows purge error banner with retry tap', (tester) async {
       final cubit = _RetryPurgeMyDataCubit(
-        stepRepository: stepRepository,
+        stepAggregation: stepRepos.aggregation,
+        csvService: stepRepos.csv,
+        stepIngestion: stepRepos.ingestion,
         userSettings: userSettings,
-      userHealthMetrics: userHealthMetrics,
+        userHealthMetrics: userHealthMetrics,
         clock: clock,
         databasePath: inMemoryDatabasePath,
       );
@@ -494,9 +505,11 @@ void main() {
       tester,
     ) async {
       final cubit = _DialogPurgeFlowMyDataCubit(
-        stepRepository: stepRepository,
+        stepAggregation: stepRepos.aggregation,
+        csvService: stepRepos.csv,
+        stepIngestion: stepRepos.ingestion,
         userSettings: userSettings,
-      userHealthMetrics: userHealthMetrics,
+        userHealthMetrics: userHealthMetrics,
         clock: clock,
         databasePath: inMemoryDatabasePath,
       );
@@ -530,7 +543,9 @@ void main() {
 
 class _RetryImportMyDataCubit extends _SeededMyDataCubit {
   _RetryImportMyDataCubit({
-    required super.stepRepository,
+    required super.stepAggregation,
+    required super.csvService,
+    required super.stepIngestion,
     required super.userSettings,
     required super.userHealthMetrics,
     required super.clock,
@@ -556,7 +571,9 @@ class _RetryImportMyDataCubit extends _SeededMyDataCubit {
 
 class _RetryExportMyDataCubit extends _SeededMyDataCubit {
   _RetryExportMyDataCubit({
-    required super.stepRepository,
+    required super.stepAggregation,
+    required super.csvService,
+    required super.stepIngestion,
     required super.userSettings,
     required super.userHealthMetrics,
     required super.clock,
@@ -582,7 +599,9 @@ class _RetryExportMyDataCubit extends _SeededMyDataCubit {
 
 class _DialogPurgeFlowMyDataCubit extends _SeededMyDataCubit {
   _DialogPurgeFlowMyDataCubit({
-    required super.stepRepository,
+    required super.stepAggregation,
+    required super.csvService,
+    required super.stepIngestion,
     required super.userSettings,
     required super.userHealthMetrics,
     required super.clock,
@@ -611,7 +630,9 @@ class _DialogPurgeFlowMyDataCubit extends _SeededMyDataCubit {
 
 class _RetryPurgeMyDataCubit extends _SeededMyDataCubit {
   _RetryPurgeMyDataCubit({
-    required super.stepRepository,
+    required super.stepAggregation,
+    required super.csvService,
+    required super.stepIngestion,
     required super.userSettings,
     required super.userHealthMetrics,
     required super.clock,

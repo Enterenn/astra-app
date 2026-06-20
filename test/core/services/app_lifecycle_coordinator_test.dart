@@ -13,6 +13,7 @@ class _DelayingBackgroundCollector extends BackgroundCollector {
     required super.sources,
     required super.normalizer,
     required super.repository,
+    required super.stepAggregation,
     required super.baselineRepository,
     required this.collectDelay,
     required this.onCollectStart,
@@ -41,6 +42,7 @@ class _NoOpBackgroundCollector extends BackgroundCollector {
     required super.sources,
     required super.normalizer,
     required super.repository,
+    required super.stepAggregation,
     required super.baselineRepository,
   });
 
@@ -90,7 +92,8 @@ void main() {
       final delayingCollector = _DelayingBackgroundCollector(
         sources: seedDeps.ingestionSources,
         normalizer: seedDeps.stepNormalizer,
-        repository: seedDeps.stepRepository,
+        repository: seedDeps.stepIngestion,
+        stepAggregation: seedDeps.stepAggregation,
         baselineRepository: IngestionBaselineRepository(
           seedDeps.databaseSession,
         ),
@@ -127,7 +130,8 @@ void main() {
         backgroundCollector: _NoOpBackgroundCollector(
           sources: seedDeps.ingestionSources,
           normalizer: seedDeps.stepNormalizer,
-          repository: seedDeps.stepRepository,
+          repository: seedDeps.stepIngestion,
+          stepAggregation: seedDeps.stepAggregation,
           baselineRepository: IngestionBaselineRepository(
             seedDeps.databaseSession,
           ),
@@ -139,11 +143,11 @@ void main() {
       );
 
       await coordinator.runLocalDayBoundaryIfNeededForTest();
-      final stepsBefore = await deps.stepRepository.getTodaySteps();
+      final stepsBefore = await deps.stepAggregation.getTodaySteps();
 
       await coordinator.runLocalDayBoundaryIfNeededForTest();
 
-      final stepsAfter = await deps.stepRepository.getTodaySteps();
+      final stepsAfter = await deps.stepAggregation.getTodaySteps();
       expect(stepsAfter, stepsBefore);
     });
 
@@ -157,7 +161,8 @@ void main() {
         backgroundCollector: _NoOpBackgroundCollector(
           sources: seedDeps.ingestionSources,
           normalizer: seedDeps.stepNormalizer,
-          repository: seedDeps.stepRepository,
+          repository: seedDeps.stepIngestion,
+          stepAggregation: seedDeps.stepAggregation,
           baselineRepository: IngestionBaselineRepository(
             seedDeps.databaseSession,
           ),

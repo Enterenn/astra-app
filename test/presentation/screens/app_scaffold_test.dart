@@ -33,7 +33,7 @@ import '../../core/time/fake_time_provider.dart';
 
 TodayCubit _testTodayCubit(AppDependencies deps) {
   return TodayCubit(
-    stepRepository: deps.stepRepository,
+    stepAggregation: deps.stepAggregation,
     userSettings: deps.userSettings,
     userHealthMetrics: deps.userHealthMetrics,
     clock: deps.timeProvider,
@@ -43,14 +43,14 @@ TodayCubit _testTodayCubit(AppDependencies deps) {
 
 HistoryCubit _testHistoryCubit(AppDependencies deps) {
   return HistoryCubit(
-    stepRepository: deps.stepRepository,
+    stepAggregation: deps.stepAggregation,
     userHealthMetrics: deps.userHealthMetrics,
   );
 }
 
 class _RefreshCountingCubit extends TodayCubit {
   _RefreshCountingCubit({
-    required super.stepRepository,
+    required super.stepAggregation,
     required super.userSettings,
     required super.userHealthMetrics,
     required super.clock,
@@ -98,7 +98,7 @@ class _RefreshCountingCubit extends TodayCubit {
 
 class _RefreshCountingHistoryCubit extends HistoryCubit {
   _RefreshCountingHistoryCubit({
-    required super.stepRepository,
+    required super.stepAggregation,
     required super.userHealthMetrics,
   });
 
@@ -113,7 +113,7 @@ class _RefreshCountingHistoryCubit extends HistoryCubit {
 
 class _ThrowingRefreshTodayCubit extends TodayCubit {
   _ThrowingRefreshTodayCubit({
-    required super.stepRepository,
+    required super.stepAggregation,
     required super.userSettings,
     required super.userHealthMetrics,
     required super.clock,
@@ -401,7 +401,7 @@ void main() {
           deps: deps,
           createTodayCubit: (dependencies) {
             cubit = _RefreshCountingCubit(
-              stepRepository: dependencies.stepRepository,
+              stepAggregation: dependencies.stepAggregation,
               userSettings: dependencies.userSettings,
               userHealthMetrics: dependencies.userHealthMetrics,
               clock: dependencies.timeProvider,
@@ -740,7 +740,7 @@ void main() {
           AppScaffold(
             deps: deps,
             createTodayCubit: (dependencies) => _ThrowingRefreshTodayCubit(
-              stepRepository: dependencies.stepRepository,
+              stepAggregation: dependencies.stepAggregation,
               userSettings: dependencies.userSettings,
               userHealthMetrics: dependencies.userHealthMetrics,
               clock: dependencies.timeProvider,
@@ -784,7 +784,7 @@ void main() {
           deps: deps,
           createTodayCubit: (dependencies) {
             todayCubit = _RefreshCountingCubit(
-              stepRepository: dependencies.stepRepository,
+              stepAggregation: dependencies.stepAggregation,
               userSettings: dependencies.userSettings,
               userHealthMetrics: dependencies.userHealthMetrics,
               clock: dependencies.timeProvider,
@@ -793,7 +793,7 @@ void main() {
           },
           createHistoryCubit: (dependencies) {
             historyCubit = _RefreshCountingHistoryCubit(
-              stepRepository: dependencies.stepRepository,
+              stepAggregation: dependencies.stepAggregation,
               userHealthMetrics: dependencies.userHealthMetrics,
             );
             return historyCubit!;

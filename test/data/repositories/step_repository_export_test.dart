@@ -5,22 +5,22 @@ import 'package:astra_app/data/csv/timeseries_csv_codec.dart';
 import 'package:astra_app/data/datasources/data_ingestion_source.dart';
 import 'package:astra_app/data/models/normalized_step_bucket.dart';
 import 'package:astra_app/data/models/timeseries_sample_model.dart';
-import 'package:astra_app/data/repositories/step_repository.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:path/path.dart' as p;
 import 'package:sqflite/sqflite.dart';
 
 import '../../core/time/fake_time_provider.dart';
 import '../../helpers/sqflite_test_helper.dart';
+import '../../helpers/step_test_fixtures.dart';
 
 void main() {
   setUpAll(() async {
     await setUpSqfliteFfi();
   });
 
-  group('StepRepository.exportCsv', () {
+  group('CsvService.exportCsv', () {
     late Database db;
-    late StepRepository repository;
+    late StepTestRepos stepRepos;
     late FakeTimeProvider clock;
     late Directory tempDir;
 
@@ -30,7 +30,7 @@ void main() {
         fixedNowUtc: DateTime.utc(2026, 6, 3, 10),
         zoneOffset: const Duration(hours: 2),
       );
-      repository = StepRepository(db: db, clock: clock);
+      stepRepos = StepTestFixtures.create(db: db, clock: clock);
       tempDir = await Directory.systemTemp.createTemp('astra_export_');
     });
 
@@ -40,7 +40,7 @@ void main() {
     });
 
     test('empty DB writes header-only CSV with dated filename', () async {
-      final filePath = await repository.exportCsv(outputDirectory: tempDir.path);
+      final filePath = await stepRepos.csv.exportCsv(outputDirectory: tempDir.path);
 
       expect(p.basename(filePath), 'astra-export-2026-06-03.csv');
       expect(File(filePath).existsSync(), isTrue);
@@ -56,7 +56,7 @@ void main() {
         'c3d4e5f6-a7b8-9012-cdef-123456789012',
       ];
 
-      await repository.insertDevSamplesBatch([
+      await stepRepos.ingestion.insertDevSamplesBatch([
         _sample(
           id: ids[0],
           startOffsetMinutes: 0,
@@ -74,7 +74,7 @@ void main() {
         ),
       ]);
 
-      final filePath = await repository.exportCsv(outputDirectory: tempDir.path);
+      final filePath = await stepRepos.csv.exportCsv(outputDirectory: tempDir.path);
       final lines = await File(filePath).readAsLines();
 
       expect(lines.length, 4);
@@ -96,7 +96,7 @@ void main() {
     });
 
     test('export includes all resolutions after compaction mix', () async {
-      await repository.insertDevSamplesBatch([
+      await stepRepos.ingestion.insertDevSamplesBatch([
         _sample(
           id: '00000000-0000-4000-8000-000000000001',
           resolution: kFiveMinuteResolution,
@@ -107,7 +107,7 @@ void main() {
         ),
       ]);
 
-      final filePath = await repository.exportCsv(outputDirectory: tempDir.path);
+      final filePath = await stepRepos.csv.exportCsv(outputDirectory: tempDir.path);
       final content = await File(filePath).readAsString();
 
       expect(content, contains(',5min,'));

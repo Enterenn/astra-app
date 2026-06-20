@@ -6,7 +6,7 @@ import 'package:astra_app/data/datasources/data_ingestion_source.dart';
 import 'package:astra_app/data/models/import_result.dart';
 import 'package:astra_app/data/models/normalized_step_bucket.dart';
 import 'package:astra_app/data/models/timeseries_sample_model.dart';
-import 'package:astra_app/data/repositories/step_repository.dart';
+
 import 'package:astra_app/data/repositories/user_health_metrics_repository.dart';
 import 'package:astra_app/data/repositories/user_settings_repository.dart';
 import 'package:astra_app/presentation/cubits/my_data_cubit.dart';
@@ -14,14 +14,18 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:sqflite/sqflite.dart';
 
 import '../../core/time/fake_time_provider.dart';
+import 'package:astra_app/core/time/time_provider.dart';
 import '../../helpers/sqflite_test_helper.dart';
+import 'package:astra_app/data/repositories/step/step_aggregation_repository.dart';
+import 'package:astra_app/data/services/csv_service.dart';
+import '../../helpers/step_test_fixtures.dart';
 
-class _ImportDelayStepRepository extends StepRepository {
-  _ImportDelayStepRepository({
-    required super.db,
-    required super.clock,
+class _ImportDelayCsvService extends CsvService {
+  _ImportDelayCsvService({
+    required Database db,
+    required TimeProvider clock,
     required this.importDelay,
-  });
+  }) : super(db, clock: clock);
 
   final Duration importDelay;
   var importCalls = 0;
@@ -46,7 +50,7 @@ void main() {
     late UserSettingsRepository userSettings;
     late UserHealthMetricsRepository userHealthMetrics;
     late FakeTimeProvider clock;
-    late StepRepository stepRepository;
+    late StepTestRepos stepRepos;
     late Directory tempDir;
 
     setUp(() async {
@@ -57,7 +61,7 @@ void main() {
         zoneOffset: const Duration(hours: 2),
       );
       userHealthMetrics = UserHealthMetricsRepository(db, clock: clock);
-      stepRepository = StepRepository(db: db, clock: clock);
+      stepRepos = StepTestFixtures.create(db: db, clock: clock);
       tempDir = await Directory.systemTemp.createTemp('astra_cubit_import_');
     });
 
@@ -72,7 +76,7 @@ void main() {
 
     /// Exports one sample then clears DB so import runs without confirm.
     Future<String> buildValidCsvFile() async {
-      await stepRepository.insertDevSamplesBatch([
+      await stepRepos.ingestion.insertDevSamplesBatch([
         TimeseriesSampleModel(
           id: '00000000-0000-4000-8000-000000000001',
           startTimeUtc: DateTime.utc(2026, 6, 3, 10),
@@ -86,7 +90,7 @@ void main() {
           zoneOffset: '+02:00',
         ),
       ]);
-      final path = await stepRepository.exportCsv(outputDirectory: tempDir.path);
+      final path = await stepRepos.csv.exportCsv(outputDirectory: tempDir.path);
       await db.delete('timeseries_samples');
       return path;
     }
@@ -95,10 +99,13 @@ void main() {
       PickCsvFileCallback? pickCsvFile,
       ConfirmImportCallback? confirmImport,
       PostImportRefreshCallback? postImportRefresh,
-      StepRepository? repository,
+      StepAggregationRepository? stepAggregationOverride,
+      CsvService? csvServiceOverride,
     }) {
       return MyDataCubit(
-        stepRepository: repository ?? stepRepository,
+        stepAggregation: stepAggregationOverride ?? stepRepos.aggregation,
+        csvService: csvServiceOverride ?? stepRepos.csv,
+        stepIngestion: stepRepos.ingestion,
         userSettings: userSettings,
         userHealthMetrics: userHealthMetrics,
         clock: clock,
@@ -113,13 +120,13 @@ void main() {
 
     test('sets isImporting while import is in flight', () async {
       final csvPath = await buildValidCsvFile();
-      final delayingRepo = _ImportDelayStepRepository(
+      final delayingRepo = _ImportDelayCsvService(
         db: db,
         clock: clock,
         importDelay: const Duration(milliseconds: 50),
       );
       final cubit = buildCubit(
-        repository: delayingRepo,
+        csvServiceOverride: delayingRepo,
         pickCsvFile: () async => csvPath,
       );
 
@@ -137,13 +144,13 @@ void main() {
 
     test('ignores duplicate import while in flight', () async {
       final csvPath = await buildValidCsvFile();
-      final delayingRepo = _ImportDelayStepRepository(
+      final delayingRepo = _ImportDelayCsvService(
         db: db,
         clock: clock,
         importDelay: const Duration(milliseconds: 50),
       );
       final cubit = buildCubit(
-        repository: delayingRepo,
+        csvServiceOverride: delayingRepo,
         pickCsvFile: () async => csvPath,
       );
 
@@ -180,7 +187,7 @@ void main() {
     });
 
     test('awaits confirm when database has samples', () async {
-      await stepRepository.insertDevSamplesBatch([
+      await stepRepos.ingestion.insertDevSamplesBatch([
         TimeseriesSampleModel(
           id: '00000000-0000-4000-8000-000000000001',
           startTimeUtc: DateTime.utc(2026, 6, 3, 10),
@@ -194,7 +201,7 @@ void main() {
           zoneOffset: '+02:00',
         ),
       ]);
-      final csvPath = await stepRepository.exportCsv(outputDirectory: tempDir.path);
+      final csvPath = await stepRepos.csv.exportCsv(outputDirectory: tempDir.path);
       var confirmCalls = 0;
 
       final cubit = buildCubit(pickCsvFile: () async => csvPath);
@@ -211,7 +218,7 @@ void main() {
 
       expect(confirmCalls, 1);
       expect(cubit.state.isImporting, isFalse);
-      expect(await stepRepository.countStepSamples(), 1);
+      expect(await stepRepos.aggregation.countStepSamples(), 1);
 
       await cubit.close();
     });
@@ -282,13 +289,13 @@ void main() {
 
     test('refresh during import preserves isImporting', () async {
       final csvPath = await buildValidCsvFile();
-      final delayingRepo = _ImportDelayStepRepository(
+      final delayingRepo = _ImportDelayCsvService(
         db: db,
         clock: clock,
         importDelay: const Duration(milliseconds: 50),
       );
       final cubit = buildCubit(
-        repository: delayingRepo,
+        csvServiceOverride: delayingRepo,
         pickCsvFile: () async => csvPath,
       );
 

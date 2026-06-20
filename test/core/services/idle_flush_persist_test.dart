@@ -9,12 +9,13 @@ import 'package:astra_app/data/datasources/phone_pedometer_source.dart';
 import 'package:astra_app/data/datasources/step_normalizer.dart';
 import 'package:astra_app/data/models/normalized_step_bucket.dart';
 import 'package:astra_app/data/repositories/ingestion_baseline_repository.dart';
-import 'package:astra_app/data/repositories/step_repository.dart';
+
 import 'package:flutter_test/flutter_test.dart';
 import 'package:sqflite/sqflite.dart';
 
 import '../../core/time/fake_time_provider.dart';
 import '../../helpers/sqflite_test_helper.dart';
+import '../../helpers/step_test_fixtures.dart';
 
 Future<void> _idleFlushPersist(
   LiveStepMonitor monitor,
@@ -36,7 +37,7 @@ void main() {
 
   group('idle flush persist', () {
     late Database db;
-    late StepRepository repository;
+    late StepTestRepos stepRepos;
     late IngestionBaselineRepository baselineRepository;
     late FakeTimeProvider clock;
     late StreamController<PhoneStepEvent> events;
@@ -49,11 +50,11 @@ void main() {
         fixedNowUtc: DateTime.utc(2026, 6, 5, 10),
         zoneOffset: const Duration(hours: 2),
       );
-      repository = StepRepository(db: db, clock: clock);
+      stepRepos = StepTestFixtures.create(db: db, clock: clock);
       baselineRepository = IngestionBaselineRepository(db);
       events = StreamController<PhoneStepEvent>.broadcast();
       monitor = LiveStepMonitor(
-        stepRepository: repository,
+        stepAggregation: stepRepos.aggregation,
         baselineRepository: baselineRepository,
         clock: clock,
         stepEventStreamFactory: () => events.stream,
@@ -63,7 +64,8 @@ void main() {
       collector = BackgroundCollector(
         sources: [MonitorDrainSource(monitor)],
         normalizer: StepNormalizer(clock: clock),
-        repository: repository,
+        repository: stepRepos.ingestion,
+        stepAggregation: stepRepos.aggregation,
         baselineRepository: baselineRepository,
         sourceTimeout: const Duration(milliseconds: 50),
       );
@@ -79,7 +81,7 @@ void main() {
       const priorBucketSteps = 51;
       const priorBaseline = 80;
 
-      await repository.upsertIngestionBucket(
+      await stepRepos.ingestion.upsertIngestionBucket(
         NormalizedStepBucket(
           startTimeUtc: DateTime.utc(2026, 6, 5, 10),
           endTimeUtc: DateTime.utc(2026, 6, 5, 10, 5),
@@ -95,7 +97,7 @@ void main() {
         cumulative: priorBaseline,
       );
 
-      final persistedBeforeWalk = await repository.getTodaySteps();
+      final persistedBeforeWalk = await stepRepos.aggregation.getTodaySteps();
       expect(persistedBeforeWalk, priorBucketSteps);
 
       await monitor.start();
@@ -121,11 +123,11 @@ void main() {
 
       final displayBeforeFlush = monitor.currentTodaySteps;
       expect(displayBeforeFlush, greaterThan(persistedBeforeWalk));
-      expect(await repository.getTodaySteps(), persistedBeforeWalk);
+      expect(await stepRepos.aggregation.getTodaySteps(), persistedBeforeWalk);
 
       await _idleFlushPersist(monitor, collector);
 
-      final persistedAfterFlush = await repository.getTodaySteps();
+      final persistedAfterFlush = await stepRepos.aggregation.getTodaySteps();
       expect(
         persistedAfterFlush,
         greaterThanOrEqualTo(persistedBeforeWalk),

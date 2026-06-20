@@ -8,7 +8,7 @@ import 'package:astra_app/core/services/notification_service.dart';
 import 'package:astra_app/data/datasources/adp_ble_source.dart';
 import 'package:astra_app/data/datasources/phone_pedometer_source.dart';
 import 'package:astra_app/data/datasources/step_normalizer.dart';
-import 'package:astra_app/data/repositories/step_repository.dart';
+
 import 'package:astra_app/data/repositories/user_health_metrics_repository.dart';
 import 'package:astra_app/data/repositories/user_settings_repository.dart';
 import 'package:flutter_test/flutter_test.dart';
@@ -16,6 +16,9 @@ import 'package:sqflite/sqflite.dart';
 
 import '../../helpers/sqflite_test_helper.dart';
 import '../time/fake_time_provider.dart';
+import 'package:astra_app/data/services/csv_service.dart';
+import 'package:astra_app/data/repositories/step/step_aggregation_repository.dart';
+import 'package:astra_app/data/repositories/step/step_ingestion_repository.dart';
 
 void main() {
   setUpAll(() async {
@@ -56,8 +59,10 @@ void main() {
         expect(deps.timeProvider, same(clock));
         expect(deps.stepNormalizer, isA<StepNormalizer>());
         expect(deps.stepNormalizer.clock, same(clock));
-        expect(deps.stepRepository, isA<StepRepository>());
-        expect(deps.stepRepository.clock, same(clock));
+        expect(deps.stepIngestion, isA<StepIngestionRepository>());
+        expect(deps.stepAggregation, isA<StepAggregationRepository>());
+        expect(deps.csvService, isA<CsvService>());
+        expect(deps.stepAggregation.clock, same(clock));
         expect(deps.backgroundCollector, isA<BackgroundCollector>());
         expect(deps.liveStepMonitor, isA<LiveStepMonitor>());
         expect(deps.dataLifecycleService, isA<DataLifecycleService>());

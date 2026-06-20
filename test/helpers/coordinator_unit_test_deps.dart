@@ -15,9 +15,11 @@ import 'package:astra_app/data/datasources/monitor_drain_source.dart';
 import 'package:astra_app/data/datasources/phone_pedometer_source.dart';
 import 'package:astra_app/data/datasources/step_normalizer.dart';
 import 'package:astra_app/data/repositories/ingestion_baseline_repository.dart';
-import 'package:astra_app/data/repositories/step_repository.dart';
+import 'package:astra_app/data/repositories/step/step_aggregation_repository.dart';
+import 'package:astra_app/data/repositories/step/step_ingestion_repository.dart';
 import 'package:astra_app/data/repositories/user_health_metrics_repository.dart';
 import 'package:astra_app/data/repositories/user_settings_repository.dart';
+import 'package:astra_app/data/services/csv_service.dart';
 import 'package:astra_app/presentation/cubits/theme_state.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:permission_handler/permission_handler.dart';
@@ -110,16 +112,18 @@ AppDependencies buildCoordinatorUnitTestDeps({
     databaseSession,
     clock: timeProvider,
   );
-  final stepRepository = StepRepository(
-    session: databaseSession,
+  final stepIngestion = StepIngestionRepository(databaseSession);
+  final stepAggregation = StepAggregationRepository(
+    databaseSession,
     clock: timeProvider,
   );
+  final csvService = CsvService(databaseSession, clock: timeProvider);
   final stepNormalizer = StepNormalizer(clock: timeProvider);
   final baselineRepository = IngestionBaselineRepository(databaseSession);
   final monitor =
       liveStepMonitor ??
       LiveStepMonitor(
-        stepRepository: stepRepository,
+        stepAggregation: stepAggregation,
         baselineRepository: baselineRepository,
         clock: timeProvider,
         stepEventStreamFactory: () => const Stream<PhoneStepEvent>.empty(),
@@ -147,7 +151,8 @@ AppDependencies buildCoordinatorUnitTestDeps({
       BackgroundCollector(
         sources: sources,
         normalizer: stepNormalizer,
-        repository: stepRepository,
+        repository: stepIngestion,
+        stepAggregation: stepAggregation,
         baselineRepository: baselineRepository,
         userSettings: userSettings,
         userHealthMetrics: userHealthMetrics,
@@ -158,7 +163,7 @@ AppDependencies buildCoordinatorUnitTestDeps({
   final lifecycleService = DataLifecycleService(
     session: databaseSession,
     databasePath: databasePath,
-    repository: stepRepository,
+    repository: stepAggregation,
     userSettings: userSettings,
     clock: timeProvider,
   );
@@ -177,7 +182,9 @@ AppDependencies buildCoordinatorUnitTestDeps({
     timeProvider: timeProvider,
     ingestionSources: sources,
     stepNormalizer: stepNormalizer,
-    stepRepository: stepRepository,
+    stepIngestion: stepIngestion,
+    stepAggregation: stepAggregation,
+    csvService: csvService,
     backgroundCollector: collector,
     notificationService: notifications,
     liveStepMonitor: monitor,

@@ -4,7 +4,7 @@ import 'package:astra_app/core/di/app_dependencies.dart';
 import 'package:astra_app/core/services/live_step_monitor.dart';
 import 'package:astra_app/data/datasources/phone_pedometer_source.dart';
 import 'package:astra_app/data/repositories/ingestion_baseline_repository.dart';
-import 'package:astra_app/data/repositories/step_repository.dart';
+
 import 'package:astra_app/data/repositories/user_health_metrics_repository.dart';
 import 'package:astra_app/data/repositories/user_settings_repository.dart';
 import 'package:astra_app/presentation/cubits/history_cubit.dart';
@@ -16,6 +16,7 @@ import 'package:sqflite/sqflite.dart';
 import 'core/time/fake_time_provider.dart';
 import 'helpers/recording_health_fgs.dart';
 import 'helpers/sqflite_test_helper.dart';
+import 'package:astra_app/data/repositories/step/step_aggregation_repository.dart';
 
 void main() {
   setUpAll(() async {
@@ -55,14 +56,14 @@ void main() {
         AstraApp(
           deps: deps,
           createTodayCubit: (dependencies) => TodayCubit(
-            stepRepository: dependencies.stepRepository,
+            stepAggregation: dependencies.stepAggregation,
             userSettings: dependencies.userSettings,
             userHealthMetrics: dependencies.userHealthMetrics,
             clock: dependencies.timeProvider,
             activityPermissionGranted: () async => true,
           ),
           createHistoryCubit: (dependencies) => HistoryCubit(
-            stepRepository: dependencies.stepRepository,
+            stepAggregation: dependencies.stepAggregation,
             userHealthMetrics: dependencies.userHealthMetrics,
           ),
           enablePeriodicPersist: false,
@@ -105,7 +106,7 @@ void main() {
       final userHealthMetrics = UserHealthMetricsRepository(db, clock: clock);
       final events = Stream<PhoneStepEvent>.empty();
       final monitor = LiveStepMonitor(
-        stepRepository: StepRepository(db: db, clock: clock),
+        stepAggregation: StepAggregationRepository(db, clock: clock),
         baselineRepository: IngestionBaselineRepository(db),
         clock: clock,
         stepEventStreamFactory: () => events,
@@ -124,14 +125,14 @@ void main() {
         AstraApp(
           deps: deps,
           createTodayCubit: (dependencies) => TodayCubit(
-            stepRepository: dependencies.stepRepository,
+            stepAggregation: dependencies.stepAggregation,
             userSettings: dependencies.userSettings,
             userHealthMetrics: dependencies.userHealthMetrics,
             clock: dependencies.timeProvider,
             activityPermissionGranted: () async => true,
           ),
           createHistoryCubit: (dependencies) => HistoryCubit(
-            stepRepository: dependencies.stepRepository,
+            stepAggregation: dependencies.stepAggregation,
             userHealthMetrics: dependencies.userHealthMetrics,
           ),
           enablePeriodicPersist: false,

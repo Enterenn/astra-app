@@ -7,12 +7,14 @@ import 'package:astra_app/data/datasources/monitor_drain_source.dart';
 import 'package:astra_app/data/datasources/phone_pedometer_source.dart';
 import 'package:astra_app/data/datasources/step_normalizer.dart';
 import 'package:astra_app/data/repositories/ingestion_baseline_repository.dart';
-import 'package:astra_app/data/repositories/step_repository.dart';
+
 import 'package:flutter_test/flutter_test.dart';
 import 'package:sqflite/sqflite.dart';
 
 import '../../core/time/fake_time_provider.dart';
 import '../../helpers/sqflite_test_helper.dart';
+import 'package:astra_app/data/repositories/step/step_ingestion_repository.dart';
+import 'package:astra_app/data/repositories/step/step_aggregation_repository.dart';
 
 Future<void> _persistBufferedSteps(
   LiveStepMonitor monitor,
@@ -36,7 +38,8 @@ void main() {
 
   group('LiveStepMonitor', () {
     late Database db;
-    late StepRepository repository;
+    late StepAggregationRepository stepAggregation;
+    late StepIngestionRepository stepIngestion;
     late IngestionBaselineRepository baselineRepository;
     late FakeTimeProvider clock;
     late StreamController<PhoneStepEvent> events;
@@ -48,11 +51,12 @@ void main() {
         fixedNowUtc: DateTime.utc(2026, 6, 2, 12),
         zoneOffset: const Duration(hours: 2),
       );
-      repository = StepRepository(db: db, clock: clock);
+      stepAggregation = StepAggregationRepository(db, clock: clock);
+      stepIngestion = StepIngestionRepository(db);
       baselineRepository = IngestionBaselineRepository(db);
       events = StreamController<PhoneStepEvent>.broadcast();
       monitor = LiveStepMonitor(
-        stepRepository: repository,
+        stepAggregation: stepAggregation,
         baselineRepository: baselineRepository,
         clock: clock,
         stepEventStreamFactory: () => events.stream,
@@ -92,7 +96,8 @@ void main() {
       final collector = BackgroundCollector(
         sources: [MonitorDrainSource(monitor)],
         normalizer: normalizer,
-        repository: repository,
+        repository: stepIngestion,
+        stepAggregation: stepAggregation,
         baselineRepository: baselineRepository,
         sourceTimeout: const Duration(milliseconds: 50),
       );
@@ -111,7 +116,7 @@ void main() {
       await monitor.reconcileFromDatabase();
       monitor.endReconcile();
 
-      expect(await repository.getTodaySteps(), 20);
+      expect(await stepAggregation.getTodaySteps(), 20);
       expect(monitor.currentTodaySteps, 20);
     });
 
@@ -153,7 +158,7 @@ void main() {
     test('collect during active monitor drains buffer without second stream', () async {
       var streamListenCount = 0;
       final countingMonitor = LiveStepMonitor(
-        stepRepository: repository,
+        stepAggregation: stepAggregation,
         baselineRepository: baselineRepository,
         clock: clock,
         stepEventStreamFactory: () {
@@ -175,7 +180,8 @@ void main() {
       final collector = BackgroundCollector(
         sources: [MonitorDrainSource(countingMonitor)],
         normalizer: StepNormalizer(clock: clock),
-        repository: repository,
+        repository: stepIngestion,
+        stepAggregation: stepAggregation,
         baselineRepository: baselineRepository,
         sourceTimeout: const Duration(milliseconds: 50),
       );
@@ -230,7 +236,7 @@ void main() {
     test('activity idle fires after delay with no new readings', () async {
       var idleCount = 0;
       monitor = LiveStepMonitor(
-        stepRepository: repository,
+        stepAggregation: stepAggregation,
         baselineRepository: baselineRepository,
         clock: clock,
         stepEventStreamFactory: () => events.stream,
@@ -256,7 +262,7 @@ void main() {
     test('new reading cancels pending activity idle timer', () async {
       var idleCount = 0;
       monitor = LiveStepMonitor(
-        stepRepository: repository,
+        stepAggregation: stepAggregation,
         baselineRepository: baselineRepository,
         clock: clock,
         stepEventStreamFactory: () => events.stream,
@@ -290,7 +296,7 @@ void main() {
       final normalizer = StepNormalizer(clock: clock);
 
       monitor = LiveStepMonitor(
-        stepRepository: repository,
+        stepAggregation: stepAggregation,
         baselineRepository: baselineRepository,
         clock: clock,
         stepEventStreamFactory: () => events.stream,
@@ -300,7 +306,8 @@ void main() {
       final collector = BackgroundCollector(
         sources: [MonitorDrainSource(monitor)],
         normalizer: normalizer,
-        repository: repository,
+        repository: stepIngestion,
+        stepAggregation: stepAggregation,
         baselineRepository: baselineRepository,
         sourceTimeout: const Duration(milliseconds: 50),
       );
@@ -323,17 +330,17 @@ void main() {
       );
       await Future<void>.delayed(Duration.zero);
       expect(monitor.currentTodaySteps, 100);
-      expect(await repository.getTodaySteps(), 0);
+      expect(await stepAggregation.getTodaySteps(), 0);
 
       await Future<void>.delayed(idleDelay);
       await persistDone.future;
-      expect(await repository.getTodaySteps(), 100);
+      expect(await stepAggregation.getTodaySteps(), 100);
     });
 
     test('stop cancels activity idle timer', () async {
       var idleCount = 0;
       monitor = LiveStepMonitor(
-        stepRepository: repository,
+        stepAggregation: stepAggregation,
         baselineRepository: baselineRepository,
         clock: clock,
         stepEventStreamFactory: () => events.stream,
@@ -358,7 +365,7 @@ void main() {
         PhoneStepEvent(steps: 200, timeStamp: DateTime.utc(2026, 6, 2, 12, 5)),
       ];
       final peekMonitor = LiveStepMonitor(
-        stepRepository: repository,
+        stepAggregation: stepAggregation,
         baselineRepository: baselineRepository,
         clock: clock,
         stepEventStreamFactory: () async* {

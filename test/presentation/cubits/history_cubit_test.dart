@@ -7,7 +7,7 @@ import 'package:astra_app/data/models/timeseries_sample_model.dart';
 import 'package:astra_app/data/datasources/data_ingestion_source.dart';
 import 'package:astra_app/data/models/normalized_step_bucket.dart';
 import 'package:astra_app/data/contracts/contracts.dart';
-import 'package:astra_app/data/repositories/step_repository.dart';
+
 import 'package:astra_app/data/repositories/user_health_metrics_repository.dart';
 import '../../dev/data_inject_service.dart';
 import 'package:astra_app/presentation/cubits/history_cubit.dart';
@@ -17,6 +17,8 @@ import 'package:sqflite/sqflite.dart';
 
 import '../../core/time/fake_time_provider.dart';
 import '../../helpers/sqflite_test_helper.dart';
+import 'package:astra_app/data/repositories/step/step_ingestion_repository.dart';
+import '../../helpers/step_test_fixtures.dart';
 
 class _BatchGoalSpyHealthMetricsRepository extends UserHealthMetricsRepository {
   _BatchGoalSpyHealthMetricsRepository(super.db, {super.clock});
@@ -39,10 +41,10 @@ class _BatchGoalSpyHealthMetricsRepository extends UserHealthMetricsRepository {
   }
 }
 
-class _ChartAggregateSpyRepository implements StepRepositoryContract {
+class _ChartAggregateSpyRepository implements StepAggregationRepositoryContract {
   _ChartAggregateSpyRepository(this._delegate);
 
-  final StepRepositoryContract _delegate;
+  final StepAggregationRepositoryContract _delegate;
   int chartAggregateCallCount = 0;
   int chartMonthlyAggregateCallCount = 0;
 
@@ -78,10 +80,10 @@ class _ChartAggregateSpyRepository implements StepRepositoryContract {
   }
 }
 
-class _ThrowingChartRepository implements StepRepositoryContract {
+class _ThrowingChartRepository implements StepAggregationRepositoryContract {
   _ThrowingChartRepository(this._fallback);
 
-  final StepRepositoryContract _fallback;
+  final StepAggregationRepositoryContract _fallback;
   int callCount = 0;
 
   @override
@@ -118,7 +120,7 @@ class _ThrowingChartRepository implements StepRepositoryContract {
   }
 }
 
-class _AlwaysThrowingChartRepository implements StepRepositoryContract {
+class _AlwaysThrowingChartRepository implements StepAggregationRepositoryContract {
   @override
   Future<List<ChartDayAggregate>> getChartDailyAggregates({
     required int days,
@@ -139,10 +141,10 @@ class _AlwaysThrowingChartRepository implements StepRepositoryContract {
   }
 }
 
-class _ThrowingBucketOnSecondRefreshRepository implements StepRepositoryContract {
+class _ThrowingBucketOnSecondRefreshRepository implements StepAggregationRepositoryContract {
   _ThrowingBucketOnSecondRefreshRepository(this._delegate);
 
-  final StepRepositoryContract _delegate;
+  final StepAggregationRepositoryContract _delegate;
   int refreshCount = 0;
 
   @override
@@ -188,7 +190,7 @@ void main() {
     late Database db;
     late UserHealthMetricsRepository userHealthMetrics;
     late FakeTimeProvider clock;
-    late StepRepository stepRepository;
+    late StepTestRepos stepRepos;
 
     setUp(() async {
       db = await openAstraDatabase(databasePath: inMemoryDatabasePath);
@@ -197,7 +199,7 @@ void main() {
         zoneOffset: const Duration(hours: 2),
       );
       userHealthMetrics = UserHealthMetricsRepository(db, clock: clock);
-      stepRepository = StepRepository(db: db, clock: clock);
+      stepRepos = StepTestFixtures.create(db: db, clock: clock);
     });
 
     tearDown(() async {
@@ -205,11 +207,11 @@ void main() {
     });
 
     HistoryCubit buildCubit({
-      StepRepositoryContract? repository,
+      StepAggregationRepositoryContract? stepAggregation,
       UserHealthMetricsRepositoryContract? healthMetrics,
     }) {
       return HistoryCubit(
-        stepRepository: repository ?? stepRepository,
+        stepAggregation: stepAggregation ?? stepRepos.aggregation,
         userHealthMetrics: healthMetrics ?? userHealthMetrics,
       );
     }
@@ -237,7 +239,7 @@ void main() {
     // ── Ready with data ──────────────────────────────────────────────────────
 
     test('refresh emits ready: 7 chart points oldest-first with non-null trend after inject', () async {
-      await DataInjectService(repository: stepRepository).inject90Days(
+      await DataInjectService(repository: stepRepos.ingestion).inject90Days(
         clock: clock,
       );
       final cubit = buildCubit();
@@ -257,11 +259,11 @@ void main() {
     });
 
     test('selectPeriod switches to 30-day slice without extra DB call', () async {
-      await DataInjectService(repository: stepRepository).inject90Days(
+      await DataInjectService(repository: stepRepos.ingestion).inject90Days(
         clock: clock,
       );
-      final spy = _ChartAggregateSpyRepository(stepRepository);
-      final cubit = buildCubit(repository: spy);
+      final spy = _ChartAggregateSpyRepository(stepRepos.aggregation);
+      final cubit = buildCubit(stepAggregation: spy);
 
       await cubit.refresh();
       expect(spy.chartAggregateCallCount, 1);
@@ -281,7 +283,7 @@ void main() {
 
     test('trend direction: up, down, and flat based on week-over-week comparison', () async {
       // up: current week > prior week
-      await _seedTwoWeekPattern(stepRepository);
+      await _seedTwoWeekPattern(stepRepos.ingestion);
       final c1 = buildCubit();
       await c1.refresh();
       expect(c1.state.trend?.direction, TrendDirection.up);
@@ -290,7 +292,7 @@ void main() {
 
       // down: current week < prior week
       await db.delete('timeseries_samples');
-      await _seedTwoWeekPattern(stepRepository, invert: true);
+      await _seedTwoWeekPattern(stepRepos.ingestion, invert: true);
       final c2 = buildCubit();
       await c2.refresh();
       expect(c2.state.trend?.direction, TrendDirection.down);
@@ -299,7 +301,7 @@ void main() {
 
       // flat: both weeks equal
       await db.delete('timeseries_samples');
-      await _seedTwoWeekPattern(stepRepository, equalWeeks: true);
+      await _seedTwoWeekPattern(stepRepos.ingestion, equalWeeks: true);
       final c3 = buildCubit();
       await c3.refresh();
       expect(c3.state.trend?.direction, TrendDirection.flat);
@@ -308,7 +310,7 @@ void main() {
     });
 
     test('trend shows no prior week copy when prior week is empty', () async {
-      await stepRepository.upsertIngestionBucket(
+      await stepRepos.ingestion.upsertIngestionBucket(
         _bucket(
           startTimeUtc: DateTime.utc(2026, 6, 2, 10),
           value: 5000,
@@ -326,11 +328,11 @@ void main() {
     // ── Concurrency & error resilience ───────────────────────────────────────
 
     test('concurrent refresh calls share one repository read', () async {
-      await DataInjectService(repository: stepRepository).inject90Days(
+      await DataInjectService(repository: stepRepos.ingestion).inject90Days(
         clock: clock,
       );
-      final spy = _ChartAggregateSpyRepository(stepRepository);
-      final cubit = buildCubit(repository: spy);
+      final spy = _ChartAggregateSpyRepository(stepRepos.aggregation);
+      final cubit = buildCubit(stepAggregation: spy);
 
       await Future.wait([cubit.refresh(), cubit.refresh()]);
 
@@ -339,11 +341,11 @@ void main() {
     });
 
     test('refresh recovers from cache when repository throws', () async {
-      await DataInjectService(repository: stepRepository).inject90Days(
+      await DataInjectService(repository: stepRepos.ingestion).inject90Days(
         clock: clock,
       );
-      final throwing = _ThrowingChartRepository(stepRepository);
-      final cubit = buildCubit(repository: throwing);
+      final throwing = _ThrowingChartRepository(stepRepos.aggregation);
+      final cubit = buildCubit(stepAggregation: throwing);
 
       await cubit.refresh();
       expect(cubit.state.status, HistoryStatus.ready);
@@ -365,11 +367,11 @@ void main() {
     test(
       'refresh keeps chart and periodAverages consistent when bucket fetch fails',
       () async {
-        await DataInjectService(repository: stepRepository).inject90Days(
+        await DataInjectService(repository: stepRepos.ingestion).inject90Days(
           clock: clock,
         );
-        final throwing = _ThrowingBucketOnSecondRefreshRepository(stepRepository);
-        final cubit = buildCubit(repository: throwing);
+        final throwing = _ThrowingBucketOnSecondRefreshRepository(stepRepos.aggregation);
+        final cubit = buildCubit(stepAggregation: throwing);
 
         await cubit.refresh();
         expect(cubit.state.status, HistoryStatus.ready);
@@ -391,7 +393,7 @@ void main() {
     );
 
     test('refresh leaves empty state when repository throws with no cache', () async {
-      final cubit = buildCubit(repository: _AlwaysThrowingChartRepository());
+      final cubit = buildCubit(stepAggregation: _AlwaysThrowingChartRepository());
 
       await cubit.refresh();
 
@@ -402,11 +404,11 @@ void main() {
     // ── refreshGoal ──────────────────────────────────────────────────────────
 
     test('refreshGoal updates daily goal without chart repository call', () async {
-      await DataInjectService(repository: stepRepository).inject90Days(
+      await DataInjectService(repository: stepRepos.ingestion).inject90Days(
         clock: clock,
       );
-      final spy = _ChartAggregateSpyRepository(stepRepository);
-      final cubit = buildCubit(repository: spy);
+      final spy = _ChartAggregateSpyRepository(stepRepos.aggregation);
+      final cubit = buildCubit(stepAggregation: spy);
 
       await cubit.refresh();
       expect(spy.chartAggregateCallCount, 1);
@@ -432,7 +434,7 @@ void main() {
         'goal': 10000,
       });
       for (var dayOffset = 0; dayOffset < 7; dayOffset++) {
-        await stepRepository.upsertIngestionBucket(
+        await stepRepos.ingestion.upsertIngestionBucket(
           _bucket(
             startTimeUtc: DateTime.utc(2026, 6, 2 - dayOffset, 10),
             value: 5000,
@@ -454,22 +456,22 @@ void main() {
         'effective_from_local_day': '2026-06-01',
         'goal': 8000,
       });
-      await stepRepository.upsertIngestionBucket(
+      await stepRepos.ingestion.upsertIngestionBucket(
         _bucket(
           startTimeUtc: DateTime.utc(2026, 6, 1, 10),
           value: 5000,
           zoneOffset: '+02:00',
         ),
       );
-      await stepRepository.upsertIngestionBucket(
+      await stepRepos.ingestion.upsertIngestionBucket(
         _bucket(
           startTimeUtc: DateTime.utc(2026, 6, 2, 10),
           value: 5000,
           zoneOffset: '+02:00',
         ),
       );
-      final spy = _ChartAggregateSpyRepository(stepRepository);
-      final cubit = buildCubit(repository: spy);
+      final spy = _ChartAggregateSpyRepository(stepRepos.aggregation);
+      final cubit = buildCubit(stepAggregation: spy);
 
       await cubit.refresh();
       expect(cubit.state.goalsByDay['2026-06-01'], 8000);
@@ -486,7 +488,7 @@ void main() {
     });
 
     test('batch goal resolution: single getGoalsForLocalDays call on refresh and refreshGoal', () async {
-      await DataInjectService(repository: stepRepository).inject90Days(
+      await DataInjectService(repository: stepRepos.ingestion).inject90Days(
         clock: clock,
       );
       final prefsSpy = _BatchGoalSpyHealthMetricsRepository(db, clock: clock);
@@ -517,7 +519,7 @@ void main() {
 
     test('refresh defaults to 30d when last 7 days are empty but older days have steps', () async {
       for (var dayOffset = 14; dayOffset < 21; dayOffset++) {
-        await stepRepository.upsertIngestionBucket(
+        await stepRepos.ingestion.upsertIngestionBucket(
           _bucket(
             startTimeUtc: DateTime.utc(2026, 6, 2 - dayOffset, 10),
             value: 3000,
@@ -539,7 +541,7 @@ void main() {
     test('periodAverages: arithmetic mean across 7 days, includes zero-step days in denominator', () async {
       // 7 equal days → mean = 1000
       for (var dayOffset = 0; dayOffset < 7; dayOffset++) {
-        await stepRepository.upsertIngestionBucket(
+        await stepRepos.ingestion.upsertIngestionBucket(
           _bucket(
             startTimeUtc: DateTime.utc(2026, 6, 2 - dayOffset, 10),
             value: 1000,
@@ -554,7 +556,7 @@ void main() {
 
       // 1 day × 7000 over 7-day window also averages to 1000 (zero days counted)
       await db.delete('timeseries_samples');
-      await stepRepository.upsertIngestionBucket(
+      await stepRepos.ingestion.upsertIngestionBucket(
         _bucket(
           startTimeUtc: DateTime.utc(2026, 6, 2, 10),
           value: 7000,
@@ -568,7 +570,7 @@ void main() {
     });
 
     test('periodAverages kcal uses bucket-based DerivedActivityMetrics', () async {
-      await stepRepository.upsertIngestionBucket(
+      await stepRepos.ingestion.upsertIngestionBucket(
         _bucket(
           startTimeUtc: DateTime.utc(2026, 6, 2, 10),
           value: 100,
@@ -586,7 +588,7 @@ void main() {
       'selectPeriod updates periodAverages from cache without extra chart query',
       () async {
         for (var dayOffset = 0; dayOffset < 10; dayOffset++) {
-          await stepRepository.upsertIngestionBucket(
+          await stepRepos.ingestion.upsertIngestionBucket(
             _bucket(
               startTimeUtc: DateTime.utc(2026, 6, 2 - dayOffset, 10),
               value: 1000,
@@ -594,8 +596,8 @@ void main() {
             ),
           );
         }
-        final spy = _ChartAggregateSpyRepository(stepRepository);
-        final cubit = buildCubit(repository: spy);
+        final spy = _ChartAggregateSpyRepository(stepRepos.aggregation);
+        final cubit = buildCubit(stepAggregation: spy);
 
         await cubit.refresh();
         expect(spy.chartAggregateCallCount, 1);
@@ -618,7 +620,7 @@ void main() {
     test('peakDay: selects max-step day, tie-breaks to most recent', () async {
       final maxValues = [3000, 5000, 2000, 8000, 1000, 4000, 6000];
       for (var i = 0; i < 7; i++) {
-        await stepRepository.upsertIngestionBucket(
+        await stepRepos.ingestion.upsertIngestionBucket(
           _bucket(
             startTimeUtc: DateTime.utc(2026, 6, 2 - i, 10),
             value: maxValues[i],
@@ -637,7 +639,7 @@ void main() {
       await db.delete('timeseries_samples');
       final tieValues = [8000, 5000, 8000, 3000, 2000, 1000, 4000];
       for (var i = 0; i < 7; i++) {
-        await stepRepository.upsertIngestionBucket(
+        await stepRepos.ingestion.upsertIngestionBucket(
           _bucket(
             startTimeUtc: DateTime.utc(2026, 6, 2 - i, 10),
             value: tieValues[i],
@@ -656,7 +658,7 @@ void main() {
       'selectPeriod updates peakDay from cache without extra chart query',
       () async {
         for (var dayOffset = 0; dayOffset < 10; dayOffset++) {
-          await stepRepository.upsertIngestionBucket(
+          await stepRepos.ingestion.upsertIngestionBucket(
             _bucket(
               startTimeUtc: DateTime.utc(2026, 6, 2 - dayOffset, 10),
               value: dayOffset == 9 ? 9000 : 1000,
@@ -664,8 +666,8 @@ void main() {
             ),
           );
         }
-        final spy = _ChartAggregateSpyRepository(stepRepository);
-        final cubit = buildCubit(repository: spy);
+        final spy = _ChartAggregateSpyRepository(stepRepos.aggregation);
+        final cubit = buildCubit(stepAggregation: spy);
 
         await cubit.refresh();
         expect(spy.chartAggregateCallCount, 1);
@@ -685,7 +687,7 @@ void main() {
 
     test('7d window with no steps: null peakDay and null periodAverages after selectPeriod', () async {
       for (var dayOffset = 14; dayOffset < 21; dayOffset++) {
-        await stepRepository.upsertIngestionBucket(
+        await stepRepos.ingestion.upsertIngestionBucket(
           _bucket(
             startTimeUtc: DateTime.utc(2026, 6, 2 - dayOffset, 10),
             value: 3000,
@@ -708,11 +710,11 @@ void main() {
     // ── Monthly chart ────────────────────────────────────────────────────────
 
     test('monthly chart: parallel fetch, cache on period toggle, oldest-first ordering', () async {
-      await DataInjectService(repository: stepRepository).inject90Days(
+      await DataInjectService(repository: stepRepos.ingestion).inject90Days(
         clock: clock,
       );
-      final spy = _ChartAggregateSpyRepository(stepRepository);
-      final cubit = buildCubit(repository: spy);
+      final spy = _ChartAggregateSpyRepository(stepRepos.aggregation);
+      final cubit = buildCubit(stepAggregation: spy);
 
       await cubit.refresh();
       expect(spy.chartAggregateCallCount, 1);
@@ -742,7 +744,7 @@ void main() {
     test(
       'refresh emits ready when 30d sum is zero but twelve-month window has steps',
       () async {
-        await stepRepository.upsertIngestionBucket(
+        await stepRepos.ingestion.upsertIngestionBucket(
           _bucket(
             startTimeUtc: DateTime.utc(2026, 4, 15, 10),
             value: 5000,
@@ -762,7 +764,7 @@ void main() {
 }
 
 Future<void> _seedTwoWeekPattern(
-  StepRepository repository, {
+  StepIngestionRepository repository, {
   bool invert = false,
   bool equalWeeks = false,
 }) async {

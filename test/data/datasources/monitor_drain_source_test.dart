@@ -9,12 +9,13 @@ import 'package:astra_app/data/datasources/phone_pedometer_source.dart';
 import 'package:astra_app/data/datasources/step_normalizer.dart';
 import 'package:astra_app/data/models/normalized_step_bucket.dart';
 import 'package:astra_app/data/repositories/ingestion_baseline_repository.dart';
-import 'package:astra_app/data/repositories/step_repository.dart';
+
 import 'package:flutter_test/flutter_test.dart';
 import 'package:sqflite/sqflite.dart';
 
 import '../../core/time/fake_time_provider.dart';
 import '../../helpers/sqflite_test_helper.dart';
+import '../../helpers/step_test_fixtures.dart';
 
 void main() {
   setUpAll(() async {
@@ -23,7 +24,7 @@ void main() {
 
   group('MonitorDrainSource', () {
     late Database db;
-    late StepRepository repository;
+    late StepTestRepos stepRepos;
     late IngestionBaselineRepository baselineRepository;
     late FakeTimeProvider clock;
     late StreamController<PhoneStepEvent> phoneEvents;
@@ -35,11 +36,11 @@ void main() {
         fixedNowUtc: DateTime.utc(2026, 6, 2, 8),
         zoneOffset: const Duration(hours: 2),
       );
-      repository = StepRepository(db: db, clock: clock);
+      stepRepos = StepTestFixtures.create(db: db, clock: clock);
       baselineRepository = IngestionBaselineRepository(db);
       phoneEvents = StreamController<PhoneStepEvent>.broadcast();
       monitor = LiveStepMonitor(
-        stepRepository: repository,
+        stepAggregation: stepRepos.aggregation,
         baselineRepository: baselineRepository,
         clock: clock,
         stepEventStreamFactory: () => phoneEvents.stream,
@@ -102,7 +103,7 @@ void main() {
         deviceId: kSmartphoneDeviceId,
         cumulative: 2559,
       );
-      await repository.upsertIngestionBucket(
+      await stepRepos.ingestion.upsertIngestionBucket(
         NormalizedStepBucket(
           startTimeUtc: DateTime.utc(2026, 6, 2, 8),
           endTimeUtc: DateTime.utc(2026, 6, 2, 8, 5),
@@ -125,7 +126,8 @@ void main() {
           ),
         ],
         normalizer: StepNormalizer(clock: clock),
-        repository: repository,
+        repository: stepRepos.ingestion,
+        stepAggregation: stepRepos.aggregation,
         baselineRepository: baselineRepository,
         sourceTimeout: const Duration(milliseconds: 50),
       );
@@ -137,7 +139,7 @@ void main() {
 
       final upserted = await collectFuture;
       expect(upserted, greaterThan(0));
-      expect(await repository.getTodaySteps(), 2680);
+      expect(await stepRepos.aggregation.getTodaySteps(), 2680);
       await fallbackEvents.close();
     });
   });

@@ -1,7 +1,8 @@
 import 'package:astra_app/core/time/time_provider.dart';
 import 'package:astra_app/data/models/normalized_step_bucket.dart';
-import 'package:astra_app/data/repositories/step_repository.dart';
+
 import 'package:flutter/foundation.dart';
+import 'package:astra_app/data/repositories/step/step_aggregation_repository.dart';
 
 class LifecycleSimResult {
   const LifecycleSimResult({
@@ -26,7 +27,7 @@ class LifecycleSimulator {
     required this.clock,
   });
 
-  final StepRepository repository;
+  final StepAggregationRepository repository;
   final TimeProvider clock;
 
   Future<LifecycleSimResult> simulateDownsampling() async {
@@ -46,7 +47,7 @@ class LifecycleSimulator {
 }
 
 Future<LifecycleSimResult> runDevLifecycleSimulate({
-  required StepRepository repository,
+  required StepAggregationRepository repository,
   required TimeProvider clock,
 }) async {
   if (!kDebugMode) {

@@ -1,6 +1,6 @@
 import 'package:astra_app/core/constants/preference_keys.dart';
 import 'package:astra_app/core/database/app_database.dart';
-import 'package:astra_app/data/repositories/step_repository.dart';
+
 import 'package:astra_app/data/repositories/user_health_metrics_repository.dart';
 import 'package:astra_app/data/repositories/user_settings_repository.dart';
 import 'package:astra_app/presentation/cubits/my_data_cubit.dart';
@@ -10,6 +10,7 @@ import 'package:sqflite/sqflite.dart';
 
 import '../../core/time/fake_time_provider.dart';
 import '../../helpers/sqflite_test_helper.dart';
+import '../../helpers/step_test_fixtures.dart';
 
 void main() {
   setUpAll(() async {
@@ -21,7 +22,7 @@ void main() {
     late UserSettingsRepository userSettings;
     late UserHealthMetricsRepository userHealthMetrics;
     late FakeTimeProvider clock;
-    late StepRepository stepRepository;
+    late StepTestRepos stepRepos;
 
     setUp(() async {
       db = await openAstraDatabase(databasePath: inMemoryDatabasePath);
@@ -31,7 +32,7 @@ void main() {
         zoneOffset: const Duration(hours: 2),
       );
       userHealthMetrics = UserHealthMetricsRepository(db, clock: clock);
-      stepRepository = StepRepository(db: db, clock: clock);
+      stepRepos = StepTestFixtures.create(db: db, clock: clock);
     });
 
     tearDown(() async {
@@ -42,7 +43,9 @@ void main() {
       PostGoalUpdateCallback? postGoalUpdate,
     }) {
       return MyDataCubit(
-        stepRepository: stepRepository,
+        stepAggregation: stepRepos.aggregation,
+        csvService: stepRepos.csv,
+        stepIngestion: stepRepos.ingestion,
         userSettings: userSettings,
         userHealthMetrics: userHealthMetrics,
         clock: clock,

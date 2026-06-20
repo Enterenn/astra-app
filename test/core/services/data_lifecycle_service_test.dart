@@ -2,7 +2,7 @@ import 'dart:io';
 
 import 'package:astra_app/core/database/app_database.dart';
 import 'package:astra_app/core/services/data_lifecycle_service.dart';
-import 'package:astra_app/data/repositories/step_repository.dart';
+
 import 'package:astra_app/data/repositories/user_settings_repository.dart';
 import '../../dev/data_inject_service.dart';
 import 'package:flutter_test/flutter_test.dart';
@@ -10,6 +10,8 @@ import 'package:sqflite/sqflite.dart';
 
 import '../../core/time/fake_time_provider.dart';
 import '../../helpers/sqflite_test_helper.dart';
+import 'package:astra_app/data/repositories/step/step_aggregation_repository.dart';
+import 'package:astra_app/data/repositories/step/step_ingestion_repository.dart';
 
 void main() {
   setUpAll(() async {
@@ -18,7 +20,8 @@ void main() {
 
   group('DataLifecycleService', () {
     late Database db;
-    late StepRepository repository;
+    late StepIngestionRepository stepIngestion;
+    late StepAggregationRepository repository;
     late UserSettingsRepository userSettings;
     late FakeTimeProvider clock;
     late DataLifecycleService service;
@@ -30,7 +33,8 @@ void main() {
         fixedNowUtc: DateTime.utc(2026, 6, 2, 12),
         zoneOffset: const Duration(hours: 2),
       );
-      repository = StepRepository(db: db, clock: clock);
+      stepIngestion = StepIngestionRepository(db);
+      repository = StepAggregationRepository(db, clock: clock);
       userSettings = UserSettingsRepository(db);
       vacuumInvoked = 0;
       service = DataLifecycleService(
@@ -78,7 +82,7 @@ void main() {
 
     test('runMaintenance downsamples and records optimization when forced',
         () async {
-      await DataInjectService(repository: repository).inject90Days(
+      await DataInjectService(repository: stepIngestion).inject90Days(
         clock: clock,
       );
       await userSettings.setLastDatabaseOptimizedAt(clock.snapshot().nowUtc);
@@ -96,7 +100,7 @@ void main() {
     });
 
     test('runMaintenance runs when due without force', () async {
-      await DataInjectService(repository: repository).inject90Days(
+      await DataInjectService(repository: stepIngestion).inject90Days(
         clock: clock,
       );
 
@@ -126,7 +130,7 @@ void main() {
         },
       );
 
-      await DataInjectService(repository: repository).inject90Days(
+      await DataInjectService(repository: stepIngestion).inject90Days(
         clock: clock,
       );
 
@@ -165,7 +169,8 @@ void main() {
         );
         final db = await openAstraDatabase(databasePath: databasePath);
         addTearDown(db.close);
-        final repository = StepRepository(db: db, clock: clock);
+        final stepIngestion = StepIngestionRepository(db);
+        final repository = StepAggregationRepository(db, clock: clock);
         final service = DataLifecycleService(
           db: db,
           databasePath: databasePath,
@@ -176,7 +181,7 @@ void main() {
           optimizeAndVacuum: runPragmaOptimizeAndVacuumOnWorkerIsolate,
         );
 
-        await DataInjectService(repository: repository).inject90Days(
+        await DataInjectService(repository: stepIngestion).inject90Days(
           clock: clock,
         );
 
@@ -205,7 +210,8 @@ void main() {
       );
       final db = await openAstraDatabase(databasePath: inMemoryDatabasePath);
       addTearDown(db.close);
-      final repository = StepRepository(db: db, clock: clock);
+      final stepIngestion2 = StepIngestionRepository(db);
+      final repository = StepAggregationRepository(db, clock: clock);
       final service = DataLifecycleService(
         db: db,
         databasePath: inMemoryDatabasePath,
@@ -215,7 +221,7 @@ void main() {
         optimizeAndVacuum: (_, _) async {},
       );
 
-      await DataInjectService(repository: repository).inject90Days(
+      await DataInjectService(repository: stepIngestion2).inject90Days(
         clock: clock,
       );
 
@@ -236,10 +242,11 @@ void main() {
       );
       final db = await openAstraDatabase(databasePath: databasePath);
       addTearDown(db.close);
-      final repository = StepRepository(db: db, clock: clock);
+      final stepIngestion3 = StepIngestionRepository(db);
+      final repository = StepAggregationRepository(db, clock: clock);
       final userSettings = UserSettingsRepository(db);
 
-      await DataInjectService(repository: repository).inject90Days(
+      await DataInjectService(repository: stepIngestion3).inject90Days(
         clock: clock,
       );
 

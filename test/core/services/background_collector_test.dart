@@ -9,7 +9,7 @@ import 'package:astra_app/data/datasources/step_normalizer.dart';
 import 'package:astra_app/data/models/normalized_step_bucket.dart';
 import 'package:astra_app/data/models/step_reading.dart';
 import 'package:astra_app/data/repositories/ingestion_baseline_repository.dart';
-import 'package:astra_app/data/repositories/step_repository.dart';
+
 import 'package:astra_app/data/repositories/user_health_metrics_repository.dart';
 import 'package:astra_app/data/repositories/user_settings_repository.dart';
 import 'package:flutter_test/flutter_test.dart';
@@ -18,6 +18,8 @@ import 'package:sqflite/sqflite.dart';
 
 import '../../core/time/fake_time_provider.dart';
 import '../../helpers/sqflite_test_helper.dart';
+import 'package:astra_app/data/repositories/step/step_ingestion_repository.dart';
+import 'package:astra_app/data/repositories/step/step_aggregation_repository.dart';
 
 void main() {
   setUpAll(() async {
@@ -26,7 +28,8 @@ void main() {
 
   group('BackgroundCollector', () {
     late Database db;
-    late StepRepository repository;
+    late StepIngestionRepository repository;
+    late StepAggregationRepository stepAggregation;
     late StepNormalizer normalizer;
     late IngestionBaselineRepository baselineRepository;
     late UserSettingsRepository userSettings;
@@ -39,7 +42,8 @@ void main() {
         fixedNowUtc: DateTime.utc(2026, 6, 2, 8),
         zoneOffset: const Duration(hours: 2),
       );
-      repository = StepRepository(db: db, clock: clock);
+      repository = StepIngestionRepository(db);
+      stepAggregation = StepAggregationRepository(db, clock: clock);
       normalizer = StepNormalizer(clock: clock);
       baselineRepository = IngestionBaselineRepository(db);
       userSettings = UserSettingsRepository(db);
@@ -86,6 +90,7 @@ void main() {
         ],
         normalizer: normalizer,
         repository: repository,
+        stepAggregation: stepAggregation,
         baselineRepository: baselineRepository,
         sourceTimeout: const Duration(milliseconds: 10),
       )..registerOnIngestionComplete(() => callbackCount += 1);
@@ -119,6 +124,7 @@ void main() {
         ],
         normalizer: normalizer,
         repository: repository,
+        stepAggregation: stepAggregation,
         baselineRepository: baselineRepository,
         sourceTimeout: const Duration(milliseconds: 10),
       );
@@ -133,6 +139,7 @@ void main() {
         sources: [_FakeStepSource(const [])],
         normalizer: normalizer,
         repository: repository,
+        stepAggregation: stepAggregation,
         baselineRepository: baselineRepository,
         sourceTimeout: const Duration(milliseconds: 10),
       )..registerOnIngestionComplete(() => callbackCount += 1);
@@ -159,6 +166,7 @@ void main() {
         ],
         normalizer: normalizer,
         repository: repository,
+        stepAggregation: stepAggregation,
         baselineRepository: baselineRepository,
         sourceTimeout: const Duration(milliseconds: 10),
       );
@@ -184,6 +192,7 @@ void main() {
         ],
         normalizer: normalizer,
         repository: repository,
+        stepAggregation: stepAggregation,
         baselineRepository: baselineRepository,
         sourceTimeout: const Duration(milliseconds: 10),
       );
@@ -215,6 +224,7 @@ void main() {
         ],
         normalizer: normalizer,
         repository: repository,
+        stepAggregation: stepAggregation,
         baselineRepository: baselineRepository,
         sourceTimeout: const Duration(seconds: 1),
       );
@@ -230,6 +240,7 @@ void main() {
         sources: [_NeverEmittingStepSource()],
         normalizer: normalizer,
         repository: repository,
+        stepAggregation: stepAggregation,
         baselineRepository: baselineRepository,
         sourceTimeout: const Duration(milliseconds: 10),
       );
@@ -255,6 +266,7 @@ void main() {
         ],
         normalizer: normalizer,
         repository: repository,
+        stepAggregation: stepAggregation,
         baselineRepository: baselineRepository,
         sourceTimeout: const Duration(milliseconds: 10),
       );
@@ -282,6 +294,7 @@ void main() {
         ],
         normalizer: normalizer,
         repository: repository,
+        stepAggregation: stepAggregation,
         baselineRepository: baselineRepository,
         sourceTimeout: const Duration(milliseconds: 10),
       )..registerOnIngestionComplete(() => callbackCount += 1);
@@ -326,6 +339,7 @@ void main() {
           ],
           normalizer: normalizer,
           repository: repository,
+          stepAggregation: stepAggregation,
           baselineRepository: baselineRepository,
           userSettings: userSettings,
         userHealthMetrics: userHealthMetrics,
@@ -364,6 +378,7 @@ void main() {
         sources: [_FakeStepSource(const [])],
         normalizer: normalizer,
         repository: repository,
+        stepAggregation: stepAggregation,
         baselineRepository: baselineRepository,
         userSettings: userSettings,
         userHealthMetrics: userHealthMetrics,
@@ -395,6 +410,7 @@ void main() {
         sources: [_FakeStepSource(const [])],
         normalizer: normalizer,
         repository: repository,
+        stepAggregation: stepAggregation,
         baselineRepository: baselineRepository,
         userSettings: userSettings,
         userHealthMetrics: userHealthMetrics,
@@ -424,6 +440,7 @@ void main() {
         sources: [_FakeStepSource(const [])],
         normalizer: normalizer,
         repository: repository,
+        stepAggregation: stepAggregation,
         baselineRepository: baselineRepository,
         userSettings: userSettings,
         userHealthMetrics: userHealthMetrics,
@@ -453,6 +470,7 @@ void main() {
         sources: [_FakeStepSource(const [])],
         normalizer: normalizer,
         repository: repository,
+        stepAggregation: stepAggregation,
         baselineRepository: baselineRepository,
         userSettings: userSettings,
         userHealthMetrics: userHealthMetrics,
@@ -481,6 +499,7 @@ void main() {
         sources: [_FakeStepSource(const [])],
         normalizer: normalizer,
         repository: repository,
+        stepAggregation: stepAggregation,
         baselineRepository: baselineRepository,
         userSettings: userSettings,
         userHealthMetrics: userHealthMetrics,
@@ -509,6 +528,7 @@ void main() {
         sources: [_FakeStepSource(const [])],
         normalizer: normalizer,
         repository: repository,
+        stepAggregation: stepAggregation,
         baselineRepository: baselineRepository,
         userSettings: userSettings,
         userHealthMetrics: userHealthMetrics,
@@ -548,6 +568,7 @@ void main() {
         ],
         normalizer: normalizer,
         repository: repository,
+        stepAggregation: stepAggregation,
         baselineRepository: baselineRepository,
         userSettings: userSettings,
         userHealthMetrics: userHealthMetrics,
@@ -585,6 +606,7 @@ void main() {
         ],
         normalizer: normalizer,
         repository: repository,
+        stepAggregation: stepAggregation,
         baselineRepository: baselineRepository,
         userSettings: userSettings,
         userHealthMetrics: userHealthMetrics,
@@ -614,6 +636,7 @@ void main() {
         sources: [_FakeStepSource(const [])],
         normalizer: normalizer,
         repository: repository,
+        stepAggregation: stepAggregation,
         baselineRepository: baselineRepository,
         userSettings: userSettings,
         userHealthMetrics: userHealthMetrics,
@@ -656,6 +679,7 @@ void main() {
         sources: [_FakeStepSource(const [])],
         normalizer: normalizer,
         repository: repository,
+        stepAggregation: stepAggregation,
         baselineRepository: baselineRepository,
         userSettings: userSettings,
         userHealthMetrics: userHealthMetrics,
@@ -704,6 +728,7 @@ void main() {
           ],
           normalizer: normalizer,
           repository: repository,
+          stepAggregation: stepAggregation,
           baselineRepository: baselineRepository,
           userSettings: userSettings,
         userHealthMetrics: userHealthMetrics,

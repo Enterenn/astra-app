@@ -2,7 +2,7 @@
 library;
 
 import 'package:astra_app/core/database/app_database.dart';
-import 'package:astra_app/data/repositories/step_repository.dart';
+
 import 'package:astra_app/data/repositories/user_health_metrics_repository.dart';
 import 'chart_benchmark.dart';
 import 'data_inject_service.dart';
@@ -13,8 +13,10 @@ import 'package:astra_app/presentation/cubits/history_state.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:sqflite/sqflite.dart';
 
-import '../core/time/fake_time_provider.dart';
+import 'package:astra_app/data/repositories/step/step_ingestion_repository.dart';
+import 'package:astra_app/data/repositories/step/step_aggregation_repository.dart';
 import '../helpers/sqflite_test_helper.dart';
+import '../core/time/fake_time_provider.dart';
 import 'chart_benchmark_pump.dart';
 
 void main() {
@@ -24,7 +26,7 @@ void main() {
 
   group('ChartBenchmark smoke (shared 90d inject)', () {
     late Database db;
-    late StepRepository repository;
+    late StepIngestionRepository repository;
     late UserHealthMetricsRepository userHealthMetrics;
     late FakeTimeProvider clock;
 
@@ -34,7 +36,7 @@ void main() {
         fixedNowUtc: DateTime.utc(2026, 6, 2, 12),
         zoneOffset: const Duration(hours: 2),
       );
-      repository = StepRepository(db: db, clock: clock);
+      repository = StepIngestionRepository(db);
       userHealthMetrics = UserHealthMetricsRepository(db);
       await DataInjectService(repository: repository).inject90Days(clock: clock);
     });
@@ -73,7 +75,7 @@ void main() {
       );
       addTearDown(emptyDb.close);
 
-      final emptyRepo = StepRepository(db: emptyDb, clock: clock);
+      final emptyRepo = StepIngestionRepository(emptyDb);
       final emptyHealth = UserHealthMetricsRepository(emptyDb);
 
       final result = await runChartBenchmark(
@@ -191,7 +193,7 @@ void main() {
 
     test('benchmarkToggleRender toggles 7d and 30d on warmed cubit', () async {
       final cubit = HistoryCubit(
-        stepRepository: repository,
+        stepAggregation: StepAggregationRepository(db, clock: clock),
         userHealthMetrics: userHealthMetrics,
       );
       addTearDown(cubit.close);
@@ -208,7 +210,7 @@ void main() {
 
   group('ChartBenchmark compacted profile', () {
     late Database db;
-    late StepRepository repository;
+    late StepIngestionRepository repository;
     late UserHealthMetricsRepository userHealthMetrics;
     late FakeTimeProvider clock;
 
@@ -218,11 +220,11 @@ void main() {
         fixedNowUtc: DateTime.utc(2026, 6, 2, 12),
         zoneOffset: const Duration(hours: 2),
       );
-      repository = StepRepository(db: db, clock: clock);
+      repository = StepIngestionRepository(db);
       userHealthMetrics = UserHealthMetricsRepository(db);
       await DataInjectService(repository: repository).inject90Days(clock: clock);
       await LifecycleSimulator(
-        repository: repository,
+        repository: StepAggregationRepository(db, clock: clock),
         clock: clock,
       ).simulateDownsampling();
     });

@@ -98,7 +98,7 @@ development_status:
   epic-18: in-progress
   18-1-extract-app-lifecycle-coordinator-from-app-dart: done
   18-2-split-user-preferences-repository: done
-  18-3-split-step-repository-and-extract-csv-service: in-progress
+  18-3-split-step-repository-and-extract-csv-service: review
   epic-18-retrospective: optional
 
   epic-19: backlog

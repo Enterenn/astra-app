@@ -2,7 +2,7 @@ import 'package:astra_app/core/constants/astra_theme.dart';
 import 'package:astra_app/core/database/app_database.dart';
 import 'package:astra_app/core/database/astra_database_session.dart';
 import 'package:astra_app/core/time/calendar_week.dart';
-import 'package:astra_app/data/repositories/step_repository.dart';
+
 import 'package:astra_app/data/repositories/user_health_metrics_repository.dart';
 import 'package:astra_app/data/repositories/user_settings_repository.dart';
 import 'package:astra_app/presentation/cubits/today_cubit.dart';
@@ -21,6 +21,7 @@ import 'package:sqflite/sqflite.dart';
 import '../../core/time/fake_time_provider.dart';
 import '../../helpers/astra_theme_test_helper.dart';
 import '../../helpers/sqflite_test_helper.dart';
+import 'package:astra_app/data/repositories/step/step_aggregation_repository.dart';
 
 Color? goalRingLoadingSkeletonPrimaryBarColor(WidgetTester tester) {
   final skeleton = find.byKey(const Key('goal_ring_loading_skeleton'));
@@ -39,7 +40,7 @@ Color? goalRingLoadingSkeletonPrimaryBarColor(WidgetTester tester) {
 
 class _SeededTodayCubit extends TodayCubit {
   _SeededTodayCubit({
-    required super.stepRepository,
+    required super.stepAggregation,
     required super.userSettings,
     required super.userHealthMetrics,
     required super.clock,
@@ -66,7 +67,7 @@ class _SeededTodayCubit extends TodayCubit {
 
 class _TrackingRefreshCubit extends _SeededTodayCubit {
   _TrackingRefreshCubit({
-    required super.stepRepository,
+    required super.stepAggregation,
     required super.userSettings,
     required super.userHealthMetrics,
     required super.clock,
@@ -252,7 +253,7 @@ void main() {
     late Database db;
     late UserSettingsRepository userSettings;
     late UserHealthMetricsRepository userHealthMetrics;
-    late StepRepository stepRepository;
+    late StepAggregationRepository stepAggregation;
     late FakeTimeProvider clock;
     late UnitsCubit unitsCubit;
     final buildCounts = <String, int>{};
@@ -269,7 +270,7 @@ void main() {
       );
       userSettings = UserSettingsRepository(session);
       userHealthMetrics = UserHealthMetricsRepository(session, clock: clock);
-      stepRepository = StepRepository(db: db, clock: clock);
+      stepAggregation = StepAggregationRepository(db, clock: clock);
       unitsCubit = UnitsCubit(userSettings: userSettings);
       buildCounts.clear();
       todaySectionBuildProbe = (section) {
@@ -300,7 +301,7 @@ void main() {
 
     _SeededTodayCubit buildCubit(TodayState state) {
       return _SeededTodayCubit(
-        stepRepository: stepRepository,
+        stepAggregation: stepAggregation,
         userSettings: userSettings,
         userHealthMetrics: userHealthMetrics,
         clock: clock,
@@ -626,7 +627,7 @@ void main() {
     testWidgets('stale banner tap invokes cubit refresh', (tester) async {
       var refreshCalls = 0;
       final cubit = _TrackingRefreshCubit(
-        stepRepository: stepRepository,
+        stepAggregation: stepAggregation,
         userSettings: userSettings,
         userHealthMetrics: userHealthMetrics,
         clock: clock,

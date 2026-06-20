@@ -1,6 +1,7 @@
 import 'package:astra_app/core/time/time_provider.dart';
 import 'package:astra_app/data/models/chart_day_aggregate.dart';
-import 'package:astra_app/data/repositories/step_repository.dart';
+import 'package:astra_app/data/repositories/step/step_aggregation_repository.dart';
+import 'package:astra_app/data/repositories/step/step_ingestion_repository.dart';
 import 'package:astra_app/data/repositories/user_health_metrics_repository.dart';
 import 'package:astra_app/data/repositories/user_settings_repository.dart';
 import 'package:astra_app/presentation/cubits/history_cubit.dart';
@@ -67,7 +68,7 @@ typedef ChartBenchmarkWidgetPump = Future<void> Function({
 
 /// Runs KPI-01 chart query + toggle/render benchmark in debug builds only.
 Future<ChartBenchmarkResult> runChartBenchmark({
-  required StepRepository repository,
+  required StepIngestionRepository repository,
   required TimeProvider clock,
   Database? db,
   UserSettingsRepository? userSettings,
@@ -96,8 +97,9 @@ Future<ChartBenchmarkResult> runChartBenchmark({
     await DataInjectService(repository: repository).inject90Days(clock: clock);
 
     if (runLifecycleCompaction) {
+      final simAggregation = StepAggregationRepository(db!, clock: clock);
       await LifecycleSimulator(
-        repository: repository,
+        repository: simAggregation,
         clock: clock,
       ).simulateDownsampling();
     }
@@ -107,7 +109,9 @@ Future<ChartBenchmarkResult> runChartBenchmark({
     );
   }
 
-  final rowCount = await repository.countStepSamples();
+  final rowCountDb = db ?? repository.db;
+  final aggregation = StepAggregationRepository(rowCountDb, clock: clock);
+  final rowCount = await aggregation.countStepSamples();
   final datasetLabel = _datasetLabelForRowCount(rowCount);
   final threshold = passThresholdMs ?? kChartBenchmarkPassThresholdMs;
   final measureQuery = profile == ChartBenchmarkProfile.fullStack;
@@ -115,7 +119,7 @@ Future<ChartBenchmarkResult> runChartBenchmark({
   final health =
       userHealthMetrics ?? UserHealthMetricsRepository(repository.db);
   final cubit = HistoryCubit(
-    stepRepository: repository,
+    stepAggregation: aggregation,
     userHealthMetrics: health,
   );
 
@@ -136,7 +140,7 @@ Future<ChartBenchmarkResult> runChartBenchmark({
       var queryMs = 0.0;
       if (measureQuery) {
         final queryStopwatch = Stopwatch()..start();
-        await repository.getChartDailyAggregates(days: 30);
+        await aggregation.getChartDailyAggregates(days: 30);
         queryStopwatch.stop();
         queryMs = queryStopwatch.elapsedMicroseconds / 1000.0;
       }
@@ -194,7 +198,7 @@ Future<ChartBenchmarkResult> runChartBenchmark({
 
 /// Debug entry point mirroring [runDevInject].
 Future<ChartBenchmarkResult> runDevChartBenchmark({
-  required StepRepository repository,
+  required StepIngestionRepository repository,
   required TimeProvider clock,
   Database? db,
   UserSettingsRepository? userSettings,

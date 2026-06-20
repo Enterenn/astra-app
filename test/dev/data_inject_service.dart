@@ -7,8 +7,9 @@ import 'package:astra_app/core/time/timestamp_codec.dart';
 import 'package:astra_app/data/datasources/data_ingestion_source.dart';
 import 'package:astra_app/data/models/normalized_step_bucket.dart';
 import 'package:astra_app/data/models/timeseries_sample_model.dart';
-import 'package:astra_app/data/repositories/step_repository.dart';
+
 import 'package:flutter/foundation.dart';
+import 'package:astra_app/data/repositories/step/step_ingestion_repository.dart';
 
 const kDevInjectDayCount = 90;
 const kDevInjectBucketsPerDay = 288;
@@ -33,7 +34,7 @@ class DataInjectService {
     Random? rng,
   }) : _rng = rng ?? Random(42);
 
-  final StepRepository repository;
+  final StepIngestionRepository repository;
   final Random _rng;
 
   Future<DataInjectResult> inject90Days({required TimeProvider clock}) async {
@@ -95,7 +96,7 @@ class DataInjectService {
 }
 
 Future<DataInjectResult> runDevInject({
-  required StepRepository repository,
+  required StepIngestionRepository repository,
   required TimeProvider clock,
   Random? rng,
 }) async {

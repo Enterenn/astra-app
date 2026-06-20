@@ -2,26 +2,29 @@ import 'package:astra_app/core/database/app_database.dart';
 import 'package:astra_app/data/datasources/data_ingestion_source.dart';
 import 'package:astra_app/data/models/normalized_step_bucket.dart';
 import 'package:astra_app/data/models/timeseries_sample_model.dart';
-import 'package:astra_app/data/repositories/step_repository.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:sqflite/sqflite.dart';
 
 import '../../core/time/fake_time_provider.dart';
 import '../../helpers/sqflite_test_helper.dart';
+import 'package:astra_app/data/repositories/step/step_ingestion_repository.dart';
+import 'package:astra_app/data/repositories/step/step_aggregation_repository.dart';
 
 void main() {
   setUpAll(() async {
     await setUpSqfliteFfi();
   });
 
-  group('StepRepository dev batch insert', () {
+  group('StepIngestionRepository dev batch insert', () {
     late Database db;
-    late StepRepository repository;
+    late StepIngestionRepository repository;
+    late StepAggregationRepository aggregation;
 
     setUp(() async {
       db = await openAstraDatabase(databasePath: inMemoryDatabasePath);
-      repository = StepRepository(
-        db: db,
+      repository = StepIngestionRepository(db);
+      aggregation = StepAggregationRepository(
+        db,
         clock: FakeTimeProvider(
           fixedNowUtc: DateTime.utc(2026, 6, 2, 8),
           zoneOffset: const Duration(hours: 2),
@@ -34,11 +37,11 @@ void main() {
     });
 
     test('insertDevSamplesBatch inserts all samples in one transaction', () async {
-      expect(await repository.countStepSamples(), 0);
+      expect(await aggregation.countStepSamples(), 0);
 
       await repository.insertDevSamplesBatch(_sampleBatch(count: 3));
 
-      expect(await repository.countStepSamples(), 3);
+      expect(await aggregation.countStepSamples(), 3);
     });
 
     test('countStepSamplesByResolution groups rows by resolution', () async {
@@ -60,7 +63,7 @@ void main() {
         ),
       ]);
 
-      final counts = await repository.countStepSamplesByResolution();
+      final counts = await aggregation.countStepSamplesByResolution();
 
       expect(counts[kFiveMinuteResolution], 2);
       expect(counts[kHourlyResolution], 1);
@@ -77,7 +80,7 @@ void main() {
         throwsA(isA<DatabaseException>()),
       );
 
-      expect(await repository.countStepSamples(), 0);
+      expect(await aggregation.countStepSamples(), 0);
     });
 
     test('replaceExistingSteps rolls back delete when insert fails', () async {
@@ -95,7 +98,7 @@ void main() {
         throwsA(isA<DatabaseException>()),
       );
 
-      expect(await repository.countStepSamples(), 3);
+      expect(await aggregation.countStepSamples(), 3);
     });
   });
 }

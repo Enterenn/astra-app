@@ -5,7 +5,7 @@ import 'package:astra_app/core/database/app_database.dart';
 import 'package:astra_app/core/time/timestamp_codec.dart';
 import 'package:astra_app/data/datasources/data_ingestion_source.dart';
 import 'package:astra_app/data/models/normalized_step_bucket.dart';
-import 'package:astra_app/data/repositories/step_repository.dart';
+
 import 'data_inject_service.dart';
 import 'package:astra_app/core/lifecycle/lifecycle_compaction.dart';
 import 'lifecycle_simulator.dart';
@@ -14,6 +14,8 @@ import 'package:sqflite/sqflite.dart';
 
 import '../core/time/fake_time_provider.dart';
 import '../helpers/sqflite_test_helper.dart';
+import 'package:astra_app/data/repositories/step/step_aggregation_repository.dart';
+import 'package:astra_app/data/repositories/step/step_ingestion_repository.dart';
 
 void main() {
   setUpAll(() async {
@@ -22,7 +24,8 @@ void main() {
 
   group('LifecycleSimulator.simulateDownsampling', () {
     late Database db;
-    late StepRepository repository;
+    late StepIngestionRepository stepIngestion;
+    late StepAggregationRepository repository;
     late FakeTimeProvider clock;
 
     setUp(() async {
@@ -31,7 +34,8 @@ void main() {
         fixedNowUtc: DateTime.utc(2026, 6, 2, 12),
         zoneOffset: const Duration(hours: 2),
       );
-      repository = StepRepository(db: db, clock: clock);
+      stepIngestion = StepIngestionRepository(db);
+      repository = StepAggregationRepository(db, clock: clock);
     });
 
     tearDown(() async {
@@ -39,7 +43,7 @@ void main() {
     });
 
     test('compacts injected dataset to expected resolution breakdown', () async {
-      await DataInjectService(repository: repository).inject90Days(
+      await DataInjectService(repository: stepIngestion).inject90Days(
         clock: clock,
       );
 
@@ -59,7 +63,7 @@ void main() {
     });
 
     test('preserves total step counts across compaction', () async {
-      await DataInjectService(repository: repository).inject90Days(
+      await DataInjectService(repository: stepIngestion).inject90Days(
         clock: clock,
       );
 
@@ -77,7 +81,7 @@ void main() {
     });
 
     test('skips incomplete hour groups without merging across gaps', () async {
-      await DataInjectService(repository: repository).inject90Days(
+      await DataInjectService(repository: stepIngestion).inject90Days(
         clock: clock,
       );
 
@@ -171,7 +175,8 @@ void main() {
 
   group('runDevLifecycleSimulate', () {
     late Database db;
-    late StepRepository repository;
+    late StepIngestionRepository stepIngestion;
+    late StepAggregationRepository repository;
     late FakeTimeProvider clock;
 
     setUp(() async {
@@ -180,7 +185,8 @@ void main() {
         fixedNowUtc: DateTime.utc(2026, 6, 2, 12),
         zoneOffset: const Duration(hours: 2),
       );
-      repository = StepRepository(db: db, clock: clock);
+      stepIngestion = StepIngestionRepository(db);
+      repository = StepAggregationRepository(db, clock: clock);
     });
 
     tearDown(() async {
@@ -188,7 +194,7 @@ void main() {
     });
 
     test('delegates to simulateDownsampling in debug builds', () async {
-      await DataInjectService(repository: repository).inject90Days(
+      await DataInjectService(repository: stepIngestion).inject90Days(
         clock: clock,
       );
 

@@ -9,8 +9,8 @@ import 'package:flutter_test/flutter_test.dart';
 
 import '../../core/time/fake_time_provider.dart';
 
-class _FakeStepRepository implements StepRepositoryContract {
-  _FakeStepRepository(this.clock);
+class _FakeStepAggregationRepository implements StepAggregationRepositoryContract {
+  _FakeStepAggregationRepository(this.clock);
 
   @override
   final TimeProvider clock;
@@ -36,6 +36,11 @@ class _FakeStepRepository implements StepRepositoryContract {
       ),
     );
   }
+
+  @override
+  Future<List<TimeseriesSampleModel>> getActiveBucketsForLocalDay(
+    DateTime localDay,
+  ) async => [];
 
   @override
   dynamic noSuchMethod(Invocation invocation) => super.noSuchMethod(invocation);
@@ -80,7 +85,7 @@ void main() {
 
     test('refresh emits noPermission when activity permission denied', () async {
       final cubit = TodayCubit(
-        stepRepository: _FakeStepRepository(clock),
+        stepAggregation: _FakeStepAggregationRepository(clock),
         userSettings: _FakeUserSettingsRepository(),
         userHealthMetrics: _FakeUserHealthMetricsRepository(),
         clock: clock,
@@ -95,7 +100,7 @@ void main() {
 
     test('refresh emits empty when permission granted and mocked zero steps', () async {
       final cubit = TodayCubit(
-        stepRepository: _FakeStepRepository(clock),
+        stepAggregation: _FakeStepAggregationRepository(clock),
         userSettings: _FakeUserSettingsRepository(),
         userHealthMetrics: _FakeUserHealthMetricsRepository(),
         clock: clock,

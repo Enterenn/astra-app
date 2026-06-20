@@ -39,9 +39,9 @@ class _ChartBenchmarkDevFabState extends State<ChartBenchmarkDevFab> {
 
     try {
       final result = await runDevChartBenchmark(
-        repository: widget.deps.stepRepository,
+        repository: widget.deps.stepIngestion,
         clock: widget.deps.timeProvider,
-        db: widget.deps.stepRepository.db,
+        db: widget.deps.stepIngestion.db,
         userHealthMetrics: widget.deps.userHealthMetrics,
         pumpChart: pumpChart,
         profile: ChartBenchmarkProfile.fullStack,
