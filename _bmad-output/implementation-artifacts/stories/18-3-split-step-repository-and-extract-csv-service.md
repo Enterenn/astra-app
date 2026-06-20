@@ -1,6 +1,6 @@
 # Story 18.3: Split StepRepository and Extract CsvService
 
-Status: review
+Status: done
 
 <!-- Refacto Epic 18 — branch `refacto` only until merge review -->
 <!-- Source: epics-refacto.md Story 18-3 · refactoring-audit-master-v0.6.1.md §1.2 · REF-19 -->
@@ -465,6 +465,8 @@ final aggregates = await stepAggregation.getChartDailyAggregates(days: 7);
 - Sub-task C: committed `12efd70` — AppDependencies + services wiring.
 - Sub-task D (lib/): committed `eaed703` — cubit + AppScaffold wiring.
 - Sub-task E: test suite migrated to split repos (ingestion/aggregation/csv); `StepTestFixtures` helper; `flutter test --exclude-tags slow` green (805 pass, 2 skip). Test file rename (`step_repository_*` → domain names) deferred as optional.
+- Code review polish (2026-06-20): extracted `_step_chart_queries.dart` to bring `StepAggregationRepository` under AC #2 line target; hardened `_FakeStepAggregationRepository` stubs; amended AC #3 below.
+- **Amendement AC #3 (post revue)** — Choix architectural : les interfaces abstraites ciblent la frontière des Cubits. Les services d'infrastructure (`BackgroundCollector`, `DataLifecycleService`, etc.) manipulent directement les classes concrètes scindées pour éviter des abstractions superflues.
 
 ### File List
 
@@ -475,6 +477,7 @@ final aggregates = await stepAggregation.getChartDailyAggregates(days: 7);
 - `lib/data/contracts/step_repository_contract.dart` (deleted)
 - `lib/data/repositories/step/_step_repository_session.dart` (new)
 - `lib/data/repositories/step/_step_sample_bounds.dart` (new)
+- `lib/data/repositories/step/_step_chart_queries.dart` (new)
 - `lib/data/repositories/step/step_ingestion_repository.dart` (new)
 - `lib/data/repositories/step/step_aggregation_repository.dart` (new)
 - `lib/data/services/csv_service.dart` (new)
@@ -499,3 +502,4 @@ final aggregates = await stepAggregation.getChartDailyAggregates(days: 7);
 
 - 2026-06-20: Sub-task A design gate approved.
 - 2026-06-20: Sub-task B–D lib/ — split StepRepository into ingestion, aggregation, CsvService; updated DI, services, cubits.
+- 2026-06-20: Code review polish — extract `_step_chart_queries.dart`, harden contract fakes; story done; Epic 18 closed at `0.8.0+17`.

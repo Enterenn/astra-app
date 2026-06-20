@@ -2,6 +2,8 @@ import 'package:astra_app/core/constants/preference_keys.dart';
 import 'package:astra_app/core/time/time_provider.dart';
 import 'package:astra_app/data/contracts/contracts.dart';
 import 'package:astra_app/data/models/chart_day_aggregate.dart';
+import 'package:astra_app/data/models/chart_month_aggregate.dart';
+import 'package:astra_app/data/models/database_footprint.dart';
 import 'package:astra_app/data/models/timeseries_sample_model.dart';
 import 'package:astra_app/presentation/cubits/today_cubit.dart';
 import 'package:astra_app/presentation/cubits/today_state.dart';
@@ -40,10 +42,21 @@ class _FakeStepAggregationRepository implements StepAggregationRepositoryContrac
   @override
   Future<List<TimeseriesSampleModel>> getActiveBucketsForLocalDay(
     DateTime localDay,
-  ) async => [];
+  ) async =>
+      [];
 
   @override
-  dynamic noSuchMethod(Invocation invocation) => super.noSuchMethod(invocation);
+  Future<List<ChartMonthAggregate>> getChartMonthlyAggregates({
+    required int months,
+  }) async =>
+      [];
+
+  @override
+  Future<int> countStepSamples() async => 0;
+
+  @override
+  Future<DatabaseFootprint> getFootprint({required String databasePath}) async =>
+      const DatabaseFootprint(sampleCount: 0, fileSizeBytes: 0);
 }
 
 class _FakeUserSettingsRepository implements UserSettingsRepositoryContract {
