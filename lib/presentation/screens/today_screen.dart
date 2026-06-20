@@ -430,12 +430,11 @@ class _ActivityStatsSection extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return BlocSelector<TodayCubit, TodayState, Object>(
+    return BlocSelector<TodayCubit, TodayState, _ActivityStatsViewModel>(
       key: sectionKey,
-      selector: todayActivityStatsSelectorSlice,
-      builder: (context, slice) {
+      selector: _ActivityStatsViewModel.fromState,
+      builder: (context, vm) {
         _probeSectionBuild('activityStats');
-        final vm = slice as _ActivityStatsViewModel;
         return ElevatedCard(
           child: ActivityStatsRow(
             status: vm.status,

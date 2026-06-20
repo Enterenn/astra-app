@@ -511,6 +511,37 @@ void main() {
       await _disposeScaffold(tester);
     });
 
+    testWidgets('opening Trends tab triggers history refresh', (tester) async {
+      _RefreshCountingHistoryCubit? historyCubit;
+
+      await _pumpAppScaffold(
+        tester,
+        AppScaffold(
+          deps: deps,
+          createTodayCubit: _testTodayCubit,
+          createHistoryCubit: (dependencies) {
+            historyCubit = _RefreshCountingHistoryCubit(
+              stepAggregation: dependencies.stepAggregation,
+              userHealthMetrics: dependencies.userHealthMetrics,
+            );
+            return historyCubit!;
+          },
+        ),
+        userSettings: deps.userSettings,
+      );
+      await tester.pump();
+
+      expect(historyCubit!.refreshCallCount, 0);
+
+      await tester.tap(find.byIcon(PhosphorIconsRegular.chartBar));
+      await tester.pump();
+      await _awaitHistoryRefresh(tester);
+
+      expect(historyCubit!.refreshCallCount, 1);
+
+      await _disposeScaffold(tester);
+    });
+
     testWidgets('returning to Today tab triggers another refresh', (
       tester,
     ) async {

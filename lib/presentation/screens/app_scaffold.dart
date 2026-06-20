@@ -252,6 +252,23 @@ class _AppScaffoldState extends State<AppScaffold> {
     }
   }
 
+  void _clearMenuDestinationGuard(MenuHubDestination destination) {
+    if (_menuStackTopDestination == destination) {
+      _menuStackTopDestination = null;
+    }
+  }
+
+  Widget _wrapMenuPushRoute(MenuHubDestination destination, Widget child) {
+    return PopScope(
+      onPopInvokedWithResult: (didPop, _) {
+        if (didPop) {
+          _clearMenuDestinationGuard(destination);
+        }
+      },
+      child: child,
+    );
+  }
+
   void _onMenuDestinationSelected(MenuHubDestination destination) {
     final navigator = _menuNavigatorKey.currentState;
     if (navigator == null) {
@@ -271,11 +288,14 @@ class _AppScaffoldState extends State<AppScaffold> {
             settings: const RouteSettings(name: 'menu/profile'),
             builder: (context) {
               final l10n = AppLocalizations.of(context);
-              return BlocProvider.value(
-                value: _profileCubit,
-                child: SecondaryScreenShell(
-                  title: l10n.menuProfile,
-                  child: const ProfileScreen(showInlineTitle: false),
+              return _wrapMenuPushRoute(
+                destination,
+                BlocProvider.value(
+                  value: _profileCubit,
+                  child: SecondaryScreenShell(
+                    title: l10n.menuProfile,
+                    child: const ProfileScreen(showInlineTitle: false),
+                  ),
                 ),
               );
             },
@@ -288,11 +308,14 @@ class _AppScaffoldState extends State<AppScaffold> {
             settings: const RouteSettings(name: 'menu/data'),
             builder: (context) {
               final l10n = AppLocalizations.of(context);
-              return BlocProvider.value(
-                value: _myDataCubit,
-                child: SecondaryScreenShell(
-                  title: l10n.menuData,
-                  child: const MyDataScreen(showInlineTitle: false),
+              return _wrapMenuPushRoute(
+                destination,
+                BlocProvider.value(
+                  value: _myDataCubit,
+                  child: SecondaryScreenShell(
+                    title: l10n.menuData,
+                    child: const MyDataScreen(showInlineTitle: false),
+                  ),
                 ),
               );
             },
@@ -303,9 +326,12 @@ class _AppScaffoldState extends State<AppScaffold> {
         pushFuture = navigator.push<void>(
           MaterialPageRoute<void>(
             settings: const RouteSettings(name: 'menu/settings'),
-            builder: (context) => BlocProvider.value(
-              value: _profileCubit,
-              child: const SettingsScreen(),
+            builder: (context) => _wrapMenuPushRoute(
+              destination,
+              BlocProvider.value(
+                value: _profileCubit,
+                child: const SettingsScreen(),
+              ),
             ),
           ),
         );
@@ -313,15 +339,18 @@ class _AppScaffoldState extends State<AppScaffold> {
         pushFuture = navigator.push<void>(
           MaterialPageRoute<void>(
             settings: const RouteSettings(name: 'menu/about'),
-            builder: (context) => const AboutScreen(),
+            builder: (context) => _wrapMenuPushRoute(
+              destination,
+              const AboutScreen(),
+            ),
           ),
         );
     }
 
     unawaited(
       pushFuture.whenComplete(() {
-        if (mounted && _menuStackTopDestination == destination) {
-          _menuStackTopDestination = null;
+        if (mounted) {
+          _clearMenuDestinationGuard(destination);
         }
       }),
     );

@@ -1,6 +1,6 @@
 # Story 20.3: Tab Navigation Haptic Feedback
 
-Status: review
+Status: done
 
 <!-- Refacto Epic 20 — branch `refacto` only until merge review -->
 <!-- Source: epics-refacto.md Story 20-3 · refactoring-audit-master-v0.6.1.md §5.3 · REF-25 -->
@@ -282,8 +282,10 @@ Composer (Cursor agent)
 ### File List
 
 - `lib/presentation/screens/app_scaffold.dart` (modified)
+- `lib/presentation/screens/today_screen.dart` (modified — typed activity-stats BlocSelector)
 - `test/presentation/screens/app_scaffold_test.dart` (modified)
 
 ## Change Log
 
+- 2026-06-21 — Code review follow-up: typed activity-stats BlocSelector, menu guard cleared on pop, Trends refresh regression test.
 - 2026-06-21 — Story 20-3: tab navigation haptic feedback in `AppScaffold._onDestinationSelected` + widget test contract (824 fast tests green).
