@@ -237,7 +237,7 @@ class _AppScaffoldState extends State<AppScaffold> {
     if (index == _selectedIndex) {
       return;
     }
-    HapticFeedback.selectionClick();
+    unawaited(HapticFeedback.selectionClick());
     final returningToToday = index == 0 && _selectedIndex != 0;
     final openingTrends = index == 1 && _selectedIndex != 1;
     setState(() {
