@@ -2,6 +2,7 @@ import 'dart:async';
 
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:flutter_localizations/flutter_localizations.dart';
 
 import 'core/constants/astra_theme.dart';
 import 'core/di/app_dependencies.dart';
@@ -15,6 +16,7 @@ import 'presentation/cubits/my_data_cubit.dart';
 import 'presentation/cubits/today_cubit.dart';
 import 'presentation/onboarding/onboarding_flow.dart';
 import 'presentation/screens/app_scaffold.dart';
+import 'l10n/app_localizations.dart';
 
 export 'core/services/app_lifecycle_coordinator.dart'
     show
@@ -141,6 +143,23 @@ class _AstraAppState extends State<AstraApp> with WidgetsBindingObserver {
             darkTheme: buildAstraDarkTheme(preset: themeState.accentPreset),
             themeMode: themeState.materialThemeMode,
             themeAnimationDuration: const Duration(milliseconds: 120),
+            localizationsDelegates: const [
+              AppLocalizations.delegate,
+              GlobalMaterialLocalizations.delegate,
+              GlobalWidgetsLocalizations.delegate,
+              GlobalCupertinoLocalizations.delegate,
+            ],
+            supportedLocales: AppLocalizations.supportedLocales,
+            localeResolutionCallback: (locale, supportedLocales) {
+              if (locale != null) {
+                for (final supported in supportedLocales) {
+                  if (supported.languageCode == locale.languageCode) {
+                    return supported;
+                  }
+                }
+              }
+              return const Locale('en');
+            },
             home: _showMainShell
                 ? AppScaffold(
                     deps: widget.deps,
