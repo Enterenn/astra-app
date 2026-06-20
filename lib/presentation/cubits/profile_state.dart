@@ -1,3 +1,5 @@
+import 'profile_errors.dart';
+
 enum ProfileStatus { loading, ready, error }
 
 class ProfileState {
@@ -7,7 +9,7 @@ class ProfileState {
     this.heightCm,
     this.weightKg,
     this.goalNotificationsEnabled = false,
-    this.errorMessage,
+    this.loadError,
   });
 
   final ProfileStatus status;
@@ -15,7 +17,7 @@ class ProfileState {
   final int? heightCm;
   final double? weightKg;
   final bool goalNotificationsEnabled;
-  final String? errorMessage;
+  final ProfileLoadError? loadError;
 
   const ProfileState.loading() : this(status: ProfileStatus.loading);
 
@@ -40,7 +42,7 @@ class ProfileState {
     int? heightCm,
     double? weightKg,
     bool? goalNotificationsEnabled,
-    String? errorMessage,
+    ProfileLoadError? loadError,
     bool clearDisplayName = false,
     bool clearHeightCm = false,
     bool clearWeightKg = false,
@@ -52,7 +54,7 @@ class ProfileState {
       weightKg: clearWeightKg ? null : (weightKg ?? this.weightKg),
       goalNotificationsEnabled:
           goalNotificationsEnabled ?? this.goalNotificationsEnabled,
-      errorMessage: errorMessage,
+      loadError: loadError,
     );
   }
 }

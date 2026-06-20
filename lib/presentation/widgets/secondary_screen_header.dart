@@ -1,3 +1,4 @@
+import 'package:astra_app/l10n/app_localizations.dart';
 import 'package:flutter/material.dart';
 import 'package:phosphoricons_flutter/phosphoricons_flutter.dart';
 
@@ -16,6 +17,7 @@ class SecondaryScreenHeader extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context);
     final colors = context.astraColors;
 
     return Semantics(
@@ -25,14 +27,14 @@ class SecondaryScreenHeader extends StatelessWidget {
         children: [
           Semantics(
             button: true,
-            label: 'Back',
+            label: l10n.commonBack,
             child: IconButton(
               onPressed: () => Navigator.of(context).pop(),
               icon: Icon(
                 PhosphorIconsRegular.arrowLeft,
                 color: colors.textPrimary,
               ),
-              tooltip: 'Back',
+              tooltip: l10n.commonBack,
             ),
           ),
           const SizedBox(width: AstraSpacing.kSpaceXs),

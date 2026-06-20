@@ -1,3 +1,4 @@
+import 'package:astra_app/l10n/app_localizations.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:permission_handler/permission_handler.dart';
@@ -7,6 +8,7 @@ import '../../core/constants/astra_spacing.dart';
 import '../../core/constants/astra_typography.dart';
 import '../cubits/my_data_cubit.dart';
 import '../cubits/my_data_state.dart';
+import '../l10n/my_data_error_messages.dart';
 import '../widgets/background_status_card.dart';
 import '../widgets/confirm_dialog.dart';
 import '../widgets/data_export_button.dart';
@@ -24,8 +26,6 @@ class MyDataScreen extends StatelessWidget {
 
   final bool showInlineTitle;
 
-  static const _kScreenTitle = 'My Data';
-
   @override
   Widget build(BuildContext context) {
     final colors = context.astraColors;
@@ -37,10 +37,11 @@ class MyDataScreen extends StatelessWidget {
                   !previous.exportSuccessPending &&
                   current.exportSuccessPending,
               listener: (context, state) {
+                final l10n = AppLocalizations.of(context);
                 ScaffoldMessenger.of(context).showSnackBar(
-                  const SnackBar(
-                    content: Text('Export saved'),
-                    duration: Duration(seconds: 3),
+                  SnackBar(
+                    content: Text(l10n.myDataExportSaved),
+                    duration: const Duration(seconds: 3),
                   ),
                 );
                 context.read<MyDataCubit>().ackExportSuccess();
@@ -51,10 +52,11 @@ class MyDataScreen extends StatelessWidget {
                   !previous.importSuccessPending &&
                   current.importSuccessPending,
               listener: (context, state) {
+                final l10n = AppLocalizations.of(context);
                 ScaffoldMessenger.of(context).showSnackBar(
-                  const SnackBar(
-                    content: Text('Import complete'),
-                    duration: Duration(seconds: 3),
+                  SnackBar(
+                    content: Text(l10n.myDataImportComplete),
+                    duration: const Duration(seconds: 3),
                   ),
                 );
                 context.read<MyDataCubit>().ackImportSuccess();
@@ -64,10 +66,11 @@ class MyDataScreen extends StatelessWidget {
               listenWhen: (previous, current) =>
                   !previous.purgeSuccessPending && current.purgeSuccessPending,
               listener: (context, state) {
+                final l10n = AppLocalizations.of(context);
                 ScaffoldMessenger.of(context).showSnackBar(
-                  const SnackBar(
-                    content: Text('All local data removed'),
-                    duration: Duration(seconds: 3),
+                  SnackBar(
+                    content: Text(l10n.myDataPurgeSuccess),
+                    duration: const Duration(seconds: 3),
                   ),
                 );
                 context.read<MyDataCubit>().ackPurgeSuccess();
@@ -93,6 +96,7 @@ class _MyDataScreenBody extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context);
     final colors = context.astraColors;
     final state = context.watch<MyDataCubit>().state;
     final cubit = context.read<MyDataCubit>();
@@ -104,6 +108,9 @@ class _MyDataScreenBody extends StatelessWidget {
         AstraSpacing.kBottomNavBarHeight +
         AstraSpacing.kSpaceMd;
     final nowUtc = cubit.clock.nowUtc();
+    final exportErrorMessage = myDataExportErrorMessage(l10n, state.exportError);
+    final importErrorMessage = myDataImportErrorMessage(l10n, state);
+    final purgeErrorMessage = myDataPurgeErrorMessage(l10n, state.purgeError);
 
     final scrollView = SingleChildScrollView(
       padding: EdgeInsets.fromLTRB(
@@ -117,23 +124,23 @@ class _MyDataScreenBody extends StatelessWidget {
         children: [
           if (showInlineTitle) ...[
             Text(
-              MyDataScreen._kScreenTitle,
+              l10n.menuPrivacyAndData,
               style: AstraTypography.screenTitleFor(colors),
             ),
           ],
-          if (state.exportErrorMessage != null) ...[
+          if (exportErrorMessage != null) ...[
             const SizedBox(height: AstraSpacing.kSpaceMd),
             StatusBanner(
               variant: StatusBannerVariant.error,
-              message: state.exportErrorMessage,
+              message: exportErrorMessage,
               onTap: () => cubit.exportAndShare(),
             ),
           ],
-          if (state.importErrorMessage != null) ...[
+          if (importErrorMessage != null) ...[
             const SizedBox(height: AstraSpacing.kSpaceMd),
             StatusBanner(
               variant: StatusBannerVariant.error,
-              message: state.importErrorMessage,
+              message: importErrorMessage,
               onTap: () => cubit.pickAndImport(
                 confirmImport: (csvRowCount, existingSampleCount) =>
                     showImportConfirmDialog(
@@ -144,11 +151,11 @@ class _MyDataScreenBody extends StatelessWidget {
               ),
             ),
           ],
-          if (state.purgeErrorMessage != null) ...[
+          if (purgeErrorMessage != null) ...[
             const SizedBox(height: AstraSpacing.kSpaceMd),
             StatusBanner(
               variant: StatusBannerVariant.error,
-              message: state.purgeErrorMessage,
+              message: purgeErrorMessage,
               onTap: () => cubit.confirmAndPurge(
                 confirmedAction: PurgeConfirmAction.deleteConfirmed,
               ),
@@ -163,7 +170,7 @@ class _MyDataScreenBody extends StatelessWidget {
           ],
           const SizedBox(height: AstraSpacing.kSpaceMd),
           SectionCard(
-            headline: 'Background',
+            headline: l10n.menuTrackingStatus,
             child: state.status == MyDataStatus.loading
                 ? const _SectionLoadingIndicator()
                 : BackgroundStatusCard(
@@ -175,7 +182,7 @@ class _MyDataScreenBody extends StatelessWidget {
           ),
           const SizedBox(height: AstraSpacing.kSpaceMd),
           SectionCard(
-            headline: 'Footprint',
+            headline: l10n.myDataFootprint,
             child: state.status == MyDataStatus.loading
                 ? const _SectionLoadingIndicator()
                 : FootprintKpiRow(
@@ -187,7 +194,7 @@ class _MyDataScreenBody extends StatelessWidget {
           ),
           const SizedBox(height: AstraSpacing.kSpaceMd),
           SectionCard(
-            headline: 'Your data',
+            headline: l10n.myDataYourData,
             child: state.status == MyDataStatus.loading
                 ? const _SectionLoadingIndicator()
                 : Column(
@@ -195,8 +202,8 @@ class _MyDataScreenBody extends StatelessWidget {
                     children: [
                       Builder(
                         builder: (buttonContext) => DataExportButton(
-                          label: 'Export CSV',
-                          semanticsLabel: 'Export data as CSV file',
+                          label: l10n.myDataExportCsv,
+                          semanticsLabel: l10n.myDataExportCsvSemantics,
                           isLoading: state.isExporting,
                           onPressed: dataActionInFlight
                               ? null
@@ -243,7 +250,7 @@ class _MyDataScreenBody extends StatelessWidget {
     }
 
     return Semantics(
-      label: MyDataScreen._kScreenTitle,
+      label: l10n.menuPrivacyAndData,
       child: scrollView,
     );
   }

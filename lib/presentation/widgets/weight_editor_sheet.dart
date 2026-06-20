@@ -1,3 +1,4 @@
+import 'package:astra_app/l10n/app_localizations.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 
@@ -47,10 +48,13 @@ class _WeightEditorSheetBodyState extends State<_WeightEditorSheetBody> {
 
   bool get _isLb => widget.weightUnit == WeightDisplayUnit.lb;
 
-  String get _lbRangeMessage {
+  String _lbRangeMessage(AppLocalizations l10n) {
     final minLb = weightKgToDisplayLb(kMinWeightKg);
     final maxLb = weightKgToDisplayLb(kMaxWeightKg);
-    return 'Weight must be between ${minLb.toStringAsFixed(1)} and ${maxLb.toStringAsFixed(1)} lb';
+    return l10n.profileWeightRangeLb(
+      minLb.toStringAsFixed(1),
+      maxLb.toStringAsFixed(1),
+    );
   }
 
   @override
@@ -88,34 +92,40 @@ class _WeightEditorSheetBodyState extends State<_WeightEditorSheetBody> {
 
   void _validateInput() {
     setState(() {
-      _errorText = _validationMessage(_controller.text);
+      _errorText = _validationMessage(
+        AppLocalizations.of(context),
+        _controller.text,
+      );
     });
   }
 
-  String? _validationMessage(String raw) {
+  String? _validationMessage(AppLocalizations l10n, String raw) {
     final trimmed = raw.trim();
     if (trimmed.isEmpty) {
       return null;
     }
     final parsed = double.tryParse(trimmed.replaceAll(',', '.'));
     if (parsed == null) {
-      return 'Enter a valid weight';
+      return l10n.profileWeightEnterValid;
     }
     final rounded = (parsed * 10).round() / 10;
     final decimalPart = trimmed.contains('.') || trimmed.contains(',');
     if (decimalPart) {
       final parts = trimmed.replaceAll(',', '.').split('.');
       if (parts.length > 1 && parts[1].length > 1) {
-        return 'Use at most one decimal place';
+        return l10n.profileWeightOneDecimal;
       }
     }
     if (_isLb) {
       final kg = displayLbToWeightKg(rounded);
       if (kg < kMinWeightKg || kg > kMaxWeightKg) {
-        return _lbRangeMessage;
+        return _lbRangeMessage(l10n);
       }
     } else if (rounded < kMinWeightKg || rounded > kMaxWeightKg) {
-      return 'Weight must be between ${kMinWeightKg.toInt()} and ${kMaxWeightKg.toInt()} kg';
+      return l10n.profileWeightRangeKg(
+        kMinWeightKg.toInt(),
+        kMaxWeightKg.toInt(),
+      );
     }
     return null;
   }
@@ -153,6 +163,7 @@ class _WeightEditorSheetBodyState extends State<_WeightEditorSheetBody> {
 
   @override
   Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context);
     final colors = context.astraColors;
     final bottomInset = MediaQuery.viewInsetsOf(context).bottom;
 
@@ -181,7 +192,7 @@ class _WeightEditorSheetBodyState extends State<_WeightEditorSheetBody> {
                 ),
               ),
               const SizedBox(height: AstraSpacing.kSpaceMd),
-              Text('Weight', style: AstraTypography.title(context)),
+              Text(l10n.profileWeight, style: AstraTypography.title(context)),
               const SizedBox(height: AstraSpacing.kSpaceMd),
               TextField(
                 controller: _controller,
@@ -197,13 +208,13 @@ class _WeightEditorSheetBodyState extends State<_WeightEditorSheetBody> {
                 ),
                 decoration: profileSheetFieldDecoration(
                   colors: colors,
-                  labelText: _isLb ? 'Pounds' : 'Kilograms',
+                  labelText: _isLb ? l10n.profileWeightPounds : l10n.profileWeightKilograms,
                   errorText: _errorText,
                 ),
               ),
               const SizedBox(height: AstraSpacing.kSpaceLg),
               AstraButton(
-                label: 'Save',
+                label: l10n.commonSave,
                 onPressed: _canSave
                     ? () {
                         final parsed = _parsedWeightKg;
@@ -213,7 +224,7 @@ class _WeightEditorSheetBodyState extends State<_WeightEditorSheetBody> {
               ),
               const SizedBox(height: AstraSpacing.kSpaceSm),
               AstraButton(
-                label: 'Cancel',
+                label: l10n.commonCancel,
                 variant: AstraButtonVariant.ghost,
                 onPressed: () => Navigator.of(context).pop(),
               ),

@@ -1,4 +1,5 @@
 import '../../core/constants/preference_keys.dart';
+import 'my_data_errors.dart';
 
 enum MyDataStatus { loading, ready }
 
@@ -19,13 +20,14 @@ class MyDataState {
     this.backgroundStatus = BackgroundCollectionStatus.healthy,
     this.isIos = false,
     this.isExporting = false,
-    this.exportErrorMessage,
+    this.exportError,
     this.exportSuccessPending = false,
     this.isImporting = false,
-    this.importErrorMessage,
+    this.importError,
+    this.importValidationDetail,
     this.importSuccessPending = false,
     this.isPurging = false,
-    this.purgeErrorMessage,
+    this.purgeError,
     this.purgeSuccessPending = false,
     this.dailyStepGoal = kDefaultStepGoal,
     this.displayName,
@@ -39,15 +41,17 @@ class MyDataState {
   final BackgroundCollectionStatus backgroundStatus;
   final bool isIos;
   final bool isExporting;
-  final String? exportErrorMessage;
+  final MyDataExportError? exportError;
   /// True after successful CSV save; drives success snackbar once.
   final bool exportSuccessPending;
   final bool isImporting;
-  final String? importErrorMessage;
+  final MyDataImportError? importError;
+  /// Raw parser detail when [importError] is [MyDataImportError.validation].
+  final String? importValidationDetail;
   /// True after import with at least one data row; drives success snackbar once.
   final bool importSuccessPending;
   final bool isPurging;
-  final String? purgeErrorMessage;
+  final MyDataPurgeError? purgeError;
   /// True after successful purge; drives success snackbar once.
   final bool purgeSuccessPending;
   final int dailyStepGoal;
@@ -89,13 +93,14 @@ class MyDataState {
     BackgroundCollectionStatus? backgroundStatus,
     bool? isIos,
     bool? isExporting,
-    Object? exportErrorMessage = _unset,
+    Object? exportError = _unset,
     bool? exportSuccessPending,
     bool? isImporting,
-    Object? importErrorMessage = _unset,
+    Object? importError = _unset,
+    Object? importValidationDetail = _unset,
     bool? importSuccessPending,
     bool? isPurging,
-    Object? purgeErrorMessage = _unset,
+    Object? purgeError = _unset,
     bool? purgeSuccessPending,
     int? dailyStepGoal,
     Object? displayName = _unset,
@@ -109,21 +114,24 @@ class MyDataState {
       backgroundStatus: backgroundStatus ?? this.backgroundStatus,
       isIos: isIos ?? this.isIos,
       isExporting: isExporting ?? this.isExporting,
-      exportErrorMessage: exportErrorMessage == _unset
-          ? this.exportErrorMessage
-          : exportErrorMessage as String?,
+      exportError: exportError == _unset
+          ? this.exportError
+          : exportError as MyDataExportError?,
       exportSuccessPending:
           exportSuccessPending ?? this.exportSuccessPending,
       isImporting: isImporting ?? this.isImporting,
-      importErrorMessage: importErrorMessage == _unset
-          ? this.importErrorMessage
-          : importErrorMessage as String?,
+      importError: importError == _unset
+          ? this.importError
+          : importError as MyDataImportError?,
+      importValidationDetail: importValidationDetail == _unset
+          ? this.importValidationDetail
+          : importValidationDetail as String?,
       importSuccessPending:
           importSuccessPending ?? this.importSuccessPending,
       isPurging: isPurging ?? this.isPurging,
-      purgeErrorMessage: purgeErrorMessage == _unset
-          ? this.purgeErrorMessage
-          : purgeErrorMessage as String?,
+      purgeError: purgeError == _unset
+          ? this.purgeError
+          : purgeError as MyDataPurgeError?,
       purgeSuccessPending: purgeSuccessPending ?? this.purgeSuccessPending,
       dailyStepGoal: dailyStepGoal ?? this.dailyStepGoal,
       displayName: displayName == _unset

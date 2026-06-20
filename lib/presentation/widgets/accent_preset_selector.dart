@@ -1,9 +1,11 @@
+import 'package:astra_app/l10n/app_localizations.dart';
 import 'package:flutter/material.dart';
 
-import '../../core/constants/astra_accent_palette.dart';
 import '../../core/constants/astra_accent_preset.dart';
+import '../../core/constants/astra_accent_palette.dart';
 import '../../core/constants/astra_colors.dart';
 import '../../core/constants/astra_spacing.dart';
+import '../l10n/display_unit_l10n.dart';
 
 /// Six bi-tone accent preset chips (FR-32, Story 5.11).
 class AccentPresetSelector extends StatelessWidget {
@@ -20,18 +22,9 @@ class AccentPresetSelector extends StatelessWidget {
 
   static const _presets = AstraAccentPreset.values;
 
-  static String presetSemanticsLabel(AstraAccentPreset preset) =>
-      switch (preset) {
-        AstraAccentPreset.orange => 'Accent color, Orange',
-        AstraAccentPreset.red => 'Accent color, Red',
-        AstraAccentPreset.green => 'Accent color, Green',
-        AstraAccentPreset.blue => 'Accent color, Blue',
-        AstraAccentPreset.magenta => 'Accent color, Magenta',
-        AstraAccentPreset.pink => 'Accent color, Pink',
-      };
-
   @override
   Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context);
     final colors = context.astraColors;
     final baseColor = colors.bgElevated;
 
@@ -41,6 +34,7 @@ class AccentPresetSelector extends StatelessWidget {
           Expanded(
             child: _AccentChip(
               preset: preset,
+              semanticsLabel: localizedAccentPresetSemanticsLabel(l10n, preset),
               baseColor: baseColor,
               accentColor: accentPaletteFor(preset).primary,
               selected: selected == preset,
@@ -60,6 +54,7 @@ class AccentPresetSelector extends StatelessWidget {
 class _AccentChip extends StatelessWidget {
   const _AccentChip({
     required this.preset,
+    required this.semanticsLabel,
     required this.baseColor,
     required this.accentColor,
     required this.selected,
@@ -70,6 +65,7 @@ class _AccentChip extends StatelessWidget {
   });
 
   final AstraAccentPreset preset;
+  final String semanticsLabel;
   final Color baseColor;
   final Color accentColor;
   final bool selected;
@@ -90,7 +86,7 @@ class _AccentChip extends StatelessWidget {
       button: enabled && onTap != null,
       enabled: enabled,
       selected: selected,
-      label: AccentPresetSelector.presetSemanticsLabel(preset),
+      label: semanticsLabel,
       child: Material(
         color: Colors.transparent,
         child: InkWell(

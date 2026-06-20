@@ -1,3 +1,4 @@
+import 'package:astra_app/l10n/app_localizations.dart';
 import 'package:flutter/material.dart';
 
 import '../../core/constants/astra_colors.dart';
@@ -17,14 +18,13 @@ class MenuHubScreen extends StatelessWidget {
 
   final ValueChanged<MenuHubDestination>? onDestinationSelected;
 
-  static const _kScreenTitle = 'Menu';
-
   void _onDestinationSelected(MenuHubDestination destination) {
     onDestinationSelected?.call(destination);
   }
 
   @override
   Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context);
     final colors = context.astraColors;
     final horizontalPadding = AstraSpacing.kScreenHorizontalPadding;
     final bottomScrollPadding =
@@ -37,7 +37,7 @@ class MenuHubScreen extends StatelessWidget {
       child: SafeArea(
         bottom: false,
         child: Semantics(
-          label: _kScreenTitle,
+          label: l10n.menuTitle,
           child: SingleChildScrollView(
             padding: EdgeInsets.fromLTRB(
               horizontalPadding,
@@ -49,23 +49,23 @@ class MenuHubScreen extends StatelessWidget {
               crossAxisAlignment: CrossAxisAlignment.stretch,
               children: [
                 Text(
-                  _kScreenTitle,
+                  l10n.menuTitle,
                   style: AstraTypography.screenTitleFor(colors),
                 ),
                 const SizedBox(height: AstraSpacing.kSpaceMd),
                 SectionCard(
-                  headline: 'Informations',
+                  headline: l10n.menuSectionInformations,
                   child: Column(
                     children: [
                       MenuNavRow(
-                        label: 'Profile',
+                        label: l10n.menuProfile,
                         onTap: () => _onDestinationSelected(
                           MenuHubDestination.profile,
                         ),
                       ),
                       const SizedBox(height: AstraSpacing.kSpaceSm),
                       MenuNavRow(
-                        label: 'Data',
+                        label: l10n.menuData,
                         onTap: () =>
                             _onDestinationSelected(MenuHubDestination.data),
                       ),
@@ -74,18 +74,18 @@ class MenuHubScreen extends StatelessWidget {
                 ),
                 const SizedBox(height: AstraSpacing.kSpaceMd),
                 SectionCard(
-                  headline: 'Other',
+                  headline: l10n.menuOther,
                   child: Column(
                     children: [
                       MenuNavRow(
-                        label: 'Settings',
+                        label: l10n.menuSettings,
                         onTap: () => _onDestinationSelected(
                           MenuHubDestination.settings,
                         ),
                       ),
                       const SizedBox(height: AstraSpacing.kSpaceSm),
                       MenuNavRow(
-                        label: 'About',
+                        label: l10n.menuAbout,
                         onTap: () =>
                             _onDestinationSelected(MenuHubDestination.about),
                       ),

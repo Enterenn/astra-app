@@ -17,6 +17,7 @@ import '../../data/csv/timeseries_csv_codec.dart';
 import '../../data/models/database_footprint.dart';
 import '../../data/contracts/contracts.dart';
 import '../widgets/confirm_dialog.dart';
+import 'my_data_errors.dart';
 import 'my_data_state.dart';
 
 typedef ActivityPermissionChecker = Future<bool> Function();
@@ -137,7 +138,8 @@ class MyDataCubit extends Cubit<MyDataState> {
     emit(
       state.copyWith(
         isImporting: true,
-        importErrorMessage: null,
+        importError: null,
+        importValidationDetail: null,
         importSuccessPending: false,
       ),
     );
@@ -159,8 +161,8 @@ class MyDataCubit extends Cubit<MyDataState> {
           emit(
             state.copyWith(
               isImporting: false,
-              importErrorMessage:
-                  'Import could not be completed. Try again.',
+              importError: MyDataImportError.generic,
+              importValidationDetail: null,
             ),
           );
           return;
@@ -180,7 +182,8 @@ class MyDataCubit extends Cubit<MyDataState> {
       emit(
         state.copyWith(
           isImporting: false,
-          importErrorMessage: null,
+          importError: null,
+          importValidationDetail: null,
           importSuccessPending: result.totalRowsInFile > 0,
         ),
       );
@@ -202,7 +205,8 @@ class MyDataCubit extends Cubit<MyDataState> {
       emit(
         state.copyWith(
           isImporting: false,
-          importErrorMessage: error.message,
+          importError: MyDataImportError.validation,
+          importValidationDetail: error.message,
         ),
       );
     } catch (error, stackTrace) {
@@ -216,7 +220,8 @@ class MyDataCubit extends Cubit<MyDataState> {
       emit(
         state.copyWith(
           isImporting: false,
-          importErrorMessage: 'Import could not be completed. Try again.',
+          importError: MyDataImportError.generic,
+          importValidationDetail: null,
         ),
       );
     }
@@ -245,7 +250,7 @@ class MyDataCubit extends Cubit<MyDataState> {
     emit(
       state.copyWith(
         isExporting: true,
-        exportErrorMessage: null,
+        exportError: null,
         exportSuccessPending: false,
       ),
     );
@@ -265,7 +270,7 @@ class MyDataCubit extends Cubit<MyDataState> {
           emit(
             state.copyWith(
               isExporting: false,
-              exportErrorMessage: null,
+              exportError: null,
               exportSuccessPending: true,
             ),
           );
@@ -290,7 +295,7 @@ class MyDataCubit extends Cubit<MyDataState> {
       emit(
         state.copyWith(
           isExporting: false,
-          exportErrorMessage: 'Export could not be completed. Try again.',
+          exportError: MyDataExportError.generic,
         ),
       );
     }
@@ -368,7 +373,7 @@ class MyDataCubit extends Cubit<MyDataState> {
     emit(
       state.copyWith(
         isPurging: true,
-        purgeErrorMessage: null,
+        purgeError: null,
         purgeSuccessPending: false,
       ),
     );
@@ -392,7 +397,7 @@ class MyDataCubit extends Cubit<MyDataState> {
       emit(
         state.copyWith(
           isPurging: false,
-          purgeErrorMessage: null,
+          purgeError: null,
           purgeSuccessPending: true,
         ),
       );
@@ -407,9 +412,9 @@ class MyDataCubit extends Cubit<MyDataState> {
       emit(
         state.copyWith(
           isPurging: false,
-          purgeErrorMessage: purged
-              ? 'All local data was removed, but the app could not refresh. Try again.'
-              : 'Purge could not be completed. Try again.',
+          purgeError: purged
+              ? MyDataPurgeError.refreshFailedAfterPurge
+              : MyDataPurgeError.generic,
         ),
       );
     }
@@ -644,13 +649,14 @@ class MyDataCubit extends Cubit<MyDataState> {
         displayName: displayName ?? state.displayName,
       ).copyWith(
         isExporting: state.isExporting,
-        exportErrorMessage: state.exportErrorMessage,
+        exportError: state.exportError,
         exportSuccessPending: state.exportSuccessPending,
         isImporting: state.isImporting,
-        importErrorMessage: state.importErrorMessage,
+        importError: state.importError,
+        importValidationDetail: state.importValidationDetail,
         importSuccessPending: state.importSuccessPending,
         isPurging: state.isPurging,
-        purgeErrorMessage: state.purgeErrorMessage,
+        purgeError: state.purgeError,
         purgeSuccessPending: state.purgeSuccessPending,
       ),
     );

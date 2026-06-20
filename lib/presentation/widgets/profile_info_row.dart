@@ -1,3 +1,4 @@
+import 'package:astra_app/l10n/app_localizations.dart';
 import 'package:flutter/material.dart';
 import 'package:phosphoricons_flutter/phosphoricons_flutter.dart';
 
@@ -26,15 +27,17 @@ class ProfileInfoRow extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context);
     final colors = context.astraColors;
     final valueColor =
         _isEnabled ? colors.textPrimary : colors.textMuted;
+    final editHint = semanticsHint ?? l10n.commonDoubleTapToEdit;
 
     return Semantics(
       button: true,
       enabled: _isEnabled,
       label: _isEnabled
-          ? '$label, $valueLabel. ${semanticsHint ?? 'Double tap to edit.'}'
+          ? '$label, $valueLabel. $editHint'
           : '$label, $valueLabel.',
       child: Material(
         color: Colors.transparent,

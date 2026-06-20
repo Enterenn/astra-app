@@ -1,3 +1,4 @@
+import 'package:astra_app/l10n/app_localizations.dart';
 import 'package:flutter/material.dart';
 
 import '../../core/constants/astra_colors.dart';
@@ -23,35 +24,43 @@ class FootprintKpiRow extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context);
     final colors = context.astraColors;
+    final formattedCount = formatStepCount(sampleCount);
+    final formattedSize = formatFileSize(fileSizeBytes);
+    final relativeTime = lastOptimizedUtc == null
+        ? null
+        : formatRelativeTimeLocalized(
+            l10n,
+            instantUtc: lastOptimizedUtc,
+            nowUtc: nowUtc,
+          );
     final optimizedLabel = lastOptimizedUtc == null
-        ? 'not optimized yet'
-        : 'optimized ${formatRelativeTime(instantUtc: lastOptimizedUtc, nowUtc: nowUtc)}';
+        ? l10n.myDataFootprintNotOptimizedYet
+        : l10n.myDataFootprintOptimized(relativeTime!);
 
     return LayoutBuilder(
       builder: (context, constraints) {
         final useRow = constraints.maxWidth >= 480;
 
         final sampleKpi = _KpiItem(
-          value: formatStepCount(sampleCount),
-          label: 'samples stored',
-          semanticsLabel:
-              '${formatStepCount(sampleCount)} samples stored',
+          value: formattedCount,
+          label: l10n.myDataFootprintSamplesStored,
+          semanticsLabel: l10n.myDataFootprintSamplesStoredSemantics(
+            formattedCount,
+          ),
           colors: colors,
         );
         final sizeKpi = _KpiItem(
-          value: formatFileSize(fileSizeBytes),
-          label: 'database size',
-          semanticsLabel: 'Database size ${formatFileSize(fileSizeBytes)}',
+          value: formattedSize,
+          label: l10n.myDataFootprintDatabaseSize,
+          semanticsLabel: l10n.myDataFootprintDatabaseSizeSemantics(
+            formattedSize,
+          ),
           colors: colors,
         );
         final optimizedKpi = _KpiItem(
-          value: lastOptimizedUtc == null
-              ? '—'
-              : formatRelativeTime(
-                  instantUtc: lastOptimizedUtc,
-                  nowUtc: nowUtc,
-                ),
+          value: lastOptimizedUtc == null ? '—' : relativeTime!,
           label: optimizedLabel,
           semanticsLabel: optimizedLabel,
           colors: colors,

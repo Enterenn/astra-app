@@ -5,6 +5,7 @@ import 'package:permission_handler/permission_handler.dart';
 import '../../core/constants/preference_keys.dart';
 import '../../core/services/notification_service.dart';
 import '../../data/contracts/contracts.dart';
+import 'profile_errors.dart';
 import 'profile_state.dart';
 
 typedef NotificationPermissionRequester = Future<PermissionStatus> Function(
@@ -84,7 +85,7 @@ class ProfileCubit extends Cubit<ProfileState> {
         emit(
           ProfileState(
             status: ProfileStatus.error,
-            errorMessage: 'Could not load profile settings',
+            loadError: ProfileLoadError.generic,
           ),
         );
       }

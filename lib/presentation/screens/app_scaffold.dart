@@ -1,5 +1,6 @@
 import 'dart:async';
 
+import 'package:astra_app/l10n/app_localizations.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
@@ -263,13 +264,16 @@ class _AppScaffoldState extends State<AppScaffold> {
         pushFuture = navigator.push<void>(
           MaterialPageRoute<void>(
             settings: const RouteSettings(name: 'menu/profile'),
-            builder: (context) => BlocProvider.value(
-              value: _profileCubit,
-              child: const SecondaryScreenShell(
-                title: 'Profile',
-                child: ProfileScreen(showInlineTitle: false),
-              ),
-            ),
+            builder: (context) {
+              final l10n = AppLocalizations.of(context);
+              return BlocProvider.value(
+                value: _profileCubit,
+                child: SecondaryScreenShell(
+                  title: l10n.menuProfile,
+                  child: const ProfileScreen(showInlineTitle: false),
+                ),
+              );
+            },
           ),
         );
       case MenuHubDestination.data:
@@ -277,13 +281,16 @@ class _AppScaffoldState extends State<AppScaffold> {
         pushFuture = navigator.push<void>(
           MaterialPageRoute<void>(
             settings: const RouteSettings(name: 'menu/data'),
-            builder: (context) => BlocProvider.value(
-              value: _myDataCubit,
-              child: const SecondaryScreenShell(
-                title: 'Data',
-                child: MyDataScreen(showInlineTitle: false),
-              ),
-            ),
+            builder: (context) {
+              final l10n = AppLocalizations.of(context);
+              return BlocProvider.value(
+                value: _myDataCubit,
+                child: SecondaryScreenShell(
+                  title: l10n.menuData,
+                  child: const MyDataScreen(showInlineTitle: false),
+                ),
+              );
+            },
           ),
         );
       case MenuHubDestination.settings:

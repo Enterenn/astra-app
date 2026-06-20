@@ -1,3 +1,4 @@
+import 'package:astra_app/l10n/app_localizations.dart';
 import 'package:flutter/material.dart';
 
 import '../../core/constants/astra_colors.dart';
@@ -20,6 +21,7 @@ Future<PurgeConfirmAction?> showPurgeConfirmDialog(
   BuildContext context, {
   required VoidCallback onExportFirst,
 }) async {
+  final l10n = AppLocalizations.of(context);
   final result = await showDialog<PurgeConfirmAction>(
     context: context,
     builder: (dialogContext) {
@@ -27,12 +29,11 @@ Future<PurgeConfirmAction?> showPurgeConfirmDialog(
       return AlertDialog(
         backgroundColor: colors.bgElevated,
         title: Text(
-          'Delete all local data?',
+          l10n.myDataPurgeConfirmTitle,
           style: AstraTypography.title(dialogContext),
         ),
         content: Text(
-          'This removes all step history on this device. '
-          'Export first if you want to keep a copy.',
+          l10n.myDataPurgeConfirmBody,
           style: AstraTypography.body(dialogContext),
         ),
         actionsPadding: const EdgeInsets.fromLTRB(
@@ -49,7 +50,7 @@ Future<PurgeConfirmAction?> showPurgeConfirmDialog(
                 children: [
                   Expanded(
                     child: AstraButton(
-                      label: 'Export first',
+                      label: l10n.myDataPurgeExportFirst,
                       variant: AstraButtonVariant.secondary,
                       onPressed: onExportFirst,
                     ),
@@ -57,7 +58,7 @@ Future<PurgeConfirmAction?> showPurgeConfirmDialog(
                   const SizedBox(width: AstraSpacing.kSpaceSm),
                   Expanded(
                     child: AstraButton(
-                      label: 'Delete anyway',
+                      label: l10n.myDataPurgeDeleteAnyway,
                       variant: AstraButtonVariant.danger,
                       onPressed: () => Navigator.of(dialogContext).pop(
                         PurgeConfirmAction.deleteConfirmed,
@@ -68,7 +69,7 @@ Future<PurgeConfirmAction?> showPurgeConfirmDialog(
               ),
               const SizedBox(height: AstraSpacing.kSpaceSm),
               AstraButton(
-                label: 'Cancel',
+                label: l10n.commonCancel,
                 variant: AstraButtonVariant.ghost,
                 onPressed: () => Navigator.of(dialogContext).pop(
                   PurgeConfirmAction.cancelled,
@@ -89,18 +90,19 @@ Future<bool> showImportConfirmDialog(
   required int csvRowCount,
   required int existingSampleCount,
 }) async {
+  final l10n = AppLocalizations.of(context);
   final result = await showDialog<bool>(
     context: context,
     builder: (dialogContext) {
       final colors = dialogContext.astraColors;
       return AlertDialog(
         backgroundColor: colors.bgElevated,
-        title: Text('Import data?', style: AstraTypography.title(dialogContext)),
+        title: Text(
+          l10n.myDataImportConfirmTitle,
+          style: AstraTypography.title(dialogContext),
+        ),
         content: Text(
-          'This file contains $csvRowCount samples. '
-          'Your database already has $existingSampleCount samples. '
-          'Rows with matching IDs or the same time bucket will be skipped — '
-          'existing data is not overwritten.',
+          l10n.myDataImportConfirmBody(csvRowCount, existingSampleCount),
           style: AstraTypography.body(dialogContext),
         ),
         actionsPadding: const EdgeInsets.fromLTRB(
@@ -111,12 +113,12 @@ Future<bool> showImportConfirmDialog(
         ),
         actions: [
           AstraButton(
-            label: 'Cancel',
+            label: l10n.commonCancel,
             variant: AstraButtonVariant.ghost,
             onPressed: () => Navigator.of(dialogContext).pop(false),
           ),
           AstraButton(
-            label: 'Import',
+            label: l10n.myDataImportConfirmImport,
             onPressed: () => Navigator.of(dialogContext).pop(true),
           ),
         ],

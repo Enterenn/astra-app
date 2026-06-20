@@ -1,3 +1,4 @@
+import 'package:astra_app/l10n/app_localizations.dart';
 import 'package:flutter/material.dart';
 import 'package:phosphoricons_flutter/phosphoricons_flutter.dart';
 
@@ -22,8 +23,9 @@ class MenuNavRow extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context);
     final colors = context.astraColors;
-    final hint = semanticsHint ?? 'Double tap to open.';
+    final hint = semanticsHint ?? l10n.commonDoubleTapToOpen;
 
     return Semantics(
       button: true,
