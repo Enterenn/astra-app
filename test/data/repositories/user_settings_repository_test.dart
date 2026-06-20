@@ -181,6 +181,9 @@ void main() {
         () => repository.setAppLocale('de'),
         throwsA(isA<ArgumentError>()),
       );
+
+      await repository.clearAppLocale();
+      expect(await repository.getAppLocale(), isNull);
     });
   });
 }

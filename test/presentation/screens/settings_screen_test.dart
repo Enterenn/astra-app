@@ -14,7 +14,6 @@ import 'package:astra_app/presentation/cubits/theme_state.dart';
 import 'package:astra_app/presentation/cubits/units_cubit.dart';
 import 'package:astra_app/presentation/screens/settings_screen.dart';
 import 'package:astra_app/presentation/widgets/accent_preset_selector.dart';
-import 'package:astra_app/presentation/widgets/language_selector.dart';
 import 'package:astra_app/presentation/widgets/section_card.dart';
 import 'package:astra_app/presentation/widgets/settings_preference_row.dart';
 import 'package:astra_app/presentation/widgets/theme_selector.dart';
@@ -150,11 +149,10 @@ void main() {
       expect(find.text('cm'), findsOneWidget);
       expect(find.text('Receive Goal notifications'), findsOneWidget);
       expect(find.byType(Switch), findsOneWidget);
-      expect(find.byType(LanguageSelector), findsOneWidget);
+      expect(find.byType(SettingsPreferenceRow), findsNWidgets(4));
       expect(find.byType(ThemeSelector), findsOneWidget);
       expect(find.byType(AccentPresetSelector), findsOneWidget);
       expect(find.byType(SectionCard), findsNWidgets(4));
-      expect(find.byType(SettingsPreferenceRow), findsNWidgets(3));
 
       final headlines = tester
           .widgetList<SectionCard>(find.byType(SectionCard))

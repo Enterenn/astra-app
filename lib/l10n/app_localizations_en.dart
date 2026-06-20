@@ -763,6 +763,27 @@ class AppLocalizationsEn extends AppLocalizations {
   String get commonWeekdaySun => 'Sun';
 
   @override
+  String get todayWeekPillMon => 'MON';
+
+  @override
+  String get todayWeekPillTue => 'TUE';
+
+  @override
+  String get todayWeekPillWed => 'WED';
+
+  @override
+  String get todayWeekPillThu => 'THU';
+
+  @override
+  String get todayWeekPillFri => 'FRI';
+
+  @override
+  String get todayWeekPillSat => 'SAT';
+
+  @override
+  String get todayWeekPillSun => 'SUN';
+
+  @override
   String get commonMonthJan => 'Jan';
 
   @override

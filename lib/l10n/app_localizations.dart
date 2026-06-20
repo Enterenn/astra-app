@@ -1374,6 +1374,48 @@ abstract class AppLocalizations {
   /// **'Sun'**
   String get commonWeekdaySun;
 
+  /// Uppercase Monday label for Today week progress pills
+  ///
+  /// In en, this message translates to:
+  /// **'MON'**
+  String get todayWeekPillMon;
+
+  /// Uppercase Tuesday label for Today week progress pills
+  ///
+  /// In en, this message translates to:
+  /// **'TUE'**
+  String get todayWeekPillTue;
+
+  /// Uppercase Wednesday label for Today week progress pills
+  ///
+  /// In en, this message translates to:
+  /// **'WED'**
+  String get todayWeekPillWed;
+
+  /// Uppercase Thursday label for Today week progress pills
+  ///
+  /// In en, this message translates to:
+  /// **'THU'**
+  String get todayWeekPillThu;
+
+  /// Uppercase Friday label for Today week progress pills
+  ///
+  /// In en, this message translates to:
+  /// **'FRI'**
+  String get todayWeekPillFri;
+
+  /// Uppercase Saturday label for Today week progress pills
+  ///
+  /// In en, this message translates to:
+  /// **'SAT'**
+  String get todayWeekPillSat;
+
+  /// Uppercase Sunday label for Today week progress pills
+  ///
+  /// In en, this message translates to:
+  /// **'SUN'**
+  String get todayWeekPillSun;
+
   /// Short January label for chart period captions
   ///
   /// In en, this message translates to:

@@ -52,6 +52,34 @@ void main() {
     );
   }
 
+  testWidgets('renders localized weekday pill labels in French', (tester) async {
+    final wednesday = DateTime.utc(2026, 6, 3);
+    await tester.pumpWidget(
+      TestMaterialApp(
+        locale: const Locale('fr'),
+        theme: buildAstraLightTheme(),
+        home: Scaffold(
+          body: WeekProgressRow(
+            days: [
+              day(
+                localDay: wednesday,
+                label: 'WED',
+                dayNumber: 3,
+                isToday: true,
+              ),
+            ],
+            selectedLocalDay: wednesday,
+            onDayTap: (_) {},
+          ),
+        ),
+      ),
+    );
+    await tester.pump();
+
+    expect(find.text('MER'), findsOneWidget);
+    expect(find.text('WED'), findsNothing);
+  });
+
   testWidgets('today pill uses accent primary fill', (tester) async {
     final selectedDay = DateTime.utc(2026, 6, 3);
     await pumpRow(tester, [

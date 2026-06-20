@@ -17,6 +17,20 @@ extension AppLocalizationsDateLabels on AppLocalizations {
     };
   }
 
+  /// Uppercase three-letter labels for the Today week progress pills.
+  String weekdayPillLabel(DateTime day) {
+    return switch (day.weekday) {
+      DateTime.monday => todayWeekPillMon,
+      DateTime.tuesday => todayWeekPillTue,
+      DateTime.wednesday => todayWeekPillWed,
+      DateTime.thursday => todayWeekPillThu,
+      DateTime.friday => todayWeekPillFri,
+      DateTime.saturday => todayWeekPillSat,
+      DateTime.sunday => todayWeekPillSun,
+      _ => '',
+    };
+  }
+
   String monthShort(int month) {
     return switch (month) {
       1 => commonMonthJan,

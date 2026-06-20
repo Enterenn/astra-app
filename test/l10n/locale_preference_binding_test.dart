@@ -19,6 +19,11 @@ class _LocaleSettingsFake implements UserSettingsRepositoryContract {
   }
 
   @override
+  Future<void> clearAppLocale() async {
+    stored = null;
+  }
+
+  @override
   bool get isDatabaseOpen => true;
 
   @override

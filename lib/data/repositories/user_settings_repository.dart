@@ -141,6 +141,11 @@ class UserSettingsRepository implements UserSettingsRepositoryContract {
     return _kv.writeValue(kAppLocaleKey, languageCode);
   }
 
+  @override
+  Future<void> clearAppLocale() {
+    return _kv.deleteValue(kAppLocaleKey);
+  }
+
   Future<String?> getCelebrationShownDate() async {
     return _kv.readValue(kCelebrationShownDateKey);
   }

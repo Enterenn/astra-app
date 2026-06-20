@@ -73,6 +73,9 @@ class _FakeUserSettingsRepository implements UserSettingsRepositoryContract {
   Future<void> setAppLocale(String languageCode) async {}
 
   @override
+  Future<void> clearAppLocale() async {}
+
+  @override
   dynamic noSuchMethod(Invocation invocation) => super.noSuchMethod(invocation);
 }
 

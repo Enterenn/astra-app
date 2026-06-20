@@ -6,6 +6,7 @@ import '../../core/constants/astra_colors.dart';
 import '../../core/constants/astra_spacing.dart';
 import '../../core/constants/astra_typography.dart';
 import '../../core/constants/display_unit_preferences.dart';
+import '../../core/constants/supported_app_languages.dart';
 import '../cubits/locale_cubit.dart';
 import '../cubits/locale_state.dart';
 import '../cubits/profile_cubit.dart';
@@ -15,9 +16,9 @@ import '../cubits/theme_state.dart';
 import '../cubits/units_cubit.dart';
 import '../cubits/units_state.dart';
 import '../l10n/display_unit_l10n.dart';
+import '../l10n/language_l10n.dart';
 import '../l10n/profile_error_messages.dart';
 import '../widgets/accent_preset_selector.dart';
-import '../widgets/language_selector.dart';
 import '../widgets/secondary_screen_shell.dart';
 import '../widgets/section_card.dart';
 import '../widgets/settings_preference_row.dart';
@@ -68,6 +69,38 @@ class _SettingsScreenBody extends StatelessWidget {
 
         return const _SettingsScrollBody();
       },
+    );
+  }
+}
+
+Future<void> _pickLanguage(
+  BuildContext context, {
+  required LocaleCubit localeCubit,
+  required String? selected,
+}) async {
+  final l10n = AppLocalizations.of(context);
+  const automatic = '__automatic__';
+  final options = [automatic, ...SupportedAppLanguages.codes];
+  final picked = await showUnitOptionPickerSheet<String>(
+    context: context,
+    title: l10n.settingsLanguage,
+    options: options,
+    labelFor: (option) => option == automatic
+        ? l10n.settingsLanguageAutomatic
+        : localizedLanguageName(l10n, option),
+    selected: selected ?? automatic,
+  );
+  if (picked == null) {
+    return;
+  }
+  final preference = picked == automatic ? null : picked;
+  if (preference == selected || !context.mounted) {
+    return;
+  }
+  final saved = await localeCubit.setLanguagePreference(preference);
+  if (!saved && context.mounted) {
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(content: Text(l10n.settingsLanguageUpdateError)),
     );
   }
 }
@@ -174,19 +207,17 @@ class _SettingsScrollBody extends StatelessWidget {
               final localeCubit = context.read<LocaleCubit>();
               return SectionCard(
                 headline: l10n.settingsLanguage,
-                child: LanguageSelector(
-                  explicitLanguageCode: localeState.explicitLanguageCode,
-                  onChanged: (languageCode) {
-                    localeCubit.setLanguage(languageCode).then((saved) {
-                      if (!saved && context.mounted) {
-                        ScaffoldMessenger.of(context).showSnackBar(
-                          SnackBar(
-                            content: Text(l10n.settingsLanguageUpdateError),
-                          ),
-                        );
-                      }
-                    });
-                  },
+                child: SettingsPreferenceRow(
+                  label: localizedLanguagePreferenceValueLabel(
+                    l10n,
+                    localeState.explicitLanguageCode,
+                  ),
+                  valueLabel: '',
+                  onTap: () => _pickLanguage(
+                    context,
+                    localeCubit: localeCubit,
+                    selected: localeState.explicitLanguageCode,
+                  ),
                 ),
               );
             },

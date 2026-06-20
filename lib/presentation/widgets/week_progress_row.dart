@@ -4,6 +4,7 @@ import 'package:flutter/material.dart';
 import '../../core/constants/astra_colors.dart';
 import '../../core/constants/astra_spacing.dart';
 import '../../core/constants/astra_typography.dart';
+import '../l10n/l10n_date_labels.dart';
 import '../models/week_day_status.dart';
 
 /// Seven day pills for the current calendar week (Mon–Sun).
@@ -75,8 +76,10 @@ class _DayPill extends StatelessWidget {
       dotColor = colors.accentPrimary;
     }
 
+    final weekdayLabel = l10n.weekdayPillLabel(day.localDay);
+
     return Semantics(
-      label: l10n.todayWeekDaySemantics(day.weekdayLabel, day.dayNumber),
+      label: l10n.todayWeekDaySemantics(weekdayLabel, day.dayNumber),
       selected: selected,
       button: onTap != null,
       child: Material(
@@ -110,7 +113,7 @@ class _DayPill extends StatelessWidget {
                 ),
                 const SizedBox(height: 2),
                 Text(
-                  day.weekdayLabel,
+                  weekdayLabel,
                   style: AstraTypography.captionFor(colors).copyWith(
                     color: mutedColor,
                     fontSize: 10,

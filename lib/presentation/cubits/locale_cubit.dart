@@ -13,7 +13,11 @@ class LocaleCubit extends Cubit<LocaleState> {
 
   Future<void>? _setInFlight;
 
-  Future<bool> setLanguage(String languageCode) async {
+  Future<bool> setLanguage(String languageCode) {
+    return setLanguagePreference(languageCode);
+  }
+
+  Future<bool> setLanguagePreference(String? languageCode) async {
     if (state.explicitLanguageCode == languageCode) {
       return false;
     }
@@ -22,7 +26,7 @@ class LocaleCubit extends Cubit<LocaleState> {
     late final Future<void> operation;
     var success = false;
     operation = () async {
-      success = await _persistLanguageAndEmit(languageCode, waitFor);
+      success = await _persistLanguagePreferenceAndEmit(languageCode, waitFor);
     }();
     _setInFlight = operation;
     try {
@@ -35,8 +39,8 @@ class LocaleCubit extends Cubit<LocaleState> {
     }
   }
 
-  Future<bool> _persistLanguageAndEmit(
-    String languageCode,
+  Future<bool> _persistLanguagePreferenceAndEmit(
+    String? languageCode,
     Future<void>? waitFor,
   ) async {
     if (waitFor != null) {
@@ -46,7 +50,11 @@ class LocaleCubit extends Cubit<LocaleState> {
       return false;
     }
     try {
-      await userSettings.setAppLocale(languageCode);
+      if (languageCode == null) {
+        await userSettings.clearAppLocale();
+      } else {
+        await userSettings.setAppLocale(languageCode);
+      }
     } catch (_) {
       return false;
     }

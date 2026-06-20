@@ -67,7 +67,7 @@ class AppLocalizationsFr extends AppLocalizations {
   String get navSteps => 'PAS';
 
   @override
-  String get navTrends => 'TENDANCES';
+  String get navTrends => 'STATS';
 
   @override
   String get navMenu => 'MENU';
@@ -661,7 +661,7 @@ class AppLocalizationsFr extends AppLocalizations {
   String get onboardingHeightUnitSemantics => 'Choisir l\'unité de taille';
 
   @override
-  String get trendsScreenTitle => 'Tendances';
+  String get trendsScreenTitle => 'Statistiques';
 
   @override
   String get trendsPeriod7Days => '7 jours';
@@ -772,6 +772,27 @@ class AppLocalizationsFr extends AppLocalizations {
 
   @override
   String get commonWeekdaySun => 'dim.';
+
+  @override
+  String get todayWeekPillMon => 'LUN';
+
+  @override
+  String get todayWeekPillTue => 'MAR';
+
+  @override
+  String get todayWeekPillWed => 'MER';
+
+  @override
+  String get todayWeekPillThu => 'JEU';
+
+  @override
+  String get todayWeekPillFri => 'VEN';
+
+  @override
+  String get todayWeekPillSat => 'SAM';
+
+  @override
+  String get todayWeekPillSun => 'DIM';
 
   @override
   String get commonMonthJan => 'janv.';

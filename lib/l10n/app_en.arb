@@ -1086,6 +1086,34 @@
   "@commonWeekdaySun": {
     "description": "Short Sunday label for charts"
   },
+  "todayWeekPillMon": "MON",
+  "@todayWeekPillMon": {
+    "description": "Uppercase Monday label for Today week progress pills"
+  },
+  "todayWeekPillTue": "TUE",
+  "@todayWeekPillTue": {
+    "description": "Uppercase Tuesday label for Today week progress pills"
+  },
+  "todayWeekPillWed": "WED",
+  "@todayWeekPillWed": {
+    "description": "Uppercase Wednesday label for Today week progress pills"
+  },
+  "todayWeekPillThu": "THU",
+  "@todayWeekPillThu": {
+    "description": "Uppercase Thursday label for Today week progress pills"
+  },
+  "todayWeekPillFri": "FRI",
+  "@todayWeekPillFri": {
+    "description": "Uppercase Friday label for Today week progress pills"
+  },
+  "todayWeekPillSat": "SAT",
+  "@todayWeekPillSat": {
+    "description": "Uppercase Saturday label for Today week progress pills"
+  },
+  "todayWeekPillSun": "SUN",
+  "@todayWeekPillSun": {
+    "description": "Uppercase Sunday label for Today week progress pills"
+  },
   "commonMonthJan": "Jan",
   "@commonMonthJan": {
     "description": "Short January label for chart period captions"
