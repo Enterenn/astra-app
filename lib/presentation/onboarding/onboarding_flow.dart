@@ -1,3 +1,4 @@
+import 'package:astra_app/l10n/app_localizations.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 
@@ -62,6 +63,7 @@ class _OnboardingFlowView extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context);
     final colors = context.astraColors;
     final cubit = context.watch<OnboardingCubit>();
     final state = cubit.state;
@@ -91,7 +93,7 @@ class _OnboardingFlowView extends StatelessWidget {
                   currentStep: 0,
                   showBack: false,
                   showPrimaryTrailingArrow: true,
-                  primaryLabel: 'Continue',
+                  primaryLabel: l10n.onboardingStartBtn,
                   primaryLoading: isRequestingActivity,
                   onPrimary: isRequestingActivity
                       ? null
@@ -102,8 +104,8 @@ class _OnboardingFlowView extends StatelessWidget {
                   key: const ValueKey('onboarding-step-1'),
                   currentStep: 1,
                   showBack: true,
-                  primaryLabel: 'Continue',
-                  secondaryLabel: 'Skip',
+                  primaryLabel: l10n.onboardingContinueBtn,
+                  secondaryLabel: l10n.onboardingSkipBtn,
                   onBack: cubit.previousStep,
                   onSecondary: cubit.skipWeight,
                   onPrimary: cubit.commitWeightAndContinue,
@@ -113,8 +115,8 @@ class _OnboardingFlowView extends StatelessWidget {
                   key: const ValueKey('onboarding-step-2'),
                   currentStep: 2,
                   showBack: true,
-                  primaryLabel: "Let's Go",
-                  secondaryLabel: 'Skip',
+                  primaryLabel: l10n.onboardingLetsGoBtn,
+                  secondaryLabel: l10n.onboardingSkipBtn,
                   onBack: cubit.previousStep,
                   onSecondary: () => _onHeightSkip(context),
                   onPrimary: () => _onHeightLetsGo(context),

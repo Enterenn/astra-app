@@ -1,3 +1,4 @@
+import 'package:astra_app/l10n/app_localizations.dart';
 import 'package:flutter/material.dart';
 import 'package:phosphoricons_flutter/phosphoricons_flutter.dart';
 
@@ -38,6 +39,7 @@ class OnboardingShell extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context);
     final colors = context.astraColors;
     final primaryEnabled = onPrimary != null && !primaryLoading;
 
@@ -61,7 +63,7 @@ class OnboardingShell extends StatelessWidget {
           children: [
             if (showBack)
               Tooltip(
-                message: 'Back',
+                message: l10n.commonBack,
                 child: TextButton(
                   onPressed: primaryLoading ? null : onBack,
                   style: TextButton.styleFrom(
@@ -82,7 +84,7 @@ class OnboardingShell extends StatelessWidget {
                       ),
                       const SizedBox(width: AstraSpacing.kSpaceXs),
                       Text(
-                        'Back',
+                        l10n.commonBack,
                         style: AstraTypography.labelFor(colors),
                       ),
                     ],

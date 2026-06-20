@@ -1,3 +1,4 @@
+import 'package:astra_app/l10n/app_localizations.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 
@@ -22,6 +23,7 @@ class OnboardingWeightPage extends StatelessWidget {
           previous.weightKg != current.weightKg ||
           previous.weightDisplayUnit != current.weightDisplayUnit,
       builder: (context, state) {
+        final l10n = AppLocalizations.of(context);
         final cubit = context.read<OnboardingCubit>();
         final canonicalKg = state.weightKg ?? _defaultKg;
         final isLb = state.weightDisplayUnit == WeightDisplayUnit.lb;
@@ -38,17 +40,23 @@ class OnboardingWeightPage extends StatelessWidget {
             : kMaxWeightKg;
 
         return OnboardingMetricPickerLayout(
-          title: 'What is your weight?',
+          title: l10n.onboardingWeightTitle,
           unitSelector: AstraSegmentedControl<WeightDisplayUnit>(
             segmentHorizontalPadding:
                 OnboardingMetricPickerLayout.unitSegmentHorizontalPadding,
-            options: const [
-              AstraSegmentOption(value: WeightDisplayUnit.kg, label: 'kg'),
-              AstraSegmentOption(value: WeightDisplayUnit.lb, label: 'lb'),
+            options: [
+              AstraSegmentOption(
+                value: WeightDisplayUnit.kg,
+                label: l10n.onboardingUnitKg,
+              ),
+              AstraSegmentOption(
+                value: WeightDisplayUnit.lb,
+                label: l10n.onboardingUnitLb,
+              ),
             ],
             selected: state.weightDisplayUnit,
             onChanged: cubit.setWeightDisplayUnit,
-            semanticsHint: 'Select weight unit',
+            semanticsHint: l10n.onboardingWeightUnitSemantics,
           ),
           ruler: AstraHorizontalRuler(
             key: ValueKey('weight-ruler-${state.weightDisplayUnit.name}'),
@@ -63,7 +71,7 @@ class OnboardingWeightPage extends StatelessWidget {
             min: min,
             max: max,
             step: 1,
-            unitLabel: isLb ? 'lb' : 'kg',
+            unitLabel: isLb ? l10n.onboardingUnitLb : l10n.onboardingUnitKg,
             majorTickEvery: 10,
             sliderVerticalMargin:
                 OnboardingMetricPickerLayout.sliderVerticalMargin,
