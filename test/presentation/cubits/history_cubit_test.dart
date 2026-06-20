@@ -233,6 +233,7 @@ void main() {
       expect(cubit.state.dailyGoal, kDefaultStepGoal);
       expect(cubit.state.periodAverages, isNull);
       expect(cubit.state.peakDay, isNull);
+      expect(cubit.state.insightAvailability, isNull);
       cubit.close();
     });
 
@@ -726,6 +727,7 @@ void main() {
       expect(cubit.state.trend, isNull);
       expect(cubit.state.periodAverages, isNull);
       expect(cubit.state.peakDay, isNull);
+      expect(cubit.state.insightAvailability, isNull);
 
       // oldest-first ordering
       final points = cubit.state.monthlyChartPoints;
@@ -753,6 +755,133 @@ void main() {
         expect(cubit.state.status, HistoryStatus.ready);
         cubit.selectPeriod(HistoryPeriod.months12);
         expect(cubit.state.monthlyChartPoints.any((m) => m.totalSteps > 0), isTrue);
+        cubit.close();
+      },
+    );
+
+    // ── Local insight cards (Story 20-2) ─────────────────────────────────────
+
+    test('insights: fewer than seven days with steps yields empty availability', () async {
+      for (var dayOffset = 0; dayOffset < 6; dayOffset++) {
+        await stepRepos.ingestion.upsertIngestionBucket(
+          _bucket(
+            startTimeUtc: DateTime.utc(2026, 6, 2 - dayOffset, 10),
+            value: 1000,
+            zoneOffset: '+02:00',
+          ),
+        );
+      }
+      final cubit = buildCubit();
+      await cubit.refresh();
+
+      expect(cubit.state.status, HistoryStatus.ready);
+      expect(cubit.state.insightAvailability?.hasMinimumHistory, isFalse);
+      expect(cubit.state.mostActiveWeekday, isNull);
+      expect(cubit.state.goalStreak, isNull);
+      cubit.close();
+    });
+
+    test('insights: seven to thirteen days enables weekday and streak but not weekly', () async {
+      for (var dayOffset = 0; dayOffset < 10; dayOffset++) {
+        await stepRepos.ingestion.upsertIngestionBucket(
+          _bucket(
+            startTimeUtc: DateTime.utc(2026, 6, 2 - dayOffset, 10),
+            value: 1000 + dayOffset,
+            zoneOffset: '+02:00',
+          ),
+        );
+      }
+      final cubit = buildCubit();
+      await cubit.refresh();
+
+      expect(cubit.state.insightAvailability?.hasMinimumHistory, isTrue);
+      expect(cubit.state.insightAvailability?.hasWeeklyComparison, isFalse);
+      expect(cubit.state.mostActiveWeekday, isNotNull);
+      expect(cubit.state.goalStreak, isNotNull);
+      cubit.close();
+    });
+
+    test('mostActiveWeekday: selects highest weekday average with tie-break', () async {
+      // Seed 14 days: Tuesdays get 5000, other weekdays get 1000.
+      for (var dayOffset = 0; dayOffset < 14; dayOffset++) {
+        final day = DateTime.utc(2026, 6, 2 - dayOffset, 10);
+        final isTuesday = day.weekday == DateTime.tuesday;
+        await stepRepos.ingestion.upsertIngestionBucket(
+          _bucket(
+            startTimeUtc: day,
+            value: isTuesday ? 5000 : 1000,
+            zoneOffset: '+02:00',
+          ),
+        );
+      }
+      final cubit = buildCubit();
+      await cubit.refresh();
+
+      expect(cubit.state.mostActiveWeekday?.weekday, DateTime.tuesday);
+      cubit.close();
+
+      // Tie-break: equal averages, higher sum wins (two Tuesdays at 8000 vs one Wednesday at 8000).
+      await db.delete('timeseries_samples');
+      for (final dayOffset in [0, 7, 1, 8, 2, 9, 3]) {
+        final day = DateTime.utc(2026, 6, 2 - dayOffset, 10);
+        final isTuesday = day.weekday == DateTime.tuesday;
+        await stepRepos.ingestion.upsertIngestionBucket(
+          _bucket(
+            startTimeUtc: day,
+            value: isTuesday ? 8000 : 1000,
+            zoneOffset: '+02:00',
+          ),
+        );
+      }
+      final c2 = buildCubit();
+      await c2.refresh();
+      expect(c2.state.mostActiveWeekday?.weekday, DateTime.tuesday);
+      c2.close();
+    });
+
+    test('goalStreak: counts consecutive days above goal and respects goalsByDay', () async {
+      await db.insert('daily_goal_effective', {
+        'effective_from_local_day': '2026-06-01',
+        'goal': 8000,
+      });
+      for (var dayOffset = 0; dayOffset < 10; dayOffset++) {
+        await stepRepos.ingestion.upsertIngestionBucket(
+          _bucket(
+            startTimeUtc: DateTime.utc(2026, 6, 2 - dayOffset, 10),
+            value: dayOffset <= 2 ? 9000 : (dayOffset == 3 ? 3000 : 5000),
+            zoneOffset: '+02:00',
+          ),
+        );
+      }
+      final cubit = buildCubit();
+      await cubit.refresh();
+
+      expect(cubit.state.goalStreak?.consecutiveDays, 3);
+      cubit.close();
+    });
+
+    test(
+      'selectPeriod updates insights from cache without extra chart query',
+      () async {
+        await DataInjectService(repository: stepRepos.ingestion).inject90Days(
+          clock: clock,
+        );
+        final spy = _ChartAggregateSpyRepository(stepRepos.aggregation);
+        final cubit = buildCubit(stepAggregation: spy);
+
+        await cubit.refresh();
+        expect(spy.chartAggregateCallCount, 1);
+        final weekday7d = cubit.state.mostActiveWeekday?.weekday;
+        final streak7d = cubit.state.goalStreak?.consecutiveDays;
+
+        cubit.selectPeriod(HistoryPeriod.days30);
+        expect(spy.chartAggregateCallCount, 1);
+        expect(cubit.state.mostActiveWeekday?.weekday, weekday7d);
+        expect(cubit.state.goalStreak?.consecutiveDays, streak7d);
+        expect(cubit.state.insightAvailability?.hasMinimumHistory, isTrue);
+
+        cubit.selectPeriod(HistoryPeriod.days7);
+        expect(spy.chartAggregateCallCount, 1);
         cubit.close();
       },
     );
