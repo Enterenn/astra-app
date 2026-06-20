@@ -179,6 +179,7 @@ AppDependencies buildCoordinatorUnitTestDeps({
     initialWeightUnit: WeightDisplayUnit.kg,
     initialHeightUnit: HeightDisplayUnit.cm,
     initialOnboardingComplete: initialOnboardingComplete,
+    initialAppLocale: null,
     timeProvider: timeProvider,
     ingestionSources: sources,
     stepNormalizer: stepNormalizer,

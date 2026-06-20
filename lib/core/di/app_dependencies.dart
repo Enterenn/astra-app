@@ -40,6 +40,7 @@ class AppDependencies {
     required this.initialWeightUnit,
     required this.initialHeightUnit,
     required this.initialOnboardingComplete,
+    required this.initialAppLocale,
     required this.timeProvider,
     required this.ingestionSources,
     required this.stepNormalizer,
@@ -65,6 +66,7 @@ class AppDependencies {
   final WeightDisplayUnit initialWeightUnit;
   final HeightDisplayUnit initialHeightUnit;
   final bool initialOnboardingComplete;
+  final String? initialAppLocale;
   final TimeProvider timeProvider;
   final List<DataIngestionSource> ingestionSources;
   final StepNormalizer stepNormalizer;
@@ -102,6 +104,7 @@ class AppDependencies {
     final initialWeightUnit = await userSettings.getWeightDisplayUnit();
     final initialHeightUnit = await userSettings.getHeightDisplayUnit();
     final initialOnboardingComplete = await userSettings.getOnboardingComplete();
+    final initialAppLocale = await userSettings.getAppLocale();
     final stepIngestion = StepIngestionRepository(databaseSession);
     final stepAggregation = StepAggregationRepository(
       databaseSession,
@@ -166,6 +169,7 @@ class AppDependencies {
       initialWeightUnit: initialWeightUnit,
       initialHeightUnit: initialHeightUnit,
       initialOnboardingComplete: initialOnboardingComplete,
+      initialAppLocale: initialAppLocale,
       timeProvider: timeProvider,
       ingestionSources: ingestionSources,
       stepNormalizer: stepNormalizer,
@@ -192,6 +196,7 @@ class AppDependencies {
     required WeightDisplayUnit initialWeightUnit,
     required HeightDisplayUnit initialHeightUnit,
     required bool initialOnboardingComplete,
+    required String? initialAppLocale,
     required TimeProvider timeProvider,
     required List<DataIngestionSource> ingestionSources,
     required StepNormalizer stepNormalizer,
@@ -220,6 +225,7 @@ class AppDependencies {
       initialWeightUnit: initialWeightUnit,
       initialHeightUnit: initialHeightUnit,
       initialOnboardingComplete: initialOnboardingComplete,
+      initialAppLocale: initialAppLocale,
       timeProvider: timeProvider,
       ingestionSources: ingestionSources,
       stepNormalizer: stepNormalizer,
@@ -276,6 +282,7 @@ class AppDependencies {
     final initialHeightUnit = await settings.getHeightDisplayUnit();
     final onboardingComplete =
         initialOnboardingComplete ?? await settings.getOnboardingComplete();
+    final initialAppLocale = await settings.getAppLocale();
     final ingestion = stepIngestion ?? StepIngestionRepository(databaseSession);
     final aggregation = stepAggregation ??
         StepAggregationRepository(databaseSession, clock: clock);
@@ -350,6 +357,7 @@ class AppDependencies {
       initialWeightUnit: initialWeightUnit,
       initialHeightUnit: initialHeightUnit,
       initialOnboardingComplete: onboardingComplete,
+      initialAppLocale: initialAppLocale,
       timeProvider: clock,
       ingestionSources: sources,
       stepNormalizer: stepNormalizer,

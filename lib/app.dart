@@ -7,6 +7,8 @@ import 'package:flutter_localizations/flutter_localizations.dart';
 import 'core/constants/astra_theme.dart';
 import 'core/di/app_dependencies.dart';
 import 'core/services/app_lifecycle_coordinator.dart';
+import 'presentation/cubits/locale_cubit.dart';
+import 'presentation/cubits/locale_state.dart';
 import 'presentation/cubits/onboarding_cubit.dart';
 import 'presentation/cubits/theme_cubit.dart';
 import 'presentation/cubits/theme_state.dart';
@@ -134,56 +136,67 @@ class _AstraAppState extends State<AstraApp> with WidgetsBindingObserver {
             initialHeightUnit: widget.deps.initialHeightUnit,
           ),
         ),
+        BlocProvider(
+          create: (_) => LocaleCubit(
+            userSettings: widget.deps.userSettings,
+            initialLanguageCode: widget.deps.initialAppLocale,
+          ),
+        ),
       ],
-      child: BlocBuilder<ThemeCubit, ThemeState>(
-        builder: (context, themeState) {
-          return MaterialApp(
-            title: 'ASTRA',
-            theme: buildAstraLightTheme(preset: themeState.accentPreset),
-            darkTheme: buildAstraDarkTheme(preset: themeState.accentPreset),
-            themeMode: themeState.materialThemeMode,
-            themeAnimationDuration: const Duration(milliseconds: 120),
-            localizationsDelegates: const [
-              AppLocalizations.delegate,
-              GlobalMaterialLocalizations.delegate,
-              GlobalWidgetsLocalizations.delegate,
-              GlobalCupertinoLocalizations.delegate,
-            ],
-            supportedLocales: AppLocalizations.supportedLocales,
-            localeResolutionCallback: (locale, supportedLocales) {
-              if (locale != null) {
-                for (final supported in supportedLocales) {
-                  if (supported.languageCode == locale.languageCode) {
-                    return supported;
+      child: BlocBuilder<LocaleCubit, LocaleState>(
+        builder: (context, localeState) {
+          return BlocBuilder<ThemeCubit, ThemeState>(
+            builder: (context, themeState) {
+              return MaterialApp(
+                title: 'ASTRA',
+                theme: buildAstraLightTheme(preset: themeState.accentPreset),
+                darkTheme: buildAstraDarkTheme(preset: themeState.accentPreset),
+                themeMode: themeState.materialThemeMode,
+                themeAnimationDuration: const Duration(milliseconds: 120),
+                locale: localeState.materialLocale,
+                localizationsDelegates: const [
+                  AppLocalizations.delegate,
+                  GlobalMaterialLocalizations.delegate,
+                  GlobalWidgetsLocalizations.delegate,
+                  GlobalCupertinoLocalizations.delegate,
+                ],
+                supportedLocales: AppLocalizations.supportedLocales,
+                localeResolutionCallback: (locale, supportedLocales) {
+                  if (locale != null) {
+                    for (final supported in supportedLocales) {
+                      if (supported.languageCode == locale.languageCode) {
+                        return supported;
+                      }
+                    }
                   }
-                }
-              }
-              return const Locale('en');
+                  return const Locale('en');
+                },
+                home: _showMainShell
+                    ? AppScaffold(
+                        deps: widget.deps,
+                        foregroundBackfill: widget.deps.initialOnboardingComplete
+                            ? _coordinator.foregroundBackfill
+                            : null,
+                        onTodayCubitReady: _onTodayCubitReady,
+                        onTodayCubitDisposed: () =>
+                            _coordinator.bindTodayCubit(null),
+                        onHistoryCubitReady: _onHistoryCubitReady,
+                        onHistoryCubitDisposed: () =>
+                            _coordinator.bindHistoryCubit(null),
+                        onMyDataCubitReady: _onMyDataCubitReady,
+                        onMyDataCubitDisposed: () =>
+                            _coordinator.bindMyDataCubit(null),
+                        createTodayCubit: widget.createTodayCubit,
+                        createHistoryCubit: widget.createHistoryCubit,
+                        createMyDataCubit: widget.createMyDataCubit,
+                      )
+                    : OnboardingFlow(
+                        deps: widget.deps,
+                        onComplete: _onOnboardingComplete,
+                        createCubit: widget.createOnboardingCubit,
+                      ),
+              );
             },
-            home: _showMainShell
-                ? AppScaffold(
-                    deps: widget.deps,
-                    foregroundBackfill: widget.deps.initialOnboardingComplete
-                        ? _coordinator.foregroundBackfill
-                        : null,
-                    onTodayCubitReady: _onTodayCubitReady,
-                    onTodayCubitDisposed: () =>
-                        _coordinator.bindTodayCubit(null),
-                    onHistoryCubitReady: _onHistoryCubitReady,
-                    onHistoryCubitDisposed: () =>
-                        _coordinator.bindHistoryCubit(null),
-                    onMyDataCubitReady: _onMyDataCubitReady,
-                    onMyDataCubitDisposed: () =>
-                        _coordinator.bindMyDataCubit(null),
-                    createTodayCubit: widget.createTodayCubit,
-                    createHistoryCubit: widget.createHistoryCubit,
-                    createMyDataCubit: widget.createMyDataCubit,
-                  )
-                : OnboardingFlow(
-                    deps: widget.deps,
-                    onComplete: _onOnboardingComplete,
-                    createCubit: widget.createOnboardingCubit,
-                  ),
           );
         },
       ),
