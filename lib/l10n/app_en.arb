@@ -3,5 +3,51 @@
   "appTitle": "ASTRA",
   "@appTitle": {
     "description": "Application title shown in task switcher / OS shell"
+  },
+  "menuPrivacyAndData": "Privacy & My Data",
+  "@menuPrivacyAndData": {
+    "description": "My Data screen title and menu label (audit REF-21)"
+  },
+  "menuTrackingStatus": "Step Tracking Status",
+  "@menuTrackingStatus": {
+    "description": "My Data Background section headline (audit REF-21)"
+  },
+  "bannerStaleData": "Data outdated. Tap to refresh.",
+  "@bannerStaleData": {
+    "description": "Compact stale-data banner on Today screen (audit REF-21)"
+  },
+  "errorNoPermission": "Step access denied. Tap to fix.",
+  "@errorNoPermission": {
+    "description": "Today screen permission CTA when step access is denied (audit REF-21)"
+  },
+  "onboardingStartBtn": "Start",
+  "@onboardingStartBtn": {
+    "description": "Onboarding step 0 primary button label (audit REF-21)"
+  },
+  "trendsWeeklyGrowth": "Up {percentage}% from last week",
+  "@trendsWeeklyGrowth": {
+    "description": "Weekly step trend chip when steps increased",
+    "placeholders": {
+      "percentage": {
+        "type": "int"
+      }
+    }
+  },
+  "trendsWeeklyDecline": "Down {percentage}% from last week",
+  "@trendsWeeklyDecline": {
+    "description": "Weekly step trend chip when steps decreased",
+    "placeholders": {
+      "percentage": {
+        "type": "int"
+      }
+    }
+  },
+  "trendsWeeklyFlat": "Same as last week",
+  "@trendsWeeklyFlat": {
+    "description": "Weekly step trend chip when steps unchanged from prior week"
+  },
+  "trendsNoPriorWeek": "No prior week data",
+  "@trendsNoPriorWeek": {
+    "description": "Weekly step trend chip when prior week has no step data"
   }
 }

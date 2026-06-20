@@ -103,6 +103,60 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'ASTRA'**
   String get appTitle;
+
+  /// My Data screen title and menu label (audit REF-21)
+  ///
+  /// In en, this message translates to:
+  /// **'Privacy & My Data'**
+  String get menuPrivacyAndData;
+
+  /// My Data Background section headline (audit REF-21)
+  ///
+  /// In en, this message translates to:
+  /// **'Step Tracking Status'**
+  String get menuTrackingStatus;
+
+  /// Compact stale-data banner on Today screen (audit REF-21)
+  ///
+  /// In en, this message translates to:
+  /// **'Data outdated. Tap to refresh.'**
+  String get bannerStaleData;
+
+  /// Today screen permission CTA when step access is denied (audit REF-21)
+  ///
+  /// In en, this message translates to:
+  /// **'Step access denied. Tap to fix.'**
+  String get errorNoPermission;
+
+  /// Onboarding step 0 primary button label (audit REF-21)
+  ///
+  /// In en, this message translates to:
+  /// **'Start'**
+  String get onboardingStartBtn;
+
+  /// Weekly step trend chip when steps increased
+  ///
+  /// In en, this message translates to:
+  /// **'Up {percentage}% from last week'**
+  String trendsWeeklyGrowth(int percentage);
+
+  /// Weekly step trend chip when steps decreased
+  ///
+  /// In en, this message translates to:
+  /// **'Down {percentage}% from last week'**
+  String trendsWeeklyDecline(int percentage);
+
+  /// Weekly step trend chip when steps unchanged from prior week
+  ///
+  /// In en, this message translates to:
+  /// **'Same as last week'**
+  String get trendsWeeklyFlat;
+
+  /// Weekly step trend chip when prior week has no step data
+  ///
+  /// In en, this message translates to:
+  /// **'No prior week data'**
+  String get trendsNoPriorWeek;
 }
 
 class _AppLocalizationsDelegate

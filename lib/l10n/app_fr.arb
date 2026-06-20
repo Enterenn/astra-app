@@ -3,5 +3,14 @@
   "appTitle": "ASTRA",
   "@appTitle": {
     "description": "Application title shown in task switcher / OS shell"
-  }
+  },
+  "menuPrivacyAndData": "Confidentialité & Mes Données",
+  "menuTrackingStatus": "État du suivi des pas",
+  "bannerStaleData": "Données obsolètes. Toucher pour actualiser.",
+  "errorNoPermission": "Accès aux pas refusé. Toucher pour régler.",
+  "onboardingStartBtn": "Démarrer",
+  "trendsWeeklyGrowth": "En hausse de {percentage}% la semaine dernière",
+  "trendsWeeklyDecline": "En baisse de {percentage}% la semaine dernière",
+  "trendsWeeklyFlat": "Identique à la semaine dernière",
+  "trendsNoPriorWeek": "Pas de données la semaine précédente"
 }

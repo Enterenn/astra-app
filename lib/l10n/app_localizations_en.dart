@@ -10,4 +10,35 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get appTitle => 'ASTRA';
+
+  @override
+  String get menuPrivacyAndData => 'Privacy & My Data';
+
+  @override
+  String get menuTrackingStatus => 'Step Tracking Status';
+
+  @override
+  String get bannerStaleData => 'Data outdated. Tap to refresh.';
+
+  @override
+  String get errorNoPermission => 'Step access denied. Tap to fix.';
+
+  @override
+  String get onboardingStartBtn => 'Start';
+
+  @override
+  String trendsWeeklyGrowth(int percentage) {
+    return 'Up $percentage% from last week';
+  }
+
+  @override
+  String trendsWeeklyDecline(int percentage) {
+    return 'Down $percentage% from last week';
+  }
+
+  @override
+  String get trendsWeeklyFlat => 'Same as last week';
+
+  @override
+  String get trendsNoPriorWeek => 'No prior week data';
 }
