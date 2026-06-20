@@ -266,6 +266,36 @@ abstract class AppLocalizations {
   /// **'Settings'**
   String get settingsTitle;
 
+  /// Settings section headline for language preference
+  ///
+  /// In en, this message translates to:
+  /// **'Language'**
+  String get settingsLanguage;
+
+  /// Language selector option for English
+  ///
+  /// In en, this message translates to:
+  /// **'English'**
+  String get settingsLanguageEnglish;
+
+  /// Language selector option for French
+  ///
+  /// In en, this message translates to:
+  /// **'French'**
+  String get settingsLanguageFrench;
+
+  /// Subtitle when no explicit language preference is saved
+  ///
+  /// In en, this message translates to:
+  /// **'Using device language'**
+  String get settingsLanguageAutomatic;
+
+  /// Snack bar when saving language preference fails
+  ///
+  /// In en, this message translates to:
+  /// **'Could not update language'**
+  String get settingsLanguageUpdateError;
+
   /// Settings section headline for unit preferences
   ///
   /// In en, this message translates to:

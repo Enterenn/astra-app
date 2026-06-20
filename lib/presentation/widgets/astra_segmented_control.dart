@@ -12,11 +12,13 @@ class AstraSegmentOption<T> {
     required this.value,
     required this.label,
     this.semanticsLabel,
+    this.segmentKey,
   });
 
   final T value;
   final String label;
   final String? semanticsLabel;
+  final Key? segmentKey;
 
   String get effectiveSemanticsLabel => semanticsLabel ?? label;
 }
@@ -201,28 +203,31 @@ class _SegmentTarget<T> extends StatelessWidget {
         opacity: enabled ? 1 : 0.5,
         child: AstraPressable(
           enabled: canSelect,
-          child: Material(
-            color: Colors.transparent,
-            borderRadius: BorderRadius.circular(AstraSpacing.kRadiusFull),
-            child: InkWell(
-              onTap: canSelect ? () => onChanged(option.value) : null,
+          child: KeyedSubtree(
+            key: option.segmentKey,
+            child: Material(
+              color: Colors.transparent,
               borderRadius: BorderRadius.circular(AstraSpacing.kRadiusFull),
-              splashColor: Colors.transparent,
-              highlightColor: Colors.transparent,
-              hoverColor: Colors.transparent,
-              child: ConstrainedBox(
-                constraints: const BoxConstraints(
-                  minHeight: AstraSpacing.kMinTouchTarget,
-                ),
-                child: Padding(
-                  padding: EdgeInsets.symmetric(horizontal: horizontalPadding),
-                  child: Center(
-                    child: Text(
-                      option.label,
-                      style: textStyle,
-                      maxLines: 1,
-                      overflow: TextOverflow.visible,
-                      softWrap: false,
+              child: InkWell(
+                onTap: canSelect ? () => onChanged(option.value) : null,
+                borderRadius: BorderRadius.circular(AstraSpacing.kRadiusFull),
+                splashColor: Colors.transparent,
+                highlightColor: Colors.transparent,
+                hoverColor: Colors.transparent,
+                child: ConstrainedBox(
+                  constraints: const BoxConstraints(
+                    minHeight: AstraSpacing.kMinTouchTarget,
+                  ),
+                  child: Padding(
+                    padding: EdgeInsets.symmetric(horizontal: horizontalPadding),
+                    child: Center(
+                      child: Text(
+                        option.label,
+                        style: textStyle,
+                        maxLines: 1,
+                        overflow: TextOverflow.visible,
+                        softWrap: false,
+                      ),
                     ),
                   ),
                 ),

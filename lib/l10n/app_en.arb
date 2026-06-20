@@ -122,6 +122,26 @@
   "@settingsTitle": {
     "description": "Settings screen title"
   },
+  "settingsLanguage": "Language",
+  "@settingsLanguage": {
+    "description": "Settings section headline for language preference"
+  },
+  "settingsLanguageEnglish": "English",
+  "@settingsLanguageEnglish": {
+    "description": "Language selector option for English"
+  },
+  "settingsLanguageFrench": "French",
+  "@settingsLanguageFrench": {
+    "description": "Language selector option for French"
+  },
+  "settingsLanguageAutomatic": "Using device language",
+  "@settingsLanguageAutomatic": {
+    "description": "Subtitle when no explicit language preference is saved"
+  },
+  "settingsLanguageUpdateError": "Could not update language",
+  "@settingsLanguageUpdateError": {
+    "description": "Snack bar when saving language preference fails"
+  },
   "settingsUnits": "Units",
   "@settingsUnits": {
     "description": "Settings section headline for unit preferences"

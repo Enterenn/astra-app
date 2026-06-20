@@ -5,6 +5,7 @@ import 'package:astra_app/core/services/notification_service.dart';
 import 'package:astra_app/data/repositories/user_health_metrics_repository.dart';
 import 'package:astra_app/data/repositories/user_settings_repository.dart';
 import 'package:astra_app/l10n/app_localizations.dart';
+import 'package:astra_app/presentation/cubits/locale_cubit.dart';
 import 'package:astra_app/presentation/cubits/profile_cubit.dart';
 import 'package:astra_app/presentation/cubits/profile_errors.dart';
 import 'package:astra_app/presentation/cubits/profile_state.dart';
@@ -13,6 +14,7 @@ import 'package:astra_app/presentation/cubits/theme_state.dart';
 import 'package:astra_app/presentation/cubits/units_cubit.dart';
 import 'package:astra_app/presentation/screens/settings_screen.dart';
 import 'package:astra_app/presentation/widgets/accent_preset_selector.dart';
+import 'package:astra_app/presentation/widgets/language_selector.dart';
 import 'package:astra_app/presentation/widgets/section_card.dart';
 import 'package:astra_app/presentation/widgets/settings_preference_row.dart';
 import 'package:astra_app/presentation/widgets/theme_selector.dart';
@@ -51,10 +53,12 @@ Future<void> _pumpSettingsScreen(
   required ProfileCubit profileCubit,
   required ThemeCubit themeCubit,
   required UnitsCubit unitsCubit,
+  required LocaleCubit localeCubit,
   bool disableAnimations = true,
 }) async {
   await tester.pumpWidget(
     MaterialApp(
+      locale: const Locale('en'),
       theme: buildAstraLightTheme(preset: AstraAccentPreset.orange),
       localizationsDelegates: kTestLocalizationsDelegates,
       supportedLocales: AppLocalizations.supportedLocales,
@@ -66,6 +70,7 @@ Future<void> _pumpSettingsScreen(
               BlocProvider<ProfileCubit>.value(value: profileCubit),
               BlocProvider<ThemeCubit>.value(value: themeCubit),
               BlocProvider<UnitsCubit>.value(value: unitsCubit),
+              BlocProvider<LocaleCubit>.value(value: localeCubit),
             ],
             child: const SettingsScreen(),
           ),
@@ -98,7 +103,7 @@ void main() {
       await db.close();
     });
 
-    testWidgets('shows Units, Notifications, and Theme cards in order', (
+    testWidgets('shows Language, Units, Notifications, and Theme cards in order', (
       tester,
     ) async {
       final profileCubit = _SeededProfileCubit(
@@ -121,14 +126,19 @@ void main() {
       final unitsCubit = UnitsCubit(userSettings: userSettings);
       addTearDown(unitsCubit.close);
 
+      final localeCubit = LocaleCubit(userSettings: userSettings);
+      addTearDown(localeCubit.close);
+
       await _pumpSettingsScreen(
         tester,
         profileCubit: profileCubit,
         themeCubit: themeCubit,
         unitsCubit: unitsCubit,
+        localeCubit: localeCubit,
       );
 
       expect(find.text('Settings'), findsOneWidget);
+      expect(find.text('Language'), findsOneWidget);
       expect(find.text('Units'), findsOneWidget);
       expect(find.text('Notifications'), findsOneWidget);
       expect(find.text('Theme'), findsOneWidget);
@@ -140,16 +150,17 @@ void main() {
       expect(find.text('cm'), findsOneWidget);
       expect(find.text('Receive Goal notifications'), findsOneWidget);
       expect(find.byType(Switch), findsOneWidget);
+      expect(find.byType(LanguageSelector), findsOneWidget);
       expect(find.byType(ThemeSelector), findsOneWidget);
       expect(find.byType(AccentPresetSelector), findsOneWidget);
-      expect(find.byType(SectionCard), findsNWidgets(3));
+      expect(find.byType(SectionCard), findsNWidgets(4));
       expect(find.byType(SettingsPreferenceRow), findsNWidgets(3));
 
       final headlines = tester
           .widgetList<SectionCard>(find.byType(SectionCard))
           .map((card) => card.headline)
           .toList();
-      expect(headlines, ['Units', 'Notifications', 'Theme']);
+      expect(headlines, ['Language', 'Units', 'Notifications', 'Theme']);
     });
 
     // Tap→sheet integration: covered by unit_option_picker_sheet_test + units_cubit_test.
@@ -178,11 +189,15 @@ void main() {
       final unitsCubit = UnitsCubit(userSettings: userSettings);
       addTearDown(unitsCubit.close);
 
+      final localeCubit = LocaleCubit(userSettings: userSettings);
+      addTearDown(localeCubit.close);
+
       await _pumpSettingsScreen(
         tester,
         profileCubit: profileCubit,
         themeCubit: themeCubit,
         unitsCubit: unitsCubit,
+        localeCubit: localeCubit,
       );
 
       expect(find.text('Receive Goal notifications'), findsOneWidget);
@@ -210,11 +225,15 @@ void main() {
       final unitsCubit = UnitsCubit(userSettings: userSettings);
       addTearDown(unitsCubit.close);
 
+      final localeCubit = LocaleCubit(userSettings: userSettings);
+      addTearDown(localeCubit.close);
+
       await _pumpSettingsScreen(
         tester,
         profileCubit: profileCubit,
         themeCubit: themeCubit,
         unitsCubit: unitsCubit,
+        localeCubit: localeCubit,
       );
 
       expect(find.text('Informations'), findsNothing);
@@ -242,17 +261,22 @@ void main() {
       final unitsCubit = UnitsCubit(userSettings: userSettings);
       addTearDown(unitsCubit.close);
 
+      final localeCubit = LocaleCubit(userSettings: userSettings);
+      addTearDown(localeCubit.close);
+
       await _pumpSettingsScreen(
         tester,
         profileCubit: profileCubit,
         themeCubit: themeCubit,
         unitsCubit: unitsCubit,
+        localeCubit: localeCubit,
       );
 
       expect(find.byType(CircularProgressIndicator), findsOneWidget);
       expect(find.text('Notifications'), findsNothing);
       expect(find.text('Theme'), findsNothing);
       expect(find.text('Units'), findsNothing);
+      expect(find.text('Language'), findsNothing);
     });
 
     testWidgets('shows error message when profile fails to load', (
@@ -277,11 +301,15 @@ void main() {
       final unitsCubit = UnitsCubit(userSettings: userSettings);
       addTearDown(unitsCubit.close);
 
+      final localeCubit = LocaleCubit(userSettings: userSettings);
+      addTearDown(localeCubit.close);
+
       await _pumpSettingsScreen(
         tester,
         profileCubit: profileCubit,
         themeCubit: themeCubit,
         unitsCubit: unitsCubit,
+        localeCubit: localeCubit,
       );
 
       expect(find.text(l10n.profileLoadErrorGeneric), findsOneWidget);
@@ -308,11 +336,15 @@ void main() {
       final unitsCubit = UnitsCubit(userSettings: userSettings);
       addTearDown(unitsCubit.close);
 
+      final localeCubit = LocaleCubit(userSettings: userSettings);
+      addTearDown(localeCubit.close);
+
       await _pumpSettingsScreen(
         tester,
         profileCubit: profileCubit,
         themeCubit: themeCubit,
         unitsCubit: unitsCubit,
+        localeCubit: localeCubit,
       );
 
       expect(tester.widget<Switch>(find.byType(Switch)).value, isTrue);

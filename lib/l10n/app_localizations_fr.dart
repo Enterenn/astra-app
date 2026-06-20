@@ -97,6 +97,22 @@ class AppLocalizationsFr extends AppLocalizations {
   String get settingsTitle => 'Paramètres';
 
   @override
+  String get settingsLanguage => 'Langue';
+
+  @override
+  String get settingsLanguageEnglish => 'Anglais';
+
+  @override
+  String get settingsLanguageFrench => 'Français';
+
+  @override
+  String get settingsLanguageAutomatic => 'Langue de l\'appareil';
+
+  @override
+  String get settingsLanguageUpdateError =>
+      'Impossible de mettre à jour la langue';
+
+  @override
   String get settingsUnits => 'Unités';
 
   @override

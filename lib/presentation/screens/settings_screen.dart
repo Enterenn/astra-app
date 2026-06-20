@@ -6,6 +6,8 @@ import '../../core/constants/astra_colors.dart';
 import '../../core/constants/astra_spacing.dart';
 import '../../core/constants/astra_typography.dart';
 import '../../core/constants/display_unit_preferences.dart';
+import '../cubits/locale_cubit.dart';
+import '../cubits/locale_state.dart';
 import '../cubits/profile_cubit.dart';
 import '../cubits/profile_state.dart';
 import '../cubits/theme_cubit.dart';
@@ -15,6 +17,7 @@ import '../cubits/units_state.dart';
 import '../l10n/display_unit_l10n.dart';
 import '../l10n/profile_error_messages.dart';
 import '../widgets/accent_preset_selector.dart';
+import '../widgets/language_selector.dart';
 import '../widgets/secondary_screen_shell.dart';
 import '../widgets/section_card.dart';
 import '../widgets/settings_preference_row.dart';
@@ -166,6 +169,29 @@ class _SettingsScrollBody extends StatelessWidget {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
+          BlocBuilder<LocaleCubit, LocaleState>(
+            builder: (context, localeState) {
+              final localeCubit = context.read<LocaleCubit>();
+              return SectionCard(
+                headline: l10n.settingsLanguage,
+                child: LanguageSelector(
+                  explicitLanguageCode: localeState.explicitLanguageCode,
+                  onChanged: (languageCode) {
+                    localeCubit.setLanguage(languageCode).then((saved) {
+                      if (!saved && context.mounted) {
+                        ScaffoldMessenger.of(context).showSnackBar(
+                          SnackBar(
+                            content: Text(l10n.settingsLanguageUpdateError),
+                          ),
+                        );
+                      }
+                    });
+                  },
+                ),
+              );
+            },
+          ),
+          const SizedBox(height: AstraSpacing.kSpaceMd),
           BlocBuilder<UnitsCubit, UnitsState>(
             builder: (context, unitsState) {
               final unitsCubit = context.read<UnitsCubit>();

@@ -6,6 +6,7 @@ import 'package:astra_app/core/di/app_dependencies.dart';
 import 'package:astra_app/data/repositories/user_health_metrics_repository.dart';
 import 'package:astra_app/data/repositories/user_settings_repository.dart';
 import 'package:astra_app/presentation/cubits/history_cubit.dart';
+import 'package:astra_app/presentation/cubits/locale_cubit.dart';
 import 'package:astra_app/presentation/cubits/my_data_cubit.dart';
 import 'package:astra_app/presentation/cubits/my_data_errors.dart';
 import 'package:astra_app/presentation/cubits/theme_cubit.dart';
@@ -151,6 +152,9 @@ Future<void> _pumpAppScaffold(
               ),
               BlocProvider(
                 create: (_) => UnitsCubit(userSettings: userSettings),
+              ),
+              BlocProvider(
+                create: (_) => LocaleCubit(userSettings: userSettings),
               ),
             ],
             child: scaffold,
@@ -677,6 +681,7 @@ void main() {
       );
 
       expect(find.text('Settings'), findsWidgets);
+      expect(find.text('Language'), findsOneWidget);
       expect(find.text('Units'), findsOneWidget);
       expect(find.text('Distance'), findsOneWidget);
       expect(find.text('Metric'), findsOneWidget);
