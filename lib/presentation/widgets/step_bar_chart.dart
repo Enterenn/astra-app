@@ -1,3 +1,4 @@
+import 'package:astra_app/l10n/app_localizations.dart';
 import 'package:fl_chart/fl_chart.dart';
 import 'package:flutter/material.dart';
 
@@ -8,6 +9,7 @@ import '../../core/constants/preference_keys.dart';
 import '../../core/time/local_day_formatter.dart';
 import '../../data/models/chart_day_aggregate.dart';
 import '../cubits/history_state.dart';
+import '../l10n/l10n_date_labels.dart';
 import 'chart/astra_bar_chart_touch.dart';
 import 'chart/chart_axis_ticks.dart';
 import 'chart/goal_step_line_painter.dart';
@@ -23,9 +25,6 @@ class StepBarChart extends StatelessWidget {
 
   static const kDailyChartHeight = 320.0;
 
-  static const emptyCopy =
-      'No history yet. Walk a bit — data stays on this device.';
-
   final List<ChartDayAggregate> points;
   final int dailyGoal;
   final Map<String, int> goalsByDay;
@@ -33,6 +32,7 @@ class StepBarChart extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context);
     final colors = context.astraColors;
     final chartShell = ConstrainedBox(
       constraints: const BoxConstraints(minHeight: kDailyChartHeight),
@@ -45,7 +45,7 @@ class StepBarChart extends StatelessWidget {
           borderRadius: BorderRadius.circular(AstraSpacing.kRadiusMd),
           child: switch (status) {
             HistoryStatus.loading => _LoadingSkeleton(colors: colors),
-            HistoryStatus.empty => _EmptyState(colors: colors),
+            HistoryStatus.empty => _EmptyState(colors: colors, l10n: l10n),
             HistoryStatus.ready => _ReadyChart(
               points: points,
               dailyGoal: dailyGoal,
@@ -61,14 +61,18 @@ class StepBarChart extends StatelessWidget {
       return chartShell;
     }
 
-    return Semantics(label: 'Step history bar chart', child: chartShell);
+    return Semantics(
+      label: l10n.trendsStepBarChartSemantics,
+      child: chartShell,
+    );
   }
 }
 
 class _EmptyState extends StatelessWidget {
-  const _EmptyState({required this.colors});
+  const _EmptyState({required this.colors, required this.l10n});
 
   final AstraColors colors;
+  final AppLocalizations l10n;
 
   @override
   Widget build(BuildContext context) {
@@ -76,7 +80,7 @@ class _EmptyState extends StatelessWidget {
       child: Padding(
         padding: const EdgeInsets.all(AstraSpacing.kSpaceLg),
         child: Text(
-          StepBarChart.emptyCopy,
+          l10n.trendsEmptyHistory,
           style: AstraTypography.bodyFor(
             colors,
           ).copyWith(color: colors.neutralGray),
@@ -148,35 +152,11 @@ class _ReadyChartState extends State<_ReadyChart> {
   static const _kLeftAxisReserved = 36.0;
   static const _kBottomAxisReserved = 24.0;
 
-  static const _weekdayLabels = [
-    'Mon',
-    'Tue',
-    'Wed',
-    'Thu',
-    'Fri',
-    'Sat',
-    'Sun',
-  ];
-
-  static const _tooltipMonthNames = [
-    'January',
-    'February',
-    'March',
-    'April',
-    'May',
-    'June',
-    'July',
-    'August',
-    'September',
-    'October',
-    'November',
-    'December',
-  ];
-
   int? _touchedIndex;
 
   @override
   Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context);
     final colors = widget.colors;
     final points = widget.points;
     final resolvedGoals = [for (final point in points) _goalForPoint(point)];
@@ -214,8 +194,9 @@ class _ReadyChartState extends State<_ReadyChart> {
     final yAxisInterval = chartAxisTitleInterval(yTicks);
 
     final semanticsLabel = _touchedIndex == null
-        ? 'Step history bar chart'
+        ? l10n.trendsStepBarChartSemantics
         : _selectionSemanticsLabel(
+            l10n: l10n,
             point: points[_touchedIndex!],
             goal: resolvedGoals[_touchedIndex!],
           );
@@ -286,6 +267,7 @@ class _ReadyChartState extends State<_ReadyChart> {
                             colors: colors,
                             getTooltipItem: (group, groupIndex, rod, rodIndex) {
                               return _dailyTooltipItem(
+                                l10n: l10n,
                                 colors: colors,
                                 point: points[groupIndex],
                                 goal: resolvedGoals[groupIndex],
@@ -346,7 +328,10 @@ class _ReadyChartState extends State<_ReadyChart> {
                                     top: AstraSpacing.kSpaceXs,
                                   ),
                                   child: Text(
-                                    _formatDayLabel(points[index].localDay),
+                                    _formatDayLabel(
+                                      l10n,
+                                      points[index].localDay,
+                                    ),
                                     style: AstraTypography.captionFor(
                                       colors,
                                     ).copyWith(color: colors.textPrimary),
@@ -406,6 +391,7 @@ class _ReadyChartState extends State<_ReadyChart> {
   }
 
   BarTooltipItem _dailyTooltipItem({
+    required AppLocalizations l10n,
     required AstraColors colors,
     required ChartDayAggregate point,
     required int goal,
@@ -413,41 +399,31 @@ class _ReadyChartState extends State<_ReadyChart> {
     final steps = point.totalSteps;
 
     return BarTooltipItem(
-      '${_formatTooltipDate(point.localDay)}\n'
-      '$steps/$goal steps',
+      '${_formatTooltipDate(l10n, point.localDay)}\n'
+      '${l10n.chartTooltipStepsOfGoal(steps, goal)}',
       astraBarTooltipPrimaryStyle(colors),
     );
   }
 
   String _selectionSemanticsLabel({
+    required AppLocalizations l10n,
     required ChartDayAggregate point,
     required int goal,
   }) {
     final steps = point.totalSteps;
-    return '${_formatTooltipDate(point.localDay)}, '
-        '$steps of $goal steps, '
-        '${_formatGoalStatus(steps: steps, goal: goal)}';
+    return l10n.chartSelectionSemantics(
+      _formatTooltipDate(l10n, point.localDay),
+      steps,
+      goal,
+      l10n.chartGoalStatus(steps: steps, goal: goal),
+    );
   }
 
-  static String _formatGoalStatus({required int steps, required int goal}) {
-    if (goal <= 0) {
-      return 'no goal set';
-    }
-    if (steps > goal) {
-      return '${steps - goal} over goal';
-    }
-    if (steps < goal) {
-      return '${goal - steps} below goal';
-    }
-    return 'goal met';
-  }
-
-  String _formatTooltipDate(DateTime localDay) {
-    final month = _tooltipMonthNames[localDay.month - 1];
-    if (_chartSpansMultipleYears) {
-      return '${localDay.day} $month ${localDay.year}';
-    }
-    return '${localDay.day} $month';
+  String _formatTooltipDate(AppLocalizations l10n, DateTime localDay) {
+    return l10n.formatChartTooltipDate(
+      localDay,
+      includeYear: _chartSpansMultipleYears,
+    );
   }
 
   bool get _chartSpansMultipleYears {
@@ -489,9 +465,9 @@ class _ReadyChartState extends State<_ReadyChart> {
     return index % step == 0 || index == pointCount - 1;
   }
 
-  String _formatDayLabel(DateTime localDay) {
+  String _formatDayLabel(AppLocalizations l10n, DateTime localDay) {
     if (widget.points.length <= 7) {
-      return _weekdayLabels[localDay.weekday - 1];
+      return l10n.weekdayShort(localDay);
     }
     return '${localDay.day}/${localDay.month}';
   }

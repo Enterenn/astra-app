@@ -2,7 +2,6 @@ import 'package:flutter/foundation.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 
 import '../../core/metrics/derived_activity_metrics.dart';
-import '../../core/time/calendar_week.dart';
 import '../../core/time/local_day_formatter.dart';
 import '../../data/models/chart_day_aggregate.dart';
 import '../../data/models/chart_month_aggregate.dart';
@@ -304,24 +303,7 @@ class HistoryCubit extends Cubit<HistoryState> {
     return TrendsPeakDay(
       localDay: best.localDay,
       totalSteps: best.totalSteps,
-      dateLabel: _formatPeakDayLabel(best.localDay, period),
     );
-  }
-
-  String _formatPeakDayLabel(DateTime localDay, HistoryPeriod period) {
-    return switch (period) {
-      HistoryPeriod.days7 =>
-        '${_titleCaseWeekdayLabel(localDay)} ${localDay.day}',
-      HistoryPeriod.days30 => '${localDay.day}/${localDay.month}',
-      HistoryPeriod.months12 =>
-        throw StateError('peak day labels are not defined for months12'),
-    };
-  }
-
-  /// Title-case weekday (e.g. `Sat`) to match [StepBarChart] 7d axis labels.
-  String _titleCaseWeekdayLabel(DateTime localDay) {
-    final upper = CalendarWeek.weekdayLabelFor(localDay);
-    return '${upper[0]}${upper.substring(1).toLowerCase()}';
   }
 
   TrendsPeriodAverages? _computeAveragesForPeriod(HistoryPeriod period) {
@@ -414,7 +396,6 @@ class HistoryCubit extends Cubit<HistoryState> {
     if (priorWeekSum == 0 && currentWeekSum > 0) {
       return const TrendSnapshot(
         direction: TrendDirection.flat,
-        label: 'No prior week data',
       );
     }
 
@@ -425,7 +406,6 @@ class HistoryCubit extends Cubit<HistoryState> {
       return TrendSnapshot(
         direction: TrendDirection.up,
         percent: percent,
-        label: 'Up $percent% from last week',
       );
     }
     if (percent < 0) {
@@ -433,14 +413,12 @@ class HistoryCubit extends Cubit<HistoryState> {
       return TrendSnapshot(
         direction: TrendDirection.down,
         percent: absPercent,
-        label: 'Down $absPercent% from last week',
       );
     }
 
     return const TrendSnapshot(
       direction: TrendDirection.flat,
       percent: 0,
-      label: 'Same as last week',
     );
   }
 }

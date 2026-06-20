@@ -1,3 +1,4 @@
+import 'package:astra_app/l10n/app_localizations.dart';
 import 'package:flutter/material.dart';
 
 import '../cubits/history_state.dart';
@@ -13,19 +14,28 @@ class PeriodToggle extends StatelessWidget {
   final HistoryPeriod selected;
   final ValueChanged<HistoryPeriod> onChanged;
 
-  static const _options = [
-    AstraSegmentOption(value: HistoryPeriod.days7, label: '7 days'),
-    AstraSegmentOption(value: HistoryPeriod.days30, label: '30 days'),
-    AstraSegmentOption(value: HistoryPeriod.months12, label: '12 months'),
-  ];
-
   @override
   Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context);
+
     return AstraSegmentedControl<HistoryPeriod>(
-      options: _options,
+      options: [
+        AstraSegmentOption(
+          value: HistoryPeriod.days7,
+          label: l10n.trendsPeriod7Days,
+        ),
+        AstraSegmentOption(
+          value: HistoryPeriod.days30,
+          label: l10n.trendsPeriod30Days,
+        ),
+        AstraSegmentOption(
+          value: HistoryPeriod.months12,
+          label: l10n.trendsPeriod12Months,
+        ),
+      ],
       selected: selected,
       onChanged: onChanged,
-      semanticsHint: 'Chart range',
+      semanticsHint: l10n.trendsChartRangeSemantics,
     );
   }
 }

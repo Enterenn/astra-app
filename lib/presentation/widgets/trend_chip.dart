@@ -1,3 +1,4 @@
+import 'package:astra_app/l10n/app_localizations.dart';
 import 'package:flutter/material.dart';
 import 'package:phosphoricons_flutter/phosphoricons_flutter.dart';
 
@@ -5,6 +6,7 @@ import '../../core/constants/astra_colors.dart';
 import '../../core/constants/astra_spacing.dart';
 import '../../core/constants/astra_typography.dart';
 import '../cubits/history_state.dart';
+import '../l10n/l10n_date_labels.dart';
 
 /// Rounded caption pill used for trend deltas and period captions on Trends.
 class CaptionPill extends StatelessWidget {
@@ -68,6 +70,7 @@ class TrendChip extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context);
     final colors = context.astraColors;
     final (icon, color) = switch (trend.direction) {
       TrendDirection.up => (PhosphorIconsRegular.arrowUp, colors.dataPositive),
@@ -77,7 +80,7 @@ class TrendChip extends StatelessWidget {
     };
 
     return CaptionPill(
-      label: trend.label,
+      label: l10n.trendLabel(trend),
       textColor: color,
       leading: Icon(icon, size: 16, color: color),
     );

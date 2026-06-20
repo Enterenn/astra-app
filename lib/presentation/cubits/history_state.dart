@@ -33,17 +33,15 @@ class TrendsDayMetrics {
   final int dailyKcal;
 }
 
-/// Peak step day in the active 7d/30d window (label precomputed in cubit).
+/// Peak step day in the active 7d/30d window.
 class TrendsPeakDay {
   const TrendsPeakDay({
     required this.localDay,
     required this.totalSteps,
-    required this.dateLabel,
   });
 
   final DateTime localDay;
   final int totalSteps;
-  final String dateLabel;
 }
 
 /// Arithmetic mean kcal and steps for the active 7d/30d window.
@@ -61,12 +59,10 @@ class TrendSnapshot {
   const TrendSnapshot({
     required this.direction,
     this.percent,
-    required this.label,
   });
 
   final TrendDirection direction;
   final int? percent;
-  final String label;
 }
 
 class HistoryState {

@@ -1,3 +1,4 @@
+import 'package:astra_app/l10n/app_localizations.dart';
 import 'package:fl_chart/fl_chart.dart';
 import 'package:flutter/material.dart';
 
@@ -6,9 +7,9 @@ import '../../core/constants/astra_spacing.dart';
 import '../../core/constants/astra_typography.dart';
 import '../../data/models/chart_month_aggregate.dart';
 import '../cubits/history_state.dart';
+import '../l10n/l10n_date_labels.dart';
 import 'chart/astra_bar_chart_touch.dart';
 import 'chart/chart_axis_ticks.dart';
-import 'step_bar_chart.dart';
 
 /// Twelve-month monthly average steps chart for the Trends screen.
 class TrendsMonthlyBarChart extends StatelessWidget {
@@ -25,62 +26,28 @@ class TrendsMonthlyBarChart extends StatelessWidget {
     return monthStart.month.toString().padLeft(2, '0');
   }
 
-  static const _monthNames = [
-    'Jan',
-    'Feb',
-    'Mar',
-    'Apr',
-    'May',
-    'Jun',
-    'Jul',
-    'Aug',
-    'Sep',
-    'Oct',
-    'Nov',
-    'Dec',
-  ];
-
-  static const _tooltipMonthNames = [
-    'January',
-    'February',
-    'March',
-    'April',
-    'May',
-    'June',
-    'July',
-    'August',
-    'September',
-    'October',
-    'November',
-    'December',
-  ];
-
   /// Caption for the rolling window, e.g. `Jul 2025 – Jun 2026`.
   ///
   /// [points] must be oldest-first (same order as chart axis).
-  static String? formatPeriodRange(List<ChartMonthAggregate> points) {
+  static String? formatPeriodRange(
+    AppLocalizations l10n,
+    List<ChartMonthAggregate> points,
+  ) {
     if (points.isEmpty) {
       return null;
     }
     final oldest = points.first.monthStart;
     final newest = points.last.monthStart;
-    return '${_formatMonthYear(oldest)} – ${_formatMonthYear(newest)}';
-  }
-
-  static String _formatMonthYear(DateTime monthStart) {
-    return '${_monthNames[monthStart.month - 1]} ${monthStart.year}';
-  }
-
-  static String _formatTooltipMonthYear(DateTime monthStart) {
-    return '${_tooltipMonthNames[monthStart.month - 1]} ${monthStart.year}';
+    return '${l10n.formatMonthYearShort(oldest)} – ${l10n.formatMonthYearShort(newest)}';
   }
 
   @override
   Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context);
     final colors = context.astraColors;
 
     return Semantics(
-      label: 'Twelve month step history bar chart',
+      label: l10n.trendsMonthlyBarChartSemantics,
       child: ConstrainedBox(
         constraints: const BoxConstraints(minHeight: 200),
         child: DecoratedBox(
@@ -92,7 +59,7 @@ class TrendsMonthlyBarChart extends StatelessWidget {
             borderRadius: BorderRadius.circular(AstraSpacing.kRadiusMd),
             child: switch (status) {
               HistoryStatus.loading => _LoadingSkeleton(colors: colors),
-              HistoryStatus.empty => _EmptyState(colors: colors),
+              HistoryStatus.empty => _EmptyState(colors: colors, l10n: l10n),
               HistoryStatus.ready => _ReadyChart(
                 points: points,
                 colors: colors,
@@ -106,9 +73,10 @@ class TrendsMonthlyBarChart extends StatelessWidget {
 }
 
 class _EmptyState extends StatelessWidget {
-  const _EmptyState({required this.colors});
+  const _EmptyState({required this.colors, required this.l10n});
 
   final AstraColors colors;
+  final AppLocalizations l10n;
 
   @override
   Widget build(BuildContext context) {
@@ -116,7 +84,7 @@ class _EmptyState extends StatelessWidget {
       child: Padding(
         padding: const EdgeInsets.all(AstraSpacing.kSpaceLg),
         child: Text(
-          StepBarChart.emptyCopy,
+          l10n.trendsEmptyHistory,
           style: AstraTypography.bodyFor(colors).copyWith(
             color: colors.neutralGray,
           ),
@@ -188,6 +156,7 @@ class _ReadyChartState extends State<_ReadyChart> {
 
   @override
   Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context);
     final colors = widget.colors;
     final points = widget.points;
     final maxSteps = points.fold<int>(
@@ -255,6 +224,7 @@ class _ReadyChartState extends State<_ReadyChart> {
                     colors: colors,
                     getTooltipItem: (group, groupIndex, rod, rodIndex) {
                       return _monthlyTooltipItem(
+                        l10n: l10n,
                         colors: colors,
                         point: points[groupIndex],
                       );
@@ -331,13 +301,14 @@ class _ReadyChartState extends State<_ReadyChart> {
   }
 
   BarTooltipItem _monthlyTooltipItem({
+    required AppLocalizations l10n,
     required AstraColors colors,
     required ChartMonthAggregate point,
   }) {
     return BarTooltipItem(
-      '${TrendsMonthlyBarChart._formatTooltipMonthYear(point.monthStart)}\n'
-      '${point.averageDailySteps} steps/day\n'
-      '${point.totalSteps} total · ${point.dayCount} days',
+      '${l10n.formatMonthYearFull(point.monthStart)}\n'
+      '${l10n.trendsMonthlyTooltipStepsPerDay(point.averageDailySteps)}\n'
+      '${l10n.trendsMonthlyTooltipTotal(point.totalSteps, point.dayCount)}',
       astraBarTooltipPrimaryStyle(colors),
     );
   }
