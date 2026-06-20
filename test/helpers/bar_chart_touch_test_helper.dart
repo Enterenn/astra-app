@@ -1,54 +1,61 @@
+import 'package:astra_app/presentation/widgets/chart/astra_bar_chart_core.dart';
+import 'package:astra_app/presentation/widgets/chart/astra_bar_chart_painter.dart';
+import 'package:astra_app/presentation/widgets/chart/astra_single_goal_line_painter.dart';
 import 'package:astra_app/presentation/widgets/chart/goal_step_line_painter.dart';
-import 'package:fl_chart/fl_chart.dart';
-import 'package:flutter/gestures.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
-
-BarTouchResponse fakeBarTouchResponse({
-  required int groupIndex,
-  double rodValue = 1000,
-}) {
-  final group = BarChartGroupData(
-    x: groupIndex,
-    barRods: [
-      BarChartRodData(
-        toY: rodValue,
-        width: 8,
-        color: Colors.blue,
-      ),
-    ],
-  );
-
-  return BarTouchResponse(
-    touchLocation: Offset.zero,
-    touchChartCoordinate: Offset.zero,
-    spot: BarTouchedSpot(
-      group,
-      groupIndex,
-      group.barRods.first,
-      0,
-      null,
-      -1,
-      FlSpot(groupIndex.toDouble(), rodValue),
-      Offset.zero,
-    ),
-  );
-}
-
-void simulateBarTap(BarTouchData touchData, {required int groupIndex}) {
-  touchData.touchCallback?.call(
-    FlTapUpEvent(
-      TapUpDetails(
-        kind: PointerDeviceKind.touch,
-        localPosition: Offset.zero,
-      ),
-    ),
-    fakeBarTouchResponse(groupIndex: groupIndex),
-  );
-}
 
 bool hasGoalStepLinePainter(WidgetTester tester) {
   return tester
       .widgetList<CustomPaint>(find.byType(CustomPaint))
       .any((paint) => paint.painter is GoalStepLinePainter);
+}
+
+bool hasSingleGoalLinePainter(WidgetTester tester) {
+  return tester
+      .widgetList<CustomPaint>(find.byType(CustomPaint))
+      .any((paint) => paint.painter is AstraSingleGoalLinePainter);
+}
+
+/// Taps the plot area at the center X of [barIndex] for the given layout.
+Future<void> tapBarAtIndex(
+  WidgetTester tester, {
+  required int barIndex,
+  required int barCount,
+  required double barWidth,
+  required double plotWidth,
+  double plotTop = 0,
+}) async {
+  final centerX = barCenterPlotX(
+    index: barIndex,
+    plotWidth: plotWidth,
+    barCount: barCount,
+    barWidth: barWidth,
+  );
+  final plotFinder = find.byType(AstraBarChartCore);
+  final plotBox = tester.getRect(plotFinder);
+  final leftAxisWidth = 36.0;
+  await tester.tapAt(
+    Offset(
+      plotBox.left + leftAxisWidth + centerX,
+      plotBox.top + plotTop + 20,
+    ),
+  );
+  await tester.pump();
+}
+
+/// Reads bar colors from the chart painter delegate.
+List<Color> barColorsFromChart(WidgetTester tester) {
+  final painter = tester
+      .widgetList<CustomPaint>(find.byType(CustomPaint))
+      .map((paint) => paint.painter)
+      .whereType<AstraBarChartPainter>()
+      .firstOrNull;
+  if (painter == null) {
+    return const [];
+  }
+  return [
+    for (var i = 0; i < painter.values.length; i++)
+      painter.barColor(i, painter.selectedIndex == i),
+  ];
 }
