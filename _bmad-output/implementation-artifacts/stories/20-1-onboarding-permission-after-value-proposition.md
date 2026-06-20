@@ -1,6 +1,6 @@
 # Story 20.1: Onboarding Permission After Value Proposition
 
-Status: review
+Status: done
 
 <!-- Refacto Epic 20 — branch `refacto` only until merge review -->
 <!-- Source: epics-refacto.md Story 20-1 · refactoring-audit-master-v0.6.1.md §5.1 · REF-23 · UX-REF-04 -->
@@ -16,36 +16,36 @@ So that I trust the app and am more likely to grant permission.
 
 ## Acceptance Criteria
 
-1. **Given** `OnboardingIntroPage` (index 0) on first launch
-   **When** onboarding renders
-   **Then** the screen **prominently** emphasises "100% offline" and "no account required" (UX-REF-04, REF-23)
-   **And** trust value appears **above or directly under the headline** — not buried only inside card body copy
-   **And** activity permission is **not** requested on first paint or in `initState` / cubit constructor
+- [x] **AC #1** — **Given** `OnboardingIntroPage` (index 0) on first launch
+  **When** onboarding renders
+  **Then** the screen **prominently** emphasises "100% offline" and "no account required" (UX-REF-04, REF-23)
+  **And** trust value appears **above or directly under the headline** — not buried only inside card body copy
+  **And** activity permission is **not** requested on first paint or in `initState` / cubit constructor
 
-2. **Given** user reads intro trust copy and taps **Start** (`onboardingStartBtn`)
-   **When** they have seen product value
-   **Then** `OnboardingCubit.requestActivityPermission()` runs (existing bridge in `onboarding_flow.dart`)
-   **And** system activity dialog appears after value presentation — **not** before user action
-   **And** flow advances to weight step after dialog dismisses (grant **or** deny)
-   **And** Continue shows loading/disabled while `activityPermissionStatus == requesting`
+- [x] **AC #2** — **Given** user reads intro trust copy and taps **Start** (`onboardingStartBtn`)
+  **When** they have seen product value
+  **Then** `OnboardingCubit.requestActivityPermission()` runs (existing bridge in `onboarding_flow.dart`)
+  **And** system activity dialog appears after value presentation — **not** before user action
+  **And** flow advances to weight step after dialog dismisses (grant **or** deny)
+  **And** Continue shows loading/disabled while `activityPermissionStatus == requesting`
 
-3. **Given** weight/height steps (indices 1–2)
-   **When** unchanged by this story
-   **Then** **Skip** remains available on both steps — no regression to mandatory biometrics
-   **And** denied permission on intro still allows full onboarding completion via Skip path
+- [x] **AC #3** — **Given** weight/height steps (indices 1–2)
+  **When** unchanged by this story
+  **Then** **Skip** remains available on both steps — no regression to mandatory biometrics
+  **And** denied permission on intro still allows full onboarding completion via Skip path
 
-4. **Given** localized app (`en` / `fr`)
-   **When** intro renders
-   **Then** new trust emphasis strings come from ARB keys (no hardcoded French/English in widgets)
+- [x] **AC #4** — **Given** localized app (`en` / `fr`)
+  **When** intro renders
+  **Then** new trust emphasis strings come from ARB keys (no hardcoded French/English in widgets)
 
-5. **Given** `flutter test --exclude-tags slow`
-   **When** run after implementation
-   **Then** all tests pass
-   **And** new/updated widget tests assert: trust emphasis visible on mount; **zero** permission requests before Start tap; permission invoked once on Start tap
+- [x] **AC #5** — **Given** `flutter test --exclude-tags slow`
+  **When** run after implementation
+  **Then** all tests pass
+  **And** new/updated widget tests assert: trust emphasis visible on mount; **zero** permission requests before Start tap; permission invoked once on Start tap
 
-6. **Given** work completes on branch `refacto`
-   **When** story is marked done
-   **Then** **no version bump** — Epic 20 closes with minor+1 (`0.10.0+20`) when stories 20-1–20-5 are done
+- [x] **AC #6** — **Given** work completes on branch `refacto`
+  **When** story is marked done
+  **Then** **no version bump** — Epic 20 closes with minor+1 (`0.10.0+20`) when stories 20-1–20-5 are done
 
 **Covers:** REF-23 · UX-REF-04 · Audit §5.1 (onboarding permission timing)
 
@@ -330,6 +330,7 @@ Composer (Cursor)
 - Extended onboarding flow tests: trust badges visible on mount, zero permission requests before Start tap, French locale trust strings.
 - Permission timing bridge unchanged — value-first UX emphasis only (audit §5.1 / UX-REF-04).
 - `flutter analyze` clean; `flutter test test/presentation/onboarding/` 17/17 pass; `flutter test --exclude-tags slow` 815 pass (~2 skipped).
+- Dette technique acceptée : L'extraction de CaptionPill hors de trend_chip.dart est différée à la Story 20-5 pour centraliser les refactorings de widgets.
 
 ### File List
 
@@ -340,8 +341,9 @@ Composer (Cursor)
 - `lib/l10n/app_localizations_en.dart` — generated
 - `lib/l10n/app_localizations_fr.dart` — generated
 - `test/presentation/onboarding/onboarding_flow_test.dart` — trust visibility + no-permission-before-Start + FR locale tests
-- `_bmad-output/implementation-artifacts/sprint-status-refacto.yaml` — status in-progress → review
+- `_bmad-output/implementation-artifacts/sprint-status-refacto.yaml` — status review → done
 
 ## Change Log
 
 - 2026-06-20: Story 20-1 implemented — onboarding intro trust emphasis (offline + no account pills), permission timing verified unchanged, tests added.
+- 2026-06-20: Story 20-1 closed after positive code review — AC validated, CaptionPill extraction deferred to story 20-5.
