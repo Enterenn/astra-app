@@ -6,12 +6,14 @@ import 'package:astra_app/presentation/widgets/weight_editor_sheet.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 
+import '../../helpers/l10n_test_helper.dart';
+
 void main() {
   group('showDisplayNameEditorSheet', () {
     testWidgets('returns trimmed name on Save', (tester) async {
       String? result;
       await tester.pumpWidget(
-        MaterialApp(
+        TestMaterialApp(
           theme: buildAstraLightTheme(),
           home: Builder(
             builder: (context) {
@@ -43,7 +45,7 @@ void main() {
     testWidgets('returns height in cm on Save', (tester) async {
       int? result;
       await tester.pumpWidget(
-        MaterialApp(
+        TestMaterialApp(
           theme: buildAstraLightTheme(),
           home: Builder(
             builder: (context) {
@@ -73,7 +75,7 @@ void main() {
     testWidgets('returns height in cm from ft+in on Save', (tester) async {
       int? result;
       await tester.pumpWidget(
-        MaterialApp(
+        TestMaterialApp(
           theme: buildAstraLightTheme(),
           home: Builder(
             builder: (context) {
@@ -108,7 +110,7 @@ void main() {
     testWidgets('returns -1 when ft+in fields cleared on Save', (tester) async {
       int? result;
       await tester.pumpWidget(
-        MaterialApp(
+        TestMaterialApp(
           theme: buildAstraLightTheme(),
           home: Builder(
             builder: (context) {
@@ -146,7 +148,7 @@ void main() {
     testWidgets('returns weight in kg on Save', (tester) async {
       double? result;
       await tester.pumpWidget(
-        MaterialApp(
+        TestMaterialApp(
           theme: buildAstraLightTheme(),
           home: Builder(
             builder: (context) {
@@ -176,7 +178,7 @@ void main() {
     testWidgets('returns weight in kg from lb on Save', (tester) async {
       double? result;
       await tester.pumpWidget(
-        MaterialApp(
+        TestMaterialApp(
           theme: buildAstraLightTheme(),
           home: Builder(
             builder: (context) {
@@ -209,7 +211,7 @@ void main() {
     testWidgets('accepts displayed min lb boundary and returns kg', (tester) async {
       double? result;
       await tester.pumpWidget(
-        MaterialApp(
+        TestMaterialApp(
           theme: buildAstraLightTheme(),
           home: Builder(
             builder: (context) {
@@ -242,7 +244,7 @@ void main() {
     testWidgets('accepts displayed max lb boundary and returns kg', (tester) async {
       double? result;
       await tester.pumpWidget(
-        MaterialApp(
+        TestMaterialApp(
           theme: buildAstraLightTheme(),
           home: Builder(
             builder: (context) {
@@ -275,7 +277,7 @@ void main() {
     testWidgets('returns -1.0 when lb field cleared on Save', (tester) async {
       double? result;
       await tester.pumpWidget(
-        MaterialApp(
+        TestMaterialApp(
           theme: buildAstraLightTheme(),
           home: Builder(
             builder: (context) {

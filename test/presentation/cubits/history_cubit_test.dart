@@ -287,7 +287,7 @@ void main() {
       final c1 = buildCubit();
       await c1.refresh();
       expect(c1.state.trend?.direction, TrendDirection.up);
-      expect(c1.state.trend?.label, contains('Up'));
+      expect(c1.state.trend?.percent, greaterThan(0));
       c1.close();
 
       // down: current week < prior week
@@ -296,7 +296,7 @@ void main() {
       final c2 = buildCubit();
       await c2.refresh();
       expect(c2.state.trend?.direction, TrendDirection.down);
-      expect(c2.state.trend?.label, contains('Down'));
+      expect(c2.state.trend?.percent, greaterThan(0));
       c2.close();
 
       // flat: both weeks equal
@@ -305,7 +305,7 @@ void main() {
       final c3 = buildCubit();
       await c3.refresh();
       expect(c3.state.trend?.direction, TrendDirection.flat);
-      expect(c3.state.trend?.label, 'Same as last week');
+      expect(c3.state.trend?.percent, 0);
       c3.close();
     });
 
@@ -321,7 +321,7 @@ void main() {
       await cubit.refresh();
 
       expect(cubit.state.trend?.direction, TrendDirection.flat);
-      expect(cubit.state.trend?.label, 'No prior week data');
+      expect(cubit.state.trend?.percent, isNull);
       cubit.close();
     });
 
@@ -360,7 +360,6 @@ void main() {
       expect(cubit.state.periodAverages?.averageKcal, averagesBefore?.averageKcal);
       expect(cubit.state.peakDay?.totalSteps, peakDayBefore?.totalSteps);
       expect(cubit.state.peakDay?.localDay, peakDayBefore?.localDay);
-      expect(cubit.state.peakDay?.dateLabel, peakDayBefore?.dateLabel);
       cubit.close();
     });
 
@@ -387,7 +386,6 @@ void main() {
         expect(cubit.state.periodAverages?.averageKcal, averagesBefore?.averageKcal);
         expect(cubit.state.peakDay?.totalSteps, peakDayBefore?.totalSteps);
         expect(cubit.state.peakDay?.localDay, peakDayBefore?.localDay);
-        expect(cubit.state.peakDay?.dateLabel, peakDayBefore?.dateLabel);
         cubit.close();
       },
     );
@@ -632,7 +630,6 @@ void main() {
       await c1.refresh();
       expect(c1.state.peakDay?.totalSteps, 8000);
       expect(c1.state.peakDay?.localDay, DateTime.utc(2026, 5, 30));
-      expect(c1.state.peakDay?.dateLabel, 'Sat 30');
       c1.close();
 
       // tie-break: most recent day wins
@@ -676,7 +673,6 @@ void main() {
         cubit.selectPeriod(HistoryPeriod.days30);
         expect(spy.chartAggregateCallCount, 1);
         expect(cubit.state.peakDay?.totalSteps, 9000);
-        expect(cubit.state.peakDay?.dateLabel, '24/5');
 
         cubit.selectPeriod(HistoryPeriod.days7);
         expect(spy.chartAggregateCallCount, 1);

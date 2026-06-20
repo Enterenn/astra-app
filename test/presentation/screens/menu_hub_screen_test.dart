@@ -3,11 +3,13 @@ import 'package:astra_app/presentation/screens/menu_hub_screen.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 
+import '../../helpers/l10n_test_helper.dart';
+
 void main() {
   group('MenuHubScreen', () {
     Future<void> pumpMenuHub(WidgetTester tester) async {
       await tester.pumpWidget(
-        MaterialApp(
+        TestMaterialApp(
           theme: buildAstraLightTheme(),
           home: const Scaffold(body: MenuHubScreen()),
         ),

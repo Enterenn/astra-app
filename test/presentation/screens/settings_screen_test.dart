@@ -4,7 +4,9 @@ import 'package:astra_app/core/database/app_database.dart';
 import 'package:astra_app/core/services/notification_service.dart';
 import 'package:astra_app/data/repositories/user_health_metrics_repository.dart';
 import 'package:astra_app/data/repositories/user_settings_repository.dart';
+import 'package:astra_app/l10n/app_localizations.dart';
 import 'package:astra_app/presentation/cubits/profile_cubit.dart';
+import 'package:astra_app/presentation/cubits/profile_errors.dart';
 import 'package:astra_app/presentation/cubits/profile_state.dart';
 import 'package:astra_app/presentation/cubits/theme_cubit.dart';
 import 'package:astra_app/presentation/cubits/theme_state.dart';
@@ -20,6 +22,7 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:permission_handler/permission_handler.dart';
 import 'package:sqflite/sqflite.dart';
 
+import '../../helpers/l10n_test_helper.dart';
 import '../../helpers/sqflite_test_helper.dart';
 
 class _SeededProfileCubit extends ProfileCubit {
@@ -53,6 +56,8 @@ Future<void> _pumpSettingsScreen(
   await tester.pumpWidget(
     MaterialApp(
       theme: buildAstraLightTheme(preset: AstraAccentPreset.orange),
+      localizationsDelegates: kTestLocalizationsDelegates,
+      supportedLocales: AppLocalizations.supportedLocales,
       home: Scaffold(
         body: MediaQuery(
           data: MediaQueryData(disableAnimations: disableAnimations),
@@ -72,6 +77,8 @@ Future<void> _pumpSettingsScreen(
 }
 
 void main() {
+  final l10n = lookupAppLocalizations(const Locale('en'));
+
   setUpAll(() async {
     await setUpSqfliteFfi();
   });
@@ -259,7 +266,7 @@ void main() {
         ),
         seededState: const ProfileState(
           status: ProfileStatus.error,
-          errorMessage: 'Network failed',
+          loadError: ProfileLoadError.generic,
         ),
       );
       addTearDown(profileCubit.close);
@@ -277,9 +284,9 @@ void main() {
         unitsCubit: unitsCubit,
       );
 
-      expect(find.text('Network failed'), findsOneWidget);
-      expect(find.text('Notifications'), findsNothing);
-      expect(find.text('Units'), findsNothing);
+      expect(find.text(l10n.profileLoadErrorGeneric), findsOneWidget);
+      expect(find.text(l10n.settingsNotifications), findsNothing);
+      expect(find.text(l10n.settingsUnits), findsNothing);
     });
 
     testWidgets('switch reflects profile notification preference', (

@@ -4,6 +4,8 @@ import 'package:astra_app/presentation/widgets/goal_ring.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 
+import '../../helpers/l10n_test_helper.dart';
+
 void main() {
   group('AnimatedStepCount', () {
     const style = TextStyle(fontSize: 32, fontWeight: FontWeight.w900);
@@ -16,7 +18,7 @@ void main() {
       bool disableAnimations = false,
     }) async {
       await tester.pumpWidget(
-        MaterialApp(
+        TestMaterialApp(
           theme: buildAstraLightTheme(),
           home: MediaQuery(
             data: MediaQueryData(disableAnimations: disableAnimations),

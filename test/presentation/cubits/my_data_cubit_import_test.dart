@@ -10,6 +10,7 @@ import 'package:astra_app/data/models/timeseries_sample_model.dart';
 import 'package:astra_app/data/repositories/user_health_metrics_repository.dart';
 import 'package:astra_app/data/repositories/user_settings_repository.dart';
 import 'package:astra_app/presentation/cubits/my_data_cubit.dart';
+import 'package:astra_app/presentation/cubits/my_data_errors.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:sqflite/sqflite.dart';
 
@@ -137,7 +138,7 @@ void main() {
 
       await importFuture;
       expect(cubit.state.isImporting, isFalse);
-      expect(cubit.state.importErrorMessage, isNull);
+      expect(cubit.state.importError, isNull);
 
       await cubit.close();
     });
@@ -233,8 +234,8 @@ void main() {
       await cubit.pickAndImport();
 
       expect(cubit.state.isImporting, isFalse);
-      expect(cubit.state.importErrorMessage, isNotNull);
-      expect(cubit.state.importErrorMessage, contains('header'));
+      expect(cubit.state.importError, isNotNull);
+      expect(cubit.state.importValidationDetail, contains('header'));
 
       await cubit.close();
     });
@@ -249,7 +250,7 @@ void main() {
       await cubit.pickAndImport();
 
       expect(cubit.state.importSuccessPending, isFalse);
-      expect(cubit.state.importErrorMessage, isNull);
+      expect(cubit.state.importError, isNull);
 
       await cubit.close();
     });
@@ -281,8 +282,8 @@ void main() {
       await cubit.pickAndImport();
 
       expect(cubit.state.isImporting, isFalse);
-      expect(cubit.state.importErrorMessage, isNotNull);
-      expect(cubit.state.importErrorMessage, contains('Row'));
+      expect(cubit.state.importError, isNotNull);
+      expect(cubit.state.importValidationDetail, contains('Row'));
 
       await cubit.close();
     });

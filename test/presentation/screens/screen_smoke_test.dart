@@ -1,3 +1,4 @@
+import 'package:astra_app/l10n/app_localizations.dart';
 import 'package:astra_app/core/constants/astra_spacing.dart';
 import 'package:astra_app/core/constants/astra_theme.dart';
 import 'package:astra_app/core/database/app_database.dart';
@@ -30,6 +31,7 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:sqflite/sqflite.dart';
 
 import '../../core/time/fake_time_provider.dart';
+import '../../helpers/l10n_test_helper.dart';
 import '../../helpers/sqflite_test_helper.dart';
 import 'package:astra_app/data/repositories/step/step_aggregation_repository.dart';
 
@@ -74,6 +76,8 @@ class _SeededHistoryCubit extends HistoryCubit {
 }
 
 void main() {
+  final l10n = lookupAppLocalizations(const Locale('en'));
+
   setUpAll(() async {
     await setUpSqfliteFfi();
   });
@@ -158,7 +162,7 @@ void main() {
         child: const TodayScreen(),
       );
       await tester.pumpWidget(
-        MaterialApp(
+        TestMaterialApp(
           theme: buildAstraLightTheme(),
           home: disableAnimations
               ? MediaQuery(
@@ -270,7 +274,7 @@ void main() {
       await pumpScreen(tester, cubit);
 
       expect(find.byType(StatusBanner), findsOneWidget);
-      expect(find.textContaining('Steps may be delayed'), findsOneWidget);
+      expect(find.textContaining(l10n.bannerStaleData), findsOneWidget);
     });
 
     testWidgets('shows three main cards', (tester) async {
@@ -405,7 +409,7 @@ void main() {
       HistoryCubit cubit,
     ) async {
       await tester.pumpWidget(
-        MaterialApp(
+        TestMaterialApp(
           theme: buildAstraLightTheme(),
           home: SizedBox(
             height: 640,
@@ -585,7 +589,6 @@ void main() {
           peakDay: TrendsPeakDay(
             localDay: DateTime.utc(2026, 6, 4),
             totalSteps: 8500,
-            dateLabel: 'Wed 4',
           ),
         ),
       );
@@ -594,7 +597,7 @@ void main() {
       await pumpScreen(tester, cubit);
 
       expect(find.byType(TrendsPeakDayCard), findsOneWidget);
-      expect(find.text('peak day in this period'), findsOneWidget);
+      expect(find.text(l10n.trendsPeakDayCaption), findsOneWidget);
       expect(find.text('8500'), findsOneWidget);
     });
 

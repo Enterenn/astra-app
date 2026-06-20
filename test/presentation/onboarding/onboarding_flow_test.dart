@@ -16,11 +16,12 @@ import 'package:permission_handler/permission_handler.dart';
 import 'package:sqflite/sqflite.dart';
 import 'package:sqflite_common_ffi/sqflite_ffi.dart';
 
+import '../../helpers/l10n_test_helper.dart';
 import '../../helpers/sqflite_test_helper.dart';
 
 Finder _introContinue() => find.descendant(
   of: find.byKey(const ValueKey('onboarding-step-0')),
-  matching: find.text('Continue'),
+  matching: find.text('Start'),
 );
 
 Finder _weightContinue() => find.descendant(
@@ -79,7 +80,7 @@ void main() {
       required VoidCallback onComplete,
       OnboardingCubit Function(AppDependencies)? createCubit,
     }) {
-      return MaterialApp(
+      return TestMaterialApp(
         theme: buildAstraLightTheme(),
         home: OnboardingFlow(
           deps: deps,

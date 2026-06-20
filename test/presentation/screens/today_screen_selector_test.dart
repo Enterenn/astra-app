@@ -16,6 +16,8 @@ import 'package:astra_app/presentation/widgets/status_banner.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:flutter_test/flutter_test.dart';
+
+import '../../helpers/l10n_test_helper.dart';
 import 'package:sqflite/sqflite.dart';
 
 import '../../core/time/fake_time_provider.dart';
@@ -317,7 +319,7 @@ void main() {
       addTearDown(cubit.close);
 
       await tester.pumpWidget(
-        MaterialApp(
+        TestMaterialApp(
           theme: buildAstraLightTheme(),
           home: MediaQuery(
             data: const MediaQueryData(disableAnimations: true),
@@ -340,7 +342,7 @@ void main() {
       addTearDown(cubit.close);
 
       await tester.pumpWidget(
-        MaterialApp(
+        TestMaterialApp(
           theme: buildAstraLightTheme(),
           home: MediaQuery(
             data: const MediaQueryData(disableAnimations: true),
@@ -363,7 +365,7 @@ void main() {
       addTearDown(cubit.close);
 
       await tester.pumpWidget(
-        MaterialApp(
+        TestMaterialApp(
           theme: buildAstraLightTheme(),
           home: MediaQuery(
             data: const MediaQueryData(disableAnimations: true),
@@ -386,7 +388,7 @@ void main() {
       addTearDown(cubit.close);
 
       await tester.pumpWidget(
-        MaterialApp(
+        TestMaterialApp(
           theme: buildAstraLightTheme(),
           home: MediaQuery(
             data: const MediaQueryData(disableAnimations: true),
@@ -422,7 +424,7 @@ void main() {
       addTearDown(cubit.close);
 
       await tester.pumpWidget(
-        MaterialApp(
+        TestMaterialApp(
           theme: buildAstraLightTheme(),
           home: MediaQuery(
             data: const MediaQueryData(disableAnimations: true),
@@ -516,7 +518,7 @@ void main() {
       addTearDown(cubit.close);
 
       await tester.pumpWidget(
-        MaterialApp(
+        TestMaterialApp(
           home: BlocProvider<TodayCubit>.value(
             value: cubit,
             child: BlocSelector<TodayCubit, TodayState, Object>(
@@ -641,7 +643,7 @@ void main() {
       addTearDown(cubit.close);
 
       await tester.pumpWidget(
-        MaterialApp(
+        TestMaterialApp(
           theme: buildAstraLightTheme(),
           home: MediaQuery(
             data: const MediaQueryData(disableAnimations: true),
@@ -699,7 +701,7 @@ void main() {
       addTearDown(cubit.close);
 
       await tester.pumpWidget(
-        MaterialApp(
+        TestMaterialApp(
           home: BlocProvider<TodayCubit>.value(
             value: cubit,
             child: BlocSelector<TodayCubit, TodayState, Object>(
@@ -758,7 +760,7 @@ void main() {
         addTearDown(cubit.close);
 
         await tester.pumpWidget(
-          MaterialApp(
+          TestMaterialApp(
             theme: buildAstraLightTheme(),
             home: MediaQuery(
               data: const MediaQueryData(disableAnimations: true),

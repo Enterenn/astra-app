@@ -2,6 +2,8 @@ import 'package:astra_app/presentation/widgets/astra_inset_shadow.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 
+import '../../helpers/l10n_test_helper.dart';
+
 class _BorderRadiusHarness extends StatefulWidget {
   const _BorderRadiusHarness();
 
@@ -45,7 +47,7 @@ void main() {
   group('AstraInsetShadowSurface', () {
     testWidgets('repaints after borderRadius changes', (tester) async {
       await tester.pumpWidget(
-        const MaterialApp(
+        TestMaterialApp(
           home: Scaffold(
             body: Center(child: _BorderRadiusHarness()),
           ),

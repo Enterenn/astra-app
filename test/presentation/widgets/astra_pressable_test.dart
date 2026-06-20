@@ -2,6 +2,8 @@ import 'package:astra_app/presentation/widgets/astra_pressable.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 
+import '../../helpers/l10n_test_helper.dart';
+
 void main() {
   Future<void> pumpPressable(
     WidgetTester tester, {
@@ -9,7 +11,7 @@ void main() {
     double pressedScale = AstraPressable.defaultPressedScale,
   }) async {
     await tester.pumpWidget(
-      MaterialApp(
+      TestMaterialApp(
         home: Scaffold(
           body: Center(
             child: AstraPressable(

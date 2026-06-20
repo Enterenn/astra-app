@@ -3,6 +3,7 @@ import 'package:astra_app/core/database/app_database.dart';
 import 'package:astra_app/data/repositories/user_health_metrics_repository.dart';
 import 'package:astra_app/data/repositories/user_settings_repository.dart';
 import 'package:astra_app/presentation/cubits/my_data_cubit.dart';
+import 'package:astra_app/presentation/cubits/my_data_errors.dart';
 import 'package:astra_app/presentation/widgets/confirm_dialog.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:sqflite/sqflite.dart';
@@ -121,7 +122,7 @@ void main() {
       expect(refreshCalled, isTrue);
       expect(cubit.state.isPurging, isFalse);
       expect(cubit.state.purgeSuccessPending, isTrue);
-      expect(cubit.state.purgeErrorMessage, isNull);
+      expect(cubit.state.purgeError, isNull);
     });
 
     test('cancelled action does not purge', () async {
@@ -199,8 +200,8 @@ void main() {
       expect(trackingIngestion.purgeCalls, 1);
       expect(cubit.state.purgeSuccessPending, isFalse);
       expect(
-        cubit.state.purgeErrorMessage,
-        'All local data was removed, but the app could not refresh. Try again.',
+        cubit.state.purgeError,
+        MyDataPurgeError.refreshFailedAfterPurge,
       );
     });
 
@@ -226,7 +227,7 @@ void main() {
         confirmedAction: PurgeConfirmAction.deleteConfirmed,
       );
 
-      expect(cubit.state.purgeErrorMessage, isNotNull);
+      expect(cubit.state.purgeError, isNotNull);
       expect(cubit.state.isPurging, isFalse);
     });
   });

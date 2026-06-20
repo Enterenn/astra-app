@@ -1,16 +1,20 @@
 import 'package:astra_app/core/constants/astra_theme.dart';
+import 'package:astra_app/l10n/app_localizations.dart';
 import 'package:astra_app/presentation/helpers/collection_health_evaluator.dart';
 import 'package:astra_app/presentation/widgets/collection_health_indicator.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 
+import '../../helpers/l10n_test_helper.dart';
+
 void main() {
+  final l10n = lookupAppLocalizations(const Locale('en'));
   final fixedNow = DateTime.utc(2026, 6, 3, 15);
 
   group('CollectionHealthIndicator', () {
     testWidgets('loading state renders nothing', (tester) async {
       await tester.pumpWidget(
-        MaterialApp(
+        TestMaterialApp(
           theme: buildAstraLightTheme(),
           home: Scaffold(
             body: CollectionHealthIndicator(
@@ -21,14 +25,14 @@ void main() {
         ),
       );
 
-      expect(find.text('Collection active ●'), findsNothing);
-      expect(find.text('Sensor access revoked ✕'), findsNothing);
+      expect(find.text(l10n.todayCollectionHealthActive), findsNothing);
+      expect(find.text(l10n.todayCollectionHealthPermissionDenied), findsNothing);
       expect(find.byType(Row), findsNothing);
     });
 
     testWidgets('active state shows collection active copy', (tester) async {
       await tester.pumpWidget(
-        MaterialApp(
+        TestMaterialApp(
           theme: buildAstraLightTheme(),
           home: Scaffold(
             body: CollectionHealthIndicator(
@@ -39,12 +43,12 @@ void main() {
         ),
       );
 
-      expect(find.text('Collection active ●'), findsOneWidget);
+      expect(find.text(l10n.todayCollectionHealthActive), findsOneWidget);
     });
 
     testWidgets('stale state shows relative last sync copy', (tester) async {
       await tester.pumpWidget(
-        MaterialApp(
+        TestMaterialApp(
           theme: buildAstraLightTheme(),
           home: Scaffold(
             body: CollectionHealthIndicator(
@@ -56,12 +60,15 @@ void main() {
         ),
       );
 
-      expect(find.text('Last sync 3 hours ago ⚠'), findsOneWidget);
+      expect(
+        find.text(l10n.todayCollectionHealthStale('3 hours ago')),
+        findsOneWidget,
+      );
     });
 
     testWidgets('permission denied state shows revoked copy', (tester) async {
       await tester.pumpWidget(
-        MaterialApp(
+        TestMaterialApp(
           theme: buildAstraLightTheme(),
           home: Scaffold(
             body: CollectionHealthIndicator(
@@ -72,14 +79,14 @@ void main() {
         ),
       );
 
-      expect(find.text('Sensor access revoked ✕'), findsOneWidget);
+      expect(find.text(l10n.todayCollectionHealthPermissionDenied), findsOneWidget);
     });
 
     testWidgets('exposes merged label as semantics', (tester) async {
       final handle = tester.ensureSemantics();
 
       await tester.pumpWidget(
-        MaterialApp(
+        TestMaterialApp(
           theme: buildAstraLightTheme(),
           home: Scaffold(
             body: CollectionHealthIndicator(
@@ -90,7 +97,7 @@ void main() {
         ),
       );
 
-      expect(find.bySemanticsLabel('Collection active ●'), findsOneWidget);
+      expect(find.bySemanticsLabel(l10n.todayCollectionHealthActive), findsOneWidget);
 
       handle.dispose();
     });

@@ -1,4 +1,5 @@
 import 'package:astra_app/core/constants/astra_theme.dart';
+import 'package:astra_app/l10n/app_localizations.dart';
 import 'package:astra_app/data/models/chart_month_aggregate.dart';
 import 'package:astra_app/presentation/cubits/history_state.dart';
 import 'package:astra_app/presentation/widgets/chart/chart_axis_ticks.dart';
@@ -8,8 +9,11 @@ import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 
 import '../../helpers/bar_chart_touch_test_helper.dart';
+import '../../helpers/l10n_test_helper.dart';
 
 void main() {
+  final l10n = lookupAppLocalizations(const Locale('en'));
+
   group('TrendsMonthlyBarChart', () {
     Future<void> pumpChart(
       WidgetTester tester, {
@@ -17,7 +21,7 @@ void main() {
       required HistoryStatus status,
     }) async {
       await tester.pumpWidget(
-        MaterialApp(
+        TestMaterialApp(
           theme: buildAstraLightTheme(),
           home: Scaffold(
             body: SizedBox(
@@ -88,7 +92,7 @@ void main() {
       );
 
       expect(
-        find.textContaining('No history yet'),
+        find.textContaining(l10n.trendsEmptyHistory),
         findsOneWidget,
       );
     });
@@ -210,13 +214,13 @@ void main() {
       ];
 
       expect(
-        TrendsMonthlyBarChart.formatPeriodRange(points),
+        TrendsMonthlyBarChart.formatPeriodRange(l10n, points),
         'Jul 2025 – Jun 2026',
       );
     });
 
     test('formatPeriodRange returns null when points are empty', () {
-      expect(TrendsMonthlyBarChart.formatPeriodRange(const []), isNull);
+      expect(TrendsMonthlyBarChart.formatPeriodRange(l10n, const []), isNull);
     });
   });
 }

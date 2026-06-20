@@ -7,6 +7,7 @@ import 'package:astra_app/data/models/normalized_step_bucket.dart';
 import 'package:astra_app/data/repositories/user_health_metrics_repository.dart';
 import 'package:astra_app/data/repositories/user_settings_repository.dart';
 import 'package:astra_app/presentation/cubits/my_data_cubit.dart';
+import 'package:astra_app/presentation/cubits/my_data_errors.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:sqflite/sqflite.dart';
 
@@ -80,7 +81,7 @@ void main() {
 
       await exportFuture;
       expect(cubit.state.isExporting, isFalse);
-      expect(cubit.state.exportErrorMessage, isNull);
+      expect(cubit.state.exportError, isNull);
 
       await cubit.close();
     });
@@ -105,7 +106,7 @@ void main() {
       await cubit.close();
     });
 
-    test('emits exportErrorMessage when save fails', () async {
+    test('emits exportError when save fails', () async {
       final cubit = buildCubit(
         saveCsvFile: (_) async => throw StateError('save failed'),
       );
@@ -115,8 +116,8 @@ void main() {
 
       expect(cubit.state.isExporting, isFalse);
       expect(
-        cubit.state.exportErrorMessage,
-        'Export could not be completed. Try again.',
+        cubit.state.exportError,
+        MyDataExportError.generic,
       );
 
       await cubit.close();
@@ -136,10 +137,10 @@ void main() {
 
       await cubit.refresh();
       await cubit.exportAndShare();
-      expect(cubit.state.exportErrorMessage, isNotNull);
+      expect(cubit.state.exportError, isNotNull);
 
       await cubit.exportAndShare();
-      expect(cubit.state.exportErrorMessage, isNull);
+      expect(cubit.state.exportError, isNull);
 
       await cubit.close();
     });
@@ -153,7 +154,7 @@ void main() {
       await cubit.exportAndShare();
 
       expect(cubit.state.isExporting, isFalse);
-      expect(cubit.state.exportErrorMessage, isNull);
+      expect(cubit.state.exportError, isNull);
 
       await cubit.close();
     });
@@ -179,17 +180,17 @@ void main() {
       await cubit.close();
     });
 
-    test('refresh during export error preserves exportErrorMessage', () async {
+    test('refresh during export error preserves exportError', () async {
       final cubit = buildCubit(
         saveCsvFile: (_) async => throw StateError('save failed'),
       );
 
       await cubit.refresh();
       await cubit.exportAndShare();
-      expect(cubit.state.exportErrorMessage, isNotNull);
+      expect(cubit.state.exportError, isNotNull);
 
       await cubit.refresh(silent: true);
-      expect(cubit.state.exportErrorMessage, isNotNull);
+      expect(cubit.state.exportError, isNotNull);
 
       await cubit.close();
     });

@@ -7,11 +7,13 @@ import 'package:astra_app/data/repositories/user_health_metrics_repository.dart'
 import 'package:astra_app/data/repositories/user_settings_repository.dart';
 import 'package:astra_app/presentation/cubits/history_cubit.dart';
 import 'package:astra_app/presentation/cubits/my_data_cubit.dart';
+import 'package:astra_app/presentation/cubits/my_data_errors.dart';
 import 'package:astra_app/presentation/cubits/theme_cubit.dart';
 import 'package:astra_app/presentation/cubits/theme_state.dart';
 import 'package:astra_app/presentation/cubits/today_cubit.dart';
 import 'package:astra_app/presentation/cubits/today_state.dart';
 import 'package:astra_app/presentation/cubits/units_cubit.dart';
+import 'package:astra_app/l10n/app_localizations.dart';
 import 'package:astra_app/presentation/widgets/confirm_dialog.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:astra_app/presentation/screens/app_scaffold.dart';
@@ -25,6 +27,8 @@ import 'package:astra_app/presentation/widgets/theme_selector.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_test/flutter_test.dart';
+
+import '../../helpers/l10n_test_helper.dart';
 import 'package:phosphoricons_flutter/phosphoricons_flutter.dart';
 import 'package:sqflite/sqflite.dart';
 
@@ -133,7 +137,7 @@ Future<void> _pumpAppScaffold(
 }) async {
   await tester.runAsync(() async {
     await tester.pumpWidget(
-      MaterialApp(
+      TestMaterialApp(
         theme: buildAstraLightTheme(),
         home: MediaQuery(
           data: MediaQueryData(disableAnimations: disableAnimations),
@@ -178,6 +182,8 @@ const _packageInfoChannel =
     MethodChannel('dev.fluttercommunity.plus/package_info');
 
 void main() {
+  final l10n = lookupAppLocalizations(const Locale('en'));
+
   setUpAll(() async {
     await setUpSqfliteFfi();
     TestDefaultBinaryMessengerBinding.instance.defaultBinaryMessenger
@@ -615,11 +621,12 @@ void main() {
       });
       await tester.pump();
 
-      expect(find.text('Data'), findsWidgets);
+      expect(find.text(l10n.menuData), findsWidgets);
+      expect(find.text(l10n.menuPrivacyAndData), findsNothing);
       expect(find.text('My Data'), findsNothing);
-      expect(find.text('Background'), findsOneWidget);
-      expect(find.text('Footprint'), findsOneWidget);
-      expect(find.text('Your data'), findsOneWidget);
+      expect(find.text(l10n.menuTrackingStatus), findsOneWidget);
+      expect(find.text(l10n.myDataFootprint), findsOneWidget);
+      expect(find.text(l10n.myDataYourData), findsOneWidget);
       expect(find.byIcon(PhosphorIconsRegular.arrowLeft), findsOneWidget);
 
       await tester.tap(find.byTooltip('Back'));
@@ -763,8 +770,8 @@ void main() {
 
         expect(myDataCubit!.state.purgeSuccessPending, isFalse);
         expect(
-          myDataCubit!.state.purgeErrorMessage,
-          'All local data was removed, but the app could not refresh. Try again.',
+          myDataCubit!.state.purgeError,
+          MyDataPurgeError.refreshFailedAfterPurge,
         );
 
         await _disposeScaffold(tester);
@@ -829,7 +836,7 @@ void main() {
       expect(todayCubit!.refreshMetadataCallCount, greaterThanOrEqualTo(1));
       expect(historyCubit!.refreshCallCount, greaterThanOrEqualTo(1));
       expect(myDataCubit!.state.purgeSuccessPending, isTrue);
-      expect(myDataCubit!.state.purgeErrorMessage, isNull);
+      expect(myDataCubit!.state.purgeError, isNull);
       expect(todayCubit!.state.lastDisplayedSteps, isNot(3500));
       expect(todayCubit!.state.lastDisplayedSteps, anyOf(isNull, 0));
       expect(todayCubit!.state.lastDisplayedStepsLoaded, isTrue);

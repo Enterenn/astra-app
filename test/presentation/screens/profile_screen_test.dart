@@ -6,7 +6,9 @@ import 'package:astra_app/data/repositories/user_health_metrics_repository.dart'
 import 'package:astra_app/data/repositories/user_settings_repository.dart';
 import 'package:permission_handler/permission_handler.dart';
 import 'package:astra_app/core/constants/display_unit_preferences.dart';
+import 'package:astra_app/l10n/app_localizations.dart';
 import 'package:astra_app/presentation/cubits/profile_cubit.dart';
+import 'package:astra_app/presentation/cubits/profile_errors.dart';
 import 'package:astra_app/presentation/cubits/profile_state.dart';
 import 'package:astra_app/presentation/cubits/units_cubit.dart';
 import 'package:astra_app/presentation/screens/profile_screen.dart';
@@ -18,6 +20,7 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:sqflite/sqflite.dart';
 
+import '../../helpers/l10n_test_helper.dart';
 import '../../helpers/sqflite_test_helper.dart';
 
 class _SeededProfileCubit extends ProfileCubit {
@@ -51,6 +54,8 @@ Future<void> _pumpProfileScreen(
   await tester.pumpWidget(
     MaterialApp(
       theme: buildAstraLightTheme(preset: AstraAccentPreset.orange),
+      localizationsDelegates: kTestLocalizationsDelegates,
+      supportedLocales: AppLocalizations.supportedLocales,
       home: MediaQuery(
         data: MediaQueryData(disableAnimations: disableAnimations),
         child: Scaffold(
@@ -69,6 +74,8 @@ Future<void> _pumpProfileScreen(
 }
 
 void main() {
+  final l10n = lookupAppLocalizations(const Locale('en'));
+
   setUpAll(() async {
     await setUpSqfliteFfi();
   });
@@ -151,12 +158,12 @@ void main() {
 
       expect(find.text('Profile'), findsNothing);
       expect(find.text('My Profile'), findsNothing);
-      expect(find.text('Informations'), findsOneWidget);
+      expect(find.text(l10n.profileSectionInformations), findsOneWidget);
       expect(find.byType(SectionCard), findsOneWidget);
-      expect(find.text('Display name'), findsOneWidget);
+      expect(find.text(l10n.profileDisplayName), findsOneWidget);
       expect(find.text('Alex'), findsOneWidget);
-      expect(find.text('Height'), findsOneWidget);
-      expect(find.text('Weight'), findsOneWidget);
+      expect(find.text(l10n.profileHeight), findsOneWidget);
+      expect(find.text(l10n.profileWeight), findsOneWidget);
       expect(find.text('Age'), findsNothing);
       expect(find.textContaining('ASTRA v'), findsNothing);
       expect(find.text('Notifications'), findsNothing);
@@ -187,7 +194,7 @@ void main() {
         showInlineTitle: true,
       );
 
-      expect(find.text('Profile'), findsOneWidget);
+      expect(find.text(l10n.profileTitle), findsOneWidget);
       expect(find.text('My Profile'), findsNothing);
     });
 
@@ -208,7 +215,7 @@ void main() {
         unitsCubit: unitsCubit,
       );
 
-      expect(find.text('Not set'), findsNWidgets(3));
+      expect(find.text(l10n.commonNotSet), findsNWidgets(3));
     });
 
     testWidgets('shows loading indicator while profile is loading', (
@@ -231,7 +238,7 @@ void main() {
       );
 
       expect(find.byType(CircularProgressIndicator), findsOneWidget);
-      expect(find.text('Informations'), findsNothing);
+      expect(find.text(l10n.profileSectionInformations), findsNothing);
     });
 
     testWidgets('shows error message when profile fails to load', (
@@ -245,7 +252,7 @@ void main() {
         ),
         seededState: const ProfileState(
           status: ProfileStatus.error,
-          errorMessage: 'Network failed',
+          loadError: ProfileLoadError.generic,
         ),
       );
       addTearDown(cubit.close);
@@ -256,8 +263,8 @@ void main() {
         unitsCubit: unitsCubit,
       );
 
-      expect(find.text('Network failed'), findsOneWidget);
-      expect(find.text('Informations'), findsNothing);
+      expect(find.text(l10n.profileLoadErrorGeneric), findsOneWidget);
+      expect(find.text(l10n.profileSectionInformations), findsNothing);
     });
 
     testWidgets('shows default error message when errorMessage is null', (
@@ -279,7 +286,7 @@ void main() {
         unitsCubit: unitsCubit,
       );
 
-      expect(find.text('Could not load profile'), findsOneWidget);
+      expect(find.text(l10n.profileCouldNotLoad), findsOneWidget);
     });
 
     testWidgets('formats height and weight values', (tester) async {

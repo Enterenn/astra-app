@@ -1,4 +1,5 @@
 import 'package:astra_app/core/constants/astra_theme.dart';
+import 'package:astra_app/l10n/app_localizations.dart';
 import 'package:astra_app/data/models/chart_day_aggregate.dart';
 import 'package:astra_app/presentation/cubits/history_state.dart';
 import 'package:astra_app/presentation/widgets/chart/chart_axis_ticks.dart';
@@ -8,8 +9,11 @@ import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 
 import '../../helpers/bar_chart_touch_test_helper.dart';
+import '../../helpers/l10n_test_helper.dart';
 
 void main() {
+  final l10n = lookupAppLocalizations(const Locale('en'));
+
   group('StepBarChart', () {
     Future<void> pumpChart(
       WidgetTester tester, {
@@ -20,7 +24,7 @@ void main() {
       double width = 320,
     }) async {
       await tester.pumpWidget(
-        MaterialApp(
+        TestMaterialApp(
           theme: buildAstraLightTheme(),
           home: Scaffold(
             body: SizedBox(
@@ -42,12 +46,12 @@ void main() {
     testWidgets('empty state shows exact copy', (tester) async {
       await pumpChart(tester, status: HistoryStatus.empty);
 
-      expect(find.text(StepBarChart.emptyCopy), findsOneWidget);
+      expect(find.text(l10n.trendsEmptyHistory), findsOneWidget);
     });
 
     testWidgets('loading state shows seven skeleton bars', (tester) async {
       await tester.pumpWidget(
-        MaterialApp(
+        TestMaterialApp(
           theme: buildAstraLightTheme(),
           home: const Scaffold(
             body: SizedBox(

@@ -1,13 +1,18 @@
 import 'package:astra_app/core/constants/astra_theme.dart';
+import 'package:astra_app/l10n/app_localizations.dart';
 import 'package:astra_app/presentation/widgets/status_banner.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 
+import '../../helpers/l10n_test_helper.dart';
+
 void main() {
+  final l10n = lookupAppLocalizations(const Locale('en'));
+
   group('StatusBanner', () {
     testWidgets('staleCompact variant shows compact stale copy', (tester) async {
       await tester.pumpWidget(
-        MaterialApp(
+        TestMaterialApp(
           theme: buildAstraLightTheme(),
           home: const Scaffold(
             body: StatusBanner(variant: StatusBannerVariant.staleCompact),
@@ -15,10 +20,7 @@ void main() {
         ),
       );
 
-      expect(
-        find.text('Steps may be delayed — tap to refresh'),
-        findsOneWidget,
-      );
+      expect(find.text(l10n.bannerStaleData), findsOneWidget);
     });
 
     testWidgets('staleCompact exposes full copy as semantics label', (
@@ -27,7 +29,7 @@ void main() {
       final handle = tester.ensureSemantics();
 
       await tester.pumpWidget(
-        MaterialApp(
+        TestMaterialApp(
           theme: buildAstraLightTheme(),
           home: Scaffold(
             body: StatusBanner(
@@ -38,10 +40,7 @@ void main() {
         ),
       );
 
-      expect(
-        find.bySemanticsLabel('Steps may be delayed — tap to refresh'),
-        findsOneWidget,
-      );
+      expect(find.bySemanticsLabel(l10n.bannerStaleData), findsOneWidget);
 
       handle.dispose();
     });
@@ -50,7 +49,7 @@ void main() {
       var tapped = false;
 
       await tester.pumpWidget(
-        MaterialApp(
+        TestMaterialApp(
           theme: buildAstraLightTheme(),
           home: Scaffold(
             body: StatusBanner(
@@ -69,7 +68,7 @@ void main() {
 
     testWidgets('staleFull stub renders Android diagnostic copy', (tester) async {
       await tester.pumpWidget(
-        MaterialApp(
+        TestMaterialApp(
           theme: buildAstraLightTheme(),
           home: const Scaffold(
             body: StatusBanner(variant: StatusBannerVariant.staleFull),
@@ -87,7 +86,7 @@ void main() {
       tester,
     ) async {
       await tester.pumpWidget(
-        MaterialApp(
+        TestMaterialApp(
           theme: buildAstraLightTheme(),
           home: const Scaffold(
             body: StatusBanner(
@@ -106,7 +105,7 @@ void main() {
 
     testWidgets('info variant renders iOS backfill copy', (tester) async {
       await tester.pumpWidget(
-        MaterialApp(
+        TestMaterialApp(
           theme: buildAstraLightTheme(),
           home: const Scaffold(
             body: StatusBanner(variant: StatusBannerVariant.info),
@@ -114,10 +113,7 @@ void main() {
         ),
       );
 
-      expect(
-        find.text('Steps update when you open the app on this device.'),
-        findsOneWidget,
-      );
+      expect(find.text(l10n.bannerInfoStepsSync), findsOneWidget);
     });
   });
 }

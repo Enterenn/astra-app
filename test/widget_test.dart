@@ -6,6 +6,7 @@ import 'package:astra_app/data/models/step_reading.dart';
 
 import 'package:astra_app/data/repositories/user_health_metrics_repository.dart';
 import 'package:astra_app/data/repositories/user_settings_repository.dart';
+import 'package:astra_app/l10n/app_localizations.dart';
 import 'package:astra_app/presentation/cubits/onboarding_cubit.dart';
 import 'package:astra_app/presentation/cubits/theme_state.dart';
 import 'package:astra_app/presentation/cubits/history_cubit.dart';
@@ -366,7 +367,7 @@ void main() {
         await tester.tap(
           find.descendant(
             of: find.byKey(const ValueKey('onboarding-step-0')),
-            matching: find.text('Continue'),
+            matching: find.text('Start'),
           ),
         );
         await tester.pumpAndSettle();
@@ -393,7 +394,9 @@ void main() {
         await tester.pump();
 
         expect(
-          find.text('Open settings to allow step access'),
+          find.text(
+            lookupAppLocalizations(const Locale('en')).errorNoPermission,
+          ),
           findsOneWidget,
         );
         expect(todayCubitRef!.state.status, TodayStatus.noPermission);

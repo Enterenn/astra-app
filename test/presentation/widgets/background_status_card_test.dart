@@ -4,6 +4,8 @@ import 'package:astra_app/presentation/widgets/background_status_card.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 
+import '../../helpers/l10n_test_helper.dart';
+
 void main() {
   group('BackgroundStatusCard', () {
     final nowUtc = DateTime.utc(2026, 6, 3, 12);
@@ -15,7 +17,7 @@ void main() {
       VoidCallback? onOpenSettings,
     }) async {
       await tester.pumpWidget(
-        MaterialApp(
+        TestMaterialApp(
           theme: buildAstraLightTheme(),
           home: Scaffold(
             body: BackgroundStatusCard(

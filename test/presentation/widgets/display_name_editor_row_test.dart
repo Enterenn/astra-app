@@ -3,6 +3,8 @@ import 'package:astra_app/presentation/widgets/display_name_editor_row.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 
+import '../../helpers/l10n_test_helper.dart';
+
 void main() {
   group('DisplayNameEditorRow', () {
     Future<void> pumpRow(
@@ -10,7 +12,7 @@ void main() {
       String? displayName,
     }) async {
       await tester.pumpWidget(
-        MaterialApp(
+        TestMaterialApp(
           theme: buildAstraLightTheme(),
           home: Scaffold(
             body: DisplayNameEditorRow(

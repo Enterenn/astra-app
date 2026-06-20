@@ -8,6 +8,8 @@ import 'dart:ui' show Tristate;
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 
+import '../../helpers/l10n_test_helper.dart';
+
 void main() {
   final colors = AstraColors.light(preset: AstraAccentPreset.orange);
 
@@ -18,7 +20,7 @@ void main() {
     void Function(DateTime day)? onDayTap,
   }) async {
     await tester.pumpWidget(
-      MaterialApp(
+      TestMaterialApp(
         theme: buildAstraLightTheme(),
         home: Scaffold(
           body: WeekProgressRow(
