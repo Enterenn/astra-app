@@ -1,6 +1,6 @@
 # Story 19.3: Persist and Apply User Locale Preference
 
-Status: review
+Status: done
 
 <!-- Refacto Epic 19 — branch `refacto` only until merge review -->
 <!-- Source: epics-refacto.md Story 19-3 · refactoring-audit-master-v0.6.1.md §2.3 · REF-22 -->
@@ -439,7 +439,8 @@ Auto (Cursor)
 ### Change Log
 
 - 2026-06-20: Story 19-3 implemented — persist and apply user locale preference; Epic 19 version bump 0.9.0+18.
+- 2026-06-20: Story 19-3 and Epic 19 closed after code review; build bump 0.9.0+19.
 
 ## Story Completion Status
 
-**Status:** review
+**Status:** done
