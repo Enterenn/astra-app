@@ -1,6 +1,6 @@
 # generated: 2026-06-18
-# last_updated: 2026-06-20 (Epic 18 done at 0.8.0+17)
-# NEXT: dev-story 18-3
+# last_updated: 2026-06-20 (Story 19-1 done)
+# NEXT: create-story 19-2
 # Ref: planning-artifacts/epics-refacto.md · planning-artifacts/refactoring-audit-master-v0.6.1.md
 # branch: refacto
 # base_version: 0.6.2+13
@@ -58,7 +58,7 @@
 # NAVIGATION: _bmad-output/README.md · planning-artifacts/epics-refacto.md
 
 generated: 2026-06-18
-last_updated: 2026-06-20 (Epic 18 done at 0.8.0+17)
+last_updated: 2026-06-20 (Story 19-1 done)
 project: astra-app
 project_key: NOKEY
 tracking_system: file-system
@@ -101,8 +101,8 @@ development_status:
   18-3-split-step-repository-and-extract-csv-service: done
   epic-18-retrospective: optional
 
-  epic-19: backlog
-  19-1-flutter-localizations-scaffold: backlog
+  epic-19: in-progress
+  19-1-flutter-localizations-scaffold: done
   19-2-migrate-hardcoded-strings-to-arb-keys: backlog
   19-3-persist-and-apply-user-locale-preference: backlog
   epic-19-retrospective: optional

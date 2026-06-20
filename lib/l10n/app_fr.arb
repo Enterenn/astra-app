@@ -1,4 +1,7 @@
 {
   "@@locale": "fr",
-  "appTitle": "ASTRA"
+  "appTitle": "ASTRA",
+  "@appTitle": {
+    "description": "Application title shown in task switcher / OS shell"
+  }
 }

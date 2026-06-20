@@ -16,7 +16,7 @@ import 'presentation/cubits/my_data_cubit.dart';
 import 'presentation/cubits/today_cubit.dart';
 import 'presentation/onboarding/onboarding_flow.dart';
 import 'presentation/screens/app_scaffold.dart';
-import 'l10n/app_localizations.dart';
+import 'package:astra_app/l10n/app_localizations.dart';
 
 export 'core/services/app_lifecycle_coordinator.dart'
     show
