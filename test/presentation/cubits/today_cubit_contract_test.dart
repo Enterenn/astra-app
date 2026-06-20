@@ -67,6 +67,12 @@ class _FakeUserSettingsRepository implements UserSettingsRepositoryContract {
   Future<int?> getLastDisplayedSteps(String localDayIso) async => null;
 
   @override
+  Future<String?> getAppLocale() async => null;
+
+  @override
+  Future<void> setAppLocale(String languageCode) async {}
+
+  @override
   dynamic noSuchMethod(Invocation invocation) => super.noSuchMethod(invocation);
 }
 

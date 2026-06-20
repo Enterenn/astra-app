@@ -120,6 +120,27 @@ class UserSettingsRepository implements UserSettingsRepositoryContract {
     await _kv.writeValue(kHeightDisplayUnitKey, unit.storageValue);
   }
 
+  @override
+  Future<String?> getAppLocale() async {
+    final value = await _kv.readValue(kAppLocaleKey);
+    return switch (value) {
+      'en' || 'fr' => value,
+      _ => null,
+    };
+  }
+
+  @override
+  Future<void> setAppLocale(String languageCode) {
+    if (languageCode != 'en' && languageCode != 'fr') {
+      throw ArgumentError.value(
+        languageCode,
+        'languageCode',
+        "must be 'en' or 'fr'",
+      );
+    }
+    return _kv.writeValue(kAppLocaleKey, languageCode);
+  }
+
   Future<String?> getCelebrationShownDate() async {
     return _kv.readValue(kCelebrationShownDateKey);
   }

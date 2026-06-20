@@ -154,5 +154,33 @@ void main() {
       expect(await repository.getWeightDisplayUnit(), WeightDisplayUnit.kg);
       expect(await repository.getHeightDisplayUnit(), HeightDisplayUnit.cm);
     });
+
+    test('app locale: null default, round-trips en/fr, invalid stored value returns null', () async {
+      expect(await repository.getAppLocale(), isNull);
+
+      await repository.setAppLocale('en');
+      expect(await repository.getAppLocale(), 'en');
+      final enRows = await db.query(
+        'user_preferences',
+        where: 'key = ?',
+        whereArgs: [kAppLocaleKey],
+      );
+      expect(enRows.single['value'], 'en');
+
+      await repository.setAppLocale('fr');
+      expect(await repository.getAppLocale(), 'fr');
+
+      await db.insert(
+        'user_preferences',
+        {'key': kAppLocaleKey, 'value': 'de'},
+        conflictAlgorithm: ConflictAlgorithm.replace,
+      );
+      expect(await repository.getAppLocale(), isNull);
+
+      expect(
+        () => repository.setAppLocale('de'),
+        throwsA(isA<ArgumentError>()),
+      );
+    });
   });
 }

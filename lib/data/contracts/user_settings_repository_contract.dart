@@ -21,6 +21,10 @@ abstract class UserSettingsRepositoryContract {
 
   Future<void> setOnboardingComplete(bool complete);
 
+  Future<String?> getAppLocale();
+
+  Future<void> setAppLocale(String languageCode);
+
   Future<int?> getLastDisplayedSteps(String localDayIso);
 
   Future<void> setLastDisplayedSteps({
