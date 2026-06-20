@@ -112,6 +112,7 @@ Direct dependencies from `pubspec.yaml` (locked versions from `pubspec.lock` as 
 | Package | Locked version | Purpose | Network in health pipeline |
 |---------|----------------|---------|---------------------------|
 | `flutter` | SDK | UI framework | No |
+| `flutter_localizations` | SDK | i18n codegen (`flutter gen-l10n`, ARB templates); pulls `intl` transitively for build-time generation only | No |
 | `flutter_bloc` | 9.1.1 | Cubit state management (`TodayCubit`, `HistoryCubit`, etc.) | No |
 | `sqflite` | 2.4.2+1 | On-device SQLite (`timeseries_samples`, WAL, migrations) | No |
 | `path` | 1.9.1 | DB path joining, file path helpers | No |
