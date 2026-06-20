@@ -233,7 +233,8 @@ void main() {
       expect(cubit.state.dailyGoal, kDefaultStepGoal);
       expect(cubit.state.periodAverages, isNull);
       expect(cubit.state.peakDay, isNull);
-      expect(cubit.state.insightAvailability, isNull);
+      expect(cubit.state.insightAvailability?.hasMinimumHistory, isFalse);
+      expect(cubit.state.insightAvailability?.hasWeeklyComparison, isFalse);
       cubit.close();
     });
 
@@ -838,6 +839,32 @@ void main() {
       expect(c2.state.mostActiveWeekday?.weekday, DateTime.tuesday);
       c2.close();
     });
+
+    test(
+      'mostActiveWeekday: equal average and sum tie-breaks to most recent weekday',
+      () async {
+        // Two Mondays and two Tuesdays at 5000 each — same avg (5000) and sum (10000).
+        // June 2 2026 is Tuesday (index 0); June 1 is Monday (index 1) → Tuesday wins.
+        for (final dayOffset in [0, 7, 1, 8, 2, 3, 4]) {
+          final day = DateTime.utc(2026, 6, 2 - dayOffset, 10);
+          final isMonOrTue =
+              day.weekday == DateTime.monday || day.weekday == DateTime.tuesday;
+          await stepRepos.ingestion.upsertIngestionBucket(
+            _bucket(
+              startTimeUtc: day,
+              value: isMonOrTue ? 5000 : 1000,
+              zoneOffset: '+02:00',
+            ),
+          );
+        }
+        final cubit = buildCubit();
+        await cubit.refresh();
+
+        expect(cubit.state.insightAvailability?.hasMinimumHistory, isTrue);
+        expect(cubit.state.mostActiveWeekday?.weekday, DateTime.tuesday);
+        cubit.close();
+      },
+    );
 
     test('goalStreak: counts consecutive days above goal and respects goalsByDay', () async {
       await db.insert('daily_goal_effective', {

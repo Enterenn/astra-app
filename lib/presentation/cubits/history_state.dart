@@ -96,6 +96,12 @@ class TrendsInsightAvailability {
   final bool hasWeeklyComparison;
 }
 
+/// Insight cards always render on daily Trends; empty DB uses calm insufficient copy.
+const kEmptyTrendsInsightAvailability = TrendsInsightAvailability(
+  hasMinimumHistory: false,
+  hasWeeklyComparison: false,
+);
+
 class HistoryState {
   const HistoryState({
     required this.status,
@@ -142,6 +148,7 @@ class HistoryState {
       period: period,
       dailyGoal: dailyGoal,
       goalsByDay: goalsByDay,
+      insightAvailability: kEmptyTrendsInsightAvailability,
     );
   }
 

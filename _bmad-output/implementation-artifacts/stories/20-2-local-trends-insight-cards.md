@@ -1,6 +1,6 @@
 # Story 20.2: Local Trends Insight Cards
 
-Status: review
+Status: done
 
 <!-- Refacto Epic 20 — branch `refacto` only until merge review -->
 <!-- Source: epics-refacto.md Story 20-2 · refactoring-audit-master-v0.6.1.md §5.3 · REF-24 · UX-REF-05 -->
@@ -400,4 +400,5 @@ Composer (Cursor agent)
 
 ## Change Log
 
+- 2026-06-21 — Code review fixes: streak zero empty state, empty DB insight availability, weekday tie-break test.
 - 2026-06-20 — Story 20-2 implemented: local Trends insight cards (cubit + UI + l10n + tests).

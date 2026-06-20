@@ -84,7 +84,7 @@ class TrendsInsightCardsSection extends StatelessWidget {
       return l10n.trendsInsightInsufficientData;
     }
     final streak = goalStreak;
-    if (streak == null) {
+    if (streak == null || streak.consecutiveDays == 0) {
       return l10n.trendsInsightInsufficientData;
     }
     return l10n.formatGoalStreakInsight(streak.consecutiveDays);
