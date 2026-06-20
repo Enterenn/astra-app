@@ -2,6 +2,7 @@ import 'package:flutter/foundation.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 
 import '../../core/metrics/derived_activity_metrics.dart';
+import '../../core/metrics/trends_insights.dart';
 import '../../core/time/local_day_formatter.dart';
 import '../../data/models/chart_day_aggregate.dart';
 import '../../data/models/chart_month_aggregate.dart';
@@ -246,15 +247,33 @@ class HistoryCubit extends Cubit<HistoryState> {
     }
 
     final source = aggregates ?? _cachedAggregates30d;
+    final resolvedDailyGoal = dailyGoal ?? state.dailyGoal;
+    final resolvedGoalsByDay = goalsByDay ?? _cachedGoalsByDay;
+    final availability = computeInsightAvailability(source);
+    TrendsMostActiveWeekday? mostActiveWeekday;
+    TrendsGoalStreak? goalStreak;
+
+    if (availability.hasMinimumHistory) {
+      mostActiveWeekday = computeMostActiveWeekday(source);
+      goalStreak = computeGoalStreak(
+        newestFirst: source,
+        goalsByDay: resolvedGoalsByDay,
+        fallbackGoal: resolvedDailyGoal,
+      );
+    }
+
     emit(
       HistoryState.ready(
         period: period,
         chartPoints: _sliceForPeriod(period),
-        dailyGoal: dailyGoal ?? state.dailyGoal,
-        goalsByDay: goalsByDay ?? _cachedGoalsByDay,
+        dailyGoal: resolvedDailyGoal,
+        goalsByDay: resolvedGoalsByDay,
         trend: _computeTrend(source),
         periodAverages: _computeAveragesForPeriod(period),
         peakDay: _computePeakDayForPeriod(period),
+        mostActiveWeekday: mostActiveWeekday,
+        goalStreak: goalStreak,
+        insightAvailability: availability,
       ),
     );
   }

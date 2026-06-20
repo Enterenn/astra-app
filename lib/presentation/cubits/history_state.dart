@@ -65,6 +65,37 @@ class TrendSnapshot {
   final int? percent;
 }
 
+/// Weekday with the highest average steps in the 30-day insight window.
+class TrendsMostActiveWeekday {
+  const TrendsMostActiveWeekday({
+    required this.weekday,
+    required this.averageSteps,
+  });
+
+  /// `DateTime.monday` … `DateTime.sunday`.
+  final int weekday;
+  final int averageSteps;
+}
+
+/// Consecutive calendar days at or above the resolved daily goal (newest-first).
+class TrendsGoalStreak {
+  const TrendsGoalStreak({required this.consecutiveDays});
+
+  /// Zero means no active streak.
+  final int consecutiveDays;
+}
+
+/// Drives calm empty states for local Trends insight cards.
+class TrendsInsightAvailability {
+  const TrendsInsightAvailability({
+    required this.hasMinimumHistory,
+    required this.hasWeeklyComparison,
+  });
+
+  final bool hasMinimumHistory;
+  final bool hasWeeklyComparison;
+}
+
 class HistoryState {
   const HistoryState({
     required this.status,
@@ -76,6 +107,9 @@ class HistoryState {
     this.trend,
     this.periodAverages,
     this.peakDay,
+    this.mostActiveWeekday,
+    this.goalStreak,
+    this.insightAvailability,
   });
 
   final HistoryStatus status;
@@ -92,6 +126,9 @@ class HistoryState {
   final TrendsPeriodAverages? periodAverages;
   /// Peak step day for active period; null when loading, empty, or zero-step window.
   final TrendsPeakDay? peakDay;
+  final TrendsMostActiveWeekday? mostActiveWeekday;
+  final TrendsGoalStreak? goalStreak;
+  final TrendsInsightAvailability? insightAvailability;
 
   const HistoryState.loading() : this(status: HistoryStatus.loading);
 
@@ -117,6 +154,9 @@ class HistoryState {
     TrendSnapshot? trend,
     TrendsPeriodAverages? periodAverages,
     TrendsPeakDay? peakDay,
+    TrendsMostActiveWeekday? mostActiveWeekday,
+    TrendsGoalStreak? goalStreak,
+    TrendsInsightAvailability? insightAvailability,
   }) {
     return HistoryState(
       status: HistoryStatus.ready,
@@ -128,6 +168,9 @@ class HistoryState {
       trend: trend,
       periodAverages: periodAverages,
       peakDay: peakDay,
+      mostActiveWeekday: mostActiveWeekday,
+      goalStreak: goalStreak,
+      insightAvailability: insightAvailability,
     );
   }
 
@@ -141,6 +184,9 @@ class HistoryState {
     TrendSnapshot? trend,
     TrendsPeriodAverages? periodAverages,
     TrendsPeakDay? peakDay,
+    TrendsMostActiveWeekday? mostActiveWeekday,
+    TrendsGoalStreak? goalStreak,
+    TrendsInsightAvailability? insightAvailability,
   }) {
     return HistoryState(
       status: status ?? this.status,
@@ -152,6 +198,9 @@ class HistoryState {
       trend: trend ?? this.trend,
       periodAverages: periodAverages ?? this.periodAverages,
       peakDay: peakDay ?? this.peakDay,
+      mostActiveWeekday: mostActiveWeekday ?? this.mostActiveWeekday,
+      goalStreak: goalStreak ?? this.goalStreak,
+      insightAvailability: insightAvailability ?? this.insightAvailability,
     );
   }
 }
