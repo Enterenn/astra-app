@@ -72,7 +72,7 @@ String formatChartAxisValue(int value) {
   return '$value';
 }
 
-/// Smallest positive gap between consecutive [ticks] for fl_chart `interval`.
+/// Smallest positive gap between consecutive [ticks] for axis label spacing.
 double chartAxisTitleInterval(List<double> ticks) {
   if (ticks.length < 2) {
     return 1;
@@ -88,7 +88,7 @@ double chartAxisTitleInterval(List<double> ticks) {
   return minGap <= 0 ? 1 : minGap;
 }
 
-/// Whether [value] from fl_chart should render the label for [tick].
+/// Whether [value] should render the label for [tick].
 bool isChartAxisTickLabel({
   required double value,
   required double tick,
