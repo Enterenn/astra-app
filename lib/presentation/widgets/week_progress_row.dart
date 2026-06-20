@@ -1,3 +1,4 @@
+import 'package:astra_app/l10n/app_localizations.dart';
 import 'package:flutter/material.dart';
 
 import '../../core/constants/astra_colors.dart';
@@ -57,6 +58,7 @@ class _DayPill extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final colors = context.astraColors;
+    final l10n = AppLocalizations.of(context);
     final isToday = day.isToday;
     final selected = isSelected;
 
@@ -74,7 +76,7 @@ class _DayPill extends StatelessWidget {
     }
 
     return Semantics(
-      label: '${day.weekdayLabel} ${day.dayNumber}',
+      label: l10n.todayWeekDaySemantics(day.weekdayLabel, day.dayNumber),
       selected: selected,
       button: onTap != null,
       child: Material(

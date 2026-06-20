@@ -1,3 +1,4 @@
+import 'package:astra_app/l10n/app_localizations.dart';
 import 'package:flutter/material.dart';
 import 'package:phosphoricons_flutter/phosphoricons_flutter.dart';
 
@@ -19,7 +20,8 @@ class WeekTrophyBadge extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final colors = context.astraColors;
-    final label = 'Goals met $goalsMetCount of $totalDays days this week';
+    final l10n = AppLocalizations.of(context);
+    final label = l10n.todayWeekGoalsMetSemantics(goalsMetCount, totalDays);
 
     return Semantics(
       label: label,

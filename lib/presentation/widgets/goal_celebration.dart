@@ -3,6 +3,7 @@ import 'dart:io';
 import 'dart:math' as math;
 import 'dart:ui' show ImageFilter;
 
+import 'package:astra_app/l10n/app_localizations.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 
@@ -127,11 +128,12 @@ class _GoalCelebrationState extends State<GoalCelebration>
   Widget build(BuildContext context) {
     final reduceMotion = MediaQuery.disableAnimationsOf(context);
     final colors = context.astraColors;
+    final l10n = AppLocalizations.of(context);
     final controller = _sequenceController;
 
     return Semantics(
       liveRegion: true,
-      label: 'Daily goal reached',
+      label: l10n.todayGoalCelebrationLabel,
       child: LayoutBuilder(
         builder: (context, constraints) {
           final diameter = _ringDiameter(constraints.maxWidth);
@@ -163,6 +165,7 @@ class _GoalCelebrationState extends State<GoalCelebration>
                     child: _buildMicroCopy(
                       colors,
                       controller,
+                      l10n,
                       reduceMotion: reduceMotion,
                     ),
                   ),
@@ -322,7 +325,8 @@ class _GoalCelebrationState extends State<GoalCelebration>
 
   Widget _buildMicroCopy(
     AstraColors colors,
-    AnimationController controller, {
+    AnimationController controller,
+    AppLocalizations l10n, {
     required bool reduceMotion,
   }) {
     final opacity = reduceMotion
@@ -333,7 +337,7 @@ class _GoalCelebrationState extends State<GoalCelebration>
       child: Opacity(
         opacity: opacity.clamp(0.0, 1.0),
         child: Text(
-          'Daily goal reached',
+          l10n.todayGoalCelebrationLabel,
           style: AstraTypography.captionFor(colors).copyWith(
             color: colors.neutralGray,
           ),

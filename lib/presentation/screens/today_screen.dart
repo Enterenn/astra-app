@@ -1,3 +1,4 @@
+import 'package:astra_app/l10n/app_localizations.dart';
 import 'package:flutter/foundation.dart' show immutable, listEquals, visibleForTesting;
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
@@ -25,11 +26,9 @@ import '../widgets/week_trophy_badge.dart';
 class TodayScreen extends StatelessWidget {
   const TodayScreen({super.key});
 
-  static const _kScreenTitle = 'Steps';
-  static const _kSetGoalLabel = 'Set goal';
-
   @override
   Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context);
     final colors = context.astraColors;
     final horizontalPadding = AstraSpacing.kScreenHorizontalPadding;
     final bottomScrollPadding =
@@ -42,7 +41,7 @@ class TodayScreen extends StatelessWidget {
       child: SafeArea(
         bottom: false,
         child: Semantics(
-          label: _kScreenTitle,
+          label: l10n.todayScreenTitle,
           child: SingleChildScrollView(
             padding: EdgeInsets.fromLTRB(
               horizontalPadding,
@@ -57,7 +56,7 @@ class TodayScreen extends StatelessWidget {
                   builder: (context) {
                     _probeSectionBuild('staticTitle');
                     return Text(
-                      _kScreenTitle,
+                      l10n.todayScreenTitle,
                       style: AstraTypography.screenTitleFor(colors),
                     );
                   },
@@ -360,8 +359,9 @@ class _WeekSection extends StatelessWidget {
       selector: _WeekProgressViewModel.fromState,
       builder: (context, vm) {
         _probeSectionBuild('week');
+        final l10n = AppLocalizations.of(context);
         return SectionCard(
-          headline: 'This week',
+          headline: l10n.todayWeekSectionHeadline,
           trailing: vm.weekDays.isEmpty
               ? null
               : WeekTrophyBadge(
@@ -404,6 +404,7 @@ class _PermissionCta extends StatelessWidget {
           return const SizedBox.shrink();
         }
         final colors = context.astraColors;
+        final l10n = AppLocalizations.of(context);
         return Column(
           crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
@@ -411,7 +412,7 @@ class _PermissionCta extends StatelessWidget {
             TextButton(
               onPressed: () => openAppSettings(),
               child: Text(
-                'Open settings to allow step access',
+                l10n.errorNoPermission,
                 style: AstraTypography.captionFor(colors),
               ),
             ),
@@ -516,6 +517,7 @@ class _GoalRingCard extends StatelessWidget {
           Builder(
             builder: (context) {
               _probeSectionBuild('staticSetGoal');
+              final l10n = AppLocalizations.of(context);
               return Center(
                 child: AstraPressable(
                   child: Material(
@@ -532,7 +534,7 @@ class _GoalRingCard extends StatelessWidget {
                           vertical: AstraSpacing.kSpaceSm,
                         ),
                         child: Text(
-                          TodayScreen._kSetGoalLabel,
+                          l10n.todaySetGoalLabel,
                           style: AstraTypography.labelFor(colors),
                         ),
                       ),
@@ -565,10 +567,11 @@ class _GoalRingCard extends StatelessWidget {
       return;
     }
     if (!saved) {
+      final l10n = AppLocalizations.of(context);
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text('Daily goal could not be saved. Try again.'),
-          duration: Duration(seconds: 3),
+        SnackBar(
+          content: Text(l10n.todayGoalSaveError),
+          duration: const Duration(seconds: 3),
         ),
       );
     }

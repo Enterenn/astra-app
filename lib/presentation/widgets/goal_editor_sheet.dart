@@ -1,3 +1,4 @@
+import 'package:astra_app/l10n/app_localizations.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 
@@ -60,6 +61,7 @@ class _GoalEditorSheetBodyState extends State<_GoalEditorSheetBody> {
   @override
   Widget build(BuildContext context) {
     final colors = context.astraColors;
+    final l10n = AppLocalizations.of(context);
     final bottomInset = MediaQuery.viewInsetsOf(context).bottom;
     final validation = _validation;
 
@@ -88,7 +90,7 @@ class _GoalEditorSheetBodyState extends State<_GoalEditorSheetBody> {
                 ),
               ),
               const SizedBox(height: AstraSpacing.kSpaceMd),
-              Text('Daily step goal', style: AstraTypography.title(context)),
+              Text(l10n.todayGoalEditorTitle, style: AstraTypography.title(context)),
               const SizedBox(height: AstraSpacing.kSpaceMd),
               TextField(
                 controller: _controller,
@@ -104,19 +106,21 @@ class _GoalEditorSheetBodyState extends State<_GoalEditorSheetBody> {
                     borderRadius: BorderRadius.circular(AstraSpacing.kRadiusSm),
                     borderSide: BorderSide(color: colors.borderDefault),
                   ),
-                  errorText: validation.isValid ? null : validation.errorMessage,
+                  errorText: validation.isValid
+                      ? null
+                      : l10n.todayGoalValidationError,
                 ),
               ),
               const SizedBox(height: AstraSpacing.kSpaceLg),
               AstraButton(
-                label: 'Save',
+                label: l10n.commonSave,
                 onPressed: _canSave
                     ? () => Navigator.of(context).pop(_validation.parsedGoal)
                     : null,
               ),
               const SizedBox(height: AstraSpacing.kSpaceSm),
               AstraButton(
-                label: 'Cancel',
+                label: l10n.commonCancel,
                 variant: AstraButtonVariant.ghost,
                 onPressed: () => Navigator.of(context).pop(),
               ),

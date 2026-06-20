@@ -1,6 +1,7 @@
 import 'dart:async';
 import 'dart:math' as math;
 
+import 'package:astra_app/l10n/app_localizations.dart';
 import 'package:flutter/material.dart';
 import 'package:phosphoricons_flutter/phosphoricons_flutter.dart';
 
@@ -610,6 +611,7 @@ class _GoalRingState extends State<GoalRing> with TickerProviderStateMixin {
   @override
   Widget build(BuildContext context) {
     final colors = context.astraColors;
+    final l10n = AppLocalizations.of(context);
     final reduceMotion = MediaQuery.disableAnimationsOf(context);
 
     return RepaintBoundary(
@@ -622,7 +624,7 @@ class _GoalRingState extends State<GoalRing> with TickerProviderStateMixin {
           final size = Size.square(diameter);
 
           return Semantics(
-            label: _semanticsLabel,
+            label: _semanticsLabel(l10n),
             value: _semanticsValue,
             increasedValue: _semanticsMaxValue,
             decreasedValue: _semanticsDecreasedValue,
@@ -636,7 +638,7 @@ class _GoalRingState extends State<GoalRing> with TickerProviderStateMixin {
                   children: [
                     if (widget.showRing)
                       _buildRing(size, colors, reduceMotion),
-                    _buildCenterContent(colors, reduceMotion),
+                    _buildCenterContent(colors, reduceMotion, l10n),
                   ],
                 ),
               ),
@@ -706,7 +708,11 @@ class _GoalRingState extends State<GoalRing> with TickerProviderStateMixin {
     return result;
   }
 
-  Widget _buildCenterContent(AstraColors colors, bool reduceMotion) {
+  Widget _buildCenterContent(
+    AstraColors colors,
+    bool reduceMotion,
+    AppLocalizations l10n,
+  ) {
     final status = widget.state.status;
     final showLoadingSkeleton =
         _isLoadingPlaceholder && status != TodayStatus.noPermission;
@@ -738,7 +744,10 @@ class _GoalRingState extends State<GoalRing> with TickerProviderStateMixin {
                 ),
               ),
               const SizedBox(width: AstraSpacing.kSpaceXs),
-              Text('Steps', style: AstraTypography.goalRingLabelFor(colors)),
+              Text(
+                l10n.todayGoalRingStepsLabel,
+                style: AstraTypography.goalRingLabelFor(colors),
+              ),
             ],
           ),
           if (showLoadingSkeleton)
@@ -770,19 +779,19 @@ class _GoalRingState extends State<GoalRing> with TickerProviderStateMixin {
     );
   }
 
-  String get _semanticsLabel {
+  String _semanticsLabel(AppLocalizations l10n) {
     if (_isLoadingPlaceholder &&
         widget.state.status != TodayStatus.noPermission) {
-      return 'Steps today: loading';
+      return l10n.todayGoalRingSemanticsLoading;
     }
     final steps = _targetSteps;
     return switch (widget.state.status) {
-      TodayStatus.loading => 'Steps today: loading',
-      TodayStatus.noPermission => 'Steps today: permission required',
+      TodayStatus.loading => l10n.todayGoalRingSemanticsLoading,
+      TodayStatus.noPermission => l10n.todayGoalRingSemanticsNoPermission,
       TodayStatus.overflow ||
       TodayStatus.goalMet =>
-        'Steps today: $steps. Daily goal ${widget.state.goal} reached.',
-      _ => 'Steps today: $steps of ${widget.state.goal}',
+        l10n.todayGoalRingSemanticsGoalReached(steps, widget.state.goal),
+      _ => l10n.todayGoalRingSemanticsProgress(steps, widget.state.goal),
     };
   }
 

@@ -1,3 +1,4 @@
+import 'package:astra_app/l10n/app_localizations.dart';
 import 'package:flutter/material.dart';
 
 import '../../core/constants/astra_colors.dart';
@@ -18,12 +19,18 @@ class CollectionHealthIndicator extends StatelessWidget {
   final DateTime? lastIngestionUtc;
   final DateTime nowUtc;
 
-  String get _label => switch (display) {
+  String _label(AppLocalizations l10n) => switch (display) {
         CollectionHealthDisplay.loading => '',
-        CollectionHealthDisplay.active => 'Collection active ●',
-        CollectionHealthDisplay.stale =>
-          'Last sync ${formatRelativeTime(instantUtc: lastIngestionUtc, nowUtc: nowUtc)} ⚠',
-        CollectionHealthDisplay.permissionDenied => 'Sensor access revoked ✕',
+        CollectionHealthDisplay.active => l10n.todayCollectionHealthActive,
+        CollectionHealthDisplay.stale => l10n.todayCollectionHealthStale(
+            formatRelativeTimeLocalized(
+              l10n,
+              instantUtc: lastIngestionUtc,
+              nowUtc: nowUtc,
+            ),
+          ),
+        CollectionHealthDisplay.permissionDenied =>
+          l10n.todayCollectionHealthPermissionDenied,
       };
 
   Color _dotColor(AstraColors colors) => switch (display) {
@@ -40,9 +47,11 @@ class CollectionHealthIndicator extends StatelessWidget {
     }
 
     final colors = context.astraColors;
+    final l10n = AppLocalizations.of(context);
+    final label = _label(l10n);
 
     return Semantics(
-      label: _label,
+      label: label,
       excludeSemantics: true,
       child: Row(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -61,7 +70,7 @@ class CollectionHealthIndicator extends StatelessWidget {
           const SizedBox(width: AstraSpacing.kSpaceSm),
           Expanded(
             child: Text(
-              _label,
+              label,
               style: AstraTypography.captionFor(colors),
             ),
           ),
