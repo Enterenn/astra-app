@@ -718,6 +718,69 @@ class AppLocalizationsFr extends AppLocalizations {
   }
 
   @override
+  String get trendsInsightWeeklyTitle => 'Évolution hebdomadaire';
+
+  @override
+  String get trendsInsightWeekdayTitle => 'Jour le plus actif';
+
+  @override
+  String get trendsInsightStreakTitle => 'Série au-dessus de l\'objectif';
+
+  @override
+  String get trendsInsightInsufficientData =>
+      'Pas assez d\'historique. Continuez à marcher — les données restent sur cet appareil.';
+
+  @override
+  String get trendsInsightWeeklyInsufficientData =>
+      'Pas assez d\'historique pour comparer les semaines.';
+
+  @override
+  String trendsInsightMostActiveWeekday(String weekday) {
+    return '$weekday est votre jour le plus actif en moyenne';
+  }
+
+  @override
+  String trendsInsightGoalStreak(int count) {
+    return '$count jours consécutifs au-dessus de l\'objectif';
+  }
+
+  @override
+  String get trendsInsightGoalStreakOne =>
+      '1 jour consécutif au-dessus de l\'objectif';
+
+  @override
+  String trendsInsightWeeklyUp(int percentage) {
+    return 'En hausse de $percentage % la semaine dernière';
+  }
+
+  @override
+  String trendsInsightWeeklyDown(int percentage) {
+    return 'En baisse de $percentage % la semaine dernière';
+  }
+
+  @override
+  String get trendsInsightWeeklyFlat => 'Identique à la semaine dernière';
+
+  @override
+  String get trendsInsightWeeklyNoPrior =>
+      'Pas de données la semaine précédente';
+
+  @override
+  String trendsInsightWeeklySemantics(String body) {
+    return 'Évolution hebdomadaire : $body';
+  }
+
+  @override
+  String trendsInsightWeekdaySemantics(String body) {
+    return 'Jour le plus actif : $body';
+  }
+
+  @override
+  String trendsInsightStreakSemantics(String body) {
+    return 'Série au-dessus de l\'objectif : $body';
+  }
+
+  @override
   String chartTooltipStepsOfGoal(int steps, int goal) {
     return '$steps/$goal pas';
   }

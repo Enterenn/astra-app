@@ -103,6 +103,29 @@ extension AppLocalizationsDateLabels on AppLocalizations {
     };
   }
 
+  String weeklyInsightBody(TrendSnapshot trend) {
+    if (trend.direction == TrendDirection.flat && trend.percent == null) {
+      return trendsInsightWeeklyNoPrior;
+    }
+    return switch (trend.direction) {
+      TrendDirection.up => trendsInsightWeeklyUp(trend.percent!),
+      TrendDirection.down => trendsInsightWeeklyDown(trend.percent!),
+      TrendDirection.flat => trendsInsightWeeklyFlat,
+    };
+  }
+
+  String formatMostActiveWeekdayInsight(int weekday) {
+    final day = DateTime(2024, 1, weekday);
+    return trendsInsightMostActiveWeekday(weekdayShort(day));
+  }
+
+  String formatGoalStreakInsight(int consecutiveDays) {
+    if (consecutiveDays == 1) {
+      return trendsInsightGoalStreakOne;
+    }
+    return trendsInsightGoalStreak(consecutiveDays);
+  }
+
   String chartGoalStatus({required int steps, required int goal}) {
     if (goal <= 0) {
       return chartGoalStatusNoGoal;

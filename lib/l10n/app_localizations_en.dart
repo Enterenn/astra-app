@@ -707,6 +707,67 @@ class AppLocalizationsEn extends AppLocalizations {
   }
 
   @override
+  String get trendsInsightWeeklyTitle => 'Weekly change';
+
+  @override
+  String get trendsInsightWeekdayTitle => 'Most active day';
+
+  @override
+  String get trendsInsightStreakTitle => 'Goal streak';
+
+  @override
+  String get trendsInsightInsufficientData =>
+      'Not enough history yet. Keep walking — data stays on this device.';
+
+  @override
+  String get trendsInsightWeeklyInsufficientData =>
+      'Not enough history for weekly comparison.';
+
+  @override
+  String trendsInsightMostActiveWeekday(String weekday) {
+    return '$weekday averages the most steps';
+  }
+
+  @override
+  String trendsInsightGoalStreak(int count) {
+    return '$count consecutive days above goal';
+  }
+
+  @override
+  String get trendsInsightGoalStreakOne => '1 consecutive day above goal';
+
+  @override
+  String trendsInsightWeeklyUp(int percentage) {
+    return 'Up $percentage% from last week';
+  }
+
+  @override
+  String trendsInsightWeeklyDown(int percentage) {
+    return 'Down $percentage% from last week';
+  }
+
+  @override
+  String get trendsInsightWeeklyFlat => 'Same as last week';
+
+  @override
+  String get trendsInsightWeeklyNoPrior => 'No prior week data';
+
+  @override
+  String trendsInsightWeeklySemantics(String body) {
+    return 'Weekly change: $body';
+  }
+
+  @override
+  String trendsInsightWeekdaySemantics(String body) {
+    return 'Most active day: $body';
+  }
+
+  @override
+  String trendsInsightStreakSemantics(String body) {
+    return 'Goal streak: $body';
+  }
+
+  @override
   String chartTooltipStepsOfGoal(int steps, int goal) {
     return '$steps/$goal steps';
   }

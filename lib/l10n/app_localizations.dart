@@ -1291,6 +1291,96 @@ abstract class AppLocalizations {
   /// **'Peak day {dateLabel} with {steps} steps in this period'**
   String trendsPeakDaySemantics(String dateLabel, int steps);
 
+  /// Title for weekly change insight card on Trends screen
+  ///
+  /// In en, this message translates to:
+  /// **'Weekly change'**
+  String get trendsInsightWeeklyTitle;
+
+  /// Title for most active weekday insight card on Trends screen
+  ///
+  /// In en, this message translates to:
+  /// **'Most active day'**
+  String get trendsInsightWeekdayTitle;
+
+  /// Title for goal streak insight card on Trends screen
+  ///
+  /// In en, this message translates to:
+  /// **'Goal streak'**
+  String get trendsInsightStreakTitle;
+
+  /// Calm empty state when fewer than seven days of step history exist
+  ///
+  /// In en, this message translates to:
+  /// **'Not enough history yet. Keep walking — data stays on this device.'**
+  String get trendsInsightInsufficientData;
+
+  /// Calm empty state when weekly comparison needs fourteen days of history
+  ///
+  /// In en, this message translates to:
+  /// **'Not enough history for weekly comparison.'**
+  String get trendsInsightWeeklyInsufficientData;
+
+  /// Body copy for most active weekday insight card
+  ///
+  /// In en, this message translates to:
+  /// **'{weekday} averages the most steps'**
+  String trendsInsightMostActiveWeekday(String weekday);
+
+  /// Body copy for goal streak insight when count is greater than one
+  ///
+  /// In en, this message translates to:
+  /// **'{count} consecutive days above goal'**
+  String trendsInsightGoalStreak(int count);
+
+  /// Body copy for goal streak insight when count is exactly one
+  ///
+  /// In en, this message translates to:
+  /// **'1 consecutive day above goal'**
+  String get trendsInsightGoalStreakOne;
+
+  /// Weekly change insight when steps increased
+  ///
+  /// In en, this message translates to:
+  /// **'Up {percentage}% from last week'**
+  String trendsInsightWeeklyUp(int percentage);
+
+  /// Weekly change insight when steps decreased
+  ///
+  /// In en, this message translates to:
+  /// **'Down {percentage}% from last week'**
+  String trendsInsightWeeklyDown(int percentage);
+
+  /// Weekly change insight when steps unchanged from prior week
+  ///
+  /// In en, this message translates to:
+  /// **'Same as last week'**
+  String get trendsInsightWeeklyFlat;
+
+  /// Weekly change insight when prior week has no step data
+  ///
+  /// In en, this message translates to:
+  /// **'No prior week data'**
+  String get trendsInsightWeeklyNoPrior;
+
+  /// Accessibility label for weekly change insight card
+  ///
+  /// In en, this message translates to:
+  /// **'Weekly change: {body}'**
+  String trendsInsightWeeklySemantics(String body);
+
+  /// Accessibility label for most active weekday insight card
+  ///
+  /// In en, this message translates to:
+  /// **'Most active day: {body}'**
+  String trendsInsightWeekdaySemantics(String body);
+
+  /// Accessibility label for goal streak insight card
+  ///
+  /// In en, this message translates to:
+  /// **'Goal streak: {body}'**
+  String trendsInsightStreakSemantics(String body);
+
   /// Daily bar chart tooltip steps versus goal
   ///
   /// In en, this message translates to:

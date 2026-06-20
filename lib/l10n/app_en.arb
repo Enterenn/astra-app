@@ -989,6 +989,101 @@
       }
     }
   },
+  "trendsInsightWeeklyTitle": "Weekly change",
+  "@trendsInsightWeeklyTitle": {
+    "description": "Title for weekly change insight card on Trends screen"
+  },
+  "trendsInsightWeekdayTitle": "Most active day",
+  "@trendsInsightWeekdayTitle": {
+    "description": "Title for most active weekday insight card on Trends screen"
+  },
+  "trendsInsightStreakTitle": "Goal streak",
+  "@trendsInsightStreakTitle": {
+    "description": "Title for goal streak insight card on Trends screen"
+  },
+  "trendsInsightInsufficientData": "Not enough history yet. Keep walking — data stays on this device.",
+  "@trendsInsightInsufficientData": {
+    "description": "Calm empty state when fewer than seven days of step history exist"
+  },
+  "trendsInsightWeeklyInsufficientData": "Not enough history for weekly comparison.",
+  "@trendsInsightWeeklyInsufficientData": {
+    "description": "Calm empty state when weekly comparison needs fourteen days of history"
+  },
+  "trendsInsightMostActiveWeekday": "{weekday} averages the most steps",
+  "@trendsInsightMostActiveWeekday": {
+    "description": "Body copy for most active weekday insight card",
+    "placeholders": {
+      "weekday": {
+        "type": "String"
+      }
+    }
+  },
+  "trendsInsightGoalStreak": "{count} consecutive days above goal",
+  "@trendsInsightGoalStreak": {
+    "description": "Body copy for goal streak insight when count is greater than one",
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "trendsInsightGoalStreakOne": "1 consecutive day above goal",
+  "@trendsInsightGoalStreakOne": {
+    "description": "Body copy for goal streak insight when count is exactly one"
+  },
+  "trendsInsightWeeklyUp": "Up {percentage}% from last week",
+  "@trendsInsightWeeklyUp": {
+    "description": "Weekly change insight when steps increased",
+    "placeholders": {
+      "percentage": {
+        "type": "int"
+      }
+    }
+  },
+  "trendsInsightWeeklyDown": "Down {percentage}% from last week",
+  "@trendsInsightWeeklyDown": {
+    "description": "Weekly change insight when steps decreased",
+    "placeholders": {
+      "percentage": {
+        "type": "int"
+      }
+    }
+  },
+  "trendsInsightWeeklyFlat": "Same as last week",
+  "@trendsInsightWeeklyFlat": {
+    "description": "Weekly change insight when steps unchanged from prior week"
+  },
+  "trendsInsightWeeklyNoPrior": "No prior week data",
+  "@trendsInsightWeeklyNoPrior": {
+    "description": "Weekly change insight when prior week has no step data"
+  },
+  "trendsInsightWeeklySemantics": "Weekly change: {body}",
+  "@trendsInsightWeeklySemantics": {
+    "description": "Accessibility label for weekly change insight card",
+    "placeholders": {
+      "body": {
+        "type": "String"
+      }
+    }
+  },
+  "trendsInsightWeekdaySemantics": "Most active day: {body}",
+  "@trendsInsightWeekdaySemantics": {
+    "description": "Accessibility label for most active weekday insight card",
+    "placeholders": {
+      "body": {
+        "type": "String"
+      }
+    }
+  },
+  "trendsInsightStreakSemantics": "Goal streak: {body}",
+  "@trendsInsightStreakSemantics": {
+    "description": "Accessibility label for goal streak insight card",
+    "placeholders": {
+      "body": {
+        "type": "String"
+      }
+    }
+  },
   "chartTooltipStepsOfGoal": "{steps}/{goal} steps",
   "@chartTooltipStepsOfGoal": {
     "description": "Daily bar chart tooltip steps versus goal",
