@@ -633,6 +633,12 @@ class AppLocalizationsFr extends AppLocalizations {
       'Votre évolution personnelle vous appartient — et vous seul.';
 
   @override
+  String get onboardingTrustOfflineBadge => '100 % hors ligne';
+
+  @override
+  String get onboardingTrustNoAccountBadge => 'Aucun compte requis';
+
+  @override
   String get onboardingWeightTitle => 'Quel est votre poids ?';
 
   @override

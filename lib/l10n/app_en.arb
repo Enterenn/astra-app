@@ -871,6 +871,14 @@
   "@onboardingIntroParagraphTwo": {
     "description": "Onboarding intro second card paragraph"
   },
+  "onboardingTrustOfflineBadge": "100% offline",
+  "@onboardingTrustOfflineBadge": {
+    "description": "Trust badge on onboarding intro emphasising offline-only data"
+  },
+  "onboardingTrustNoAccountBadge": "No account required",
+  "@onboardingTrustNoAccountBadge": {
+    "description": "Trust badge on onboarding intro emphasising no account signup"
+  },
   "onboardingWeightTitle": "What is your weight?",
   "@onboardingWeightTitle": {
     "description": "Onboarding weight picker screen title"

@@ -623,6 +623,12 @@ class AppLocalizationsEn extends AppLocalizations {
       'Your personal evolution belongs to you—and only you.';
 
   @override
+  String get onboardingTrustOfflineBadge => '100% offline';
+
+  @override
+  String get onboardingTrustNoAccountBadge => 'No account required';
+
+  @override
   String get onboardingWeightTitle => 'What is your weight?';
 
   @override

@@ -1141,6 +1141,18 @@ abstract class AppLocalizations {
   /// **'Your personal evolution belongs to you—and only you.'**
   String get onboardingIntroParagraphTwo;
 
+  /// Trust badge on onboarding intro emphasising offline-only data
+  ///
+  /// In en, this message translates to:
+  /// **'100% offline'**
+  String get onboardingTrustOfflineBadge;
+
+  /// Trust badge on onboarding intro emphasising no account signup
+  ///
+  /// In en, this message translates to:
+  /// **'No account required'**
+  String get onboardingTrustNoAccountBadge;
+
   /// Onboarding weight picker screen title
   ///
   /// In en, this message translates to:

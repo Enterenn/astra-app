@@ -173,6 +173,8 @@
   "onboardingIntroHeadline": "Votre santé. Votre téléphone. Point final.",
   "onboardingIntroParagraphOne": "Astra suit votre activité, vos habitudes et vos indicateurs de santé grâce uniquement aux capteurs intégrés de votre appareil. Pas de compte, pas de fuite cloud.",
   "onboardingIntroParagraphTwo": "Votre évolution personnelle vous appartient — et vous seul.",
+  "onboardingTrustOfflineBadge": "100 % hors ligne",
+  "onboardingTrustNoAccountBadge": "Aucun compte requis",
   "onboardingWeightTitle": "Quel est votre poids ?",
   "onboardingHeightTitle": "Quelle est votre taille ?",
   "onboardingOptionalMetricsHint": "Le poids et la taille sont optionnels, mais améliorent la précision des mesures dans l'application.",

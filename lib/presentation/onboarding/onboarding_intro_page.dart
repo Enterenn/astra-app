@@ -4,6 +4,7 @@ import 'package:flutter/material.dart';
 import '../../core/constants/astra_colors.dart';
 import '../../core/constants/astra_spacing.dart';
 import '../../core/constants/astra_typography.dart';
+import '../widgets/trend_chip.dart';
 
 class OnboardingIntroPage extends StatelessWidget {
   const OnboardingIntroPage({super.key});
@@ -22,7 +23,17 @@ class OnboardingIntroPage extends StatelessWidget {
             textAlign: TextAlign.center,
             style: AstraTypography.onboardingIntroTitleFor(colors),
           ),
-          const SizedBox(height: AstraSpacing.kSpaceXl),
+          const SizedBox(height: AstraSpacing.kSpaceMd),
+          Wrap(
+            alignment: WrapAlignment.center,
+            spacing: AstraSpacing.kSpaceSm,
+            runSpacing: AstraSpacing.kSpaceSm,
+            children: [
+              CaptionPill(label: l10n.onboardingTrustOfflineBadge),
+              CaptionPill(label: l10n.onboardingTrustNoAccountBadge),
+            ],
+          ),
+          const SizedBox(height: AstraSpacing.kSpaceLg),
           DecoratedBox(
             decoration: BoxDecoration(
               color: colors.bgElevated,
