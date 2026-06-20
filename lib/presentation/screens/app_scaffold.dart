@@ -3,6 +3,7 @@ import 'dart:async';
 import 'package:astra_app/l10n/app_localizations.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 
 import '../../core/constants/astra_colors.dart';
@@ -233,6 +234,10 @@ class _AppScaffoldState extends State<AppScaffold> {
   }
 
   void _onDestinationSelected(int index) {
+    if (index == _selectedIndex) {
+      return;
+    }
+    HapticFeedback.selectionClick();
     final returningToToday = index == 0 && _selectedIndex != 0;
     final openingTrends = index == 1 && _selectedIndex != 1;
     setState(() {
