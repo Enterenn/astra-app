@@ -140,7 +140,7 @@ See KGP section below for Android build patches.
 
 | Package / asset | Notes |
 |-----------------|-------|
-| Phosphor subset fonts (local) | `assets/fonts/Phosphor-Regular-subset.ttf` + `Phosphor-Fill-subset.ttf` — 18 Regular + 3 Fill glyphs only (Story 20-5). MIT license ([phosphor-icons/core](https://github.com/phosphor-icons/core)). **Not** `phosphor_flutter` 2.1.0 (incompatible with Dart 3.12). Tab icons: `sneakerMove`, `chartBar`, `list`. Regenerate: `tool/subset_phosphor_icons.ps1` or `.sh` (requires `fonttools` / `pyftsubset`). |
+| Phosphor subset fonts (local) | `assets/fonts/Phosphor-Regular-subset.ttf` + `Phosphor-Fill-subset.ttf` — 18 Regular + 3 Fill glyphs only (Story 20-5). MIT license ([phosphor-icons/core](https://github.com/phosphor-icons/core)). **Not** `phosphor_flutter` 2.1.0 (incompatible with Dart 3.12). Tab icons: `sneakerMove`, `chartBar`, `list`. Regenerate: `tool/subset_phosphor_icons.ps1` or `.sh` (auto-downloads source TTFs to `tool/fonts/` from [phosphor-icons/web](https://github.com/phosphor-icons/web) release; requires `fonttools` / `pyftsubset`). Guard test: `test/core/icons/phosphor_icons_subset_test.dart`. |
 | Active nav squircle | Native `ClipPath` + `CustomClipper<Path>` (`RoundedSuperellipseBorder` path, radius 16) — Story 17-3; `figma_squircle` removed |
 | `file_picker` 12.0.0-beta.5 | Exact pin at 12.0.0-beta.5 (REF-15) — CSV import/export via OS dialogs (Story 4.4 import, Story 17-1 export) |
 

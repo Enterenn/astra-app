@@ -1,6 +1,6 @@
 # Story 20.5: Phosphor Icons Selective Font Subsetting
 
-Status: review
+Status: done
 
 <!-- Refacto Epic 20 — branch `refacto` only until merge review -->
 <!-- Source: epics-refacto.md Story 20-5 · refactoring-audit-master-v0.6.1.md §4 · REF-27 · NFR-REF-03 -->
