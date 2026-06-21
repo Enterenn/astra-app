@@ -1,6 +1,6 @@
 # Story 20.4: Replace fl_chart with CustomPainter Charts
 
-Status: review
+Status: done
 
 <!-- Refacto Epic 20 — branch `refacto` only until merge review -->
 <!-- Source: epics-refacto.md Story 20-4 · refactoring-audit-master-v0.6.1.md §4 · REF-26 · NFR-REF-01 · NFR-REF-03 -->

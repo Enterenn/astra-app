@@ -3,6 +3,8 @@ import 'package:astra_app/l10n/app_localizations.dart';
 import 'package:astra_app/data/models/chart_day_aggregate.dart';
 import 'package:astra_app/presentation/cubits/history_state.dart';
 import 'package:astra_app/presentation/widgets/chart/astra_bar_chart_core.dart';
+import 'package:astra_app/presentation/widgets/chart/astra_bar_chart_painter.dart';
+import 'package:astra_app/presentation/widgets/chart/bar_chart_layout.dart';
 import 'package:astra_app/presentation/widgets/chart/chart_axis_ticks.dart';
 import 'package:astra_app/presentation/widgets/step_bar_chart.dart';
 import 'package:flutter/material.dart';
@@ -371,6 +373,113 @@ void main() {
       );
 
       expect(find.text('9 June\n8547/8000 steps'), findsOneWidget);
+    });
+
+    testWidgets('re-tap selected bar clears selection', (tester) async {
+      final points = [
+        ChartDayAggregate(
+          localDay: DateTime.utc(2026, 6, 9),
+          totalSteps: 8547,
+        ),
+      ];
+
+      await pumpChart(
+        tester,
+        status: HistoryStatus.ready,
+        points: points,
+        dailyGoal: 8000,
+        goalsByDay: const {'2026-06-09': 8000},
+      );
+
+      final core = tester.widget<AstraBarChartCore>(
+        find.byType(AstraBarChartCore),
+      );
+      const plotWidth = 320 - kAstraBarChartLeftAxisReserved - 16;
+
+      await tapBarAtIndex(
+        tester,
+        barIndex: 0,
+        barCount: 1,
+        barWidth: core.barWidth,
+        plotWidth: plotWidth,
+      );
+      expect(find.text('9 June\n8547/8000 steps'), findsOneWidget);
+
+      await tapBarAtIndex(
+        tester,
+        barIndex: 0,
+        barCount: 1,
+        barWidth: core.barWidth,
+        plotWidth: plotWidth,
+      );
+
+      expect(
+        tester.widget<AstraBarChartCore>(find.byType(AstraBarChartCore)).selectedIndex,
+        isNull,
+      );
+      expect(find.text('9 June\n8547/8000 steps'), findsNothing);
+    });
+
+    testWidgets('tap in plot gap clears active selection', (tester) async {
+      final points = [
+        ChartDayAggregate(
+          localDay: DateTime.utc(2026, 6, 8),
+          totalSteps: 5000,
+        ),
+        ChartDayAggregate(
+          localDay: DateTime.utc(2026, 6, 9),
+          totalSteps: 8547,
+        ),
+      ];
+
+      await pumpChart(
+        tester,
+        status: HistoryStatus.ready,
+        points: points,
+        dailyGoal: 8000,
+        goalsByDay: const {
+          '2026-06-08': 8000,
+          '2026-06-09': 8000,
+        },
+      );
+
+      final core = tester.widget<AstraBarChartCore>(
+        find.byType(AstraBarChartCore),
+      );
+      const plotWidth = 320 - kAstraBarChartLeftAxisReserved - 16;
+
+      await tapBarAtIndex(
+        tester,
+        barIndex: 1,
+        barCount: 2,
+        barWidth: core.barWidth,
+        plotWidth: plotWidth,
+      );
+      expect(find.text('9 June\n8547/8000 steps'), findsOneWidget);
+
+      final centers = computeSpaceAroundBarCenters(
+        viewWidth: plotWidth,
+        barCount: 2,
+        barWidth: core.barWidth,
+      );
+      final gapLocalX = (centers[0] + centers[1]) / 2;
+      expect(
+        barIndexAtPlotX(
+          localX: gapLocalX,
+          plotWidth: plotWidth,
+          barCount: 2,
+          barWidth: core.barWidth,
+        ),
+        isNull,
+      );
+
+      await tapPlotAtLocalX(tester, localX: gapLocalX);
+
+      expect(
+        tester.widget<AstraBarChartCore>(find.byType(AstraBarChartCore)).selectedIndex,
+        isNull,
+      );
+      expect(find.text('9 June\n8547/8000 steps'), findsNothing);
     });
 
     testWidgets('selected bar updates semantics summary', (tester) async {

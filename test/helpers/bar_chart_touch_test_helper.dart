@@ -32,12 +32,24 @@ Future<void> tapBarAtIndex(
     barCount: barCount,
     barWidth: barWidth,
   );
+  await tapPlotAtLocalX(
+    tester,
+    localX: centerX,
+    plotTop: plotTop,
+  );
+}
+
+/// Taps the plot area at [localX] (plot coordinates, excluding left axis).
+Future<void> tapPlotAtLocalX(
+  WidgetTester tester, {
+  required double localX,
+  double plotTop = 0,
+}) async {
   final plotFinder = find.byType(AstraBarChartCore);
   final plotBox = tester.getRect(plotFinder);
-  final leftAxisWidth = 36.0;
   await tester.tapAt(
     Offset(
-      plotBox.left + leftAxisWidth + centerX,
+      plotBox.left + kAstraBarChartLeftAxisReserved + localX,
       plotBox.top + plotTop + 20,
     ),
   );

@@ -22,7 +22,7 @@ class AstraBarChartPainter extends CustomPainter {
   final int? selectedIndex;
   final double topCornerRadius;
 
-  static const _barPaint = PaintingStyle.fill;
+  final _barFillPaint = Paint()..style = PaintingStyle.fill;
 
   @override
   void paint(Canvas canvas, Size size) {
@@ -39,7 +39,6 @@ class AstraBarChartPainter extends CustomPainter {
       return;
     }
 
-    final paint = Paint()..style = _barPaint;
     final halfBar = barWidth / 2;
 
     for (var index = 0; index < values.length; index++) {
@@ -53,14 +52,14 @@ class AstraBarChartPainter extends CustomPainter {
       final top = size.height - barHeight;
       final rect = Rect.fromLTWH(left, top, barWidth, barHeight);
 
-      paint.color = barColor(index, selectedIndex == index);
+      _barFillPaint.color = barColor(index, selectedIndex == index);
       canvas.drawRRect(
         RRect.fromRectAndCorners(
           rect,
           topLeft: Radius.circular(topCornerRadius),
           topRight: Radius.circular(topCornerRadius),
         ),
-        paint,
+        _barFillPaint,
       );
     }
   }
@@ -71,8 +70,7 @@ class AstraBarChartPainter extends CustomPainter {
         oldDelegate.maxY != maxY ||
         oldDelegate.barWidth != barWidth ||
         oldDelegate.selectedIndex != selectedIndex ||
-        oldDelegate.topCornerRadius != topCornerRadius ||
-        oldDelegate.barColor != barColor;
+        oldDelegate.topCornerRadius != topCornerRadius;
   }
 }
 

@@ -7,6 +7,12 @@ import 'astra_bar_chart_touch.dart';
 import 'astra_single_goal_line_painter.dart';
 import 'chart_axis_ticks.dart';
 
+/// Default width reserved for the left Y-axis column in chart layouts.
+const kAstraBarChartLeftAxisReserved = 36.0;
+
+/// Default height reserved for the bottom X-axis row in chart layouts.
+const kAstraBarChartBottomAxisReserved = 24.0;
+
 /// Shared native bar chart shell: axes as [Text], bars via [CustomPainter].
 class AstraBarChartCore extends StatefulWidget {
   const AstraBarChartCore({
@@ -19,8 +25,8 @@ class AstraBarChartCore extends StatefulWidget {
     required this.bottomLabelBuilder,
     required this.selectedIndex,
     required this.onSelectedIndexChanged,
-    this.leftAxisReserved = 36,
-    this.bottomAxisReserved = 24,
+    this.leftAxisReserved = kAstraBarChartLeftAxisReserved,
+    this.bottomAxisReserved = kAstraBarChartBottomAxisReserved,
     this.shouldShowBottomLabel,
     this.tooltipTextBuilder,
     this.singleGoalValue,
