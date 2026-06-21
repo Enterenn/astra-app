@@ -2,9 +2,9 @@ import 'package:astra_app/core/constants/astra_theme.dart';
 import 'package:astra_app/l10n/app_localizations.dart';
 import 'package:astra_app/data/models/chart_month_aggregate.dart';
 import 'package:astra_app/presentation/cubits/history_state.dart';
+import 'package:astra_app/presentation/widgets/chart/astra_bar_chart_core.dart';
 import 'package:astra_app/presentation/widgets/chart/chart_axis_ticks.dart';
 import 'package:astra_app/presentation/widgets/trends_monthly_bar_chart.dart';
-import 'package:fl_chart/fl_chart.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 
@@ -106,37 +106,21 @@ void main() {
         status: HistoryStatus.ready,
       );
 
-      final barChart = tester.widget<BarChart>(find.byType(BarChart));
-      final chartMaxY = barChart.data.maxY;
-      final sideTitles = barChart.data.titlesData.leftTitles.sideTitles;
-      final ticks = computeChartYAxisTicks(maxY: chartMaxY);
-      final interval = chartAxisTitleInterval(ticks);
+      final core = tester.widget<AstraBarChartCore>(
+        find.byType(AstraBarChartCore),
+      );
+      final ticks = computeChartYAxisTicks(maxY: core.maxY);
 
-      final renderedLabels = <String>[];
+      var renderedCount = 0;
       for (final tick in ticks) {
-        final titleWidget = sideTitles.getTitlesWidget(
-          tick,
-          TitleMeta(
-            min: 0,
-            max: chartMaxY,
-            parentAxisSize: 240,
-            axisPosition: tick,
-            appliedInterval: interval,
-            sideTitles: sideTitles,
-            formattedValue: tick.toString(),
-            axisSide: AxisSide.left,
-            rotationQuarterTurns: 0,
-          ),
-        );
-        if (titleWidget is Text &&
-            titleWidget.data != null &&
-            titleWidget.data!.isNotEmpty) {
-          renderedLabels.add(titleWidget.data!);
+        final label = formatChartAxisValue(tick.round());
+        if (find.text(label).evaluate().isNotEmpty) {
+          renderedCount++;
         }
       }
 
-      expect(renderedLabels.length, greaterThanOrEqualTo(4));
-      expect(renderedLabels, contains('0'));
+      expect(renderedCount, greaterThanOrEqualTo(4));
+      expect(find.text('0'), findsWidgets);
     });
 
     testWidgets('ready chart computes at least four Y-axis ticks', (
@@ -148,7 +132,9 @@ void main() {
         status: HistoryStatus.ready,
       );
 
-      final chartMaxY = tester.widget<BarChart>(find.byType(BarChart)).data.maxY;
+      final chartMaxY = tester
+          .widget<AstraBarChartCore>(find.byType(AstraBarChartCore))
+          .maxY;
       final ticks = computeChartYAxisTicks(maxY: chartMaxY);
 
       expect(ticks.length, greaterThanOrEqualTo(4));
@@ -174,27 +160,21 @@ void main() {
         status: HistoryStatus.ready,
       );
 
-      final barChart = tester.widget<BarChart>(find.byType(BarChart));
-      expect(barChart.data.barTouchData.enabled, isTrue);
-      expect(barChart.data.barTouchData.handleBuiltInTouches, isFalse);
+      final core = tester.widget<AstraBarChartCore>(
+        find.byType(AstraBarChartCore),
+      );
+      await tapBarAtIndex(
+        tester,
+        barIndex: 0,
+        barCount: 1,
+        barWidth: core.barWidth,
+        plotWidth: 400 - 36 - 16,
+      );
 
-      simulateBarTap(barChart.data.barTouchData, groupIndex: 0);
-      await tester.pump();
-
-      final updatedChart = tester.widget<BarChart>(find.byType(BarChart));
       expect(
-        updatedChart.data.barGroups.first.showingTooltipIndicators,
-        const [0],
+        find.text('June 2026\n3532 steps/day\n52980 total · 15 days'),
+        findsOneWidget,
       );
-
-      final tooltip = updatedChart.data.barTouchData.touchTooltipData
-          .getTooltipItem(
-        updatedChart.data.barGroups.first,
-        0,
-        updatedChart.data.barGroups.first.barRods.first,
-        0,
-      );
-      expect(tooltip?.text, 'June 2026\n3532 steps/day\n52980 total · 15 days');
     });
 
     test('formatPeriodRange returns oldest–newest month year caption', () {

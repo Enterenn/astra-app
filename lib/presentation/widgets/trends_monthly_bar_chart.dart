@@ -1,5 +1,4 @@
 import 'package:astra_app/l10n/app_localizations.dart';
-import 'package:fl_chart/fl_chart.dart';
 import 'package:flutter/material.dart';
 
 import '../../core/constants/astra_colors.dart';
@@ -8,7 +7,7 @@ import '../../core/constants/astra_typography.dart';
 import '../../data/models/chart_month_aggregate.dart';
 import '../cubits/history_state.dart';
 import '../l10n/l10n_date_labels.dart';
-import 'chart/astra_bar_chart_touch.dart';
+import 'chart/astra_bar_chart_core.dart';
 import 'chart/chart_axis_ticks.dart';
 
 /// Twelve-month monthly average steps chart for the Trends screen.
@@ -146,9 +145,6 @@ class _ReadyChart extends StatefulWidget {
 class _ReadyChartState extends State<_ReadyChart> {
   static const _kBelowGoalBarAlpha = 0.66;
   static const _kSelectedBarAlpha = 0.8;
-  static const _kMaxBarWidth = 12.0;
-  static const _kMinBarWidth = 4.0;
-  static const _kBarSlotFillRatio = 0.55;
   static const _kLeftAxisReserved = 36.0;
   static const _kBottomAxisReserved = 24.0;
 
@@ -167,7 +163,6 @@ class _ReadyChartState extends State<_ReadyChart> {
     final safeYMax = (maxSteps <= 0 ? 1 : maxSteps).toDouble();
     final chartMaxY = safeYMax * 1.05;
     final yTicks = computeChartYAxisTicks(maxY: chartMaxY);
-    final yAxisInterval = chartAxisTitleInterval(yTicks);
 
     return ExcludeSemantics(
       child: Padding(
@@ -179,119 +174,42 @@ class _ReadyChartState extends State<_ReadyChart> {
         ),
         child: LayoutBuilder(
           builder: (context, constraints) {
-            final barWidth = _resolveBarWidth(
-              constraints.maxWidth,
-              points.length,
+            final plotWidth = constraints.maxWidth - _kLeftAxisReserved;
+            final barWidth = resolveAstraBarWidth(
+              chartWidth: plotWidth,
+              pointCount: points.length,
             );
-            final barGroups = [
-              for (var i = 0; i < points.length; i++)
-                BarChartGroupData(
-                  x: i,
-                  barRods: [
-                    BarChartRodData(
-                      toY: points[i].averageDailySteps.toDouble(),
-                      color: _touchedIndex == i
-                          ? colors.accentPrimary.withValues(
-                              alpha: _kSelectedBarAlpha,
-                            )
-                          : colors.accentPrimary.withValues(
-                              alpha: _kBelowGoalBarAlpha,
-                            ),
-                      width: barWidth,
-                      borderRadius: const BorderRadius.vertical(
-                        top: Radius.circular(4),
-                      ),
-                    ),
-                  ],
-                ),
+            final values = [
+              for (final point in points)
+                point.averageDailySteps.toDouble(),
             ];
 
-            return BarChart(
-              duration: Duration.zero,
-              BarChartData(
-                maxY: chartMaxY,
-                minY: 0,
-                alignment: BarChartAlignment.spaceAround,
-                gridData: const FlGridData(show: false),
-                borderData: FlBorderData(show: false),
-                barTouchData: buildAstraBarTouchData(
-                  colors: colors,
-                  touchedIndex: _touchedIndex,
-                  onTouchedIndexChanged: (index) {
-                    setState(() => _touchedIndex = index);
-                  },
-                  tooltipData: buildAstraBarTooltipData(
-                    colors: colors,
-                    getTooltipItem: (group, groupIndex, rod, rodIndex) {
-                      return _monthlyTooltipItem(
-                        l10n: l10n,
-                        colors: colors,
-                        point: points[groupIndex],
-                      );
-                    },
-                  ),
-                ),
-                titlesData: FlTitlesData(
-                  topTitles: const AxisTitles(
-                    sideTitles: SideTitles(showTitles: false),
-                  ),
-                  rightTitles: const AxisTitles(
-                    sideTitles: SideTitles(showTitles: false),
-                  ),
-                  leftTitles: AxisTitles(
-                    sideTitles: SideTitles(
-                      showTitles: true,
-                      reservedSize: _kLeftAxisReserved,
-                      interval: yAxisInterval,
-                      getTitlesWidget: (value, meta) {
-                        for (final tick in yTicks) {
-                          if (!isChartAxisTickLabel(
-                            value: value,
-                            tick: tick,
-                            ticks: yTicks,
-                          )) {
-                            continue;
-                          }
-                          return Text(
-                            formatChartAxisValue(tick.round()),
-                            style: AstraTypography.captionFor(colors).copyWith(
-                              color: colors.textPrimary,
-                            ),
-                          );
-                        }
-                        return const SizedBox.shrink();
-                      },
+            return AstraBarChartCore(
+              values: values,
+              maxY: chartMaxY,
+              barWidth: barWidth,
+              yTicks: yTicks,
+              colors: colors,
+              leftAxisReserved: _kLeftAxisReserved,
+              bottomAxisReserved: _kBottomAxisReserved,
+              selectedIndex: _touchedIndex,
+              onSelectedIndexChanged: (index) {
+                setState(() => _touchedIndex = index);
+              },
+              barColor: (index, isSelected) => isSelected
+                  ? colors.accentPrimary.withValues(
+                      alpha: _kSelectedBarAlpha,
+                    )
+                  : colors.accentPrimary.withValues(
+                      alpha: _kBelowGoalBarAlpha,
                     ),
+              bottomLabelBuilder: (index) =>
+                  TrendsMonthlyBarChart.formatMonthLabel(
+                    points[index].monthStart,
                   ),
-                  bottomTitles: AxisTitles(
-                    sideTitles: SideTitles(
-                      showTitles: true,
-                      reservedSize: _kBottomAxisReserved,
-                      getTitlesWidget: (value, meta) {
-                        final index = value.toInt();
-                        if (index < 0 || index >= points.length) {
-                          return const SizedBox.shrink();
-                        }
-                        return Padding(
-                          padding:
-                              const EdgeInsets.only(top: AstraSpacing.kSpaceXs),
-                          child: Text(
-                            TrendsMonthlyBarChart.formatMonthLabel(
-                              points[index].monthStart,
-                            ),
-                            style: AstraTypography.captionFor(colors).copyWith(
-                              color: colors.textPrimary,
-                            ),
-                          ),
-                        );
-                      },
-                    ),
-                  ),
-                ),
-                barGroups: withBarTouchIndicators(
-                  groups: barGroups,
-                  touchedIndex: _touchedIndex,
-                ),
+              tooltipTextBuilder: (index) => _monthlyTooltipText(
+                l10n: l10n,
+                point: points[index],
               ),
             );
           },
@@ -300,24 +218,12 @@ class _ReadyChartState extends State<_ReadyChart> {
     );
   }
 
-  BarTooltipItem _monthlyTooltipItem({
+  String _monthlyTooltipText({
     required AppLocalizations l10n,
-    required AstraColors colors,
     required ChartMonthAggregate point,
   }) {
-    return BarTooltipItem(
-      '${l10n.formatMonthYearFull(point.monthStart)}\n'
-      '${l10n.trendsMonthlyTooltipStepsPerDay(point.averageDailySteps)}\n'
-      '${l10n.trendsMonthlyTooltipTotal(point.totalSteps, point.dayCount)}',
-      astraBarTooltipPrimaryStyle(colors),
-    );
-  }
-
-  static double _resolveBarWidth(double chartWidth, int pointCount) {
-    if (pointCount <= 0 || chartWidth <= 0) {
-      return _kMaxBarWidth;
-    }
-    final slotWidth = chartWidth / pointCount;
-    return (slotWidth * _kBarSlotFillRatio).clamp(_kMinBarWidth, _kMaxBarWidth);
+    return '${l10n.formatMonthYearFull(point.monthStart)}\n'
+        '${l10n.trendsMonthlyTooltipStepsPerDay(point.averageDailySteps)}\n'
+        '${l10n.trendsMonthlyTooltipTotal(point.totalSteps, point.dayCount)}';
   }
 }
