@@ -1,6 +1,6 @@
 import 'package:astra_app/core/di/app_dependencies.dart';
 import 'package:flutter/material.dart';
-import 'package:phosphoricons_flutter/phosphoricons_flutter.dart';
+import 'package:astra_app/core/icons/phosphor_icons.dart';
 
 import 'chart_benchmark.dart';
 import 'chart_benchmark_render_pump.dart';
@@ -92,7 +92,7 @@ class _ChartBenchmarkDevFabState extends State<ChartBenchmarkDevFab> {
               height: 18,
               child: CircularProgressIndicator(strokeWidth: 2),
             )
-          : const Icon(PhosphorIconsRegular.speedometer),
+          : const Icon(PhosphorIconsRegular.chartBar),
     );
   }
 }

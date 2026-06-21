@@ -6,7 +6,7 @@ import 'package:astra_app/presentation/l10n/l10n_date_labels.dart';
 import 'package:astra_app/presentation/widgets/trend_chip.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
-import 'package:phosphoricons_flutter/phosphoricons_flutter.dart';
+import 'package:astra_app/core/icons/phosphor_icons.dart';
 
 import '../../helpers/astra_theme_test_helper.dart';
 
