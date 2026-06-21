@@ -6,9 +6,11 @@ import 'package:astra_app/presentation/widgets/step_bar_chart.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 
+import '../helpers/l10n_test_helper.dart';
+
 /// Builds a [ChartBenchmarkWidgetPump] for widget tests.
 ///
-/// Pumps the 7d chart only — 30-bar fl_chart layout can hang some desktop CI
+/// Pumps the 7d chart only — 30-bar native chart layout can hang some desktop CI
 /// hosts. Device runs use [createOverlayStepBarChartPump] (7d + 30d).
 ChartBenchmarkWidgetPump createTestStepBarChartPump(WidgetTester tester) {
   return ({
@@ -34,7 +36,7 @@ Future<void> _pumpReadyChart(
   required Map<String, int> goalsByDay,
 }) async {
   await tester.pumpWidget(
-    MaterialApp(
+    TestMaterialApp(
       theme: buildAstraLightTheme(),
       home: Scaffold(
         body: SizedBox(

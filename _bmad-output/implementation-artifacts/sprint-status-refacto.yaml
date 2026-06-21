@@ -1,6 +1,6 @@
 # generated: 2026-06-18
-# last_updated: 2026-06-21 (Story 20-3 done)
-# NEXT: 20-4-replace-fl-chart-with-custom-painter-charts
+# last_updated: 2026-06-21 (Story 20-4 review)
+# NEXT: dev-story 20-4-replace-fl-chart-with-custom-painter-charts
 # Ref: planning-artifacts/epics-refacto.md · planning-artifacts/refactoring-audit-master-v0.6.1.md
 # branch: refacto
 # base_version: 0.6.2+13
@@ -58,7 +58,7 @@
 # NAVIGATION: _bmad-output/README.md · planning-artifacts/epics-refacto.md
 
 generated: 2026-06-18
-last_updated: 2026-06-21 (Story 20-3 done)
+last_updated: 2026-06-21 (Story 20-4 review)
 project: astra-app
 project_key: NOKEY
 tracking_system: file-system
@@ -111,6 +111,6 @@ development_status:
   20-1-onboarding-permission-after-value-proposition: done
   20-2-local-trends-insight-cards: done
   20-3-tab-navigation-haptic-feedback: done
-  20-4-replace-fl-chart-with-custom-painter-charts: backlog
+  20-4-replace-fl-chart-with-custom-painter-charts: review
   20-5-phosphor-icons-selective-font-subsetting: backlog
   epic-20-retrospective: optional

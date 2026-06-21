@@ -127,7 +127,7 @@ Full decisions: [`_bmad-output/planning-artifacts/architecture.md`](_bmad-output
 | Persistence | `sqflite`, on-device SQLite, WAL, versioned migrations |
 | Background | `workmanager` + FGS health (Android) |
 | Sensors | `pedometer` |
-| Charts | `fl_chart` |
+| Charts | Native `CustomPainter` (bar charts) |
 | Notifications | `flutter_local_notifications` (local only) |
 | Export | `file_picker` (OS save dialog) |
 | State | Cubit (`flutter_bloc`) |

@@ -8,7 +8,7 @@ import 'package:flutter/scheduler.dart';
 
 import 'chart_benchmark.dart';
 
-/// Pumps [StepBarChart] off-screen via [Overlay] to measure fl_chart layout cost.
+/// Pumps [StepBarChart] off-screen via [Overlay] to measure native chart layout cost.
 ChartBenchmarkWidgetPump createOverlayStepBarChartPump(BuildContext context) {
   final overlay = Overlay.of(context);
   return ({

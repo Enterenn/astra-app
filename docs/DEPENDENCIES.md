@@ -120,7 +120,6 @@ Direct dependencies from `pubspec.yaml` (locked versions from `pubspec.lock` as 
 | `workmanager` | 0.9.0+3 | Android background periodic collection (fallback orchestrator) | No |
 | `pedometer` | 4.2.0 | OS step counter sensor stream | No |
 | `permission_handler` | 12.0.1 | OS permission dialogs (`ACTIVITY_RECOGNITION`, notifications) | No (OS UI only) |
-| `fl_chart` | 1.2.0 | Trends bar chart | No |
 | `flutter_local_notifications` | 21.0.0 | Local goal-reached and FGS ongoing notifications, **no FCM/Firebase** | No (local channels only) |
 | `path_provider` | 2.1.5 | App documents/temp paths for export | No |
 | `file_picker` | 12.0.0-beta.5 (exact pin) | My Data CSV import/export via OS save/pick dialogs | No data upload; OS picker only |
