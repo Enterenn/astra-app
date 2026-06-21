@@ -19,7 +19,6 @@ dependencies:
   flutter_local_notifications: ^21.0.0
   path_provider: ^2.1.5
   file_picker: 12.0.0-beta.5
-  phosphoricons_flutter: ^1.0.0
   package_info_plus: ^10.1.0
 
 dev_dependencies:
@@ -47,3 +46,9 @@ flutter:
     - family: Darker Grotesque
       fonts:
         - asset: assets/fonts/DarkerGrotesque-VariableFont_wght.ttf
+    - family: PhosphorRegular
+      fonts:
+        - asset: assets/fonts/Phosphor-Regular-subset.ttf
+    - family: PhosphorFill
+      fonts:
+        - asset: assets/fonts/Phosphor-Fill-subset.ttf
