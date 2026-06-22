@@ -1,6 +1,5 @@
 import 'dart:io' show Platform;
 import 'dart:isolate';
-import 'dart:ui';
 
 import 'package:flutter/foundation.dart';
 import 'package:flutter/services.dart';
@@ -113,13 +112,13 @@ Future<LifecycleRunResult> _runFileMaintenanceIsolate(
 class DataLifecycleService {
   DataLifecycleService({
     required String databasePath,
-    required StepAggregationRepository repository,
-    required UserSettingsRepository userSettings,
-    required TimeProvider clock,
+    required this._repository,
+    required this._userSettings,
+    required this._clock,
     AstraDatabaseSession? session,
     Database? db,
     DatabaseOptimizeRunner? optimizeAndVacuum,
-    bool maintenanceOnCurrentConnection = false,
+    this._maintenanceOnCurrentConnection = false,
   }) : _session =
            session ??
            AstraDatabaseSession(
@@ -127,12 +126,8 @@ class DataLifecycleService {
              initial: db!,
            ),
        _databasePath = databasePath,
-       _repository = repository,
-       _userSettings = userSettings,
-       _clock = clock,
        _optimizeAndVacuum =
            optimizeAndVacuum ?? runPragmaOptimizeAndVacuumOnWorkerIsolate,
-       _maintenanceOnCurrentConnection = maintenanceOnCurrentConnection,
        assert(session != null || db != null);
 
   final AstraDatabaseSession _session;

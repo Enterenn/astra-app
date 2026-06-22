@@ -20,11 +20,10 @@ class ProfileCubit extends Cubit<ProfileState> {
     required this.userHealthMetrics,
     required this.notificationService,
     NotificationPermissionRequester? permissionRequester,
-    PostDisplayNameUpdateCallback? postDisplayNameUpdate,
+    this._postDisplayNameUpdate,
   }) : _requestPermission =
            permissionRequester ??
            ((permission) => permission.request()),
-       _postDisplayNameUpdate = postDisplayNameUpdate,
        super(const ProfileState.loading());
 
   final UserSettingsRepositoryContract userSettings;

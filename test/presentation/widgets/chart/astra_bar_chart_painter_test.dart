@@ -1,6 +1,5 @@
 import 'package:astra_app/presentation/widgets/chart/astra_bar_chart_painter.dart';
 import 'package:astra_app/presentation/widgets/chart/bar_chart_layout.dart';
-import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 
 void main() {

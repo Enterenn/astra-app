@@ -9,7 +9,7 @@ import 'package:sqflite_common_ffi/sqflite_ffi.dart';
 import '../../helpers/sqflite_test_helper.dart';
 
 class _ThrowingDistanceSettingsRepository extends UserSettingsRepository {
-  _ThrowingDistanceSettingsRepository(Database db) : super(db);
+  _ThrowingDistanceSettingsRepository(Database super.db);
 
   @override
   Future<void> setDistanceDisplayUnit(DistanceDisplayUnit unit) async {

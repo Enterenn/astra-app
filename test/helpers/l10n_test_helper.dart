@@ -12,7 +12,7 @@ const kTestLocalizationsDelegates = [
 
 /// MaterialApp pre-configured with Astra localization delegates for widget tests.
 class TestMaterialApp extends MaterialApp {
-  TestMaterialApp({
+  const TestMaterialApp({
     super.key,
     required super.home,
     super.theme,

@@ -15,7 +15,7 @@ import 'package:astra_app/data/repositories/step/step_ingestion_repository.dart'
 import '../../helpers/step_test_fixtures.dart';
 
 class _TrackingStepIngestionRepository extends StepIngestionRepository {
-  _TrackingStepIngestionRepository(Database db) : super(db);
+  _TrackingStepIngestionRepository(Database super.db);
 
   var purgeCalls = 0;
 

@@ -121,7 +121,7 @@ class _ForegroundCatchUpHarnessState extends State<_ForegroundCatchUpHarness> {
 
 void main() {
   group('GoalRing', () {
-    TodayState _displayReady(TodayState state) {
+    TodayState displayReady(TodayState state) {
       if (state.lastDisplayedStepsLoaded) {
         return state;
       }
@@ -142,7 +142,7 @@ void main() {
           Center(
             child: SizedBox(
               width: width,
-              child: GoalRing(state: _displayReady(state)),
+              child: GoalRing(state: displayReady(state)),
             ),
           ),
           preset: preset,
@@ -339,7 +339,7 @@ void main() {
               child: SizedBox(
                 width: 400,
                 child: GoalRing(
-                  state: _displayReady(
+                  state: displayReady(
                     TodayState.fromData(
                       steps: 10_847,
                       goal: 8000,
@@ -778,7 +778,7 @@ void main() {
     setUp(() => cache = GoalRingInsetShadowCache());
     tearDown(() => cache.dispose());
 
-    Path _annulusFor(Size canvasSize) {
+    Path annulusFor(Size canvasSize) {
       final center = Offset(canvasSize.width / 2, canvasSize.height / 2);
       const strokeWidth = kGoalRingStrokeWidth;
       final radius = (canvasSize.width - strokeWidth) / 2;
@@ -798,7 +798,7 @@ void main() {
       final radius = (size.width - strokeWidth) / 2;
       final innerRadius = radius - strokeWidth / 2;
       final outerRadius = radius + strokeWidth / 2;
-      final annulus = _annulusFor(size);
+      final annulus = annulusFor(size);
 
       paintGoalRingTrackInnerShadow(
         canvas,
@@ -820,7 +820,7 @@ void main() {
       final radius = (size.width - strokeWidth) / 2;
       final innerRadius = radius - strokeWidth / 2;
       final outerRadius = radius + strokeWidth / 2;
-      final annulus = _annulusFor(size);
+      final annulus = annulusFor(size);
 
       final recorder = PictureRecorder();
       paintGoalRingTrackInnerShadow(
@@ -855,7 +855,7 @@ void main() {
       final radius = (size.width - strokeWidth) / 2;
       final innerRadius = radius - strokeWidth / 2;
       final outerRadius = radius + strokeWidth / 2;
-      final annulus = _annulusFor(size);
+      final annulus = annulusFor(size);
 
       paintGoalRingTrackInnerShadow(
         Canvas(PictureRecorder()),
