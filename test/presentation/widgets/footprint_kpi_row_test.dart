@@ -3,6 +3,8 @@ import 'package:astra_app/presentation/widgets/footprint_kpi_row.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 
+import '../../helpers/l10n_test_helper.dart';
+
 void main() {
   group('FootprintKpiRow', () {
     final nowUtc = DateTime.utc(2026, 6, 3, 12);
@@ -21,7 +23,7 @@ void main() {
       addTearDown(tester.view.resetDevicePixelRatio);
 
       await tester.pumpWidget(
-        MaterialApp(
+        TestMaterialApp(
           theme: buildAstraLightTheme(),
           home: Scaffold(
             body: FootprintKpiRow(

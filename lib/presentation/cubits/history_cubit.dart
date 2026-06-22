@@ -2,22 +2,21 @@ import 'package:flutter/foundation.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 
 import '../../core/metrics/derived_activity_metrics.dart';
-import '../../core/time/calendar_week.dart';
+import '../../core/metrics/trends_insights.dart';
 import '../../core/time/local_day_formatter.dart';
 import '../../data/models/chart_day_aggregate.dart';
 import '../../data/models/chart_month_aggregate.dart';
-import '../../data/repositories/step_repository.dart';
-import '../../data/repositories/user_preferences_repository.dart';
+import '../../data/contracts/contracts.dart';
 import 'history_state.dart';
 
 class HistoryCubit extends Cubit<HistoryState> {
   HistoryCubit({
-    required this.stepRepository,
-    required this.userPreferences,
+    required this.stepAggregation,
+    required this.userHealthMetrics,
   }) : super(const HistoryState.loading());
 
-  final StepRepository stepRepository;
-  final UserPreferencesRepository userPreferences;
+  final StepAggregationRepositoryContract stepAggregation;
+  final UserHealthMetricsRepositoryContract userHealthMetrics;
 
   List<ChartDayAggregate> _cachedAggregates30d = const [];
   List<ChartMonthAggregate> _cachedMonthlyAggregates12 = const [];
@@ -100,8 +99,8 @@ class HistoryCubit extends Cubit<HistoryState> {
 
     try {
       final fetchResults = await Future.wait<Object>([
-        stepRepository.getChartDailyAggregates(days: 30),
-        stepRepository.getChartMonthlyAggregates(months: 12),
+        stepAggregation.getChartDailyAggregates(days: 30),
+        stepAggregation.getChartMonthlyAggregates(months: 12),
       ]);
       if (isClosed) {
         return;
@@ -144,8 +143,8 @@ class HistoryCubit extends Cubit<HistoryState> {
       }
 
       final profileResults = await Future.wait<Object?>([
-        userPreferences.getHeightCm(),
-        userPreferences.getWeightKg(),
+        userHealthMetrics.getHeightCm(),
+        userHealthMetrics.getWeightKg(),
       ]);
       if (isClosed) {
         return;
@@ -248,15 +247,33 @@ class HistoryCubit extends Cubit<HistoryState> {
     }
 
     final source = aggregates ?? _cachedAggregates30d;
+    final resolvedDailyGoal = dailyGoal ?? state.dailyGoal;
+    final resolvedGoalsByDay = goalsByDay ?? _cachedGoalsByDay;
+    final availability = computeInsightAvailability(source);
+    TrendsMostActiveWeekday? mostActiveWeekday;
+    TrendsGoalStreak? goalStreak;
+
+    if (availability.hasMinimumHistory) {
+      mostActiveWeekday = computeMostActiveWeekday(source);
+      goalStreak = computeGoalStreak(
+        newestFirst: source,
+        goalsByDay: resolvedGoalsByDay,
+        fallbackGoal: resolvedDailyGoal,
+      );
+    }
+
     emit(
       HistoryState.ready(
         period: period,
         chartPoints: _sliceForPeriod(period),
-        dailyGoal: dailyGoal ?? state.dailyGoal,
-        goalsByDay: goalsByDay ?? _cachedGoalsByDay,
+        dailyGoal: resolvedDailyGoal,
+        goalsByDay: resolvedGoalsByDay,
         trend: _computeTrend(source),
         periodAverages: _computeAveragesForPeriod(period),
         peakDay: _computePeakDayForPeriod(period),
+        mostActiveWeekday: mostActiveWeekday,
+        goalStreak: goalStreak,
+        insightAvailability: availability,
       ),
     );
   }
@@ -269,7 +286,7 @@ class HistoryCubit extends Cubit<HistoryState> {
     final bucketLists = await Future.wait(
       aggregates.map(
         (aggregate) =>
-            stepRepository.getActiveBucketsForLocalDay(aggregate.localDay),
+            stepAggregation.getActiveBucketsForLocalDay(aggregate.localDay),
       ),
     );
 
@@ -305,24 +322,7 @@ class HistoryCubit extends Cubit<HistoryState> {
     return TrendsPeakDay(
       localDay: best.localDay,
       totalSteps: best.totalSteps,
-      dateLabel: _formatPeakDayLabel(best.localDay, period),
     );
-  }
-
-  String _formatPeakDayLabel(DateTime localDay, HistoryPeriod period) {
-    return switch (period) {
-      HistoryPeriod.days7 =>
-        '${_titleCaseWeekdayLabel(localDay)} ${localDay.day}',
-      HistoryPeriod.days30 => '${localDay.day}/${localDay.month}',
-      HistoryPeriod.months12 =>
-        throw StateError('peak day labels are not defined for months12'),
-    };
-  }
-
-  /// Title-case weekday (e.g. `Sat`) to match [StepBarChart] 7d axis labels.
-  String _titleCaseWeekdayLabel(DateTime localDay) {
-    final upper = CalendarWeek.weekdayLabelFor(localDay);
-    return '${upper[0]}${upper.substring(1).toLowerCase()}';
   }
 
   TrendsPeriodAverages? _computeAveragesForPeriod(HistoryPeriod period) {
@@ -340,8 +340,8 @@ class HistoryCubit extends Cubit<HistoryState> {
   }
 
   Future<int> _resolveTodayGoal() async {
-    final todayIso = formatLocalDayIso(stepRepository.clock.snapshot());
-    return userPreferences.getGoalForLocalDay(todayIso);
+    final todayIso = formatLocalDayIso(stepAggregation.clock.snapshot());
+    return userHealthMetrics.getGoalForLocalDay(todayIso);
   }
 
   Future<Map<String, int>> _resolveGoalsForAggregates(
@@ -355,11 +355,7 @@ class HistoryCubit extends Cubit<HistoryState> {
       return const {};
     }
 
-    final goals = await Future.wait<int>([
-      for (final iso in distinctIsos)
-        userPreferences.getGoalForLocalDay(iso),
-    ]);
-    return Map.fromIterables(distinctIsos, goals);
+    return userHealthMetrics.getGoalsForLocalDays(distinctIsos);
   }
 
   /// When 7d is selected but the last 7 days have no steps while older days do,
@@ -419,7 +415,6 @@ class HistoryCubit extends Cubit<HistoryState> {
     if (priorWeekSum == 0 && currentWeekSum > 0) {
       return const TrendSnapshot(
         direction: TrendDirection.flat,
-        label: 'No prior week data',
       );
     }
 
@@ -430,7 +425,6 @@ class HistoryCubit extends Cubit<HistoryState> {
       return TrendSnapshot(
         direction: TrendDirection.up,
         percent: percent,
-        label: 'Up $percent% from last week',
       );
     }
     if (percent < 0) {
@@ -438,14 +432,12 @@ class HistoryCubit extends Cubit<HistoryState> {
       return TrendSnapshot(
         direction: TrendDirection.down,
         percent: absPercent,
-        label: 'Down $absPercent% from last week',
       );
     }
 
     return const TrendSnapshot(
       direction: TrendDirection.flat,
       percent: 0,
-      label: 'Same as last week',
     );
   }
 }

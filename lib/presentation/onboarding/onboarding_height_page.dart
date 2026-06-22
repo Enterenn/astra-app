@@ -1,3 +1,4 @@
+import 'package:astra_app/l10n/app_localizations.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 
@@ -21,6 +22,7 @@ class OnboardingHeightPage extends StatelessWidget {
           previous.heightCm != current.heightCm ||
           previous.heightUsesInches != current.heightUsesInches,
       builder: (context, state) {
+        final l10n = AppLocalizations.of(context);
         final cubit = context.read<OnboardingCubit>();
         final canonicalCm = state.heightCm ?? _defaultCm;
         final usesInches = state.heightUsesInches;
@@ -37,17 +39,17 @@ class OnboardingHeightPage extends StatelessWidget {
             : kMaxHeightCm.toDouble();
 
         return OnboardingMetricPickerLayout(
-          title: 'What is your height?',
+          title: l10n.onboardingHeightTitle,
           unitSelector: AstraSegmentedControl<bool>(
             segmentHorizontalPadding:
                 OnboardingMetricPickerLayout.unitSegmentHorizontalPadding,
-            options: const [
-              AstraSegmentOption(value: false, label: 'cm'),
-              AstraSegmentOption(value: true, label: 'in'),
+            options: [
+              AstraSegmentOption(value: false, label: l10n.onboardingUnitCm),
+              AstraSegmentOption(value: true, label: l10n.onboardingUnitIn),
             ],
             selected: usesInches,
             onChanged: cubit.setHeightUsesInches,
-            semanticsHint: 'Select height unit',
+            semanticsHint: l10n.onboardingHeightUnitSemantics,
           ),
           ruler: AstraHorizontalRuler(
             key: ValueKey('height-ruler-$usesInches'),
@@ -62,7 +64,7 @@ class OnboardingHeightPage extends StatelessWidget {
             min: min,
             max: max,
             step: 1,
-            unitLabel: usesInches ? 'in' : 'cm',
+            unitLabel: usesInches ? l10n.onboardingUnitIn : l10n.onboardingUnitCm,
             majorTickEvery: usesInches ? 12 : 10,
             sliderVerticalMargin:
                 OnboardingMetricPickerLayout.sliderVerticalMargin,

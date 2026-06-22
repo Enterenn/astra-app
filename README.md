@@ -13,7 +13,7 @@ ASTRA is a **local-first** wellness ecosystem: a Flutter mobile Hub App that col
 | | |
 |---|---|
 | **Current phase** | Phase 0: OSS beta (exit gate passed 2026-06-08) |
-| **Version** | `0.6.1+12` (see `pubspec.yaml`; displayed on About screen) |
+| **Version** | `0.10.1+21` (see `pubspec.yaml`; displayed on About screen) |
 | **Code status** | **Implemented**: Epics 1–7 complete |
 | **Beta gate** | [docs/BETA_CHECKLIST.md](docs/BETA_CHECKLIST.md) — Phase 0 field pass logged; post-close items tracked in checklist |
 | **Reference platform** | Android (iOS secondary, with reduced background expectations) |
@@ -127,9 +127,9 @@ Full decisions: [`_bmad-output/planning-artifacts/architecture.md`](_bmad-output
 | Persistence | `sqflite`, on-device SQLite, WAL, versioned migrations |
 | Background | `workmanager` + FGS health (Android) |
 | Sensors | `pedometer` |
-| Charts | `fl_chart` |
+| Charts | Native `CustomPainter` (bar charts) |
 | Notifications | `flutter_local_notifications` (local only) |
-| Export | `share_plus` |
+| Export | `file_picker` (OS save dialog) |
 | State | Cubit (`flutter_bloc`) |
 | Bundle ID | `com.astraapp` |
 

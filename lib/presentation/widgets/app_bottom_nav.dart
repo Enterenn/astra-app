@@ -1,6 +1,6 @@
-import 'package:figma_squircle/figma_squircle.dart';
+import 'package:astra_app/l10n/app_localizations.dart';
 import 'package:flutter/material.dart';
-import 'package:phosphoricons_flutter/phosphoricons_flutter.dart';
+import 'package:astra_app/core/icons/phosphor_icons.dart';
 
 import '../../core/constants/astra_colors.dart';
 import '../../core/constants/astra_spacing.dart';
@@ -18,26 +18,22 @@ class AppBottomNav extends StatelessWidget {
   final int selectedIndex;
   final ValueChanged<int> onSelected;
 
-  static const _tabs = <_NavTab>[
-    _NavTab(
-      label: 'STEPS',
-      regularIcon: PhosphorIconsRegular.sneakerMove,
-      fillIcon: PhosphorIconsFill.sneakerMove,
-    ),
-    _NavTab(
-      label: 'TRENDS',
-      regularIcon: PhosphorIconsRegular.chartBar,
-      fillIcon: PhosphorIconsFill.chartBar,
-    ),
-    _NavTab(
-      label: 'MENU',
-      regularIcon: PhosphorIconsRegular.list,
-      fillIcon: PhosphorIconsFill.list,
-    ),
+  static const _regularIcons = [
+    PhosphorIconsRegular.sneakerMove,
+    PhosphorIconsRegular.chartBar,
+    PhosphorIconsRegular.list,
+  ];
+
+  static const _fillIcons = [
+    PhosphorIconsFill.sneakerMove,
+    PhosphorIconsFill.chartBar,
+    PhosphorIconsFill.list,
   ];
 
   @override
   Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context);
+    final labels = [l10n.navSteps, l10n.navTrends, l10n.navMenu];
     final colors = context.astraColors;
     final isDark = Theme.of(context).brightness == Brightness.dark;
     final squircleFill =
@@ -69,13 +65,15 @@ class AppBottomNav extends StatelessWidget {
                     child: Row(
                       mainAxisSize: MainAxisSize.min,
                       children: [
-                        for (var i = 0; i < _tabs.length; i++) ...[
+                        for (var i = 0; i < labels.length; i++) ...[
                           if (i > 0)
                             const SizedBox(
                               width: AstraSpacing.kBottomNavItemGap,
                             ),
                           _NavItem(
-                            tab: _tabs[i],
+                            label: labels[i],
+                            regularIcon: _regularIcons[i],
+                            fillIcon: _fillIcons[i],
                             selected: selectedIndex == i,
                             squircleFill: squircleFill,
                             onTap: () => onSelected(i),
@@ -94,27 +92,19 @@ class AppBottomNav extends StatelessWidget {
   }
 }
 
-class _NavTab {
-  const _NavTab({
+class _NavItem extends StatelessWidget {
+  const _NavItem({
     required this.label,
     required this.regularIcon,
     required this.fillIcon,
-  });
-
-  final String label;
-  final IconData regularIcon;
-  final IconData fillIcon;
-}
-
-class _NavItem extends StatelessWidget {
-  const _NavItem({
-    required this.tab,
     required this.selected,
     required this.squircleFill,
     required this.onTap,
   });
 
-  final _NavTab tab;
+  final String label;
+  final IconData regularIcon;
+  final IconData fillIcon;
   final bool selected;
   final Color squircleFill;
   final VoidCallback onTap;
@@ -139,13 +129,13 @@ class _NavItem extends StatelessWidget {
       mainAxisSize: MainAxisSize.min,
       children: [
         Icon(
-          selected ? tab.fillIcon : tab.regularIcon,
+          selected ? fillIcon : regularIcon,
           size: _iconSize,
           color: selected ? activeColor : inactiveColor,
         ),
         const SizedBox(height: AstraSpacing.kBottomNavIconLabelGap),
         Text(
-          tab.label,
+          label,
           style: labelStyle.copyWith(
             color: selected ? activeColor : inactiveColor,
           ),
@@ -162,24 +152,21 @@ class _NavItem extends StatelessWidget {
     );
 
     final squircleChild = selected
-        ? DecoratedBox(
-            decoration: ShapeDecoration(
-              color: squircleFill,
-              shape: SmoothRectangleBorder(
-                borderRadius: SmoothBorderRadius(
-                  cornerRadius: AstraSpacing.kBottomNavSquircleRadius,
-                  cornerSmoothing: AstraSpacing.kBottomNavSquircleSmoothing,
-                ),
-              ),
+        ? ClipPath(
+            clipper: const _BottomNavSquircleClipper(
+              radius: AstraSpacing.kBottomNavSquircleRadius,
             ),
-            child: hitTarget,
+            child: ColoredBox(
+              color: squircleFill,
+              child: hitTarget,
+            ),
           )
         : hitTarget;
 
     return Semantics(
       button: true,
       selected: selected,
-      label: tab.label,
+      label: label,
       child: AstraPressable(
         child: InkWell(
           onTap: onTap,
@@ -193,4 +180,23 @@ class _NavItem extends StatelessWidget {
       ),
     );
   }
+}
+
+/// Native squircle mask for the active nav tab (Story 17-3, REF-16).
+class _BottomNavSquircleClipper extends CustomClipper<Path> {
+  const _BottomNavSquircleClipper({required this.radius});
+
+  final double radius;
+
+  @override
+  Path getClip(Size size) {
+    final rect = Offset.zero & size;
+    return RoundedSuperellipseBorder(
+      borderRadius: BorderRadius.circular(radius),
+    ).getOuterPath(rect);
+  }
+
+  @override
+  bool shouldReclip(covariant _BottomNavSquircleClipper oldClipper) =>
+      oldClipper.radius != radius;
 }

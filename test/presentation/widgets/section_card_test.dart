@@ -3,11 +3,13 @@ import 'package:astra_app/presentation/widgets/section_card.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 
+import '../../helpers/l10n_test_helper.dart';
+
 void main() {
   group('SectionCard', () {
     testWidgets('shows headline only when trailing is null', (tester) async {
       await tester.pumpWidget(
-        MaterialApp(
+        TestMaterialApp(
           theme: buildAstraLightTheme(),
           home: const Scaffold(
             body: SectionCard(
@@ -25,7 +27,7 @@ void main() {
 
     testWidgets('shows trailing widget in header row', (tester) async {
       await tester.pumpWidget(
-        MaterialApp(
+        TestMaterialApp(
           theme: buildAstraLightTheme(),
           home: const Scaffold(
             body: SectionCard(

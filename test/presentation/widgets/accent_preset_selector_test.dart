@@ -5,6 +5,8 @@ import 'package:astra_app/presentation/widgets/accent_preset_selector.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 
+import '../../helpers/l10n_test_helper.dart';
+
 void main() {
   group('AccentPresetSelector', () {
     Future<void> pumpSelector(
@@ -13,7 +15,7 @@ void main() {
       ValueChanged<AstraAccentPreset>? onSelected,
     }) async {
       await tester.pumpWidget(
-        MaterialApp(
+        TestMaterialApp(
           theme: buildAstraLightTheme(preset: selected),
           home: Scaffold(
             body: Padding(
@@ -57,7 +59,7 @@ void main() {
 
     testWidgets('does not overflow at narrow card width', (tester) async {
       await tester.pumpWidget(
-        MaterialApp(
+        TestMaterialApp(
           theme: buildAstraLightTheme(),
           home: Scaffold(
             body: Center(

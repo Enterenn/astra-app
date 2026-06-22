@@ -1,3 +1,4 @@
+import 'package:astra_app/l10n/app_localizations.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 
@@ -9,6 +10,7 @@ import '../cubits/profile_state.dart';
 import '../cubits/units_cubit.dart';
 import '../cubits/units_state.dart';
 import '../formatters/display_unit_formatter.dart';
+import '../l10n/profile_error_messages.dart';
 import '../widgets/display_name_editor_row.dart';
 import '../widgets/display_name_editor_sheet.dart';
 import '../widgets/height_editor_sheet.dart';
@@ -24,8 +26,6 @@ class ProfileScreen extends StatelessWidget {
 
   final bool showInlineTitle;
 
-  static const _kScreenTitle = 'Profile';
-
   @override
   Widget build(BuildContext context) {
     final colors = context.astraColors;
@@ -37,13 +37,14 @@ class ProfileScreen extends StatelessWidget {
         }
 
         if (state.status == ProfileStatus.error) {
+          final l10n = AppLocalizations.of(context);
           return Center(
             child: Padding(
               padding: const EdgeInsets.all(
                 AstraSpacing.kScreenHorizontalPadding,
               ),
               child: Text(
-                state.errorMessage ?? 'Could not load profile',
+                profileLoadErrorMessage(l10n, state.loadError),
                 style: AstraTypography.body(context),
                 textAlign: TextAlign.center,
               ),
@@ -71,6 +72,7 @@ class _ProfileScreenBody extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context);
     final colors = context.astraColors;
     final profileState = context.watch<ProfileCubit>().state;
     final profileCubit = context.read<ProfileCubit>();
@@ -91,7 +93,7 @@ class _ProfileScreenBody extends StatelessWidget {
       final saved = await profileCubit.updateDisplayName(result);
       if (!saved && context.mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('Could not save display name')),
+          SnackBar(content: Text(l10n.profileCouldNotSaveDisplayName)),
         );
       }
     }
@@ -110,7 +112,7 @@ class _ProfileScreenBody extends StatelessWidget {
       final saved = await profileCubit.updateHeightCm(heightCm);
       if (!saved && context.mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('Could not save height')),
+          SnackBar(content: Text(l10n.profileCouldNotSaveHeight)),
         );
       }
     }
@@ -129,7 +131,7 @@ class _ProfileScreenBody extends StatelessWidget {
       final saved = await profileCubit.updateWeightKg(weightKg);
       if (!saved && context.mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('Could not save weight')),
+          SnackBar(content: Text(l10n.profileCouldNotSaveWeight)),
         );
       }
     }
@@ -146,13 +148,13 @@ class _ProfileScreenBody extends StatelessWidget {
         children: [
           if (showInlineTitle) ...[
             Text(
-              ProfileScreen._kScreenTitle,
+              l10n.profileTitle,
               style: AstraTypography.screenTitleFor(colors),
             ),
             const SizedBox(height: AstraSpacing.kSpaceMd),
           ],
           SectionCard(
-            headline: 'Informations',
+            headline: l10n.profileSectionInformations,
             child: BlocBuilder<UnitsCubit, UnitsState>(
               builder: (context, unitsState) {
                 return Column(
@@ -162,16 +164,18 @@ class _ProfileScreenBody extends StatelessWidget {
                       onTap: editDisplayName,
                     ),
                     ProfileInfoRow(
-                      label: 'Height',
+                      label: l10n.profileHeight,
                       valueLabel: formatDisplayHeight(
+                        l10n,
                         profileState.heightCm,
                         unitsState.heightUnit,
                       ),
                       onTap: editHeight,
                     ),
                     ProfileInfoRow(
-                      label: 'Weight',
+                      label: l10n.profileWeight,
                       valueLabel: formatDisplayWeight(
+                        l10n,
                         profileState.weightKg,
                         unitsState.weightUnit,
                       ),
@@ -191,7 +195,7 @@ class _ProfileScreenBody extends StatelessWidget {
     }
 
     return Semantics(
-      label: ProfileScreen._kScreenTitle,
+      label: l10n.profileTitle,
       child: scrollView,
     );
   }

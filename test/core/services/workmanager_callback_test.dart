@@ -5,19 +5,22 @@ import 'package:astra_app/core/services/notification_service.dart';
 import 'package:astra_app/core/services/data_lifecycle_service.dart';
 import 'package:astra_app/core/services/workmanager_callback.dart';
 import 'package:astra_app/core/services/workmanager_tasks.dart';
-import 'package:astra_app/dev/data_inject_service.dart';
+import '../../dev/data_inject_service.dart';
 import 'package:astra_app/core/time/local_day_formatter.dart';
 import 'package:astra_app/data/datasources/data_ingestion_source.dart';
 import 'package:astra_app/data/models/normalized_step_bucket.dart';
 import 'package:astra_app/data/models/step_reading.dart';
-import 'package:astra_app/data/repositories/step_repository.dart';
-import 'package:astra_app/data/repositories/user_preferences_repository.dart';
+
+import 'package:astra_app/data/repositories/user_health_metrics_repository.dart';
+import 'package:astra_app/data/repositories/user_settings_repository.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:permission_handler/permission_handler.dart';
 import 'package:workmanager/workmanager.dart';
 
 import '../../core/time/fake_time_provider.dart';
 import '../../helpers/sqflite_test_helper.dart';
+import 'package:astra_app/data/repositories/step/step_ingestion_repository.dart';
+import 'package:astra_app/data/repositories/step/step_aggregation_repository.dart';
 
 void main() {
   setUpAll(() async {
@@ -64,8 +67,8 @@ void main() {
 
       final uiDb = await openAstraDatabase(databasePath: databasePath);
       addTearDown(uiDb.close);
-      final repository = StepRepository(
-        db: uiDb,
+      final repository = StepAggregationRepository(
+        uiDb,
         clock: FakeTimeProvider(
           fixedNowUtc: DateTime.utc(2026, 6, 2, 8),
           zoneOffset: const Duration(hours: 2),
@@ -94,10 +97,11 @@ void main() {
 
       final uiDb = await openAstraDatabase(databasePath: databasePath);
       addTearDown(uiDb.close);
-      final userPreferences = UserPreferencesRepository(uiDb, clock: clock);
-      await userPreferences.setDailyStepGoal(5000);
-      await userPreferences.setGoalNotificationsEnabled(true);
-      final repository = StepRepository(db: uiDb, clock: clock);
+      final userSettings = UserSettingsRepository(uiDb);
+      final userHealthMetrics = UserHealthMetricsRepository(uiDb, clock: clock);
+      await userHealthMetrics.setDailyStepGoal(5000);
+      await userSettings.setGoalNotificationsEnabled(true);
+      final repository = StepIngestionRepository(uiDb);
       await repository.upsertIngestionBucket(
         NormalizedStepBucket(
           startTimeUtc: DateTime.utc(2026, 6, 2, 6),
@@ -131,15 +135,15 @@ void main() {
 
       final verifyDb = await openAstraDatabase(databasePath: databasePath);
       addTearDown(verifyDb.close);
-      final verifyPrefs = UserPreferencesRepository(verifyDb);
+      final verifySettings = UserSettingsRepository(verifyDb);
 
       expect(success, isTrue);
       expect(showCount, 1);
       expect(
-        await verifyPrefs.getGoalNotificationShownDate(),
+        await verifySettings.getGoalNotificationShownDate(),
         formatLocalDayIso(clock.snapshot()),
       );
-      expect(await verifyPrefs.getCelebrationShownDate(), isNull);
+      expect(await verifySettings.getCelebrationShownDate(), isNull);
     });
 
     test(
@@ -183,10 +187,11 @@ void main() {
 
         final uiDb = await openAstraDatabase(databasePath: databasePath);
         addTearDown(uiDb.close);
-        final userPreferences = UserPreferencesRepository(uiDb, clock: clock);
-        await userPreferences.setDailyStepGoal(5000);
-        await userPreferences.setGoalNotificationsEnabled(true);
-        final repository = StepRepository(db: uiDb, clock: clock);
+        final userSettings = UserSettingsRepository(uiDb);
+        final userHealthMetrics = UserHealthMetricsRepository(uiDb, clock: clock);
+        await userHealthMetrics.setDailyStepGoal(5000);
+        await userSettings.setGoalNotificationsEnabled(true);
+        final repository = StepIngestionRepository(uiDb);
         await repository.upsertIngestionBucket(
           NormalizedStepBucket(
             startTimeUtc: DateTime.utc(2026, 6, 2, 6),
@@ -220,10 +225,10 @@ void main() {
 
         final verifyDb = await openAstraDatabase(databasePath: databasePath);
         addTearDown(verifyDb.close);
-        final verifyPrefs = UserPreferencesRepository(verifyDb);
+        final verifySettings = UserSettingsRepository(verifyDb);
 
         expect(success, isTrue);
-        expect(await verifyPrefs.getGoalNotificationShownDate(), isNull);
+        expect(await verifySettings.getGoalNotificationShownDate(), isNull);
       },
     );
 
@@ -260,7 +265,7 @@ void main() {
 
     test('downsamples injected data when maintenance is due', () async {
       final seedDb = await openAstraDatabase(databasePath: databasePath);
-      final repository = StepRepository(db: seedDb, clock: clock);
+      final repository = StepIngestionRepository(seedDb);
       await DataInjectService(repository: repository).inject90Days(clock: clock);
       await seedDb.close();
 
@@ -271,20 +276,20 @@ void main() {
 
       final verifyDb = await openAstraDatabase(databasePath: databasePath);
       addTearDown(verifyDb.close);
-      final verifyRepository = StepRepository(db: verifyDb, clock: clock);
-      final verifyPrefs = UserPreferencesRepository(verifyDb);
+      final verifyRepository = StepAggregationRepository(verifyDb, clock: clock);
+      final verifySettings = UserSettingsRepository(verifyDb);
 
       expect(success, isTrue);
       expect(await verifyRepository.countStepSamples(), 10080);
-      expect(await verifyPrefs.getLastDatabaseOptimizedAt(), isNotNull);
+      expect(await verifySettings.getLastDatabaseOptimizedAt(), isNotNull);
     });
 
     test('skips compaction when maintenance is not due', () async {
       final seedDb = await openAstraDatabase(databasePath: databasePath);
-      final repository = StepRepository(db: seedDb, clock: clock);
+      final repository = StepIngestionRepository(seedDb);
       await DataInjectService(repository: repository).inject90Days(clock: clock);
-      final prefs = UserPreferencesRepository(seedDb);
-      await prefs.setLastDatabaseOptimizedAt(clock.snapshot().nowUtc);
+      final userSettings = UserSettingsRepository(seedDb);
+      await userSettings.setLastDatabaseOptimizedAt(clock.snapshot().nowUtc);
       await seedDb.close();
 
       LifecycleRunResult? captured;
@@ -299,7 +304,7 @@ void main() {
 
       final verifyDb = await openAstraDatabase(databasePath: databasePath);
       addTearDown(verifyDb.close);
-      final verifyRepository = StepRepository(db: verifyDb, clock: clock);
+      final verifyRepository = StepAggregationRepository(verifyDb, clock: clock);
 
       expect(success, isTrue);
       expect(captured!.skipped, isTrue);

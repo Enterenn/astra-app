@@ -6,22 +6,22 @@ import 'package:astra_app/data/csv/timeseries_csv_codec.dart';
 import 'package:astra_app/data/datasources/data_ingestion_source.dart';
 import 'package:astra_app/data/models/normalized_step_bucket.dart';
 import 'package:astra_app/data/models/timeseries_sample_model.dart';
-import 'package:astra_app/data/repositories/step_repository.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:path/path.dart' as p;
 import 'package:sqflite/sqflite.dart';
 
 import '../../core/time/fake_time_provider.dart';
 import '../../helpers/sqflite_test_helper.dart';
+import '../../helpers/step_test_fixtures.dart';
 
 void main() {
   setUpAll(() async {
     await setUpSqfliteFfi();
   });
 
-  group('StepRepository.importCsv', () {
+  group('CsvService.importCsv', () {
     late Database db;
-    late StepRepository repository;
+    late StepTestRepos stepRepos;
     late FakeTimeProvider clock;
     late Directory tempDir;
 
@@ -31,7 +31,7 @@ void main() {
         fixedNowUtc: DateTime.utc(2026, 6, 3, 10),
         zoneOffset: const Duration(hours: 2),
       );
-      repository = StepRepository(db: db, clock: clock);
+      stepRepos = StepTestFixtures.create(db: db, clock: clock);
       tempDir = await Directory.systemTemp.createTemp('astra_import_');
     });
 
@@ -47,7 +47,7 @@ void main() {
     }
 
     test('export then import into empty DB inserts all rows', () async {
-      await repository.insertDevSamplesBatch([
+      await stepRepos.ingestion.insertDevSamplesBatch([
         _sample(id: '00000000-0000-4000-8000-000000000001'),
         _sample(
           id: '00000000-0000-4000-8000-000000000002',
@@ -55,24 +55,24 @@ void main() {
         ),
       ]);
 
-      final exportPath = await repository.exportCsv(outputDirectory: tempDir.path);
+      final exportPath = await stepRepos.csv.exportCsv(outputDirectory: tempDir.path);
       await db.delete('timeseries_samples');
 
-      final result = await repository.importCsv(filePath: exportPath);
+      final result = await stepRepos.csv.importCsv(filePath: exportPath);
 
       expect(result.totalRowsInFile, 2);
       expect(result.insertedCount, 2);
       expect(result.skippedCount, 0);
-      expect(await repository.countStepSamples(), 2);
+      expect(await stepRepos.aggregation.countStepSamples(), 2);
     });
 
     test('re-import same file skips all rows', () async {
-      await repository.insertDevSamplesBatch([
+      await stepRepos.ingestion.insertDevSamplesBatch([
         _sample(id: '00000000-0000-4000-8000-000000000001'),
       ]);
-      final exportPath = await repository.exportCsv(outputDirectory: tempDir.path);
+      final exportPath = await stepRepos.csv.exportCsv(outputDirectory: tempDir.path);
 
-      final result = await repository.importCsv(filePath: exportPath);
+      final result = await stepRepos.csv.importCsv(filePath: exportPath);
 
       expect(result.insertedCount, 0);
       expect(result.skippedCount, 1);
@@ -80,10 +80,10 @@ void main() {
     });
 
     test('malformed CSV throws and leaves DB unchanged', () async {
-      await repository.insertDevSamplesBatch([
+      await stepRepos.ingestion.insertDevSamplesBatch([
         _sample(id: '00000000-0000-4000-8000-000000000001'),
       ]);
-      final before = await repository.countStepSamples();
+      final before = await stepRepos.aggregation.countStepSamples();
 
       final path = await writeCsvFile([
         TimeseriesCsvCodec.headerRow,
@@ -91,14 +91,14 @@ void main() {
       ]);
 
       expect(
-        () => repository.importCsv(filePath: path),
+        () => stepRepos.csv.importCsv(filePath: path),
         throwsA(isA<ImportValidationException>()),
       );
-      expect(await repository.countStepSamples(), before);
+      expect(await stepRepos.aggregation.countStepSamples(), before);
     });
 
     test('duplicate bucket identity with new UUID increments skippedCount', () async {
-      await repository.insertDevSamplesBatch([
+      await stepRepos.ingestion.insertDevSamplesBatch([
         _sample(id: '00000000-0000-4000-8000-000000000001'),
       ]);
 
@@ -110,21 +110,64 @@ void main() {
         duplicateBucketRow,
       ]);
 
-      final result = await repository.importCsv(filePath: path);
+      final result = await stepRepos.csv.importCsv(filePath: path);
 
       expect(result.insertedCount, 0);
       expect(result.skippedCount, 1);
-      expect(await repository.countStepSamples(), 1);
+      expect(await stepRepos.aggregation.countStepSamples(), 1);
     });
 
     test('header-only CSV is a no-op import', () async {
       final path = await writeCsvFile([TimeseriesCsvCodec.headerRow]);
 
-      final result = await repository.importCsv(filePath: path);
+      final result = await stepRepos.csv.importCsv(filePath: path);
 
       expect(result.totalRowsInFile, 0);
       expect(result.insertedCount, 0);
       expect(result.skippedCount, 0);
+    });
+
+    test('export purge import round-trip preserves base36 ids from ingestion', () async {
+      await stepRepos.ingestion.upsertIngestionBucket(
+        _ingestionBucket(
+          startTimeUtc: DateTime.utc(2026, 6, 2, 8),
+          value: 100,
+        ),
+      );
+      await stepRepos.ingestion.upsertIngestionBucket(
+        _ingestionBucket(
+          startTimeUtc: DateTime.utc(2026, 6, 2, 8, 5),
+          value: 42,
+        ),
+      );
+
+      final idsBeforeExport = await _sampleIds(db);
+      expect(idsBeforeExport, hasLength(2));
+      for (final id in idsBeforeExport) {
+        expect(
+          id,
+          isNot(
+            matches(
+              RegExp(
+                r'^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$',
+                caseSensitive: false,
+              ),
+            ),
+          ),
+        );
+      }
+
+      final exportPath = await stepRepos.csv.exportCsv(outputDirectory: tempDir.path);
+      await stepRepos.ingestion.purge();
+      expect(await stepRepos.aggregation.countStepSamples(), 0);
+
+      final result = await stepRepos.csv.importCsv(filePath: exportPath);
+
+      expect(result.totalRowsInFile, 2);
+      expect(result.insertedCount, 2);
+      expect(result.skippedCount, 0);
+      expect(await stepRepos.aggregation.countStepSamples(), 2);
+      expect(await _sampleIds(db), idsBeforeExport);
     });
 
     test('round-trip restores chart daily aggregates', () async {
@@ -140,16 +183,16 @@ void main() {
           value: 75,
         ),
       ];
-      await repository.insertDevSamplesBatch(samples);
+      await stepRepos.ingestion.insertDevSamplesBatch(samples);
 
-      final before = await repository.getChartDailyAggregates(days: 7);
-      final exportPath = await repository.exportCsv(outputDirectory: tempDir.path);
+      final before = await stepRepos.aggregation.getChartDailyAggregates(days: 7);
+      final exportPath = await stepRepos.csv.exportCsv(outputDirectory: tempDir.path);
       await db.delete('timeseries_samples');
-      expect(await repository.countStepSamples(), 0);
+      expect(await stepRepos.aggregation.countStepSamples(), 0);
 
-      await repository.importCsv(filePath: exportPath);
+      await stepRepos.csv.importCsv(filePath: exportPath);
 
-      final after = await repository.getChartDailyAggregates(days: 7);
+      final after = await stepRepos.aggregation.getChartDailyAggregates(days: 7);
       expect(after.length, before.length);
       for (var i = 0; i < before.length; i++) {
         expect(after[i].localDay, before[i].localDay);
@@ -157,6 +200,29 @@ void main() {
       }
     });
   });
+}
+
+Future<List<String>> _sampleIds(Database db) async {
+  final rows = await db.query(
+    'timeseries_samples',
+    columns: ['id'],
+    orderBy: 'start_time ASC',
+  );
+  return rows.map((row) => row['id']! as String).toList();
+}
+
+NormalizedStepBucket _ingestionBucket({
+  required DateTime startTimeUtc,
+  required int value,
+}) {
+  return NormalizedStepBucket(
+    startTimeUtc: startTimeUtc,
+    endTimeUtc: startTimeUtc.add(const Duration(minutes: 5)),
+    value: value,
+    provider: kInternalPhoneProvider,
+    deviceId: kSmartphoneDeviceId,
+    zoneOffset: '+02:00',
+  );
 }
 
 TimeseriesSampleModel _sample({

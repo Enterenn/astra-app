@@ -1,15 +1,21 @@
 import 'package:astra_app/core/constants/astra_theme.dart';
+import 'package:astra_app/l10n/app_localizations.dart';
 import 'package:astra_app/data/models/chart_day_aggregate.dart';
 import 'package:astra_app/presentation/cubits/history_state.dart';
+import 'package:astra_app/presentation/widgets/chart/astra_bar_chart_core.dart';
+import 'package:astra_app/presentation/widgets/chart/astra_bar_chart_painter.dart';
+import 'package:astra_app/presentation/widgets/chart/bar_chart_layout.dart';
 import 'package:astra_app/presentation/widgets/chart/chart_axis_ticks.dart';
 import 'package:astra_app/presentation/widgets/step_bar_chart.dart';
-import 'package:fl_chart/fl_chart.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 
 import '../../helpers/bar_chart_touch_test_helper.dart';
+import '../../helpers/l10n_test_helper.dart';
 
 void main() {
+  final l10n = lookupAppLocalizations(const Locale('en'));
+
   group('StepBarChart', () {
     Future<void> pumpChart(
       WidgetTester tester, {
@@ -20,7 +26,7 @@ void main() {
       double width = 320,
     }) async {
       await tester.pumpWidget(
-        MaterialApp(
+        TestMaterialApp(
           theme: buildAstraLightTheme(),
           home: Scaffold(
             body: SizedBox(
@@ -42,12 +48,12 @@ void main() {
     testWidgets('empty state shows exact copy', (tester) async {
       await pumpChart(tester, status: HistoryStatus.empty);
 
-      expect(find.text(StepBarChart.emptyCopy), findsOneWidget);
+      expect(find.text(l10n.trendsEmptyHistory), findsOneWidget);
     });
 
     testWidgets('loading state shows seven skeleton bars', (tester) async {
       await tester.pumpWidget(
-        MaterialApp(
+        TestMaterialApp(
           theme: buildAstraLightTheme(),
           home: const Scaffold(
             body: SizedBox(
@@ -104,7 +110,7 @@ void main() {
       expect(semantics.label, 'Step history bar chart');
     });
 
-    testWidgets('ready state builds BarChart without throw', (tester) async {
+    testWidgets('ready state builds native chart without throw', (tester) async {
       final points = [
         for (var i = 0; i < 7; i++)
           ChartDayAggregate(
@@ -120,7 +126,7 @@ void main() {
       );
 
       expect(tester.takeException(), isNull);
-      expect(find.byType(BarChart), findsOneWidget);
+      expect(find.byType(AstraBarChartCore), findsOneWidget);
     });
 
     testWidgets('ready 7d shows each weekday label once', (tester) async {
@@ -191,8 +197,7 @@ void main() {
         },
       );
 
-      final barChart = tester.widget<BarChart>(find.byType(BarChart));
-      expect(barChart.data.extraLinesData.horizontalLines, hasLength(1));
+      expect(hasSingleGoalLinePainter(tester), isTrue);
       expect(hasGoalStepLinePainter(tester), isFalse);
     });
 
@@ -221,8 +226,7 @@ void main() {
         },
       );
 
-      final barChart = tester.widget<BarChart>(find.byType(BarChart));
-      expect(barChart.data.extraLinesData.horizontalLines, isEmpty);
+      expect(hasSingleGoalLinePainter(tester), isFalse);
       expect(hasGoalStepLinePainter(tester), isTrue);
     });
 
@@ -249,10 +253,9 @@ void main() {
         },
       );
 
-      final barChart = tester.widget<BarChart>(find.byType(BarChart));
-      final firstBar = barChart.data.barGroups.first.barRods.first.color;
-      final secondBar = barChart.data.barGroups.last.barRods.first.color;
-      expect(firstBar, isNot(equals(secondBar)));
+      final colors = barColorsFromChart(tester);
+      expect(colors.length, 2);
+      expect(colors.first, isNot(equals(colors.last)));
     });
 
     testWidgets('ready chart renders at least four Y-axis tick labels', (
@@ -282,40 +285,24 @@ void main() {
         },
       );
 
-      final barChart = tester.widget<BarChart>(find.byType(BarChart));
-      final chartMaxY = barChart.data.maxY;
-      final sideTitles = barChart.data.titlesData.leftTitles.sideTitles;
+      final core = tester.widget<AstraBarChartCore>(
+        find.byType(AstraBarChartCore),
+      );
       final ticks = computeChartYAxisTicks(
-        maxY: chartMaxY,
+        maxY: core.maxY,
         referenceValues: const [8000],
       );
-      final interval = chartAxisTitleInterval(ticks);
 
-      final renderedLabels = <String>[];
+      var renderedCount = 0;
       for (final tick in ticks) {
-        final titleWidget = sideTitles.getTitlesWidget(
-          tick,
-          TitleMeta(
-            min: 0,
-            max: chartMaxY,
-            parentAxisSize: 240,
-            axisPosition: tick,
-            appliedInterval: interval,
-            sideTitles: sideTitles,
-            formattedValue: tick.toString(),
-            axisSide: AxisSide.left,
-            rotationQuarterTurns: 0,
-          ),
-        );
-        if (titleWidget is Text &&
-            titleWidget.data != null &&
-            titleWidget.data!.isNotEmpty) {
-          renderedLabels.add(titleWidget.data!);
+        final label = formatChartAxisValue(tick.round());
+        if (find.text(label).evaluate().isNotEmpty) {
+          renderedCount++;
         }
       }
 
-      expect(renderedLabels.length, greaterThanOrEqualTo(4));
-      expect(renderedLabels, contains('0'));
+      expect(renderedCount, greaterThanOrEqualTo(4));
+      expect(find.text('0'), findsWidgets);
     });
 
     testWidgets('ready chart computes at least four Y-axis ticks', (
@@ -345,7 +332,9 @@ void main() {
         },
       );
 
-      final chartMaxY = tester.widget<BarChart>(find.byType(BarChart)).data.maxY;
+      final chartMaxY = tester
+          .widget<AstraBarChartCore>(find.byType(AstraBarChartCore))
+          .maxY;
       final ticks = computeChartYAxisTicks(
         maxY: chartMaxY,
         referenceValues: const [8000],
@@ -356,9 +345,7 @@ void main() {
       expect(ticks.last, chartMaxY);
     });
 
-    testWidgets('bar touch selects bar and enables tooltip indicators', (
-      tester,
-    ) async {
+    testWidgets('bar touch selects bar and shows tooltip', (tester) async {
       final points = [
         ChartDayAggregate(
           localDay: DateTime.utc(2026, 6, 9),
@@ -374,27 +361,125 @@ void main() {
         goalsByDay: const {'2026-06-09': 8000},
       );
 
-      final barChart = tester.widget<BarChart>(find.byType(BarChart));
-      expect(barChart.data.barTouchData.enabled, isTrue);
-      expect(barChart.data.barTouchData.handleBuiltInTouches, isFalse);
+      final core = tester.widget<AstraBarChartCore>(
+        find.byType(AstraBarChartCore),
+      );
+      await tapBarAtIndex(
+        tester,
+        barIndex: 0,
+        barCount: 1,
+        barWidth: core.barWidth,
+        plotWidth: 320 - 36 - 16,
+      );
 
-      simulateBarTap(barChart.data.barTouchData, groupIndex: 0);
-      await tester.pump();
+      expect(find.text('9 June\n8547/8000 steps'), findsOneWidget);
+    });
 
-      final updatedChart = tester.widget<BarChart>(find.byType(BarChart));
+    testWidgets('re-tap selected bar clears selection', (tester) async {
+      final points = [
+        ChartDayAggregate(
+          localDay: DateTime.utc(2026, 6, 9),
+          totalSteps: 8547,
+        ),
+      ];
+
+      await pumpChart(
+        tester,
+        status: HistoryStatus.ready,
+        points: points,
+        dailyGoal: 8000,
+        goalsByDay: const {'2026-06-09': 8000},
+      );
+
+      final core = tester.widget<AstraBarChartCore>(
+        find.byType(AstraBarChartCore),
+      );
+      const plotWidth = 320 - kAstraBarChartLeftAxisReserved - 16;
+
+      await tapBarAtIndex(
+        tester,
+        barIndex: 0,
+        barCount: 1,
+        barWidth: core.barWidth,
+        plotWidth: plotWidth,
+      );
+      expect(find.text('9 June\n8547/8000 steps'), findsOneWidget);
+
+      await tapBarAtIndex(
+        tester,
+        barIndex: 0,
+        barCount: 1,
+        barWidth: core.barWidth,
+        plotWidth: plotWidth,
+      );
+
       expect(
-        updatedChart.data.barGroups.first.showingTooltipIndicators,
-        const [0],
+        tester.widget<AstraBarChartCore>(find.byType(AstraBarChartCore)).selectedIndex,
+        isNull,
+      );
+      expect(find.text('9 June\n8547/8000 steps'), findsNothing);
+    });
+
+    testWidgets('tap in plot gap clears active selection', (tester) async {
+      final points = [
+        ChartDayAggregate(
+          localDay: DateTime.utc(2026, 6, 8),
+          totalSteps: 5000,
+        ),
+        ChartDayAggregate(
+          localDay: DateTime.utc(2026, 6, 9),
+          totalSteps: 8547,
+        ),
+      ];
+
+      await pumpChart(
+        tester,
+        status: HistoryStatus.ready,
+        points: points,
+        dailyGoal: 8000,
+        goalsByDay: const {
+          '2026-06-08': 8000,
+          '2026-06-09': 8000,
+        },
       );
 
-      final tooltip = updatedChart.data.barTouchData.touchTooltipData
-          .getTooltipItem(
-        updatedChart.data.barGroups.first,
-        0,
-        updatedChart.data.barGroups.first.barRods.first,
-        0,
+      final core = tester.widget<AstraBarChartCore>(
+        find.byType(AstraBarChartCore),
       );
-      expect(tooltip?.text, '9 June\n8547/8000 steps');
+      const plotWidth = 320 - kAstraBarChartLeftAxisReserved - 16;
+
+      await tapBarAtIndex(
+        tester,
+        barIndex: 1,
+        barCount: 2,
+        barWidth: core.barWidth,
+        plotWidth: plotWidth,
+      );
+      expect(find.text('9 June\n8547/8000 steps'), findsOneWidget);
+
+      final centers = computeSpaceAroundBarCenters(
+        viewWidth: plotWidth,
+        barCount: 2,
+        barWidth: core.barWidth,
+      );
+      final gapLocalX = (centers[0] + centers[1]) / 2;
+      expect(
+        barIndexAtPlotX(
+          localX: gapLocalX,
+          plotWidth: plotWidth,
+          barCount: 2,
+          barWidth: core.barWidth,
+        ),
+        isNull,
+      );
+
+      await tapPlotAtLocalX(tester, localX: gapLocalX);
+
+      expect(
+        tester.widget<AstraBarChartCore>(find.byType(AstraBarChartCore)).selectedIndex,
+        isNull,
+      );
+      expect(find.text('9 June\n8547/8000 steps'), findsNothing);
     });
 
     testWidgets('selected bar updates semantics summary', (tester) async {
@@ -413,11 +498,16 @@ void main() {
         goalsByDay: const {'2026-06-09': 8000},
       );
 
-      simulateBarTap(
-        tester.widget<BarChart>(find.byType(BarChart)).data.barTouchData,
-        groupIndex: 0,
+      final core = tester.widget<AstraBarChartCore>(
+        find.byType(AstraBarChartCore),
       );
-      await tester.pump();
+      await tapBarAtIndex(
+        tester,
+        barIndex: 0,
+        barCount: 1,
+        barWidth: core.barWidth,
+        plotWidth: 320 - 36 - 16,
+      );
 
       final semantics = tester.getSemantics(
         find.descendant(
@@ -454,15 +544,18 @@ void main() {
         points: points,
       );
 
-      final barChart = tester.widget<BarChart>(find.byType(BarChart));
-      final tooltip = barChart.data.barTouchData.touchTooltipData.getTooltipItem(
-        barChart.data.barGroups.last,
-        1,
-        barChart.data.barGroups.last.barRods.first,
-        0,
+      final core = tester.widget<AstraBarChartCore>(
+        find.byType(AstraBarChartCore),
+      );
+      await tapBarAtIndex(
+        tester,
+        barIndex: 1,
+        barCount: 2,
+        barWidth: core.barWidth,
+        plotWidth: 320 - 36 - 16,
       );
 
-      expect(tooltip?.text, '1 January 2026\n6000/8000 steps');
+      expect(find.text('1 January 2026\n6000/8000 steps'), findsOneWidget);
     });
   });
 }

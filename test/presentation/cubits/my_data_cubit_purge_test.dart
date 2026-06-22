@@ -1,7 +1,9 @@
 import 'package:astra_app/core/database/app_database.dart';
-import 'package:astra_app/data/repositories/step_repository.dart';
-import 'package:astra_app/data/repositories/user_preferences_repository.dart';
+
+import 'package:astra_app/data/repositories/user_health_metrics_repository.dart';
+import 'package:astra_app/data/repositories/user_settings_repository.dart';
 import 'package:astra_app/presentation/cubits/my_data_cubit.dart';
+import 'package:astra_app/presentation/cubits/my_data_errors.dart';
 import 'package:astra_app/presentation/widgets/confirm_dialog.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:sqflite/sqflite.dart';
@@ -9,9 +11,11 @@ import 'dart:io';
 
 import '../../core/time/fake_time_provider.dart';
 import '../../helpers/sqflite_test_helper.dart';
+import 'package:astra_app/data/repositories/step/step_ingestion_repository.dart';
+import '../../helpers/step_test_fixtures.dart';
 
-class _TrackingStepRepository extends StepRepository {
-  _TrackingStepRepository({required super.db, required super.clock});
+class _TrackingStepIngestionRepository extends StepIngestionRepository {
+  _TrackingStepIngestionRepository(Database super.db);
 
   var purgeCalls = 0;
 
@@ -33,19 +37,23 @@ void main() {
 
   group('MyDataCubit confirmAndPurge', () {
     late Database db;
-    late UserPreferencesRepository userPreferences;
+    late UserSettingsRepository userSettings;
+    late UserHealthMetricsRepository userHealthMetrics;
     late FakeTimeProvider clock;
-    late _TrackingStepRepository stepRepository;
+    late _TrackingStepIngestionRepository trackingIngestion;
+    late StepTestRepos stepRepos;
     late Directory tempDir;
 
     setUp(() async {
       db = await openAstraDatabase(databasePath: inMemoryDatabasePath);
-      userPreferences = UserPreferencesRepository(db);
+      userSettings = UserSettingsRepository(db);
       clock = FakeTimeProvider(
         fixedNowUtc: DateTime.utc(2026, 6, 3, 12),
         zoneOffset: const Duration(hours: 2),
       );
-      stepRepository = _TrackingStepRepository(db: db, clock: clock);
+      userHealthMetrics = UserHealthMetricsRepository(db, clock: clock);
+      trackingIngestion = _TrackingStepIngestionRepository(db);
+      stepRepos = StepTestFixtures.create(db: db, clock: clock);
       tempDir = await Directory.systemTemp.createTemp('astra_cubit_purge_');
     });
 
@@ -60,25 +68,26 @@ void main() {
 
     MyDataCubit buildCubit({
       PostPurgeRefreshCallback? postPurgeRefresh,
-      ShareCsvFileCallback? shareCsvFile,
       SaveCsvFileCallback? saveCsvFile,
     }) {
       return MyDataCubit(
-        stepRepository: stepRepository,
-        userPreferences: userPreferences,
+        stepAggregation: stepRepos.aggregation,
+        csvService: stepRepos.csv,
+        stepIngestion: trackingIngestion,
+        userSettings: userSettings,
+        userHealthMetrics: userHealthMetrics,
         clock: clock,
         databasePath: inMemoryDatabasePath,
         isIos: false,
         activityPermissionGranted: () async => true,
         postPurgeRefresh: postPurgeRefresh,
-        shareCsvFile: shareCsvFile ?? (_, {sharePositionOrigin}) async {},
-        saveCsvFile: saveCsvFile ?? ((_) async => false),
+        saveCsvFile: saveCsvFile ?? ((_) async => true),
         tempDirectoryProvider: () async => tempDir.path,
       );
     }
 
     test('deleteConfirmed clears lastOptimizedUtc after purge', () async {
-      await userPreferences.setLastDatabaseOptimizedAt(
+      await userSettings.setLastDatabaseOptimizedAt(
         DateTime.utc(2026, 6, 1),
       );
       final cubit = buildCubit();
@@ -109,11 +118,11 @@ void main() {
         confirmedAction: PurgeConfirmAction.deleteConfirmed,
       );
 
-      expect(stepRepository.purgeCalls, 1);
+      expect(trackingIngestion.purgeCalls, 1);
       expect(refreshCalled, isTrue);
       expect(cubit.state.isPurging, isFalse);
       expect(cubit.state.purgeSuccessPending, isTrue);
-      expect(cubit.state.purgeErrorMessage, isNull);
+      expect(cubit.state.purgeError, isNull);
     });
 
     test('cancelled action does not purge', () async {
@@ -125,15 +134,16 @@ void main() {
         confirmedAction: PurgeConfirmAction.cancelled,
       );
 
-      expect(stepRepository.purgeCalls, 0);
+      expect(trackingIngestion.purgeCalls, 0);
       expect(cubit.state.purgeSuccessPending, isFalse);
     });
 
     test('exportFirst via callback does not purge', () async {
       var exportCalled = false;
       final cubit = buildCubit(
-        shareCsvFile: (_, {sharePositionOrigin}) async {
+        saveCsvFile: (_) async {
           exportCalled = true;
+          return true;
         },
       );
       addTearDown(cubit.close);
@@ -143,7 +153,7 @@ void main() {
         confirmedAction: PurgeConfirmAction.exportFirst,
       );
 
-      expect(stepRepository.purgeCalls, 0);
+      expect(trackingIngestion.purgeCalls, 0);
       expect(exportCalled, isTrue);
     });
 
@@ -157,7 +167,7 @@ void main() {
         confirmedAction: PurgeConfirmAction.deleteConfirmed,
       );
 
-      expect(stepRepository.purgeCalls, 1);
+      expect(trackingIngestion.purgeCalls, 1);
       expect(cubit.state.purgeSuccessPending, isTrue);
     });
 
@@ -171,7 +181,7 @@ void main() {
         confirmPurge: () async => PurgeConfirmAction.deleteConfirmed,
       );
 
-      expect(stepRepository.purgeCalls, 0);
+      expect(trackingIngestion.purgeCalls, 0);
     });
 
     test('sets refresh error when purge succeeds but postPurgeRefresh fails', () async {
@@ -187,24 +197,27 @@ void main() {
         confirmedAction: PurgeConfirmAction.deleteConfirmed,
       );
 
-      expect(stepRepository.purgeCalls, 1);
+      expect(trackingIngestion.purgeCalls, 1);
       expect(cubit.state.purgeSuccessPending, isFalse);
       expect(
-        cubit.state.purgeErrorMessage,
-        'All local data was removed, but the app could not refresh. Try again.',
+        cubit.state.purgeError,
+        MyDataPurgeError.refreshFailedAfterPurge,
       );
     });
 
     test('emits purge error message when repository fails', () async {
-      final failingRepository = _FailingPurgeRepository(db: db, clock: clock);
+      final failingRepository = _FailingPurgeRepository(db: db);
       final cubit = MyDataCubit(
-        stepRepository: failingRepository,
-        userPreferences: userPreferences,
+        stepAggregation: stepRepos.aggregation,
+        csvService: stepRepos.csv,
+        stepIngestion: failingRepository,
+        userSettings: userSettings,
+        userHealthMetrics: userHealthMetrics,
         clock: clock,
         databasePath: inMemoryDatabasePath,
         isIos: false,
-        shareCsvFile: (_, {sharePositionOrigin}) async {},
-        saveCsvFile: (_) async => false,
+        activityPermissionGranted: () async => true,
+        saveCsvFile: (_) async => true,
         tempDirectoryProvider: () async => '',
       );
       addTearDown(cubit.close);
@@ -214,14 +227,14 @@ void main() {
         confirmedAction: PurgeConfirmAction.deleteConfirmed,
       );
 
-      expect(cubit.state.purgeErrorMessage, isNotNull);
+      expect(cubit.state.purgeError, isNotNull);
       expect(cubit.state.isPurging, isFalse);
     });
   });
 }
 
-class _FailingPurgeRepository extends StepRepository {
-  _FailingPurgeRepository({required super.db, required super.clock});
+class _FailingPurgeRepository extends StepIngestionRepository {
+  _FailingPurgeRepository({required Database db}) : super(db);
 
   @override
   Future<void> purge({

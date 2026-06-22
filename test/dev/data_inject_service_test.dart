@@ -1,12 +1,17 @@
+@Tags(['slow'])
+library;
+
 import 'package:astra_app/core/database/app_database.dart';
 import 'package:astra_app/data/models/normalized_step_bucket.dart';
-import 'package:astra_app/data/repositories/step_repository.dart';
-import 'package:astra_app/dev/data_inject_service.dart';
+
+import 'data_inject_service.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:sqflite/sqflite.dart';
 
 import '../core/time/fake_time_provider.dart';
 import '../helpers/sqflite_test_helper.dart';
+import 'package:astra_app/data/repositories/step/step_aggregation_repository.dart';
+import 'package:astra_app/data/repositories/step/step_ingestion_repository.dart';
 
 void main() {
   setUpAll(() async {
@@ -15,7 +20,8 @@ void main() {
 
   group('DataInjectService.inject90Days', () {
     late Database db;
-    late StepRepository repository;
+    late StepIngestionRepository stepIngestion;
+    late StepAggregationRepository repository;
     late FakeTimeProvider clock;
 
     setUp(() async {
@@ -24,7 +30,8 @@ void main() {
         fixedNowUtc: DateTime.utc(2026, 6, 2, 12),
         zoneOffset: const Duration(hours: 2),
       );
-      repository = StepRepository(db: db, clock: clock);
+      stepIngestion = StepIngestionRepository(db);
+      repository = StepAggregationRepository(db, clock: clock);
     });
 
     tearDown(() async {
@@ -33,7 +40,7 @@ void main() {
 
     test('writes 25920 canonical step samples with unique UUIDs', () async {
       final result = await DataInjectService(
-        repository: repository,
+        repository: stepIngestion,
       ).inject90Days(clock: clock);
 
       expect(result.daysInjected, 90);
@@ -58,7 +65,7 @@ void main() {
     });
 
     test('clears existing step samples before re-injecting', () async {
-      final service = DataInjectService(repository: repository);
+      final service = DataInjectService(repository: stepIngestion);
 
       await service.inject90Days(clock: clock);
       await service.inject90Days(clock: clock);
@@ -72,7 +79,7 @@ void main() {
         'value': 'keep-me',
       });
 
-      await DataInjectService(repository: repository).inject90Days(
+      await DataInjectService(repository: stepIngestion).inject90Days(
         clock: clock,
       );
 
@@ -88,7 +95,7 @@ void main() {
 
     test('produces identical daily totals with fixed Random(42) seed', () async {
       Future<int> injectAndSumDailyTotal() async {
-        await DataInjectService(repository: repository).inject90Days(
+        await DataInjectService(repository: stepIngestion).inject90Days(
           clock: clock,
         );
 
@@ -114,7 +121,8 @@ void main() {
 
   group('runDevInject', () {
     late Database db;
-    late StepRepository repository;
+    late StepIngestionRepository stepIngestion;
+    late StepAggregationRepository repository;
     late FakeTimeProvider clock;
 
     setUp(() async {
@@ -123,7 +131,8 @@ void main() {
         fixedNowUtc: DateTime.utc(2026, 6, 2, 12),
         zoneOffset: const Duration(hours: 2),
       );
-      repository = StepRepository(db: db, clock: clock);
+      stepIngestion = StepIngestionRepository(db);
+      repository = StepAggregationRepository(db, clock: clock);
     });
 
     tearDown(() async {
@@ -132,7 +141,7 @@ void main() {
 
     test('delegates to inject90Days in debug builds', () async {
       final result = await runDevInject(
-        repository: repository,
+        repository: stepIngestion,
         clock: clock,
       );
 

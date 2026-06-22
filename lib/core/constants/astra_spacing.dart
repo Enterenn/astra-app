@@ -42,7 +42,4 @@ abstract final class AstraSpacing {
 
   /// Active tab squircle corner radius (= kRadiusLg = 16px).
   static const double kBottomNavSquircleRadius = kRadiusLg;
-
-  /// Figma corner smoothing for active tab squircle (0–1, spec = 100%).
-  static const double kBottomNavSquircleSmoothing = 1.0;
 }

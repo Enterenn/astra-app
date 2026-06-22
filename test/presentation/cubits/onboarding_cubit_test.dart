@@ -1,6 +1,7 @@
 import 'package:astra_app/core/constants/preference_keys.dart';
 import 'package:astra_app/core/database/app_database.dart';
-import 'package:astra_app/data/repositories/user_preferences_repository.dart';
+import 'package:astra_app/data/repositories/user_health_metrics_repository.dart';
+import 'package:astra_app/data/repositories/user_settings_repository.dart';
 import 'package:astra_app/presentation/cubits/onboarding_cubit.dart';
 import 'package:astra_app/presentation/cubits/onboarding_state.dart';
 import 'package:flutter_test/flutter_test.dart';
@@ -17,11 +18,13 @@ void main() {
 
   group('OnboardingCubit', () {
     late Database db;
-    late UserPreferencesRepository repository;
+    late UserSettingsRepository userSettings;
+    late UserHealthMetricsRepository userHealthMetrics;
 
     setUp(() async {
       db = await openAstraDatabase(databasePath: inMemoryDatabasePath);
-      repository = UserPreferencesRepository(db);
+      userSettings = UserSettingsRepository(db);
+      userHealthMetrics = UserHealthMetricsRepository(db);
     });
 
     tearDown(() async {
@@ -29,7 +32,10 @@ void main() {
     });
 
     test('starts on intro step', () {
-      final cubit = OnboardingCubit(userPreferences: repository);
+      final cubit = OnboardingCubit(
+        userSettings: userSettings,
+        userHealthMetrics: userHealthMetrics,
+      );
 
       expect(cubit.state.currentStep, 0);
       expect(cubit.state.status, OnboardingStatus.inProgress);
@@ -38,7 +44,10 @@ void main() {
     });
 
     test('nextStep and previousStep respect boundaries', () {
-      final cubit = OnboardingCubit(userPreferences: repository);
+      final cubit = OnboardingCubit(
+        userSettings: userSettings,
+        userHealthMetrics: userHealthMetrics,
+      );
 
       cubit.nextStep();
       expect(cubit.state.currentStep, 1);
@@ -62,7 +71,8 @@ void main() {
     test('requestActivityPermission uses injected requester', () async {
       Permission? requestedPermission;
       final cubit = OnboardingCubit(
-        userPreferences: repository,
+        userSettings: userSettings,
+        userHealthMetrics: userHealthMetrics,
         activityPermissionResolver: () => Permission.activityRecognition,
         permissionRequester: (permission) async {
           requestedPermission = permission;
@@ -85,7 +95,8 @@ void main() {
     test('requestActivityPermission uses injected platform resolver', () async {
       Permission? requestedPermission;
       final cubit = OnboardingCubit(
-        userPreferences: repository,
+        userSettings: userSettings,
+        userHealthMetrics: userHealthMetrics,
         activityPermissionResolver: () => Permission.sensors,
         permissionRequester: (permission) async {
           requestedPermission = permission;
@@ -106,7 +117,8 @@ void main() {
 
     test('requestActivityPermission maps denied platform status', () async {
       final cubit = OnboardingCubit(
-        userPreferences: repository,
+        userSettings: userSettings,
+        userHealthMetrics: userHealthMetrics,
         permissionRequester: (_) async => PermissionStatus.denied,
       );
 
@@ -122,7 +134,8 @@ void main() {
 
     test('requestActivityPermission recovers when requester throws', () async {
       final cubit = OnboardingCubit(
-        userPreferences: repository,
+        userSettings: userSettings,
+        userHealthMetrics: userHealthMetrics,
         permissionRequester: (_) async {
           throw Exception('platform channel failure');
         },
@@ -140,40 +153,47 @@ void main() {
 
     test('completeWithHeight persists default metrics and completion flag',
         () async {
-      final cubit = OnboardingCubit(userPreferences: repository)
-        ..commitWeightAndContinue();
+      final cubit = OnboardingCubit(
+        userSettings: userSettings,
+        userHealthMetrics: userHealthMetrics,
+      )..commitWeightAndContinue();
 
       await cubit.completeWithHeight();
 
       expect(cubit.state.status, OnboardingStatus.completed);
-      expect(await repository.getDailyStepGoal(), kDefaultStepGoal);
-      expect(await repository.getWeightKg(), 70.0);
-      expect(await repository.getHeightCm(), 170);
-      expect(await repository.getOnboardingComplete(), isTrue);
+      expect(await userHealthMetrics.getDailyStepGoal(), kDefaultStepGoal);
+      expect(await userHealthMetrics.getWeightKg(), 70.0);
+      expect(await userHealthMetrics.getHeightCm(), 170);
+      expect(await userSettings.getOnboardingComplete(), isTrue);
 
       cubit.close();
     });
 
     test('skipWeight leaves null weight after completeWithHeight', () async {
-      final cubit = OnboardingCubit(userPreferences: repository)
-        ..skipWeight();
+      final cubit = OnboardingCubit(
+        userSettings: userSettings,
+        userHealthMetrics: userHealthMetrics,
+      )..skipWeight();
 
       await cubit.completeWithHeight();
 
-      expect(await repository.getWeightKg(), isNull);
-      expect(await repository.getHeightCm(), 170);
+      expect(await userHealthMetrics.getWeightKg(), isNull);
+      expect(await userHealthMetrics.getHeightCm(), 170);
 
       cubit.close();
     });
 
     test('skipHeight leaves null height after completeWithHeight', () async {
-      final cubit = OnboardingCubit(userPreferences: repository);
+      final cubit = OnboardingCubit(
+        userSettings: userSettings,
+        userHealthMetrics: userHealthMetrics,
+      );
       cubit.commitWeightAndContinue();
       await cubit.skipHeight();
 
-      expect(await repository.getWeightKg(), 70.0);
-      expect(await repository.getHeightCm(), isNull);
-      expect(await repository.getOnboardingComplete(), isTrue);
+      expect(await userHealthMetrics.getWeightKg(), 70.0);
+      expect(await userHealthMetrics.getHeightCm(), isNull);
+      expect(await userSettings.getOnboardingComplete(), isTrue);
 
       cubit.close();
     });

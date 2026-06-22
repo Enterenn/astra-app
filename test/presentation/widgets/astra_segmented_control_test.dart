@@ -4,6 +4,8 @@ import 'package:astra_app/presentation/widgets/astra_segmented_control.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 
+import '../../helpers/l10n_test_helper.dart';
+
 void main() {
   const options = [
     AstraSegmentOption(value: 'a', label: 'Alpha'),
@@ -17,7 +19,7 @@ void main() {
     ValueChanged<String>? onChanged,
   }) async {
     await tester.pumpWidget(
-      MaterialApp(
+      TestMaterialApp(
         theme: buildAstraLightTheme(),
         home: Scaffold(
           body: Center(
@@ -55,7 +57,7 @@ void main() {
       final initial = tester.getTopLeft(thumbFinder());
 
       await tester.pumpWidget(
-        MaterialApp(
+        TestMaterialApp(
           theme: buildAstraLightTheme(),
           home: Scaffold(
             body: Center(

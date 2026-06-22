@@ -7,12 +7,14 @@ import 'package:astra_app/data/datasources/monitor_drain_source.dart';
 import 'package:astra_app/data/datasources/phone_pedometer_source.dart';
 import 'package:astra_app/data/datasources/step_normalizer.dart';
 import 'package:astra_app/data/repositories/ingestion_baseline_repository.dart';
-import 'package:astra_app/data/repositories/step_repository.dart';
+
 import 'package:flutter_test/flutter_test.dart';
 import 'package:sqflite/sqflite.dart';
 
 import '../../core/time/fake_time_provider.dart';
 import '../../helpers/sqflite_test_helper.dart';
+import 'package:astra_app/data/repositories/step/step_ingestion_repository.dart';
+import 'package:astra_app/data/repositories/step/step_aggregation_repository.dart';
 
 Future<void> _persistBufferedSteps(
   LiveStepMonitor monitor,
@@ -34,7 +36,8 @@ void main() {
 
   group('LiveStepMonitor day rollover', () {
     late Database db;
-    late StepRepository repository;
+    late StepAggregationRepository stepAggregation;
+    late StepIngestionRepository stepIngestion;
     late IngestionBaselineRepository baselineRepository;
     late FakeTimeProvider clock;
     late StreamController<PhoneStepEvent> events;
@@ -47,11 +50,12 @@ void main() {
         fixedNowUtc: DateTime.utc(2026, 6, 7, 21, 0),
         zoneOffset: const Duration(hours: 2),
       );
-      repository = StepRepository(db: db, clock: clock);
+      stepIngestion = StepIngestionRepository(db);
+      stepAggregation = StepAggregationRepository(db, clock: clock);
       baselineRepository = IngestionBaselineRepository(db);
       events = StreamController<PhoneStepEvent>.broadcast();
       monitor = LiveStepMonitor(
-        stepRepository: repository,
+        stepAggregation: stepAggregation,
         baselineRepository: baselineRepository,
         clock: clock,
         stepEventStreamFactory: () => events.stream,
@@ -60,7 +64,8 @@ void main() {
       collector = BackgroundCollector(
         sources: [MonitorDrainSource(monitor)],
         normalizer: StepNormalizer(clock: clock),
-        repository: repository,
+        repository: stepIngestion,
+        stepAggregation: stepAggregation,
         baselineRepository: baselineRepository,
         sourceTimeout: const Duration(milliseconds: 50),
       );

@@ -1,4 +1,4 @@
-/// Bar center X positions for [BarChartAlignment.spaceAround] (fl_chart 1.2.x).
+/// Bar center X positions for space-around bar alignment.
 ///
 /// Matches `BarChartDataExtension.calculateGroupsX` when every group shares
 /// [barWidth].

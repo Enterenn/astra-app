@@ -1,13 +1,11 @@
 import 'dart:async';
 import 'dart:io';
-import 'dart:ui' show Rect;
 
 import 'package:flutter/foundation.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:path/path.dart' as p;
 import 'package:file_picker/file_picker.dart';
 import 'package:path_provider/path_provider.dart';
-import 'package:share_plus/share_plus.dart';
 
 import '../../core/validation/step_goal_validator.dart';
 import '../../data/csv/import_validation_exception.dart';
@@ -17,15 +15,13 @@ import '../../core/permissions/activity_permission_resolver.dart'
 import '../../core/time/time_provider.dart';
 import '../../data/csv/timeseries_csv_codec.dart';
 import '../../data/models/database_footprint.dart';
-import '../../data/repositories/step_repository.dart';
-import '../../data/repositories/user_preferences_repository.dart';
+import '../../data/contracts/contracts.dart';
 import '../widgets/confirm_dialog.dart';
+import 'my_data_errors.dart';
 import 'my_data_state.dart';
 
 typedef ActivityPermissionChecker = Future<bool> Function();
 typedef TempDirectoryProvider = Future<String> Function();
-typedef ShareCsvFileCallback =
-    Future<void> Function(String filePath, {Rect? sharePositionOrigin});
 /// Returns true when the user saved to a chosen on-device location.
 typedef SaveCsvFileCallback = Future<bool> Function(String filePath);
 typedef PickCsvFileCallback = Future<String?> Function();
@@ -39,13 +35,15 @@ typedef PostDisplayNameUpdateCallback = Future<void> Function();
 
 class MyDataCubit extends Cubit<MyDataState> {
   MyDataCubit({
-    required this.stepRepository,
-    required this.userPreferences,
+    required this.stepAggregation,
+    required this.csvService,
+    required this.stepIngestion,
+    required this.userSettings,
+    required this.userHealthMetrics,
     required this.clock,
     required this.databasePath,
     ActivityPermissionChecker? activityPermissionGranted,
     TempDirectoryProvider? tempDirectoryProvider,
-    ShareCsvFileCallback? shareCsvFile,
     SaveCsvFileCallback? saveCsvFile,
     PickCsvFileCallback? pickCsvFile,
     this._confirmImport,
@@ -58,19 +56,20 @@ class MyDataCubit extends Cubit<MyDataState> {
            activityPermissionGranted ?? isActivityRecognitionGranted,
        _tempDirectoryProvider =
            tempDirectoryProvider ?? _defaultTempDirectoryProvider,
-       _shareCsvFile = shareCsvFile ?? _defaultShareCsvFile,
        _saveCsvFile = saveCsvFile ?? _defaultSaveCsvFile,
        _pickCsvFile = pickCsvFile ?? _defaultPickCsvFile,
        _isIos = isIos ?? Platform.isIOS,
        super(const MyDataState.loading());
 
-  final StepRepository stepRepository;
-  final UserPreferencesRepository userPreferences;
+  final StepAggregationRepositoryContract stepAggregation;
+  final CsvServiceContract csvService;
+  final StepIngestionRepositoryContract stepIngestion;
+  final UserSettingsRepositoryContract userSettings;
+  final UserHealthMetricsRepositoryContract userHealthMetrics;
   final TimeProvider clock;
   final String databasePath;
   final ActivityPermissionChecker _activityPermissionGranted;
   final TempDirectoryProvider _tempDirectoryProvider;
-  final ShareCsvFileCallback _shareCsvFile;
   final SaveCsvFileCallback _saveCsvFile;
   final PickCsvFileCallback _pickCsvFile;
   final ConfirmImportCallback? _confirmImport;
@@ -110,19 +109,6 @@ class MyDataCubit extends Cubit<MyDataState> {
     return savedPath != null;
   }
 
-  static Future<void> _defaultShareCsvFile(
-    String filePath, {
-    Rect? sharePositionOrigin,
-  }) async {
-    await SharePlus.instance.share(
-      ShareParams(
-        files: [XFile(filePath)],
-        fileNameOverrides: [p.basename(filePath)],
-        sharePositionOrigin: sharePositionOrigin,
-      ),
-    );
-  }
-
   Future<void> pickAndImport({
     ConfirmImportCallback? confirmImport,
   }) async {
@@ -152,7 +138,8 @@ class MyDataCubit extends Cubit<MyDataState> {
     emit(
       state.copyWith(
         isImporting: true,
-        importErrorMessage: null,
+        importError: null,
+        importValidationDetail: null,
         importSuccessPending: false,
       ),
     );
@@ -163,7 +150,7 @@ class MyDataCubit extends Cubit<MyDataState> {
         return;
       }
 
-      final existingSampleCount = await stepRepository.countStepSamples();
+      final existingSampleCount = await stepAggregation.countStepSamples();
       if (isClosed) {
         return;
       }
@@ -174,8 +161,8 @@ class MyDataCubit extends Cubit<MyDataState> {
           emit(
             state.copyWith(
               isImporting: false,
-              importErrorMessage:
-                  'Import could not be completed. Try again.',
+              importError: MyDataImportError.generic,
+              importValidationDetail: null,
             ),
           );
           return;
@@ -187,7 +174,7 @@ class MyDataCubit extends Cubit<MyDataState> {
         }
       }
 
-      final result = await stepRepository.importSamples(samples);
+      final result = await csvService.importSamples(samples);
       if (isClosed) {
         return;
       }
@@ -195,7 +182,8 @@ class MyDataCubit extends Cubit<MyDataState> {
       emit(
         state.copyWith(
           isImporting: false,
-          importErrorMessage: null,
+          importError: null,
+          importValidationDetail: null,
           importSuccessPending: result.totalRowsInFile > 0,
         ),
       );
@@ -217,7 +205,8 @@ class MyDataCubit extends Cubit<MyDataState> {
       emit(
         state.copyWith(
           isImporting: false,
-          importErrorMessage: error.message,
+          importError: MyDataImportError.validation,
+          importValidationDetail: error.message,
         ),
       );
     } catch (error, stackTrace) {
@@ -231,13 +220,14 @@ class MyDataCubit extends Cubit<MyDataState> {
       emit(
         state.copyWith(
           isImporting: false,
-          importErrorMessage: 'Import could not be completed. Try again.',
+          importError: MyDataImportError.generic,
+          importValidationDetail: null,
         ),
       );
     }
   }
 
-  Future<void> exportAndShare({Rect? sharePositionOrigin}) async {
+  Future<void> exportAndShare() async {
     if (isClosed ||
         state.isExporting ||
         state.isImporting ||
@@ -248,9 +238,7 @@ class MyDataCubit extends Cubit<MyDataState> {
       return _exportInFlight!;
     }
 
-    _exportInFlight = _exportAndShareImpl(
-      sharePositionOrigin: sharePositionOrigin,
-    );
+    _exportInFlight = _exportAndShareImpl();
     try {
       await _exportInFlight!;
     } finally {
@@ -258,47 +246,43 @@ class MyDataCubit extends Cubit<MyDataState> {
     }
   }
 
-  Future<void> _exportAndShareImpl({Rect? sharePositionOrigin}) async {
+  Future<void> _exportAndShareImpl() async {
     emit(
       state.copyWith(
         isExporting: true,
-        exportErrorMessage: null,
+        exportError: null,
+        exportSuccessPending: false,
       ),
     );
 
     try {
       final tempDirectory = await _tempDirectoryProvider();
-      final filePath = await stepRepository.exportCsv(
+      final filePath = await csvService.exportCsv(
         outputDirectory: tempDirectory,
       );
       try {
-        var savedOnDevice = false;
-        try {
-          savedOnDevice = await _saveCsvFile(filePath);
-        } catch (saveError, saveStack) {
-          if (kDebugMode) {
-            debugPrint('MyDataCubit.saveCsvFile failed: $saveError');
-            debugPrintStack(stackTrace: saveStack);
-          }
+        final savedOnDevice = await _saveCsvFile(filePath);
+        if (isClosed) {
+          return;
         }
-        if (!savedOnDevice && !isClosed) {
-          await _shareCsvFile(
-            filePath,
-            sharePositionOrigin: sharePositionOrigin,
+
+        if (savedOnDevice) {
+          emit(
+            state.copyWith(
+              isExporting: false,
+              exportError: null,
+              exportSuccessPending: true,
+            ),
           );
+          unawaited(refresh(silent: true));
+        } else {
+          emit(state.copyWith(isExporting: false));
         }
       } finally {
         try {
           await File(filePath).delete();
         } catch (_) {}
       }
-
-      if (isClosed) {
-        return;
-      }
-
-      emit(state.copyWith(isExporting: false, exportErrorMessage: null));
-      unawaited(refresh(silent: true));
     } catch (error, stackTrace) {
       if (kDebugMode) {
         debugPrint('MyDataCubit.exportAndShare failed: $error');
@@ -311,10 +295,18 @@ class MyDataCubit extends Cubit<MyDataState> {
       emit(
         state.copyWith(
           isExporting: false,
-          exportErrorMessage: 'Export could not be completed. Try again.',
+          exportError: MyDataExportError.generic,
         ),
       );
     }
+  }
+
+  /// Clears [MyDataState.exportSuccessPending] after the UI shows the snackbar.
+  void ackExportSuccess() {
+    if (isClosed || !state.exportSuccessPending) {
+      return;
+    }
+    emit(state.copyWith(exportSuccessPending: false));
   }
 
   /// Clears [MyDataState.importSuccessPending] after the UI shows the snackbar.
@@ -381,14 +373,14 @@ class MyDataCubit extends Cubit<MyDataState> {
     emit(
       state.copyWith(
         isPurging: true,
-        purgeErrorMessage: null,
+        purgeError: null,
         purgeSuccessPending: false,
       ),
     );
 
     var purged = false;
     try {
-      await stepRepository.purge();
+      await stepIngestion.purge();
       purged = true;
       if (isClosed) {
         return;
@@ -405,7 +397,7 @@ class MyDataCubit extends Cubit<MyDataState> {
       emit(
         state.copyWith(
           isPurging: false,
-          purgeErrorMessage: null,
+          purgeError: null,
           purgeSuccessPending: true,
         ),
       );
@@ -420,9 +412,9 @@ class MyDataCubit extends Cubit<MyDataState> {
       emit(
         state.copyWith(
           isPurging: false,
-          purgeErrorMessage: purged
-              ? 'All local data was removed, but the app could not refresh. Try again.'
-              : 'Purge could not be completed. Try again.',
+          purgeError: purged
+              ? MyDataPurgeError.refreshFailedAfterPurge
+              : MyDataPurgeError.generic,
         ),
       );
     }
@@ -450,7 +442,7 @@ class MyDataCubit extends Cubit<MyDataState> {
     }
 
     try {
-      await userPreferences.setDailyStepGoal(parsed);
+      await userHealthMetrics.setDailyStepGoal(parsed);
     } catch (error, stackTrace) {
       if (kDebugMode) {
         debugPrint('MyDataCubit.updateDailyStepGoal persist failed: $error');
@@ -498,7 +490,7 @@ class MyDataCubit extends Cubit<MyDataState> {
     }
 
     try {
-      await userPreferences.setDisplayName(trimmed.isEmpty ? null : trimmed);
+      await userHealthMetrics.setDisplayName(trimmed.isEmpty ? null : trimmed);
     } catch (error, stackTrace) {
       if (kDebugMode) {
         debugPrint('MyDataCubit.updateDisplayName persist failed: $error');
@@ -560,10 +552,10 @@ class MyDataCubit extends Cubit<MyDataState> {
 
     try {
       final results = await Future.wait<Object?>([
-        stepRepository.getFootprint(databasePath: databasePath),
-        stepRepository.getLastIngestionUtc(),
+        stepAggregation.getFootprint(databasePath: databasePath),
+        stepAggregation.getLastIngestionUtc(),
         _activityPermissionGranted(),
-        userPreferences.getLastDatabaseOptimizedAt(),
+        userSettings.getLastDatabaseOptimizedAt(),
       ]);
 
       if (isClosed) {
@@ -612,7 +604,7 @@ class MyDataCubit extends Cubit<MyDataState> {
 
     var sampleCount = 0;
     try {
-      sampleCount = await stepRepository.countStepSamples();
+      sampleCount = await stepAggregation.countStepSamples();
     } catch (error, stackTrace) {
       if (kDebugMode) {
         debugPrint('MyDataCubit._recoverFromRefreshFailure countSamples failed: $error');
@@ -657,12 +649,14 @@ class MyDataCubit extends Cubit<MyDataState> {
         displayName: displayName ?? state.displayName,
       ).copyWith(
         isExporting: state.isExporting,
-        exportErrorMessage: state.exportErrorMessage,
+        exportError: state.exportError,
+        exportSuccessPending: state.exportSuccessPending,
         isImporting: state.isImporting,
-        importErrorMessage: state.importErrorMessage,
+        importError: state.importError,
+        importValidationDetail: state.importValidationDetail,
         importSuccessPending: state.importSuccessPending,
         isPurging: state.isPurging,
-        purgeErrorMessage: state.purgeErrorMessage,
+        purgeError: state.purgeError,
         purgeSuccessPending: state.purgeSuccessPending,
       ),
     );

@@ -3,7 +3,9 @@ import 'package:astra_app/core/constants/display_unit_preferences.dart';
 import 'package:astra_app/presentation/widgets/unit_option_picker_sheet.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
-import 'package:phosphoricons_flutter/phosphoricons_flutter.dart';
+
+import '../../helpers/l10n_test_helper.dart';
+import 'package:astra_app/core/icons/phosphor_icons.dart';
 
 void main() {
   testWidgets('showUnitOptionPickerSheet returns selected distance unit', (
@@ -12,7 +14,7 @@ void main() {
     DistanceDisplayUnit? result;
 
     await tester.pumpWidget(
-      MaterialApp(
+      TestMaterialApp(
         theme: buildAstraLightTheme(),
         home: Builder(
           builder: (context) {

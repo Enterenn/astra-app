@@ -1,3 +1,4 @@
+import 'package:astra_app/l10n/app_localizations.dart';
 import 'package:flutter/material.dart';
 
 import '../cubits/theme_state.dart';
@@ -15,33 +16,34 @@ class ThemeSelector extends StatelessWidget {
   final ValueChanged<AstraThemePreference> onChanged;
   final bool enabled;
 
-  static const _options = [
-    AstraSegmentOption(
-      value: AstraThemePreference.system,
-      label: 'System',
-      semanticsLabel: 'System appearance',
-    ),
-    AstraSegmentOption(
-      value: AstraThemePreference.light,
-      label: 'Light',
-      semanticsLabel: 'Light appearance',
-    ),
-    AstraSegmentOption(
-      value: AstraThemePreference.dark,
-      label: 'Dark',
-      semanticsLabel: 'Dark appearance',
-    ),
-  ];
-
   @override
   Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context);
+    final options = [
+      AstraSegmentOption(
+        value: AstraThemePreference.system,
+        label: l10n.settingsThemeSystem,
+        semanticsLabel: l10n.settingsThemeSystemSemantics,
+      ),
+      AstraSegmentOption(
+        value: AstraThemePreference.light,
+        label: l10n.settingsThemeLight,
+        semanticsLabel: l10n.settingsThemeLightSemantics,
+      ),
+      AstraSegmentOption(
+        value: AstraThemePreference.dark,
+        label: l10n.settingsThemeDark,
+        semanticsLabel: l10n.settingsThemeDarkSemantics,
+      ),
+    ];
+
     return AstraSegmentedControl<AstraThemePreference>(
-      options: _options,
+      options: options,
       selected: selected,
       onChanged: onChanged,
       enabled: enabled,
       fireOnReselect: false,
-      semanticsHint: 'App theme',
+      semanticsHint: l10n.settingsThemeSemanticsHint,
     );
   }
 }

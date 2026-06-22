@@ -3,6 +3,8 @@ import 'package:astra_app/presentation/widgets/week_trophy_badge.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 
+import '../../helpers/l10n_test_helper.dart';
+
 void main() {
   Future<void> pumpBadge(
     WidgetTester tester, {
@@ -10,7 +12,7 @@ void main() {
     int totalDays = 7,
   }) async {
     await tester.pumpWidget(
-      MaterialApp(
+      TestMaterialApp(
         theme: buildAstraLightTheme(),
         home: Scaffold(
           body: WeekTrophyBadge(

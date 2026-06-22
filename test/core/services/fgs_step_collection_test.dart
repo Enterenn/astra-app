@@ -4,12 +4,13 @@ import 'package:astra_app/core/services/notification_service.dart';
 import 'package:permission_handler/permission_handler.dart';
 import 'package:astra_app/data/datasources/data_ingestion_source.dart';
 import 'package:astra_app/data/models/step_reading.dart';
-import 'package:astra_app/data/repositories/step_repository.dart';
+
 import 'package:flutter_test/flutter_test.dart';
 import 'package:sqflite/sqflite.dart';
 
 import '../../core/time/fake_time_provider.dart';
 import '../../helpers/sqflite_test_helper.dart';
+import 'package:astra_app/data/repositories/step/step_aggregation_repository.dart';
 
 class _FakeStepSource implements DataIngestionSource {
   const _FakeStepSource(this._readings);
@@ -33,7 +34,7 @@ void main() {
 
   group('runFgsStepCollectionCycle', () {
     late Database db;
-    late StepRepository repository;
+    late StepAggregationRepository repository;
     final clock = FakeTimeProvider(
       fixedNowUtc: DateTime.utc(2026, 6, 2, 10),
       zoneOffset: const Duration(hours: 2),
@@ -41,7 +42,7 @@ void main() {
 
     setUp(() async {
       db = await openAstraDatabase(databasePath: inMemoryDatabasePath);
-      repository = StepRepository(db: db, clock: clock);
+      repository = StepAggregationRepository(db, clock: clock);
     });
 
     tearDown(() async {

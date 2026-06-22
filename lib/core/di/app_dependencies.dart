@@ -9,13 +9,17 @@ import '../../data/datasources/monitor_drain_source.dart';
 import '../../data/datasources/phone_pedometer_source.dart';
 import '../../data/datasources/step_normalizer.dart';
 import '../../data/repositories/ingestion_baseline_repository.dart';
-import '../../data/repositories/step_repository.dart';
-import '../../data/repositories/user_preferences_repository.dart';
+import '../../data/repositories/step/step_aggregation_repository.dart';
+import '../../data/repositories/step/step_ingestion_repository.dart';
+import '../../data/repositories/user_health_metrics_repository.dart';
+import '../../data/repositories/user_settings_repository.dart';
+import '../../data/services/csv_service.dart';
 import '../../core/constants/astra_accent_preset.dart';
 import '../../core/constants/display_unit_preferences.dart';
 import '../../presentation/cubits/theme_state.dart';
 import '../database/astra_database_session.dart';
 import '../permissions/activity_permission_resolver.dart';
+import '../services/app_lifecycle_coordinator.dart';
 import '../services/background_collector.dart';
 import '../services/data_lifecycle_service.dart';
 import '../services/health_foreground_service.dart';
@@ -28,17 +32,21 @@ typedef ActivityPermissionChecker = Future<bool> Function();
 
 class AppDependencies {
   AppDependencies({
-    required this.userPreferences,
+    required this.userSettings,
+    required this.userHealthMetrics,
     required this.initialTheme,
     required this.initialAccentPreset,
     required this.initialDistanceUnit,
     required this.initialWeightUnit,
     required this.initialHeightUnit,
     required this.initialOnboardingComplete,
+    required this.initialAppLocale,
     required this.timeProvider,
     required this.ingestionSources,
     required this.stepNormalizer,
-    required this.stepRepository,
+    required this.stepIngestion,
+    required this.stepAggregation,
+    required this.csvService,
     required this.backgroundCollector,
     required this.notificationService,
     required this.liveStepMonitor,
@@ -47,19 +55,24 @@ class AppDependencies {
     required this.dataLifecycleService,
     required this.databaseSession,
     required this.databasePath,
+    required this.appLifecycleCoordinator,
   });
 
-  final UserPreferencesRepository userPreferences;
+  final UserSettingsRepository userSettings;
+  final UserHealthMetricsRepository userHealthMetrics;
   final AstraThemePreference initialTheme;
   final AstraAccentPreset initialAccentPreset;
   final DistanceDisplayUnit initialDistanceUnit;
   final WeightDisplayUnit initialWeightUnit;
   final HeightDisplayUnit initialHeightUnit;
   final bool initialOnboardingComplete;
+  final String? initialAppLocale;
   final TimeProvider timeProvider;
   final List<DataIngestionSource> ingestionSources;
   final StepNormalizer stepNormalizer;
-  final StepRepository stepRepository;
+  final StepIngestionRepository stepIngestion;
+  final StepAggregationRepository stepAggregation;
+  final CsvService csvService;
   final BackgroundCollector backgroundCollector;
   final NotificationService notificationService;
   final LiveStepMonitor liveStepMonitor;
@@ -68,6 +81,7 @@ class AppDependencies {
   final DataLifecycleService dataLifecycleService;
   final AstraDatabaseSession databaseSession;
   final String databasePath;
+  final AppLifecycleCoordinator appLifecycleCoordinator;
 
   static Future<bool> resolveActivityRecognitionGranted() =>
       isActivityRecognitionGranted();
@@ -79,25 +93,28 @@ class AppDependencies {
     final databaseSession = AstraDatabaseSession(databasePath: databasePath);
     await databaseSession.ensureOpen();
     final timeProvider = const SystemTimeProvider();
-    final userPreferences = UserPreferencesRepository(
+    final userSettings = UserSettingsRepository(databaseSession);
+    final userHealthMetrics = UserHealthMetricsRepository(
       databaseSession,
       clock: timeProvider,
     );
-    final initialTheme = await userPreferences.getThemeMode();
-    final initialAccentPreset = await userPreferences.getAccentPreset();
-    final initialDistanceUnit = await userPreferences.getDistanceDisplayUnit();
-    final initialWeightUnit = await userPreferences.getWeightDisplayUnit();
-    final initialHeightUnit = await userPreferences.getHeightDisplayUnit();
-    final initialOnboardingComplete = await userPreferences
-        .getOnboardingComplete();
-    final stepRepository = StepRepository(
-      session: databaseSession,
+    final initialTheme = await userSettings.getThemeMode();
+    final initialAccentPreset = await userSettings.getAccentPreset();
+    final initialDistanceUnit = await userSettings.getDistanceDisplayUnit();
+    final initialWeightUnit = await userSettings.getWeightDisplayUnit();
+    final initialHeightUnit = await userSettings.getHeightDisplayUnit();
+    final initialOnboardingComplete = await userSettings.getOnboardingComplete();
+    final initialAppLocale = await userSettings.getAppLocale();
+    final stepIngestion = StepIngestionRepository(databaseSession);
+    final stepAggregation = StepAggregationRepository(
+      databaseSession,
       clock: timeProvider,
     );
+    final csvService = CsvService(databaseSession, clock: timeProvider);
     final stepNormalizer = StepNormalizer(clock: timeProvider);
     final baselineRepository = IngestionBaselineRepository(databaseSession);
     final liveStepMonitor = LiveStepMonitor(
-      stepRepository: stepRepository,
+      stepAggregation: stepAggregation,
       baselineRepository: baselineRepository,
       clock: timeProvider,
     );
@@ -109,9 +126,11 @@ class AppDependencies {
     final backgroundCollector = BackgroundCollector(
       sources: ingestionSources,
       normalizer: stepNormalizer,
-      repository: stepRepository,
+      repository: stepIngestion,
+      stepAggregation: stepAggregation,
       baselineRepository: baselineRepository,
-      userPreferences: userPreferences,
+      userSettings: userSettings,
+      userHealthMetrics: userHealthMetrics,
       clock: timeProvider,
       notificationService: notificationService,
       notificationPermissionGranted:
@@ -120,9 +139,6 @@ class AppDependencies {
     );
     final healthForeground = HealthForegroundServiceCoordinator(
       activityPermissionGranted: resolveActivityRecognitionGranted,
-      // Reuse the UI [Database] — opening/closing a second connection on the same
-      // file path (see [runFgsStepCollectionCycle]) can close the app connection
-      // while the file picker is open (import → postImportRefresh).
       collectionRunner: ({bool skipPhoneSourceWhenUiActive = false}) async {
         try {
           await backgroundCollector.collectOnce(enableGoalNotification: true);
@@ -139,23 +155,27 @@ class AppDependencies {
     final dataLifecycleService = DataLifecycleService(
       session: databaseSession,
       databasePath: databasePath,
-      repository: stepRepository,
-      userPreferences: userPreferences,
+      repository: stepAggregation,
+      userSettings: userSettings,
       clock: timeProvider,
     );
 
-    return AppDependencies(
-      userPreferences: userPreferences,
+    return _buildDependencies(
+      userSettings: userSettings,
+      userHealthMetrics: userHealthMetrics,
       initialTheme: initialTheme,
       initialAccentPreset: initialAccentPreset,
       initialDistanceUnit: initialDistanceUnit,
       initialWeightUnit: initialWeightUnit,
       initialHeightUnit: initialHeightUnit,
       initialOnboardingComplete: initialOnboardingComplete,
+      initialAppLocale: initialAppLocale,
       timeProvider: timeProvider,
       ingestionSources: ingestionSources,
       stepNormalizer: stepNormalizer,
-      stepRepository: stepRepository,
+      stepIngestion: stepIngestion,
+      stepAggregation: stepAggregation,
+      csvService: csvService,
       backgroundCollector: backgroundCollector,
       notificationService: notificationService,
       liveStepMonitor: liveStepMonitor,
@@ -167,10 +187,69 @@ class AppDependencies {
     );
   }
 
+  static AppDependencies _buildDependencies({
+    required UserSettingsRepository userSettings,
+    required UserHealthMetricsRepository userHealthMetrics,
+    required AstraThemePreference initialTheme,
+    required AstraAccentPreset initialAccentPreset,
+    required DistanceDisplayUnit initialDistanceUnit,
+    required WeightDisplayUnit initialWeightUnit,
+    required HeightDisplayUnit initialHeightUnit,
+    required bool initialOnboardingComplete,
+    required String? initialAppLocale,
+    required TimeProvider timeProvider,
+    required List<DataIngestionSource> ingestionSources,
+    required StepNormalizer stepNormalizer,
+    required StepIngestionRepository stepIngestion,
+    required StepAggregationRepository stepAggregation,
+    required CsvService csvService,
+    required BackgroundCollector backgroundCollector,
+    required NotificationService notificationService,
+    required LiveStepMonitor liveStepMonitor,
+    required ActivityPermissionChecker activityPermissionGranted,
+    required HealthForegroundServiceCoordinator healthForegroundCoordinator,
+    required DataLifecycleService dataLifecycleService,
+    required AstraDatabaseSession databaseSession,
+    required String databasePath,
+    AppLifecycleCoordinator? appLifecycleCoordinator,
+  }) {
+    late AppDependencies builtDeps;
+    final coordinator = appLifecycleCoordinator ??
+        AppLifecycleCoordinator(depsGetter: () => builtDeps);
+    builtDeps = AppDependencies(
+      userSettings: userSettings,
+      userHealthMetrics: userHealthMetrics,
+      initialTheme: initialTheme,
+      initialAccentPreset: initialAccentPreset,
+      initialDistanceUnit: initialDistanceUnit,
+      initialWeightUnit: initialWeightUnit,
+      initialHeightUnit: initialHeightUnit,
+      initialOnboardingComplete: initialOnboardingComplete,
+      initialAppLocale: initialAppLocale,
+      timeProvider: timeProvider,
+      ingestionSources: ingestionSources,
+      stepNormalizer: stepNormalizer,
+      stepIngestion: stepIngestion,
+      stepAggregation: stepAggregation,
+      csvService: csvService,
+      backgroundCollector: backgroundCollector,
+      notificationService: notificationService,
+      liveStepMonitor: liveStepMonitor,
+      activityPermissionGranted: activityPermissionGranted,
+      healthForegroundCoordinator: healthForegroundCoordinator,
+      dataLifecycleService: dataLifecycleService,
+      databaseSession: databaseSession,
+      databasePath: databasePath,
+      appLifecycleCoordinator: coordinator,
+    );
+    return builtDeps;
+  }
+
   /// Test factory — reads persisted prefs while avoiding live platform streams by default.
   static Future<AppDependencies> test({
     required Database db,
-    required UserPreferencesRepository userPreferences,
+    UserSettingsRepository? userSettings,
+    UserHealthMetricsRepository? userHealthMetrics,
     bool? initialOnboardingComplete,
     TimeProvider? timeProvider,
     List<DataIngestionSource>? ingestionSources,
@@ -181,28 +260,39 @@ class AppDependencies {
     HealthForegroundServiceCoordinator? healthForegroundCoordinator,
     DataLifecycleService? dataLifecycleService,
     String? databasePath,
+    AppLifecycleCoordinator? appLifecycleCoordinator,
+    BackgroundCollector? backgroundCollector,
+    StepIngestionRepository? stepIngestion,
+    StepAggregationRepository? stepAggregation,
+    CsvService? csvService,
   }) async {
-    final initialTheme = await userPreferences.getThemeMode();
-    final initialAccentPreset = await userPreferences.getAccentPreset();
-    final initialDistanceUnit = await userPreferences.getDistanceDisplayUnit();
-    final initialWeightUnit = await userPreferences.getWeightDisplayUnit();
-    final initialHeightUnit = await userPreferences.getHeightDisplayUnit();
-    final onboardingComplete =
-        initialOnboardingComplete ??
-        await userPreferences.getOnboardingComplete();
     final clock = timeProvider ?? const SystemTimeProvider();
     final path = databasePath ?? inMemoryDatabasePath;
     final databaseSession = AstraDatabaseSession(
       databasePath: path,
       initial: db,
     );
-    final stepRepository = StepRepository(session: databaseSession, clock: clock);
+    final settings = userSettings ?? UserSettingsRepository(databaseSession);
+    final health = userHealthMetrics ??
+        UserHealthMetricsRepository(databaseSession, clock: clock);
+    final initialTheme = await settings.getThemeMode();
+    final initialAccentPreset = await settings.getAccentPreset();
+    final initialDistanceUnit = await settings.getDistanceDisplayUnit();
+    final initialWeightUnit = await settings.getWeightDisplayUnit();
+    final initialHeightUnit = await settings.getHeightDisplayUnit();
+    final onboardingComplete =
+        initialOnboardingComplete ?? await settings.getOnboardingComplete();
+    final initialAppLocale = await settings.getAppLocale();
+    final ingestion = stepIngestion ?? StepIngestionRepository(databaseSession);
+    final aggregation = stepAggregation ??
+        StepAggregationRepository(databaseSession, clock: clock);
+    final csv = csvService ?? CsvService(databaseSession, clock: clock);
     final stepNormalizer = StepNormalizer(clock: clock);
     final baselineRepository = IngestionBaselineRepository(databaseSession);
     final monitor =
         liveStepMonitor ??
         LiveStepMonitor(
-          stepRepository: stepRepository,
+          stepAggregation: aggregation,
           baselineRepository: baselineRepository,
           clock: clock,
           stepEventStreamFactory: () => const Stream<PhoneStepEvent>.empty(),
@@ -212,8 +302,6 @@ class AppDependencies {
         <DataIngestionSource>[
           MonitorDrainSource(
             monitor,
-            // Prevent real pedometer channel from opening in test environments
-            // when the monitor is not running and MonitorDrainSource falls back.
             phoneFallback: PhonePedometerSource(
               stepEventStreamFactory: () => const Stream.empty(),
             ),
@@ -238,38 +326,45 @@ class AppDependencies {
         HealthForegroundServiceCoordinator(
           activityPermissionGranted: permissionCheck,
         );
-    final backgroundCollector = BackgroundCollector(
-      sources: sources,
-      normalizer: stepNormalizer,
-      repository: stepRepository,
-      baselineRepository: baselineRepository,
-      userPreferences: userPreferences,
-      clock: clock,
-      notificationService: notifications,
-      notificationPermissionGranted: notificationCheck,
-    );
+    final collector = backgroundCollector ??
+        BackgroundCollector(
+          sources: sources,
+          normalizer: stepNormalizer,
+          repository: ingestion,
+          stepAggregation: aggregation,
+          baselineRepository: baselineRepository,
+          userSettings: settings,
+          userHealthMetrics: health,
+          clock: clock,
+          notificationService: notifications,
+          notificationPermissionGranted: notificationCheck,
+        );
     final lifecycleService =
         dataLifecycleService ??
         DataLifecycleService(
           session: databaseSession,
           databasePath: path,
-          repository: stepRepository,
-          userPreferences: userPreferences,
+          repository: aggregation,
+          userSettings: settings,
           clock: clock,
         );
-    return AppDependencies(
-      userPreferences: userPreferences,
+    return _buildDependencies(
+      userSettings: settings,
+      userHealthMetrics: health,
       initialTheme: initialTheme,
       initialAccentPreset: initialAccentPreset,
       initialDistanceUnit: initialDistanceUnit,
       initialWeightUnit: initialWeightUnit,
       initialHeightUnit: initialHeightUnit,
       initialOnboardingComplete: onboardingComplete,
+      initialAppLocale: initialAppLocale,
       timeProvider: clock,
       ingestionSources: sources,
       stepNormalizer: stepNormalizer,
-      stepRepository: stepRepository,
-      backgroundCollector: backgroundCollector,
+      stepIngestion: ingestion,
+      stepAggregation: aggregation,
+      csvService: csv,
+      backgroundCollector: collector,
       notificationService: notifications,
       liveStepMonitor: monitor,
       activityPermissionGranted: permissionCheck,
@@ -277,6 +372,7 @@ class AppDependencies {
       dataLifecycleService: lifecycleService,
       databaseSession: databaseSession,
       databasePath: path,
+      appLifecycleCoordinator: appLifecycleCoordinator,
     );
   }
 }

@@ -3,25 +3,34 @@ import 'package:astra_app/core/constants/astra_spacing.dart';
 import 'package:astra_app/core/constants/astra_theme.dart';
 import 'package:astra_app/core/database/app_database.dart';
 import 'package:astra_app/core/di/app_dependencies.dart';
-import 'package:astra_app/data/repositories/user_preferences_repository.dart';
+import 'package:astra_app/data/repositories/user_health_metrics_repository.dart';
+import 'package:astra_app/data/repositories/user_settings_repository.dart';
 import 'package:astra_app/presentation/cubits/history_cubit.dart';
+import 'package:astra_app/presentation/cubits/locale_cubit.dart';
+import 'package:astra_app/presentation/cubits/my_data_cubit.dart';
+import 'package:astra_app/presentation/cubits/my_data_errors.dart';
 import 'package:astra_app/presentation/cubits/theme_cubit.dart';
 import 'package:astra_app/presentation/cubits/theme_state.dart';
 import 'package:astra_app/presentation/cubits/today_cubit.dart';
 import 'package:astra_app/presentation/cubits/today_state.dart';
 import 'package:astra_app/presentation/cubits/units_cubit.dart';
+import 'package:astra_app/l10n/app_localizations.dart';
+import 'package:astra_app/presentation/widgets/confirm_dialog.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:astra_app/presentation/screens/app_scaffold.dart';
+import 'package:astra_app/presentation/screens/history_screen.dart';
+import 'package:astra_app/presentation/screens/menu_hub_screen.dart';
 import 'package:astra_app/presentation/screens/today_screen.dart';
 import 'package:astra_app/presentation/widgets/accent_preset_selector.dart';
 import 'package:astra_app/presentation/widgets/app_bottom_nav.dart';
-import 'package:astra_app/presentation/widgets/goal_ring.dart';
 import 'package:astra_app/presentation/widgets/menu_nav_row.dart';
 import 'package:astra_app/presentation/widgets/theme_selector.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_test/flutter_test.dart';
-import 'package:phosphoricons_flutter/phosphoricons_flutter.dart';
+
+import '../../helpers/l10n_test_helper.dart';
+import 'package:astra_app/core/icons/phosphor_icons.dart';
 import 'package:sqflite/sqflite.dart';
 
 import '../../helpers/sqflite_test_helper.dart';
@@ -29,8 +38,9 @@ import '../../core/time/fake_time_provider.dart';
 
 TodayCubit _testTodayCubit(AppDependencies deps) {
   return TodayCubit(
-    stepRepository: deps.stepRepository,
-    userPreferences: deps.userPreferences,
+    stepAggregation: deps.stepAggregation,
+    userSettings: deps.userSettings,
+    userHealthMetrics: deps.userHealthMetrics,
     clock: deps.timeProvider,
     activityPermissionGranted: () async => true,
   );
@@ -38,19 +48,22 @@ TodayCubit _testTodayCubit(AppDependencies deps) {
 
 HistoryCubit _testHistoryCubit(AppDependencies deps) {
   return HistoryCubit(
-    stepRepository: deps.stepRepository,
-    userPreferences: deps.userPreferences,
+    stepAggregation: deps.stepAggregation,
+    userHealthMetrics: deps.userHealthMetrics,
   );
 }
 
 class _RefreshCountingCubit extends TodayCubit {
   _RefreshCountingCubit({
-    required super.stepRepository,
-    required super.userPreferences,
+    required super.stepAggregation,
+    required super.userSettings,
+    required super.userHealthMetrics,
     required super.clock,
   }) : super(activityPermissionGranted: () async => true);
 
   int refreshCallCount = 0;
+  int syncStepsCallCount = 0;
+  int refreshMetadataCallCount = 0;
 
   @override
   Future<void> refresh({bool silent = true}) async {
@@ -59,8 +72,23 @@ class _RefreshCountingCubit extends TodayCubit {
   }
 
   @override
+  Future<void> syncSteps(
+    int steps, {
+    bool foregroundCatchUp = false,
+    bool clampStaleDisplay = false,
+  }) async {
+    syncStepsCallCount++;
+    await super.syncSteps(
+      steps,
+      foregroundCatchUp: foregroundCatchUp,
+      clampStaleDisplay: clampStaleDisplay,
+    );
+  }
+
+  @override
   Future<void> refreshMetadata() async {
     refreshCallCount++;
+    refreshMetadataCallCount++;
     if (state.status == TodayStatus.loading) {
       return;
     }
@@ -73,15 +101,44 @@ class _RefreshCountingCubit extends TodayCubit {
   }
 }
 
+class _RefreshCountingHistoryCubit extends HistoryCubit {
+  _RefreshCountingHistoryCubit({
+    required super.stepAggregation,
+    required super.userHealthMetrics,
+  });
+
+  int refreshCallCount = 0;
+
+  @override
+  Future<void> refresh({bool silent = true}) async {
+    refreshCallCount++;
+    await super.refresh(silent: silent);
+  }
+}
+
+class _ThrowingRefreshTodayCubit extends TodayCubit {
+  _ThrowingRefreshTodayCubit({
+    required super.stepAggregation,
+    required super.userSettings,
+    required super.userHealthMetrics,
+    required super.clock,
+  }) : super(activityPermissionGranted: () async => true);
+
+  @override
+  Future<void> refresh({bool silent = true}) async {
+    throw StateError('today refresh failed');
+  }
+}
+
 Future<void> _pumpAppScaffold(
   WidgetTester tester,
   AppScaffold scaffold, {
   bool disableAnimations = true,
-  required UserPreferencesRepository userPreferences,
+  required UserSettingsRepository userSettings,
 }) async {
   await tester.runAsync(() async {
     await tester.pumpWidget(
-      MaterialApp(
+      TestMaterialApp(
         theme: buildAstraLightTheme(),
         home: MediaQuery(
           data: MediaQueryData(disableAnimations: disableAnimations),
@@ -89,12 +146,15 @@ Future<void> _pumpAppScaffold(
             providers: [
               BlocProvider(
                 create: (_) => ThemeCubit(
-                  userPreferences: userPreferences,
+                  userSettings: userSettings,
                   initialPreference: AstraThemePreference.system,
                 ),
               ),
               BlocProvider(
-                create: (_) => UnitsCubit(userPreferences: userPreferences),
+                create: (_) => UnitsCubit(userSettings: userSettings),
+              ),
+              BlocProvider(
+                create: (_) => LocaleCubit(userSettings: userSettings),
               ),
             ],
             child: scaffold,
@@ -122,10 +182,45 @@ Future<void> _disposeScaffold(WidgetTester tester) async {
   });
 }
 
+Future<void> _withHapticCallTracking(
+  WidgetTester tester,
+  Future<void> Function(List<String> hapticCalls) body,
+) async {
+  final hapticCalls = <String>[];
+  TestDefaultBinaryMessengerBinding.instance.defaultBinaryMessenger
+      .setMockMethodCallHandler(SystemChannels.platform, (call) async {
+    if (call.method == 'HapticFeedback.vibrate') {
+      hapticCalls.add(call.arguments as String);
+    }
+    return null;
+  });
+  try {
+    await body(hapticCalls);
+  } finally {
+    TestDefaultBinaryMessengerBinding.instance.defaultBinaryMessenger
+        .setMockMethodCallHandler(SystemChannels.platform, null);
+  }
+}
+
+Future<void> _tapBottomNavTab(WidgetTester tester, String label) async {
+  await tester.tap(
+    find.descendant(
+      of: find.byType(AppBottomNav),
+      matching: find.byWidgetPredicate(
+        (widget) =>
+            widget is Semantics && widget.properties.label == label,
+      ),
+    ),
+  );
+  await tester.pump();
+}
+
 const _packageInfoChannel =
     MethodChannel('dev.fluttercommunity.plus/package_info');
 
 void main() {
+  final l10n = lookupAppLocalizations(const Locale('en'));
+
   setUpAll(() async {
     await setUpSqfliteFfi();
     TestDefaultBinaryMessengerBinding.instance.defaultBinaryMessenger
@@ -147,25 +242,19 @@ void main() {
     late Database db;
     late AppDependencies deps;
 
-    setUp(() {
-      GoalRing.disableStepPersistence = true;
-    });
-
-    tearDown(() {
-      GoalRing.disableStepPersistence = false;
-    });
-
     setUpAll(() async {
       db = await openAstraDatabase(databasePath: inMemoryDatabasePath);
       final clock = FakeTimeProvider(
         fixedNowUtc: DateTime.utc(2026, 6, 3, 12),
         zoneOffset: const Duration(hours: 2),
       );
-      final userPreferences = UserPreferencesRepository(db, clock: clock);
-      await userPreferences.setOnboardingComplete(true);
+      final userSettings = UserSettingsRepository(db);
+      await userSettings.setOnboardingComplete(true);
+      final userHealthMetrics = UserHealthMetricsRepository(db, clock: clock);
       deps = await AppDependencies.test(
         db: db,
-        userPreferences: userPreferences,
+        userSettings: userSettings,
+        userHealthMetrics: userHealthMetrics,
         timeProvider: clock,
       );
     });
@@ -173,6 +262,71 @@ void main() {
     tearDownAll(() async {
       await db.close();
     });
+
+    testWidgets(
+      'IndexedStack tab roots are wrapped in RepaintBoundary',
+      (WidgetTester tester) async {
+        await _pumpAppScaffold(
+          tester,
+          AppScaffold(
+            deps: deps,
+            createTodayCubit: _testTodayCubit,
+            createHistoryCubit: _testHistoryCubit,
+          ),
+          userSettings: deps.userSettings,
+        );
+        await tester.pump();
+
+        final stackFinder = find.byType(IndexedStack);
+        final indexedStack = tester.widget<IndexedStack>(stackFinder);
+        expect(indexedStack.children.length, 3);
+
+        expect(indexedStack.children[0], isA<RepaintBoundary>());
+        expect(
+          (indexedStack.children[0] as RepaintBoundary).child,
+          isA<BlocProvider<TodayCubit>>(),
+        );
+        expect(
+          find.descendant(
+            of: stackFinder,
+            matching: find.byType(TodayScreen),
+          ),
+          findsOneWidget,
+        );
+
+        expect(indexedStack.children[1], isA<RepaintBoundary>());
+        expect(
+          (indexedStack.children[1] as RepaintBoundary).child,
+          isA<BlocProvider<HistoryCubit>>(),
+        );
+        await tester.tap(find.byIcon(PhosphorIconsRegular.chartBar));
+        await tester.pump();
+        expect(
+          find.descendant(
+            of: stackFinder,
+            matching: find.byType(HistoryScreen),
+          ),
+          findsOneWidget,
+        );
+
+        expect(indexedStack.children[2], isA<RepaintBoundary>());
+        expect(
+          (indexedStack.children[2] as RepaintBoundary).child,
+          isA<Navigator>(),
+        );
+        await tester.tap(find.byIcon(PhosphorIconsRegular.list));
+        await tester.pump();
+        expect(
+          find.descendant(
+            of: stackFinder,
+            matching: find.byType(MenuHubScreen),
+          ),
+          findsOneWidget,
+        );
+
+        await _disposeScaffold(tester);
+      },
+    );
 
     testWidgets(
       'tab switch with reduce motion completes without hanging',
@@ -184,7 +338,7 @@ void main() {
             createTodayCubit: _testTodayCubit,
             createHistoryCubit: _testHistoryCubit,
           ),
-          userPreferences: deps.userPreferences,
+          userSettings: deps.userSettings,
         );
 
         expect(find.text("Today's activity"), findsNothing);
@@ -258,7 +412,7 @@ void main() {
           createTodayCubit: _testTodayCubit,
         ),
         disableAnimations: false,
-        userPreferences: deps.userPreferences,
+        userSettings: deps.userSettings,
       );
 
       await tester.pump();
@@ -279,6 +433,115 @@ void main() {
       await _disposeScaffold(tester);
     });
 
+    testWidgets('tab switch fires selectionClick haptic once', (tester) async {
+      await _withHapticCallTracking(tester, (hapticCalls) async {
+        await _pumpAppScaffold(
+          tester,
+          AppScaffold(
+            deps: deps,
+            createTodayCubit: _testTodayCubit,
+            createHistoryCubit: _testHistoryCubit,
+          ),
+          userSettings: deps.userSettings,
+        );
+        await tester.pump();
+
+        await tester.tap(find.byIcon(PhosphorIconsRegular.chartBar));
+        await tester.pump();
+
+        expect(hapticCalls, ['HapticFeedbackType.selectionClick']);
+      });
+
+      await _disposeScaffold(tester);
+    });
+
+    testWidgets('re-tap active tab fires no haptic', (tester) async {
+      await _withHapticCallTracking(tester, (hapticCalls) async {
+        await _pumpAppScaffold(
+          tester,
+          AppScaffold(
+            deps: deps,
+            createTodayCubit: _testTodayCubit,
+            createHistoryCubit: _testHistoryCubit,
+          ),
+          userSettings: deps.userSettings,
+        );
+        await tester.pump();
+
+        await _tapBottomNavTab(tester, 'STEPS');
+
+        expect(hapticCalls, isEmpty);
+      });
+
+      await _disposeScaffold(tester);
+    });
+
+    testWidgets('each distinct tab switch adds one haptic; re-tap does not', (
+      tester,
+    ) async {
+      await _withHapticCallTracking(tester, (hapticCalls) async {
+        await _pumpAppScaffold(
+          tester,
+          AppScaffold(
+            deps: deps,
+            createTodayCubit: _testTodayCubit,
+            createHistoryCubit: _testHistoryCubit,
+          ),
+          userSettings: deps.userSettings,
+        );
+        await tester.pump();
+
+        await tester.tap(find.byIcon(PhosphorIconsRegular.chartBar));
+        await tester.pump();
+
+        await tester.tap(find.byIcon(PhosphorIconsRegular.list));
+        await tester.pump();
+
+        expect(hapticCalls.length, 2);
+        expect(
+          hapticCalls,
+          everyElement('HapticFeedbackType.selectionClick'),
+        );
+
+        await _tapBottomNavTab(tester, 'MENU');
+
+        expect(hapticCalls.length, 2);
+      });
+
+      await _disposeScaffold(tester);
+    });
+
+    testWidgets('opening Trends tab triggers history refresh', (tester) async {
+      _RefreshCountingHistoryCubit? historyCubit;
+
+      await _pumpAppScaffold(
+        tester,
+        AppScaffold(
+          deps: deps,
+          createTodayCubit: _testTodayCubit,
+          createHistoryCubit: (dependencies) {
+            historyCubit = _RefreshCountingHistoryCubit(
+              stepAggregation: dependencies.stepAggregation,
+              userHealthMetrics: dependencies.userHealthMetrics,
+            );
+            return historyCubit!;
+          },
+        ),
+        userSettings: deps.userSettings,
+      );
+      await tester.pump();
+
+      expect(historyCubit!.refreshCallCount, 0);
+
+      await tester.tap(find.byIcon(PhosphorIconsRegular.chartBar));
+      await tester.pump();
+      await _awaitHistoryRefresh(tester);
+
+      expect(historyCubit!.refreshCallCount, 1);
+
+      await _disposeScaffold(tester);
+    });
+
     testWidgets('returning to Today tab triggers another refresh', (
       tester,
     ) async {
@@ -290,15 +553,16 @@ void main() {
           deps: deps,
           createTodayCubit: (dependencies) {
             cubit = _RefreshCountingCubit(
-              stepRepository: dependencies.stepRepository,
-              userPreferences: dependencies.userPreferences,
+              stepAggregation: dependencies.stepAggregation,
+              userSettings: dependencies.userSettings,
+              userHealthMetrics: dependencies.userHealthMetrics,
               clock: dependencies.timeProvider,
             );
             return cubit!;
           },
           createHistoryCubit: _testHistoryCubit,
         ),
-        userPreferences: deps.userPreferences,
+        userSettings: deps.userSettings,
       );
       await tester.pump();
 
@@ -332,7 +596,7 @@ void main() {
           deps: deps,
           createTodayCubit: _testTodayCubit,
         ),
-        userPreferences: deps.userPreferences,
+        userSettings: deps.userSettings,
       );
 
       expect(find.byType(AppBottomNav), findsOneWidget);
@@ -364,6 +628,62 @@ void main() {
           AstraSpacing.kBottomNavItemGap * 2;
       expect(pillBox.width, expectedPillWidth);
 
+      void expectClipPathOnSelectedNavTabOnly() {
+        final nav = find.byType(AppBottomNav);
+
+        expect(
+          find.descendant(of: nav, matching: find.byType(ClipPath)),
+          findsOneWidget,
+        );
+
+        final selectedNavItem = find.descendant(
+          of: nav,
+          matching: find.byWidgetPredicate(
+            (w) =>
+                w is Semantics &&
+                w.properties.button == true &&
+                w.properties.selected == true,
+          ),
+        );
+        expect(selectedNavItem, findsOneWidget);
+        expect(
+          find.descendant(of: selectedNavItem, matching: find.byType(ClipPath)),
+          findsOneWidget,
+        );
+
+        final inactiveNavItems = find.descendant(
+          of: nav,
+          matching: find.byWidgetPredicate(
+            (w) =>
+                w is Semantics &&
+                w.properties.button == true &&
+                w.properties.selected == false,
+          ),
+        );
+        expect(inactiveNavItems, findsNWidgets(2));
+        expect(
+          find.descendant(of: inactiveNavItems, matching: find.byType(ClipPath)),
+          findsNothing,
+        );
+      }
+
+      expectClipPathOnSelectedNavTabOnly();
+
+      expect(
+        find.byWidgetPredicate(
+          (w) => w.runtimeType.toString().contains('SmoothRectangleBorder'),
+        ),
+        findsNothing,
+      );
+
+      await tester.tap(find.byIcon(PhosphorIconsRegular.chartBar));
+      await tester.pump();
+      expectClipPathOnSelectedNavTabOnly();
+
+      await tester.tap(find.byIcon(PhosphorIconsRegular.list));
+      await tester.pump();
+      expectClipPathOnSelectedNavTabOnly();
+
       await _disposeScaffold(tester);
     });
 
@@ -386,7 +706,7 @@ void main() {
           createTodayCubit: _testTodayCubit,
           createHistoryCubit: _testHistoryCubit,
         ),
-        userPreferences: deps.userPreferences,
+        userSettings: deps.userSettings,
       );
 
       await openMenuTab(tester);
@@ -435,7 +755,7 @@ void main() {
           createTodayCubit: _testTodayCubit,
           createHistoryCubit: _testHistoryCubit,
         ),
-        userPreferences: deps.userPreferences,
+        userSettings: deps.userSettings,
       );
 
       await openMenuTab(tester);
@@ -447,11 +767,12 @@ void main() {
       });
       await tester.pump();
 
-      expect(find.text('Data'), findsWidgets);
+      expect(find.text(l10n.menuData), findsWidgets);
+      expect(find.text(l10n.menuPrivacyAndData), findsNothing);
       expect(find.text('My Data'), findsNothing);
-      expect(find.text('Background'), findsOneWidget);
-      expect(find.text('Footprint'), findsOneWidget);
-      expect(find.text('Your data'), findsOneWidget);
+      expect(find.text(l10n.menuTrackingStatus), findsOneWidget);
+      expect(find.text(l10n.myDataFootprint), findsOneWidget);
+      expect(find.text(l10n.myDataYourData), findsOneWidget);
       expect(find.byIcon(PhosphorIconsRegular.arrowLeft), findsOneWidget);
 
       await tester.tap(find.byTooltip('Back'));
@@ -477,7 +798,7 @@ void main() {
           createTodayCubit: _testTodayCubit,
           createHistoryCubit: _testHistoryCubit,
         ),
-        userPreferences: deps.userPreferences,
+        userSettings: deps.userSettings,
       );
 
       await openMenuTab(tester);
@@ -502,6 +823,7 @@ void main() {
       );
 
       expect(find.text('Settings'), findsWidgets);
+      expect(find.text('Language'), findsOneWidget);
       expect(find.text('Units'), findsOneWidget);
       expect(find.text('Distance'), findsOneWidget);
       expect(find.text('Metric'), findsOneWidget);
@@ -533,7 +855,7 @@ void main() {
           createTodayCubit: _testTodayCubit,
           createHistoryCubit: _testHistoryCubit,
         ),
-        userPreferences: deps.userPreferences,
+        userSettings: deps.userSettings,
       );
 
       await openMenuTab(tester);
@@ -558,6 +880,118 @@ void main() {
       await tester.pump();
 
       expect(find.text('Menu'), findsOneWidget);
+
+      await _disposeScaffold(tester);
+    });
+
+    testWidgets(
+      'postPurgeRefresh failure surfaces purgeErrorMessage on MyDataCubit',
+      (tester) async {
+        MyDataCubit? myDataCubit;
+
+        await _pumpAppScaffold(
+          tester,
+          AppScaffold(
+            deps: deps,
+            createTodayCubit: (dependencies) => _ThrowingRefreshTodayCubit(
+              stepAggregation: dependencies.stepAggregation,
+              userSettings: dependencies.userSettings,
+              userHealthMetrics: dependencies.userHealthMetrics,
+              clock: dependencies.timeProvider,
+            ),
+            createHistoryCubit: _testHistoryCubit,
+            onMyDataCubitReady: (cubit) => myDataCubit = cubit,
+          ),
+          userSettings: deps.userSettings,
+        );
+        await tester.pump();
+
+        expect(myDataCubit, isNotNull);
+        await tester.runAsync(() async {
+          await myDataCubit!.refresh();
+          await myDataCubit!.confirmAndPurge(
+            confirmedAction: PurgeConfirmAction.deleteConfirmed,
+          );
+        });
+        await tester.pump();
+
+        expect(myDataCubit!.state.purgeSuccessPending, isFalse);
+        expect(
+          myDataCubit!.state.purgeError,
+          MyDataPurgeError.refreshFailedAfterPurge,
+        );
+
+        await _disposeScaffold(tester);
+      },
+    );
+
+    testWidgets('postPurgeRefresh success runs all refresh steps', (
+      tester,
+    ) async {
+      _RefreshCountingCubit? todayCubit;
+      _RefreshCountingHistoryCubit? historyCubit;
+      MyDataCubit? myDataCubit;
+
+      await _pumpAppScaffold(
+        tester,
+        AppScaffold(
+          deps: deps,
+          createTodayCubit: (dependencies) {
+            todayCubit = _RefreshCountingCubit(
+              stepAggregation: dependencies.stepAggregation,
+              userSettings: dependencies.userSettings,
+              userHealthMetrics: dependencies.userHealthMetrics,
+              clock: dependencies.timeProvider,
+            );
+            return todayCubit!;
+          },
+          createHistoryCubit: (dependencies) {
+            historyCubit = _RefreshCountingHistoryCubit(
+              stepAggregation: dependencies.stepAggregation,
+              userHealthMetrics: dependencies.userHealthMetrics,
+            );
+            return historyCubit!;
+          },
+          onMyDataCubitReady: (cubit) => myDataCubit = cubit,
+        ),
+        userSettings: deps.userSettings,
+      );
+      await tester.pump();
+
+      expect(myDataCubit, isNotNull);
+      expect(todayCubit, isNotNull);
+
+      await tester.runAsync(() async {
+        await todayCubit!.recordLastDisplayedSteps(3500);
+        await Future<void>.delayed(const Duration(milliseconds: 50));
+      });
+      await tester.pump();
+
+      expect(todayCubit!.state.lastDisplayedSteps, 3500);
+      expect(todayCubit!.state.lastDisplayedStepsLoaded, isTrue);
+
+      await tester.runAsync(() async {
+        await myDataCubit!.refresh();
+        await myDataCubit!.confirmAndPurge(
+          confirmedAction: PurgeConfirmAction.deleteConfirmed,
+        );
+      });
+      await tester.pump();
+
+      expect(todayCubit!.refreshCallCount, greaterThanOrEqualTo(1));
+      expect(todayCubit!.syncStepsCallCount, 1);
+      expect(todayCubit!.refreshMetadataCallCount, greaterThanOrEqualTo(1));
+      expect(historyCubit!.refreshCallCount, greaterThanOrEqualTo(1));
+      expect(myDataCubit!.state.purgeSuccessPending, isTrue);
+      expect(myDataCubit!.state.purgeError, isNull);
+      expect(todayCubit!.state.lastDisplayedSteps, isNot(3500));
+      expect(todayCubit!.state.lastDisplayedSteps, anyOf(isNull, 0));
+      expect(todayCubit!.state.lastDisplayedStepsLoaded, isTrue);
+
+      await tester.runAsync(() async {
+        await Future<void>.delayed(const Duration(milliseconds: 200));
+      });
+      await tester.pump();
 
       await _disposeScaffold(tester);
     });

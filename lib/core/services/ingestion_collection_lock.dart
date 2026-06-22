@@ -11,8 +11,8 @@ class IngestionCollectionLock {
   IngestionCollectionLock(
     this._db, {
     this.ttl = const Duration(seconds: 35),
-    TimeProvider? clock,
-  }) : _clock = clock;
+    this._clock,
+  });
 
   final Database _db;
   final Duration ttl;

@@ -6,21 +6,21 @@ import 'package:astra_app/data/datasources/data_ingestion_source.dart';
 import 'package:astra_app/data/models/normalized_step_bucket.dart';
 import 'package:astra_app/data/models/timeseries_sample_model.dart';
 import 'package:astra_app/data/repositories/ingestion_baseline_repository.dart';
-import 'package:astra_app/data/repositories/step_repository.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:sqflite/sqflite.dart';
 
 import '../../core/time/fake_time_provider.dart';
 import '../../helpers/sqflite_test_helper.dart';
+import '../../helpers/step_test_fixtures.dart';
 
 void main() {
   setUpAll(() async {
     await setUpSqfliteFfi();
   });
 
-  group('StepRepository.purge', () {
+  group('StepIngestionRepository.purge', () {
     late Database db;
-    late StepRepository repository;
+    late StepTestRepos stepRepos;
     late IngestionBaselineRepository baselineRepository;
     late FakeTimeProvider clock;
     late Directory tempDir;
@@ -31,7 +31,7 @@ void main() {
         fixedNowUtc: DateTime.utc(2026, 6, 3, 10),
         zoneOffset: const Duration(hours: 2),
       );
-      repository = StepRepository(db: db, clock: clock);
+      stepRepos = StepTestFixtures.create(db: db, clock: clock);
       baselineRepository = IngestionBaselineRepository(db);
       tempDir = await Directory.systemTemp.createTemp('astra_purge_');
     });
@@ -42,7 +42,7 @@ void main() {
     });
 
     Future<void> seedHealthAndDerivedState() async {
-      await repository.insertDevSamplesBatch([
+      await stepRepos.ingestion.insertDevSamplesBatch([
         _sample(id: '00000000-0000-4000-8000-000000000001'),
         _sample(
           id: '00000000-0000-4000-8000-000000000002',
@@ -103,10 +103,10 @@ void main() {
       await seedHealthAndDerivedState();
       await seedSetupPreferences();
 
-      await repository.purge();
+      await stepRepos.ingestion.purge();
 
-      expect(await repository.countStepSamples(), 0);
-      expect(await repository.getLastIngestionUtc(), isNull);
+      expect(await stepRepos.aggregation.countStepSamples(), 0);
+      expect(await stepRepos.aggregation.getLastIngestionUtc(), isNull);
 
       final prefs = await readAllPreferences();
       expect(prefs.containsKey(kDailyStepGoalKey), isTrue);
@@ -134,11 +134,11 @@ void main() {
     test('transaction rolls back on forced error mid-purge', () async {
       await seedHealthAndDerivedState();
       await seedSetupPreferences();
-      final sampleCountBefore = await repository.countStepSamples();
+      final sampleCountBefore = await stepRepos.aggregation.countStepSamples();
       final prefsBefore = await readAllPreferences();
 
       await expectLater(
-        () => repository.purge(
+        () => stepRepos.ingestion.purge(
           testHookAfterDeleteSamples: (_) async {
             throw StateError('forced purge failure');
           },
@@ -146,7 +146,7 @@ void main() {
         throwsStateError,
       );
 
-      expect(await repository.countStepSamples(), sampleCountBefore);
+      expect(await stepRepos.aggregation.countStepSamples(), sampleCountBefore);
       expect(await readAllPreferences(), prefsBefore);
     });
 
@@ -163,17 +163,17 @@ void main() {
           value: 75,
         ),
       ];
-      await repository.insertDevSamplesBatch(samples);
+      await stepRepos.ingestion.insertDevSamplesBatch(samples);
 
-      final before = await repository.getChartDailyAggregates(days: 7);
-      final exportPath = await repository.exportCsv(outputDirectory: tempDir.path);
+      final before = await stepRepos.aggregation.getChartDailyAggregates(days: 7);
+      final exportPath = await stepRepos.csv.exportCsv(outputDirectory: tempDir.path);
 
-      await repository.purge();
-      expect(await repository.countStepSamples(), 0);
+      await stepRepos.ingestion.purge();
+      expect(await stepRepos.aggregation.countStepSamples(), 0);
 
-      await repository.importCsv(filePath: exportPath);
+      await stepRepos.csv.importCsv(filePath: exportPath);
 
-      final after = await repository.getChartDailyAggregates(days: 7);
+      final after = await stepRepos.aggregation.getChartDailyAggregates(days: 7);
       expect(after.length, before.length);
       for (var i = 0; i < before.length; i++) {
         expect(after[i].localDay, before[i].localDay);

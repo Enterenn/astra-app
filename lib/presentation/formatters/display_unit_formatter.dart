@@ -1,5 +1,7 @@
 import '../../core/constants/display_unit_preferences.dart';
 import '../../core/constants/preference_keys.dart';
+import 'package:astra_app/l10n/app_localizations.dart';
+
 import 'activity_metrics_formatter.dart';
 
 const _kmPerMile = 1.609344;
@@ -19,36 +21,44 @@ String formatDisplayDistanceValue(
   return formatDistanceKm(distanceKm);
 }
 
-String displayDistanceUnitLabel(DistanceDisplayUnit unit) {
-  return unit == DistanceDisplayUnit.imperial ? 'Mi' : 'Km';
+String displayDistanceUnitLabel(AppLocalizations l10n, DistanceDisplayUnit unit) {
+  return unit == DistanceDisplayUnit.imperial ? l10n.unitDistanceMi : l10n.unitDistanceKm;
 }
 
-String formatDisplayHeight(int? heightCm, HeightDisplayUnit unit) {
+String formatDisplayHeight(
+  AppLocalizations l10n,
+  int? heightCm,
+  HeightDisplayUnit unit,
+) {
   if (heightCm == null) {
-    return 'Not set';
+    return l10n.commonNotSet;
   }
   if (unit == HeightDisplayUnit.ftIn) {
     final ftIn = heightCmToFtIn(heightCm);
-    return '${ftIn.feet} ft ${ftIn.inches} in';
+    return l10n.unitHeightFtInDisplay(ftIn.feet, ftIn.inches);
   }
-  return '$heightCm cm';
+  return l10n.unitHeightCmDisplay(heightCm);
 }
 
-String formatDisplayWeight(double? weightKg, WeightDisplayUnit unit) {
+String formatDisplayWeight(
+  AppLocalizations l10n,
+  double? weightKg,
+  WeightDisplayUnit unit,
+) {
   if (weightKg == null) {
-    return 'Not set';
+    return l10n.commonNotSet;
   }
   if (unit == WeightDisplayUnit.lb) {
     final pounds = weightKgToDisplayLb(weightKg);
     if (pounds == pounds.roundToDouble()) {
-      return '${pounds.round()} lb';
+      return l10n.unitWeightLbDisplay('${pounds.round()}');
     }
-    return '${pounds.toStringAsFixed(1)} lb';
+    return l10n.unitWeightLbDisplay(pounds.toStringAsFixed(1));
   }
   if (weightKg == weightKg.roundToDouble()) {
-    return '${weightKg.toInt()} kg';
+    return l10n.unitWeightKgDisplay('${weightKg.toInt()}');
   }
-  return '${weightKg.toStringAsFixed(1)} kg';
+  return l10n.unitWeightKgDisplay(weightKg.toStringAsFixed(1));
 }
 
 /// Splits canonical cm into feet/inches using the same rounding as display.

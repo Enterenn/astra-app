@@ -5,6 +5,8 @@ import 'package:astra_app/presentation/widgets/astra_horizontal_ruler.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 
+import '../../helpers/l10n_test_helper.dart';
+
 void main() {
   Finder readoutText(String value) => find.byWidgetPredicate(
         (widget) {
@@ -40,7 +42,7 @@ void main() {
     RulerValueFormatter? valueFormatter,
   }) async {
     await tester.pumpWidget(
-      MaterialApp(
+      TestMaterialApp(
         theme: buildAstraLightTheme(),
         home: Scaffold(
           body: Center(
@@ -156,7 +158,7 @@ void main() {
       var onChangedCount = 0;
 
       await tester.pumpWidget(
-        MaterialApp(
+        TestMaterialApp(
           theme: buildAstraLightTheme(),
           home: Scaffold(
             body: Center(
@@ -179,7 +181,7 @@ void main() {
       await tester.pump();
 
       await tester.pumpWidget(
-        MaterialApp(
+        TestMaterialApp(
           theme: buildAstraLightTheme(),
           home: Scaffold(
             body: Center(

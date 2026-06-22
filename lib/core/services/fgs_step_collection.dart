@@ -26,6 +26,7 @@ Future<bool> runFgsStepCollectionCycle({
     db = await openDatabase(databasePath: databasePath);
     final collector = await createIsolateBackgroundCollector(
       db: db,
+      databasePath: databasePath,
       sources: sources,
       clock: clock,
       notificationService: notificationService,

@@ -1,5 +1,6 @@
+import 'package:astra_app/l10n/app_localizations.dart';
 import 'package:flutter/material.dart';
-import 'package:phosphoricons_flutter/phosphoricons_flutter.dart';
+import 'package:astra_app/core/icons/phosphor_icons.dart';
 
 import '../../core/constants/astra_colors.dart';
 import '../../core/constants/astra_spacing.dart';
@@ -21,16 +22,18 @@ class DisplayNameEditorRow extends StatelessWidget {
 
   bool get _isEnabled => enabled && onTap != null;
 
-  String get _valueLabel {
+  String _valueLabel(AppLocalizations l10n) {
     if (!hasTrimmedDisplayName(displayName)) {
-      return 'Not set';
+      return l10n.commonNotSet;
     }
     return displayName!.trim();
   }
 
   @override
   Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context);
     final colors = context.astraColors;
+    final valueLabel = _valueLabel(l10n);
     final valueColor =
         _isEnabled ? colors.textPrimary : colors.textMuted;
 
@@ -38,8 +41,11 @@ class DisplayNameEditorRow extends StatelessWidget {
       button: true,
       enabled: _isEnabled,
       label: _isEnabled
-          ? 'Display name, $_valueLabel. Double tap to edit.'
-          : 'Display name, $_valueLabel.',
+          ? l10n.profileDisplayNameSemantics(
+              valueLabel,
+              l10n.commonDoubleTapToEdit,
+            )
+          : l10n.profileDisplayNameReadOnlySemantics(valueLabel),
       child: Material(
         color: Colors.transparent,
         child: InkWell(
@@ -54,12 +60,12 @@ class DisplayNameEditorRow extends StatelessWidget {
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
                       Text(
-                        'Display name',
+                        l10n.profileDisplayName,
                         style: AstraTypography.body(context),
                       ),
                       const SizedBox(height: AstraSpacing.kSpaceXs),
                       Text(
-                        _valueLabel,
+                        valueLabel,
                         style: AstraTypography.headline(context).copyWith(
                           color: valueColor,
                         ),
@@ -70,7 +76,7 @@ class DisplayNameEditorRow extends StatelessWidget {
                 Icon(
                   PhosphorIconsRegular.caretRight,
                   color: _isEnabled ? colors.neutralGray : colors.textMuted,
-                  semanticLabel: 'Edit display name',
+                  semanticLabel: l10n.profileDisplayNameEditSemantics,
                 ),
               ],
             ),

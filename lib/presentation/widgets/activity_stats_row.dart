@@ -1,6 +1,7 @@
+import 'package:astra_app/l10n/app_localizations.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
-import 'package:phosphoricons_flutter/phosphoricons_flutter.dart';
+import 'package:astra_app/core/icons/phosphor_icons.dart';
 
 import '../../core/constants/display_unit_preferences.dart';
 import '../../core/constants/astra_colors.dart';
@@ -46,8 +47,9 @@ class ActivityStatsRow extends StatelessWidget {
 
   Widget _buildRow(BuildContext context, DistanceDisplayUnit distanceUnit) {
     final colors = context.astraColors;
+    final l10n = AppLocalizations.of(context);
     final (kcal, distanceValue, distanceLabel, duration) =
-        _formattedValues(distanceUnit);
+        _formattedValues(l10n, distanceUnit);
 
     return IntrinsicHeight(
       child: Row(
@@ -57,7 +59,7 @@ class ActivityStatsRow extends StatelessWidget {
             child: _StatColumn(
               icon: PhosphorIconsRegular.fire,
               value: kcal,
-              label: 'Kcal',
+              label: l10n.todayStatsKcalLabel,
               colors: colors,
             ),
           ),
@@ -85,13 +87,18 @@ class ActivityStatsRow extends StatelessWidget {
   }
 
   (String, String, String, String) _formattedValues(
+    AppLocalizations l10n,
     DistanceDisplayUnit distanceUnit,
   ) {
+    final distanceLabel = distanceUnit == DistanceDisplayUnit.imperial
+        ? l10n.todayStatsMiLabel
+        : l10n.todayStatsKmLabel;
+
     if (status == TodayStatus.loading) {
       return (
         _kLoadingPlaceholder,
         _kLoadingPlaceholder,
-        displayDistanceUnitLabel(distanceUnit),
+        distanceLabel,
         _kLoadingPlaceholder,
       );
     }
@@ -99,14 +106,14 @@ class ActivityStatsRow extends StatelessWidget {
       return (
         _kZeroKcal,
         _kZeroKm,
-        displayDistanceUnitLabel(distanceUnit),
+        distanceLabel,
         _kZeroDuration,
       );
     }
     return (
       formatKcal(metrics.kcal),
       formatDisplayDistanceValue(metrics.distanceKm, distanceUnit),
-      displayDistanceUnitLabel(distanceUnit),
+      distanceLabel,
       formatWalkingDuration(metrics.walkingDuration),
     );
   }

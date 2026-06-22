@@ -1,3 +1,4 @@
+import 'package:astra_app/l10n/app_localizations.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 
@@ -49,11 +50,15 @@ class _HeightEditorSheetBodyState extends State<_HeightEditorSheetBody> {
 
   bool get _isFtIn => widget.heightUnit == HeightDisplayUnit.ftIn;
 
-  String get _ftInRangeMessage {
+  String _ftInRangeMessage(AppLocalizations l10n) {
     final min = heightCmToFtIn(kMinHeightCm);
     final max = heightCmToFtIn(kMaxHeightCm);
-    return 'Height must be between ${min.feet} ft ${min.inches} in '
-        'and ${max.feet} ft ${max.inches} in';
+    return l10n.profileHeightRangeFtIn(
+      min.feet,
+      min.inches,
+      max.feet,
+      max.inches,
+    );
   }
 
   @override
@@ -89,52 +94,52 @@ class _HeightEditorSheetBodyState extends State<_HeightEditorSheetBody> {
 
   void _validateInput() {
     setState(() {
-      _errorText = _validationMessage();
+      _errorText = _validationMessage(AppLocalizations.of(context));
     });
   }
 
-  String? _validationMessage() {
+  String? _validationMessage(AppLocalizations l10n) {
     if (_isFtIn) {
-      return _validationMessageFtIn();
+      return _validationMessageFtIn(l10n);
     }
-    return _validationMessageCm(_cmController.text);
+    return _validationMessageCm(l10n, _cmController.text);
   }
 
-  String? _validationMessageCm(String raw) {
+  String? _validationMessageCm(AppLocalizations l10n, String raw) {
     final trimmed = raw.trim();
     if (trimmed.isEmpty) {
       return null;
     }
     final parsed = int.tryParse(trimmed);
     if (parsed == null) {
-      return 'Enter a whole number in centimeters';
+      return l10n.profileHeightEnterWholeNumberCm;
     }
     if (parsed < kMinHeightCm || parsed > kMaxHeightCm) {
-      return 'Height must be between $kMinHeightCm and $kMaxHeightCm cm';
+      return l10n.profileHeightRangeCm(kMinHeightCm, kMaxHeightCm);
     }
     return null;
   }
 
-  String? _validationMessageFtIn() {
+  String? _validationMessageFtIn(AppLocalizations l10n) {
     final feetRaw = _feetController.text.trim();
     final inchesRaw = _inchesController.text.trim();
     if (feetRaw.isEmpty && inchesRaw.isEmpty) {
       return null;
     }
     if (feetRaw.isEmpty || inchesRaw.isEmpty) {
-      return 'Enter both feet and inches';
+      return l10n.profileHeightEnterBothFtIn;
     }
     final feet = int.tryParse(feetRaw);
     final inches = int.tryParse(inchesRaw);
     if (feet == null || inches == null) {
-      return 'Enter whole numbers for feet and inches';
+      return l10n.profileHeightEnterWholeNumbersFtIn;
     }
     if (inches < 0 || inches > 11) {
-      return 'Inches must be between 0 and 11';
+      return l10n.profileHeightInchesRange;
     }
     final heightCm = heightFtInToCm(feet: feet, inches: inches);
     if (heightCm == null) {
-      return _ftInRangeMessage;
+      return _ftInRangeMessage(l10n);
     }
     return null;
   }
@@ -170,6 +175,7 @@ class _HeightEditorSheetBodyState extends State<_HeightEditorSheetBody> {
 
   @override
   Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context);
     final colors = context.astraColors;
     final bottomInset = MediaQuery.viewInsetsOf(context).bottom;
 
@@ -198,7 +204,7 @@ class _HeightEditorSheetBodyState extends State<_HeightEditorSheetBody> {
                 ),
               ),
               const SizedBox(height: AstraSpacing.kSpaceMd),
-              Text('Height', style: AstraTypography.title(context)),
+              Text(l10n.profileHeight, style: AstraTypography.title(context)),
               const SizedBox(height: AstraSpacing.kSpaceMd),
               if (_isFtIn) ...[
                 TextField(
@@ -211,7 +217,7 @@ class _HeightEditorSheetBodyState extends State<_HeightEditorSheetBody> {
                   ),
                   decoration: profileSheetFieldDecoration(
                     colors: colors,
-                    labelText: 'Feet',
+                    labelText: l10n.profileHeightFeet,
                     errorText: _errorText,
                   ),
                 ),
@@ -225,7 +231,7 @@ class _HeightEditorSheetBodyState extends State<_HeightEditorSheetBody> {
                   ),
                   decoration: profileSheetFieldDecoration(
                     colors: colors,
-                    labelText: 'Inches',
+                    labelText: l10n.profileHeightInches,
                     errorText: _errorText,
                   ),
                 ),
@@ -240,13 +246,13 @@ class _HeightEditorSheetBodyState extends State<_HeightEditorSheetBody> {
                   ),
                   decoration: profileSheetFieldDecoration(
                     colors: colors,
-                    labelText: 'Centimeters',
+                    labelText: l10n.profileHeightCentimeters,
                     errorText: _errorText,
                   ),
                 ),
               const SizedBox(height: AstraSpacing.kSpaceLg),
               AstraButton(
-                label: 'Save',
+                label: l10n.commonSave,
                 onPressed: _canSave
                     ? () {
                         final parsed = _parsedHeightCm;
@@ -256,7 +262,7 @@ class _HeightEditorSheetBodyState extends State<_HeightEditorSheetBody> {
               ),
               const SizedBox(height: AstraSpacing.kSpaceSm),
               AstraButton(
-                label: 'Cancel',
+                label: l10n.commonCancel,
                 variant: AstraButtonVariant.ghost,
                 onPressed: () => Navigator.of(context).pop(),
               ),

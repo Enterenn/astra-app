@@ -6,6 +6,8 @@ import 'dart:ui' show Tristate;
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 
+import '../../helpers/l10n_test_helper.dart';
+
 void main() {
   group('ThemeSelector', () {
     Future<void> pumpSelector(
@@ -15,7 +17,7 @@ void main() {
       bool enabled = true,
     }) async {
       await tester.pumpWidget(
-        MaterialApp(
+        TestMaterialApp(
           theme: buildAstraLightTheme(),
           home: Scaffold(
             body: ThemeSelector(

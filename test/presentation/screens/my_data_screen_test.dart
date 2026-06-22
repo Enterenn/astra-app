@@ -1,8 +1,11 @@
 import 'package:astra_app/core/constants/astra_theme.dart';
 import 'package:astra_app/core/database/app_database.dart';
-import 'package:astra_app/data/repositories/step_repository.dart';
-import 'package:astra_app/data/repositories/user_preferences_repository.dart';
+
+import 'package:astra_app/data/repositories/user_health_metrics_repository.dart';
+import 'package:astra_app/data/repositories/user_settings_repository.dart';
+import 'package:astra_app/l10n/app_localizations.dart';
 import 'package:astra_app/presentation/cubits/my_data_cubit.dart';
+import 'package:astra_app/presentation/cubits/my_data_errors.dart';
 import 'package:astra_app/presentation/cubits/my_data_state.dart';
 import 'package:astra_app/presentation/screens/my_data_screen.dart';
 import 'package:astra_app/presentation/widgets/confirm_dialog.dart';
@@ -19,13 +22,18 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:sqflite/sqflite.dart';
 
 import '../../core/time/fake_time_provider.dart';
+import '../../helpers/l10n_test_helper.dart';
 import '../../helpers/sqflite_test_helper.dart';
+import '../../helpers/step_test_fixtures.dart';
 
 /// Widget tests seed UI state directly — no async refresh / DB reads (see app_scaffold_test).
 class _SeededMyDataCubit extends MyDataCubit {
   _SeededMyDataCubit({
-    required super.stepRepository,
-    required super.userPreferences,
+    required super.stepAggregation,
+    required super.csvService,
+    required super.stepIngestion,
+    required super.userSettings,
+    required super.userHealthMetrics,
     required super.clock,
     required super.databasePath,
     required MyDataState seededState,
@@ -46,12 +54,14 @@ class _SeededMyDataCubit extends MyDataCubit {
 
 MyDataState _readyState({
   bool isExporting = false,
-  String? exportErrorMessage,
+  MyDataExportError? exportError,
+  bool exportSuccessPending = false,
   bool isImporting = false,
-  String? importErrorMessage,
+  MyDataImportError? importError,
+  String? importValidationDetail,
   bool importSuccessPending = false,
   bool isPurging = false,
-  String? purgeErrorMessage,
+  MyDataPurgeError? purgeError,
   bool purgeSuccessPending = false,
   bool isIos = false,
   BackgroundCollectionStatus backgroundStatus =
@@ -70,34 +80,40 @@ MyDataState _readyState({
     backgroundStatus: backgroundStatus,
     isIos: isIos,
     isExporting: isExporting,
-    exportErrorMessage: exportErrorMessage,
+    exportError: exportError,
+    exportSuccessPending: exportSuccessPending,
     isImporting: isImporting,
-    importErrorMessage: importErrorMessage,
+    importError: importError,
+    importValidationDetail: importValidationDetail,
     importSuccessPending: importSuccessPending,
     isPurging: isPurging,
-    purgeErrorMessage: purgeErrorMessage,
+    purgeError: purgeError,
     purgeSuccessPending: purgeSuccessPending,
   );
 }
 
 void main() {
+  final l10n = lookupAppLocalizations(const Locale('en'));
+
   setUpAll(() async {
     await setUpSqfliteFfi();
   });
 
   late Database db;
-  late UserPreferencesRepository userPreferences;
+  late UserSettingsRepository userSettings;
+  late UserHealthMetricsRepository userHealthMetrics;
   late FakeTimeProvider clock;
-  late StepRepository stepRepository;
+  late StepTestRepos stepRepos;
 
   setUp(() async {
     db = await openAstraDatabase(databasePath: inMemoryDatabasePath);
-    userPreferences = UserPreferencesRepository(db);
+    userSettings = UserSettingsRepository(db);
+    userHealthMetrics = UserHealthMetricsRepository(db);
     clock = FakeTimeProvider(
       fixedNowUtc: DateTime.utc(2026, 6, 3, 12),
       zoneOffset: const Duration(hours: 2),
     );
-    stepRepository = StepRepository(db: db, clock: clock);
+    stepRepos = StepTestFixtures.create(db: db, clock: clock);
   });
 
   tearDown(() async {
@@ -106,8 +122,11 @@ void main() {
 
   MyDataCubit buildSeededCubit(MyDataState state) {
     return _SeededMyDataCubit(
-      stepRepository: stepRepository,
-      userPreferences: userPreferences,
+      stepAggregation: stepRepos.aggregation,
+      csvService: stepRepos.csv,
+      stepIngestion: stepRepos.ingestion,
+      userSettings: userSettings,
+      userHealthMetrics: userHealthMetrics,
       clock: clock,
       databasePath: inMemoryDatabasePath,
       seededState: state,
@@ -128,6 +147,8 @@ void main() {
     await tester.pumpWidget(
       MaterialApp(
         theme: buildAstraLightTheme(),
+        localizationsDelegates: kTestLocalizationsDelegates,
+        supportedLocales: AppLocalizations.supportedLocales,
         home: MediaQuery(
           data: MediaQueryData(disableAnimations: disableAnimations),
           child: Scaffold(
@@ -151,10 +172,10 @@ void main() {
 
       await pumpScreen(tester, cubit: cubit);
 
-      expect(find.text('My Data'), findsOneWidget);
-      expect(find.text('Background'), findsOneWidget);
-      expect(find.text('Footprint'), findsOneWidget);
-      expect(find.text('Your data'), findsOneWidget);
+      expect(find.text(l10n.menuPrivacyAndData), findsOneWidget);
+      expect(find.text(l10n.menuTrackingStatus), findsOneWidget);
+      expect(find.text(l10n.myDataFootprint), findsOneWidget);
+      expect(find.text(l10n.myDataYourData), findsOneWidget);
       expect(find.text('Storage on this device'), findsNothing);
       expect(find.text('Backup & restore'), findsNothing);
       expect(find.text('Step tracking'), findsNothing);
@@ -171,14 +192,14 @@ void main() {
 
       await pumpScreen(tester, cubit: cubit);
 
-      expect(find.text('My Data'), findsOneWidget);
+      expect(find.text(l10n.menuPrivacyAndData), findsOneWidget);
       expect(
         find.descendant(
           of: find.byType(MyDataScreen),
           matching: find.byWidgetPredicate(
             (widget) =>
                 widget is Semantics &&
-                widget.properties.label == 'My Data',
+                widget.properties.label == l10n.menuPrivacyAndData,
           ),
         ),
         findsOneWidget,
@@ -193,9 +214,9 @@ void main() {
 
       await pumpScreen(tester, cubit: cubit);
 
-      final backgroundY = tester.getTopLeft(find.text('Background')).dy;
-      final footprintY = tester.getTopLeft(find.text('Footprint')).dy;
-      final yourDataY = tester.getTopLeft(find.text('Your data')).dy;
+      final backgroundY = tester.getTopLeft(find.text(l10n.menuTrackingStatus)).dy;
+      final footprintY = tester.getTopLeft(find.text(l10n.myDataFootprint)).dy;
+      final yourDataY = tester.getTopLeft(find.text(l10n.myDataYourData)).dy;
 
       expect(backgroundY < footprintY, isTrue);
       expect(footprintY < yourDataY, isTrue);
@@ -225,7 +246,7 @@ void main() {
       await pumpScreen(tester, cubit: cubit);
 
       expect(find.text('42'), findsOneWidget);
-      expect(find.text('samples stored'), findsOneWidget);
+      expect(find.text(l10n.myDataFootprintSamplesStored), findsOneWidget);
     });
 
     testWidgets('stale state shows full stale banner above Background card', (
@@ -248,7 +269,7 @@ void main() {
       final bannerY = tester.getTopLeft(
         find.textContaining('No new steps in 12+ hours'),
       ).dy;
-      final backgroundY = tester.getTopLeft(find.text('Background')).dy;
+      final backgroundY = tester.getTopLeft(find.text(l10n.menuTrackingStatus)).dy;
       expect(bannerY < backgroundY, isTrue);
     });
   });
@@ -260,7 +281,7 @@ void main() {
 
       await pumpScreen(tester, cubit: cubit);
 
-      expect(find.text('Export CSV'), findsOneWidget);
+      expect(find.text(l10n.myDataExportCsv), findsOneWidget);
       expect(find.byType(DataExportButton), findsOneWidget);
     });
 
@@ -282,7 +303,28 @@ void main() {
       expect(button.onPressed, isNull);
     });
 
-    testWidgets('shows Export saved snackbar for 3s after successful export', (
+    testWidgets(
+      'shows Export saved snackbar for 3s after successful export',
+      (tester) async {
+        final cubit = buildSeededCubit(_readyState());
+        addTearDown(cubit.close);
+
+        await pumpScreen(tester, cubit: cubit);
+
+        cubit.emit(_readyState());
+        await tester.pump();
+        cubit.emit(_readyState(exportSuccessPending: true));
+        await tester.pump();
+        await tester.pump();
+
+        expect(find.text(l10n.myDataExportSaved), findsOneWidget);
+        final snackBar = tester.widget<SnackBar>(find.byType(SnackBar));
+        expect(snackBar.duration, const Duration(seconds: 3));
+        expect(cubit.state.exportSuccessPending, isFalse);
+      },
+    );
+
+    testWidgets('does not show Export saved snackbar when export is cancelled', (
       tester,
     ) async {
       final cubit = buildSeededCubit(_readyState());
@@ -292,12 +334,17 @@ void main() {
 
       cubit.emit(_readyState(isExporting: true));
       await tester.pump();
-      cubit.emit(_readyState(isExporting: false));
+      cubit.emit(
+        _readyState(
+          isExporting: false,
+          exportSuccessPending: false,
+        ),
+      );
+      await tester.pump();
       await tester.pump();
 
-      expect(find.text('Export saved'), findsOneWidget);
-      final snackBar = tester.widget<SnackBar>(find.byType(SnackBar));
-      expect(snackBar.duration, const Duration(seconds: 3));
+      expect(find.text(l10n.myDataExportSaved), findsNothing);
+      expect(cubit.state.exportSuccessPending, isFalse);
     });
 
     testWidgets('shows Import CSV button below export', (tester) async {
@@ -306,7 +353,7 @@ void main() {
 
       await pumpScreen(tester, cubit: cubit);
 
-      expect(find.text('Import CSV'), findsOneWidget);
+      expect(find.text(l10n.myDataImportCsv), findsOneWidget);
       expect(find.byType(DataImportButton), findsOneWidget);
     });
 
@@ -334,7 +381,7 @@ void main() {
         await tester.pump();
         await tester.pump();
 
-        expect(find.text('Import complete'), findsOneWidget);
+        expect(find.text(l10n.myDataImportComplete), findsOneWidget);
         final snackBar = tester.widget<SnackBar>(find.byType(SnackBar));
         expect(snackBar.duration, const Duration(seconds: 3));
         expect(cubit.state.importSuccessPending, isFalse);
@@ -343,8 +390,11 @@ void main() {
 
     testWidgets('shows export error banner with retry tap', (tester) async {
       final cubit = _RetryExportMyDataCubit(
-        stepRepository: stepRepository,
-        userPreferences: userPreferences,
+        stepAggregation: stepRepos.aggregation,
+        csvService: stepRepos.csv,
+        stepIngestion: stepRepos.ingestion,
+        userSettings: userSettings,
+        userHealthMetrics: userHealthMetrics,
         clock: clock,
         databasePath: inMemoryDatabasePath,
       );
@@ -353,12 +403,12 @@ void main() {
       await pumpScreen(tester, cubit: cubit);
 
       expect(
-        find.text('Export could not be completed. Try again.'),
+        find.text(l10n.myDataExportErrorGeneric),
         findsOneWidget,
       );
 
       await tester.tap(
-        find.text('Export could not be completed. Try again.'),
+        find.text(l10n.myDataExportErrorGeneric),
       );
       await tester.pump();
 
@@ -367,8 +417,11 @@ void main() {
 
     testWidgets('shows import error banner with retry tap', (tester) async {
       final cubit = _RetryImportMyDataCubit(
-        stepRepository: stepRepository,
-        userPreferences: userPreferences,
+        stepAggregation: stepRepos.aggregation,
+        csvService: stepRepos.csv,
+        stepIngestion: stepRepos.ingestion,
+        userSettings: userSettings,
+        userHealthMetrics: userHealthMetrics,
         clock: clock,
         databasePath: inMemoryDatabasePath,
       );
@@ -395,7 +448,7 @@ void main() {
 
       await pumpScreen(tester, cubit: cubit);
 
-      expect(find.text('Delete all local data'), findsOneWidget);
+      expect(find.text(l10n.myDataDeleteAllLocalData), findsOneWidget);
       expect(find.byType(DataPurgeButton), findsOneWidget);
     });
 
@@ -423,7 +476,7 @@ void main() {
         await tester.pump();
         await tester.pump();
 
-        expect(find.text('All local data removed'), findsOneWidget);
+        expect(find.text(l10n.myDataPurgeSuccess), findsOneWidget);
         final snackBar = tester.widget<SnackBar>(find.byType(SnackBar));
         expect(snackBar.duration, const Duration(seconds: 3));
         expect(cubit.state.purgeSuccessPending, isFalse);
@@ -432,8 +485,11 @@ void main() {
 
     testWidgets('shows purge error banner with retry tap', (tester) async {
       final cubit = _RetryPurgeMyDataCubit(
-        stepRepository: stepRepository,
-        userPreferences: userPreferences,
+        stepAggregation: stepRepos.aggregation,
+        csvService: stepRepos.csv,
+        stepIngestion: stepRepos.ingestion,
+        userSettings: userSettings,
+        userHealthMetrics: userHealthMetrics,
         clock: clock,
         databasePath: inMemoryDatabasePath,
       );
@@ -442,12 +498,12 @@ void main() {
       await pumpScreen(tester, cubit: cubit);
 
       expect(
-        find.text('Purge could not be completed. Try again.'),
+        find.text(l10n.myDataPurgeErrorGeneric),
         findsOneWidget,
       );
 
       await tester.tap(
-        find.text('Purge could not be completed. Try again.'),
+        find.text(l10n.myDataPurgeErrorGeneric),
       );
       await tester.pump();
 
@@ -458,8 +514,11 @@ void main() {
       tester,
     ) async {
       final cubit = _DialogPurgeFlowMyDataCubit(
-        stepRepository: stepRepository,
-        userPreferences: userPreferences,
+        stepAggregation: stepRepos.aggregation,
+        csvService: stepRepos.csv,
+        stepIngestion: stepRepos.ingestion,
+        userSettings: userSettings,
+        userHealthMetrics: userHealthMetrics,
         clock: clock,
         databasePath: inMemoryDatabasePath,
       );
@@ -468,24 +527,24 @@ void main() {
       await pumpScreen(tester, cubit: cubit, disableAnimations: true);
 
       await tester.scrollUntilVisible(
-        find.text('Delete all local data'),
+        find.text(l10n.myDataDeleteAllLocalData),
         120,
         scrollable: find.byType(Scrollable).first,
       );
-      await tester.tap(find.text('Delete all local data'));
+      await tester.tap(find.text(l10n.myDataDeleteAllLocalData));
       await tester.pump();
-      expect(find.text('Export first'), findsOneWidget);
+      expect(find.text(l10n.myDataPurgeExportFirst), findsOneWidget);
 
-      await tester.tap(find.text('Export first'));
+      await tester.tap(find.text(l10n.myDataPurgeExportFirst));
       await tester.pump();
       expect(cubit.state.isExporting, isTrue);
 
-      await tester.tap(find.text('Delete anyway'));
+      await tester.tap(find.text(l10n.myDataPurgeDeleteAnyway));
       await tester.pump();
       await tester.pump();
 
       expect(cubit.confirmedPurgeWhileExporting, isTrue);
-      expect(find.text('All local data removed'), findsOneWidget);
+      expect(find.text(l10n.myDataPurgeSuccess), findsOneWidget);
       expect(cubit.state.purgeSuccessPending, isFalse);
     });
   });
@@ -493,8 +552,11 @@ void main() {
 
 class _RetryImportMyDataCubit extends _SeededMyDataCubit {
   _RetryImportMyDataCubit({
-    required super.stepRepository,
-    required super.userPreferences,
+    required super.stepAggregation,
+    required super.csvService,
+    required super.stepIngestion,
+    required super.userSettings,
+    required super.userHealthMetrics,
     required super.clock,
     required super.databasePath,
   }) : super(
@@ -504,7 +566,8 @@ class _RetryImportMyDataCubit extends _SeededMyDataCubit {
            fileSizeBytes: 1024,
            backgroundStatus: BackgroundCollectionStatus.healthy,
            isIos: false,
-           importErrorMessage: 'Row 1: expected 10 columns',
+           importError: MyDataImportError.validation,
+           importValidationDetail: 'Row 1: expected 10 columns',
          ),
        );
 
@@ -518,8 +581,11 @@ class _RetryImportMyDataCubit extends _SeededMyDataCubit {
 
 class _RetryExportMyDataCubit extends _SeededMyDataCubit {
   _RetryExportMyDataCubit({
-    required super.stepRepository,
-    required super.userPreferences,
+    required super.stepAggregation,
+    required super.csvService,
+    required super.stepIngestion,
+    required super.userSettings,
+    required super.userHealthMetrics,
     required super.clock,
     required super.databasePath,
   }) : super(
@@ -529,22 +595,25 @@ class _RetryExportMyDataCubit extends _SeededMyDataCubit {
            fileSizeBytes: 1024,
            backgroundStatus: BackgroundCollectionStatus.healthy,
            isIos: false,
-           exportErrorMessage: 'Export could not be completed. Try again.',
+           exportError: MyDataExportError.generic,
          ),
        );
 
   int exportAttempts = 0;
 
   @override
-  Future<void> exportAndShare({Rect? sharePositionOrigin}) async {
+  Future<void> exportAndShare() async {
     exportAttempts++;
   }
 }
 
 class _DialogPurgeFlowMyDataCubit extends _SeededMyDataCubit {
   _DialogPurgeFlowMyDataCubit({
-    required super.stepRepository,
-    required super.userPreferences,
+    required super.stepAggregation,
+    required super.csvService,
+    required super.stepIngestion,
+    required super.userSettings,
+    required super.userHealthMetrics,
     required super.clock,
     required super.databasePath,
   }) : super(seededState: _readyState());
@@ -552,7 +621,7 @@ class _DialogPurgeFlowMyDataCubit extends _SeededMyDataCubit {
   var confirmedPurgeWhileExporting = false;
 
   @override
-  Future<void> exportAndShare({Rect? sharePositionOrigin}) async {
+  Future<void> exportAndShare() async {
     emit(_readyState(isExporting: true));
   }
 
@@ -571,8 +640,11 @@ class _DialogPurgeFlowMyDataCubit extends _SeededMyDataCubit {
 
 class _RetryPurgeMyDataCubit extends _SeededMyDataCubit {
   _RetryPurgeMyDataCubit({
-    required super.stepRepository,
-    required super.userPreferences,
+    required super.stepAggregation,
+    required super.csvService,
+    required super.stepIngestion,
+    required super.userSettings,
+    required super.userHealthMetrics,
     required super.clock,
     required super.databasePath,
   }) : super(
@@ -582,7 +654,7 @@ class _RetryPurgeMyDataCubit extends _SeededMyDataCubit {
            fileSizeBytes: 1024,
            backgroundStatus: BackgroundCollectionStatus.healthy,
            isIos: false,
-           purgeErrorMessage: 'Purge could not be completed. Try again.',
+           purgeError: MyDataPurgeError.generic,
          ),
        );
 

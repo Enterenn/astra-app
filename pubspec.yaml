@@ -1,29 +1,27 @@
 name: astra_app
 description: ASTRA — local-first health hub
 publish_to: 'none'
-version: 0.6.1+12
+version: 0.10.1+21
 
 environment:
   sdk: ^3.12.0
 dependencies:
   flutter:
     sdk: flutter
+  flutter_localizations:
+    sdk: flutter
   flutter_bloc: ^9.1.1
   sqflite: ^2.4.2+1
   path: ^1.9.1
-  uuid: ^4.4.0
   workmanager: ^0.9.0+3
   pedometer: ^4.2.0
   permission_handler: ^12.0.1
-  fl_chart: ^1.2.0
   flutter_local_notifications: ^21.0.0
-  share_plus: ^13.1.0
   path_provider: ^2.1.5
-  file_picker: ^12.0.0-beta.5
-  phosphoricons_flutter: ^1.0.0
-  figma_squircle: ^0.6.3
+  file_picker: 12.0.0-beta.5
   package_info_plus: ^10.1.0
 
+  intl: ^0.20.2
 dev_dependencies:
   flutter_test:
     sdk: flutter
@@ -41,6 +39,7 @@ hooks:
 
 flutter:
   uses-material-design: false
+  generate: true
   fonts:
     - family: Figtree
       fonts:
@@ -48,3 +47,9 @@ flutter:
     - family: Darker Grotesque
       fonts:
         - asset: assets/fonts/DarkerGrotesque-VariableFont_wght.ttf
+    - family: PhosphorRegular
+      fonts:
+        - asset: assets/fonts/Phosphor-Regular-subset.ttf
+    - family: PhosphorFill
+      fonts:
+        - asset: assets/fonts/Phosphor-Fill-subset.ttf

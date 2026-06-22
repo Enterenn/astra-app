@@ -6,9 +6,10 @@ import 'package:astra_app/data/models/chart_month_aggregate.dart';
 import 'package:astra_app/data/models/timeseries_sample_model.dart';
 import 'package:astra_app/data/datasources/data_ingestion_source.dart';
 import 'package:astra_app/data/models/normalized_step_bucket.dart';
-import 'package:astra_app/data/repositories/step_repository.dart';
-import 'package:astra_app/data/repositories/user_preferences_repository.dart';
-import 'package:astra_app/dev/data_inject_service.dart';
+import 'package:astra_app/data/contracts/contracts.dart';
+
+import 'package:astra_app/data/repositories/user_health_metrics_repository.dart';
+import '../../dev/data_inject_service.dart';
 import 'package:astra_app/presentation/cubits/history_cubit.dart';
 import 'package:astra_app/presentation/cubits/history_state.dart';
 import 'package:flutter_test/flutter_test.dart';
@@ -16,11 +17,34 @@ import 'package:sqflite/sqflite.dart';
 
 import '../../core/time/fake_time_provider.dart';
 import '../../helpers/sqflite_test_helper.dart';
+import 'package:astra_app/data/repositories/step/step_ingestion_repository.dart';
+import '../../helpers/step_test_fixtures.dart';
 
-class _ChartAggregateSpyRepository implements StepRepository {
+class _BatchGoalSpyHealthMetricsRepository extends UserHealthMetricsRepository {
+  _BatchGoalSpyHealthMetricsRepository(super.db, {super.clock});
+
+  int getGoalsForLocalDaysCallCount = 0;
+  int getGoalForLocalDayCallCount = 0;
+
+  @override
+  Future<Map<String, int>> getGoalsForLocalDays(
+    List<String> localDayIsos,
+  ) async {
+    getGoalsForLocalDaysCallCount++;
+    return super.getGoalsForLocalDays(localDayIsos);
+  }
+
+  @override
+  Future<int> getGoalForLocalDay(String localDayIso) async {
+    getGoalForLocalDayCallCount++;
+    return super.getGoalForLocalDay(localDayIso);
+  }
+}
+
+class _ChartAggregateSpyRepository implements StepAggregationRepositoryContract {
   _ChartAggregateSpyRepository(this._delegate);
 
-  final StepRepository _delegate;
+  final StepAggregationRepositoryContract _delegate;
   int chartAggregateCallCount = 0;
   int chartMonthlyAggregateCallCount = 0;
 
@@ -56,10 +80,10 @@ class _ChartAggregateSpyRepository implements StepRepository {
   }
 }
 
-class _ThrowingChartRepository implements StepRepository {
+class _ThrowingChartRepository implements StepAggregationRepositoryContract {
   _ThrowingChartRepository(this._fallback);
 
-  final StepRepository _fallback;
+  final StepAggregationRepositoryContract _fallback;
   int callCount = 0;
 
   @override
@@ -96,7 +120,7 @@ class _ThrowingChartRepository implements StepRepository {
   }
 }
 
-class _AlwaysThrowingChartRepository implements StepRepository {
+class _AlwaysThrowingChartRepository implements StepAggregationRepositoryContract {
   @override
   Future<List<ChartDayAggregate>> getChartDailyAggregates({
     required int days,
@@ -117,10 +141,10 @@ class _AlwaysThrowingChartRepository implements StepRepository {
   }
 }
 
-class _ThrowingBucketOnSecondRefreshRepository implements StepRepository {
+class _ThrowingBucketOnSecondRefreshRepository implements StepAggregationRepositoryContract {
   _ThrowingBucketOnSecondRefreshRepository(this._delegate);
 
-  final StepRepository _delegate;
+  final StepAggregationRepositoryContract _delegate;
   int refreshCount = 0;
 
   @override
@@ -164,9 +188,9 @@ void main() {
 
   group('HistoryCubit', () {
     late Database db;
-    late UserPreferencesRepository userPreferences;
+    late UserHealthMetricsRepository userHealthMetrics;
     late FakeTimeProvider clock;
-    late StepRepository stepRepository;
+    late StepTestRepos stepRepos;
 
     setUp(() async {
       db = await openAstraDatabase(databasePath: inMemoryDatabasePath);
@@ -174,60 +198,74 @@ void main() {
         fixedNowUtc: DateTime.utc(2026, 6, 2, 12),
         zoneOffset: const Duration(hours: 2),
       );
-      userPreferences = UserPreferencesRepository(db, clock: clock);
-      stepRepository = StepRepository(db: db, clock: clock);
+      userHealthMetrics = UserHealthMetricsRepository(db, clock: clock);
+      stepRepos = StepTestFixtures.create(db: db, clock: clock);
     });
 
     tearDown(() async {
       await db.close();
     });
 
-    HistoryCubit buildCubit({StepRepository? repository}) {
+    HistoryCubit buildCubit({
+      StepAggregationRepositoryContract? stepAggregation,
+      UserHealthMetricsRepositoryContract? healthMetrics,
+    }) {
       return HistoryCubit(
-        stepRepository: repository ?? stepRepository,
-        userPreferences: userPreferences,
+        stepAggregation: stepAggregation ?? stepRepos.aggregation,
+        userHealthMetrics: healthMetrics ?? userHealthMetrics,
       );
     }
 
-    test('starts in loading state', () {
-      final cubit = buildCubit();
-      expect(cubit.state.status, HistoryStatus.loading);
-      cubit.close();
-    });
+    // ── Empty state ──────────────────────────────────────────────────────────
 
-    test('refresh emits empty when database has no steps', () async {
-      final cubit = buildCubit();
+    test('empty DB: loading initial state, empty status, null trend/peakDay/periodAverages', () async {
+      // initial state is loading before any refresh
+      final c0 = buildCubit();
+      expect(c0.state.status, HistoryStatus.loading);
+      c0.close();
 
+      // after refresh: empty status with sensible zero-state
+      final cubit = buildCubit();
       await cubit.refresh();
-
       expect(cubit.state.status, HistoryStatus.empty);
       expect(cubit.state.chartPoints, isEmpty);
       expect(cubit.state.trend, isNull);
       expect(cubit.state.dailyGoal, kDefaultStepGoal);
+      expect(cubit.state.periodAverages, isNull);
+      expect(cubit.state.peakDay, isNull);
+      expect(cubit.state.insightAvailability?.hasMinimumHistory, isFalse);
+      expect(cubit.state.insightAvailability?.hasWeeklyComparison, isFalse);
       cubit.close();
     });
 
-    test('refresh emits ready with 7 chart points by default after inject', () async {
-      await DataInjectService(repository: stepRepository).inject90Days(
+    // ── Ready with data ──────────────────────────────────────────────────────
+
+    test('refresh emits ready: 7 chart points oldest-first with non-null trend after inject', () async {
+      await DataInjectService(repository: stepRepos.ingestion).inject90Days(
         clock: clock,
       );
       final cubit = buildCubit();
-
       await cubit.refresh();
 
       expect(cubit.state.status, HistoryStatus.ready);
       expect(cubit.state.chartPoints, hasLength(7));
       expect(cubit.state.chartPoints.first.totalSteps, greaterThan(0));
       expect(cubit.state.trend, isNotNull);
+      expect(
+        cubit.state.chartPoints.first.localDay.isBefore(
+          cubit.state.chartPoints.last.localDay,
+        ),
+        isTrue,
+      );
       cubit.close();
     });
 
     test('selectPeriod switches to 30-day slice without extra DB call', () async {
-      await DataInjectService(repository: stepRepository).inject90Days(
+      await DataInjectService(repository: stepRepos.ingestion).inject90Days(
         clock: clock,
       );
-      final spy = _ChartAggregateSpyRepository(stepRepository);
-      final cubit = buildCubit(repository: spy);
+      final spy = _ChartAggregateSpyRepository(stepRepos.aggregation);
+      final cubit = buildCubit(stepAggregation: spy);
 
       await cubit.refresh();
       expect(spy.chartAggregateCallCount, 1);
@@ -243,63 +281,38 @@ void main() {
       cubit.close();
     });
 
-    test('chart points are oldest-first for chart axis', () async {
-      await DataInjectService(repository: stepRepository).inject90Days(
-        clock: clock,
-      );
-      final cubit = buildCubit();
+    // ── Trend ────────────────────────────────────────────────────────────────
 
-      await cubit.refresh();
+    test('trend direction: up, down, and flat based on week-over-week comparison', () async {
+      // up: current week > prior week
+      await _seedTwoWeekPattern(stepRepos.ingestion);
+      final c1 = buildCubit();
+      await c1.refresh();
+      expect(c1.state.trend?.direction, TrendDirection.up);
+      expect(c1.state.trend?.percent, greaterThan(0));
+      c1.close();
 
-      final points = cubit.state.chartPoints;
-      expect(points.first.localDay.isBefore(points.last.localDay), isTrue);
-      cubit.close();
-    });
+      // down: current week < prior week
+      await db.delete('timeseries_samples');
+      await _seedTwoWeekPattern(stepRepos.ingestion, invert: true);
+      final c2 = buildCubit();
+      await c2.refresh();
+      expect(c2.state.trend?.direction, TrendDirection.down);
+      expect(c2.state.trend?.percent, greaterThan(0));
+      c2.close();
 
-    test('trend is hidden when both weeks have zero steps', () async {
-      final cubit = buildCubit();
-
-      await cubit.refresh();
-
-      expect(cubit.state.trend, isNull);
-      cubit.close();
-    });
-
-    test('trend shows up when current week exceeds prior week', () async {
-      await _seedTwoWeekPattern(stepRepository);
-      final cubit = buildCubit();
-
-      await cubit.refresh();
-
-      expect(cubit.state.trend?.direction, TrendDirection.up);
-      expect(cubit.state.trend?.label, contains('Up'));
-      cubit.close();
-    });
-
-    test('trend shows down when current week is below prior week', () async {
-      await _seedTwoWeekPattern(stepRepository, invert: true);
-      final cubit = buildCubit();
-
-      await cubit.refresh();
-
-      expect(cubit.state.trend?.direction, TrendDirection.down);
-      expect(cubit.state.trend?.label, contains('Down'));
-      cubit.close();
-    });
-
-    test('trend shows flat when weeks match', () async {
-      await _seedTwoWeekPattern(stepRepository, equalWeeks: true);
-      final cubit = buildCubit();
-
-      await cubit.refresh();
-
-      expect(cubit.state.trend?.direction, TrendDirection.flat);
-      expect(cubit.state.trend?.label, 'Same as last week');
-      cubit.close();
+      // flat: both weeks equal
+      await db.delete('timeseries_samples');
+      await _seedTwoWeekPattern(stepRepos.ingestion, equalWeeks: true);
+      final c3 = buildCubit();
+      await c3.refresh();
+      expect(c3.state.trend?.direction, TrendDirection.flat);
+      expect(c3.state.trend?.percent, 0);
+      c3.close();
     });
 
     test('trend shows no prior week copy when prior week is empty', () async {
-      await stepRepository.upsertIngestionBucket(
+      await stepRepos.ingestion.upsertIngestionBucket(
         _bucket(
           startTimeUtc: DateTime.utc(2026, 6, 2, 10),
           value: 5000,
@@ -307,20 +320,21 @@ void main() {
         ),
       );
       final cubit = buildCubit();
-
       await cubit.refresh();
 
       expect(cubit.state.trend?.direction, TrendDirection.flat);
-      expect(cubit.state.trend?.label, 'No prior week data');
+      expect(cubit.state.trend?.percent, isNull);
       cubit.close();
     });
 
+    // ── Concurrency & error resilience ───────────────────────────────────────
+
     test('concurrent refresh calls share one repository read', () async {
-      await DataInjectService(repository: stepRepository).inject90Days(
+      await DataInjectService(repository: stepRepos.ingestion).inject90Days(
         clock: clock,
       );
-      final spy = _ChartAggregateSpyRepository(stepRepository);
-      final cubit = buildCubit(repository: spy);
+      final spy = _ChartAggregateSpyRepository(stepRepos.aggregation);
+      final cubit = buildCubit(stepAggregation: spy);
 
       await Future.wait([cubit.refresh(), cubit.refresh()]);
 
@@ -329,11 +343,11 @@ void main() {
     });
 
     test('refresh recovers from cache when repository throws', () async {
-      await DataInjectService(repository: stepRepository).inject90Days(
+      await DataInjectService(repository: stepRepos.ingestion).inject90Days(
         clock: clock,
       );
-      final throwing = _ThrowingChartRepository(stepRepository);
-      final cubit = buildCubit(repository: throwing);
+      final throwing = _ThrowingChartRepository(stepRepos.aggregation);
+      final cubit = buildCubit(stepAggregation: throwing);
 
       await cubit.refresh();
       expect(cubit.state.status, HistoryStatus.ready);
@@ -348,18 +362,17 @@ void main() {
       expect(cubit.state.periodAverages?.averageKcal, averagesBefore?.averageKcal);
       expect(cubit.state.peakDay?.totalSteps, peakDayBefore?.totalSteps);
       expect(cubit.state.peakDay?.localDay, peakDayBefore?.localDay);
-      expect(cubit.state.peakDay?.dateLabel, peakDayBefore?.dateLabel);
       cubit.close();
     });
 
     test(
       'refresh keeps chart and periodAverages consistent when bucket fetch fails',
       () async {
-        await DataInjectService(repository: stepRepository).inject90Days(
+        await DataInjectService(repository: stepRepos.ingestion).inject90Days(
           clock: clock,
         );
-        final throwing = _ThrowingBucketOnSecondRefreshRepository(stepRepository);
-        final cubit = buildCubit(repository: throwing);
+        final throwing = _ThrowingBucketOnSecondRefreshRepository(stepRepos.aggregation);
+        final cubit = buildCubit(stepAggregation: throwing);
 
         await cubit.refresh();
         expect(cubit.state.status, HistoryStatus.ready);
@@ -371,23 +384,16 @@ void main() {
         await cubit.refresh(silent: true);
 
         expect(cubit.state.status, HistoryStatus.ready);
-        expect(
-          cubit.state.periodAverages?.averageSteps,
-          averagesBefore?.averageSteps,
-        );
-        expect(
-          cubit.state.periodAverages?.averageKcal,
-          averagesBefore?.averageKcal,
-        );
+        expect(cubit.state.periodAverages?.averageSteps, averagesBefore?.averageSteps);
+        expect(cubit.state.periodAverages?.averageKcal, averagesBefore?.averageKcal);
         expect(cubit.state.peakDay?.totalSteps, peakDayBefore?.totalSteps);
         expect(cubit.state.peakDay?.localDay, peakDayBefore?.localDay);
-        expect(cubit.state.peakDay?.dateLabel, peakDayBefore?.dateLabel);
         cubit.close();
       },
     );
 
     test('refresh leaves empty state when repository throws with no cache', () async {
-      final cubit = buildCubit(repository: _AlwaysThrowingChartRepository());
+      final cubit = buildCubit(stepAggregation: _AlwaysThrowingChartRepository());
 
       await cubit.refresh();
 
@@ -395,17 +401,19 @@ void main() {
       cubit.close();
     });
 
+    // ── refreshGoal ──────────────────────────────────────────────────────────
+
     test('refreshGoal updates daily goal without chart repository call', () async {
-      await DataInjectService(repository: stepRepository).inject90Days(
+      await DataInjectService(repository: stepRepos.ingestion).inject90Days(
         clock: clock,
       );
-      final spy = _ChartAggregateSpyRepository(stepRepository);
-      final cubit = buildCubit(repository: spy);
+      final spy = _ChartAggregateSpyRepository(stepRepos.aggregation);
+      final cubit = buildCubit(stepAggregation: spy);
 
       await cubit.refresh();
       expect(spy.chartAggregateCallCount, 1);
 
-      await userPreferences.setDailyStepGoal(12_000);
+      await userHealthMetrics.setDailyStepGoal(12_000);
       await cubit.refreshGoal();
 
       expect(spy.chartAggregateCallCount, 1);
@@ -413,6 +421,8 @@ void main() {
       expect(cubit.state.status, HistoryStatus.ready);
       cubit.close();
     });
+
+    // ── goalsByDay ───────────────────────────────────────────────────────────
 
     test('refresh resolves goalsByDay for chart window', () async {
       await db.insert('daily_goal_effective', {
@@ -424,7 +434,7 @@ void main() {
         'goal': 10000,
       });
       for (var dayOffset = 0; dayOffset < 7; dayOffset++) {
-        await stepRepository.upsertIngestionBucket(
+        await stepRepos.ingestion.upsertIngestionBucket(
           _bucket(
             startTimeUtc: DateTime.utc(2026, 6, 2 - dayOffset, 10),
             value: 5000,
@@ -433,7 +443,6 @@ void main() {
         );
       }
       final cubit = buildCubit();
-
       await cubit.refresh();
 
       expect(cubit.state.goalsByDay['2026-05-27'], 8000);
@@ -447,28 +456,28 @@ void main() {
         'effective_from_local_day': '2026-06-01',
         'goal': 8000,
       });
-      await stepRepository.upsertIngestionBucket(
+      await stepRepos.ingestion.upsertIngestionBucket(
         _bucket(
           startTimeUtc: DateTime.utc(2026, 6, 1, 10),
           value: 5000,
           zoneOffset: '+02:00',
         ),
       );
-      await stepRepository.upsertIngestionBucket(
+      await stepRepos.ingestion.upsertIngestionBucket(
         _bucket(
           startTimeUtc: DateTime.utc(2026, 6, 2, 10),
           value: 5000,
           zoneOffset: '+02:00',
         ),
       );
-      final spy = _ChartAggregateSpyRepository(stepRepository);
-      final cubit = buildCubit(repository: spy);
+      final spy = _ChartAggregateSpyRepository(stepRepos.aggregation);
+      final cubit = buildCubit(stepAggregation: spy);
 
       await cubit.refresh();
       expect(cubit.state.goalsByDay['2026-06-01'], 8000);
       expect(cubit.state.goalsByDay['2026-06-02'], 8000);
 
-      await userPreferences.setDailyStepGoal(12_000);
+      await userHealthMetrics.setDailyStepGoal(12_000);
       await cubit.refreshGoal();
 
       expect(spy.chartAggregateCallCount, 1);
@@ -478,35 +487,61 @@ void main() {
       cubit.close();
     });
 
-    test(
-      'refresh defaults to 30d when last 7 days are empty but older days have steps',
-      () async {
-        for (var dayOffset = 14; dayOffset < 21; dayOffset++) {
-          await stepRepository.upsertIngestionBucket(
-            _bucket(
-              startTimeUtc: DateTime.utc(2026, 6, 2 - dayOffset, 10),
-              value: 3000,
-              zoneOffset: '+02:00',
-            ),
-          );
-        }
-        final cubit = buildCubit();
+    test('batch goal resolution: single getGoalsForLocalDays call on refresh and refreshGoal', () async {
+      await DataInjectService(repository: stepRepos.ingestion).inject90Days(
+        clock: clock,
+      );
+      final prefsSpy = _BatchGoalSpyHealthMetricsRepository(db, clock: clock);
+      final cubit = buildCubit(healthMetrics: prefsSpy);
 
-        await cubit.refresh();
+      await cubit.refresh();
+      expect(prefsSpy.getGoalsForLocalDaysCallCount, 1);
+      expect(
+        prefsSpy.getGoalForLocalDayCallCount,
+        1,
+        reason: 'only _resolveTodayGoal should call getGoalForLocalDay',
+      );
+      expect(cubit.state.status, HistoryStatus.ready);
 
-        expect(cubit.state.period, HistoryPeriod.days30);
-        expect(cubit.state.chartPoints, hasLength(30));
-        expect(
-          cubit.state.chartPoints.any((p) => p.totalSteps > 0),
-          isTrue,
+      // reset counters and verify refreshGoal also uses batch resolution
+      prefsSpy.getGoalsForLocalDaysCallCount = 0;
+      prefsSpy.getGoalForLocalDayCallCount = 0;
+      await prefsSpy.setDailyStepGoal(12_000);
+      await cubit.refreshGoal();
+
+      expect(prefsSpy.getGoalsForLocalDaysCallCount, 1);
+      expect(prefsSpy.getGoalForLocalDayCallCount, 1);
+      expect(cubit.state.dailyGoal, 12_000);
+      cubit.close();
+    });
+
+    // ── Auto-period selection ────────────────────────────────────────────────
+
+    test('refresh defaults to 30d when last 7 days are empty but older days have steps', () async {
+      for (var dayOffset = 14; dayOffset < 21; dayOffset++) {
+        await stepRepos.ingestion.upsertIngestionBucket(
+          _bucket(
+            startTimeUtc: DateTime.utc(2026, 6, 2 - dayOffset, 10),
+            value: 3000,
+            zoneOffset: '+02:00',
+          ),
         );
-        cubit.close();
-      },
-    );
+      }
+      final cubit = buildCubit();
+      await cubit.refresh();
 
-    test('periodAverages reflects arithmetic mean of steps in 7d window', () async {
+      expect(cubit.state.period, HistoryPeriod.days30);
+      expect(cubit.state.chartPoints, hasLength(30));
+      expect(cubit.state.chartPoints.any((p) => p.totalSteps > 0), isTrue);
+      cubit.close();
+    });
+
+    // ── periodAverages ───────────────────────────────────────────────────────
+
+    test('periodAverages: arithmetic mean across 7 days, includes zero-step days in denominator', () async {
+      // 7 equal days → mean = 1000
       for (var dayOffset = 0; dayOffset < 7; dayOffset++) {
-        await stepRepository.upsertIngestionBucket(
+        await stepRepos.ingestion.upsertIngestionBucket(
           _bucket(
             startTimeUtc: DateTime.utc(2026, 6, 2 - dayOffset, 10),
             value: 1000,
@@ -514,32 +549,28 @@ void main() {
           ),
         );
       }
-      final cubit = buildCubit();
+      final c1 = buildCubit();
+      await c1.refresh();
+      expect(c1.state.periodAverages?.averageSteps, 1000);
+      c1.close();
 
-      await cubit.refresh();
-
-      expect(cubit.state.periodAverages?.averageSteps, 1000);
-      cubit.close();
-    });
-
-    test('periodAverages includes zero-step days in denominator', () async {
-      await stepRepository.upsertIngestionBucket(
+      // 1 day × 7000 over 7-day window also averages to 1000 (zero days counted)
+      await db.delete('timeseries_samples');
+      await stepRepos.ingestion.upsertIngestionBucket(
         _bucket(
           startTimeUtc: DateTime.utc(2026, 6, 2, 10),
           value: 7000,
           zoneOffset: '+02:00',
         ),
       );
-      final cubit = buildCubit();
-
-      await cubit.refresh();
-
-      expect(cubit.state.periodAverages?.averageSteps, 1000);
-      cubit.close();
+      final c2 = buildCubit();
+      await c2.refresh();
+      expect(c2.state.periodAverages?.averageSteps, 1000);
+      c2.close();
     });
 
     test('periodAverages kcal uses bucket-based DerivedActivityMetrics', () async {
-      await stepRepository.upsertIngestionBucket(
+      await stepRepos.ingestion.upsertIngestionBucket(
         _bucket(
           startTimeUtc: DateTime.utc(2026, 6, 2, 10),
           value: 100,
@@ -547,7 +578,6 @@ void main() {
         ),
       );
       final cubit = buildCubit();
-
       await cubit.refresh();
 
       expect(cubit.state.periodAverages?.averageKcal, greaterThan(0));
@@ -558,7 +588,7 @@ void main() {
       'selectPeriod updates periodAverages from cache without extra chart query',
       () async {
         for (var dayOffset = 0; dayOffset < 10; dayOffset++) {
-          await stepRepository.upsertIngestionBucket(
+          await stepRepos.ingestion.upsertIngestionBucket(
             _bucket(
               startTimeUtc: DateTime.utc(2026, 6, 2 - dayOffset, 10),
               value: 1000,
@@ -566,8 +596,8 @@ void main() {
             ),
           );
         }
-        final spy = _ChartAggregateSpyRepository(stepRepository);
-        final cubit = buildCubit(repository: spy);
+        final spy = _ChartAggregateSpyRepository(stepRepos.aggregation);
+        final cubit = buildCubit(stepAggregation: spy);
 
         await cubit.refresh();
         expect(spy.chartAggregateCallCount, 1);
@@ -585,86 +615,49 @@ void main() {
       },
     );
 
-    test('refresh emits null periodAverages when empty', () async {
-      final cubit = buildCubit();
+    // ── peakDay ──────────────────────────────────────────────────────────────
 
-      await cubit.refresh();
-
-      expect(cubit.state.periodAverages, isNull);
-      cubit.close();
-    });
-
-    test(
-      'selectPeriod to 7d with zero-step window emits null periodAverages',
-      () async {
-        for (var dayOffset = 14; dayOffset < 21; dayOffset++) {
-          await stepRepository.upsertIngestionBucket(
-            _bucket(
-              startTimeUtc: DateTime.utc(2026, 6, 2 - dayOffset, 10),
-              value: 3000,
-              zoneOffset: '+02:00',
-            ),
-          );
-        }
-        final cubit = buildCubit();
-
-        await cubit.refresh();
-        expect(cubit.state.period, HistoryPeriod.days30);
-        expect(cubit.state.periodAverages, isNotNull);
-
-        cubit.selectPeriod(HistoryPeriod.days7);
-        expect(cubit.state.period, HistoryPeriod.days7);
-        expect(cubit.state.periodAverages, isNull);
-        cubit.close();
-      },
-    );
-
-    test('peakDay selects day with maximum steps in 7d window', () async {
-      final stepValues = [3000, 5000, 2000, 8000, 1000, 4000, 6000];
-      for (var dayOffset = 0; dayOffset < 7; dayOffset++) {
-        await stepRepository.upsertIngestionBucket(
+    test('peakDay: selects max-step day, tie-breaks to most recent', () async {
+      final maxValues = [3000, 5000, 2000, 8000, 1000, 4000, 6000];
+      for (var i = 0; i < 7; i++) {
+        await stepRepos.ingestion.upsertIngestionBucket(
           _bucket(
-            startTimeUtc: DateTime.utc(2026, 6, 2 - dayOffset, 10),
-            value: stepValues[dayOffset],
+            startTimeUtc: DateTime.utc(2026, 6, 2 - i, 10),
+            value: maxValues[i],
             zoneOffset: '+02:00',
           ),
         );
       }
-      final cubit = buildCubit();
+      final c1 = buildCubit();
+      await c1.refresh();
+      expect(c1.state.peakDay?.totalSteps, 8000);
+      expect(c1.state.peakDay?.localDay, DateTime.utc(2026, 5, 30));
+      c1.close();
 
-      await cubit.refresh();
-
-      expect(cubit.state.peakDay?.totalSteps, 8000);
-      expect(cubit.state.peakDay?.localDay, DateTime.utc(2026, 5, 30));
-      expect(cubit.state.peakDay?.dateLabel, 'Sat 30');
-      cubit.close();
-    });
-
-    test('peakDay tie-break keeps most recent day with equal max steps', () async {
-      final stepValues = [8000, 5000, 8000, 3000, 2000, 1000, 4000];
-      for (var dayOffset = 0; dayOffset < 7; dayOffset++) {
-        await stepRepository.upsertIngestionBucket(
+      // tie-break: most recent day wins
+      await db.delete('timeseries_samples');
+      final tieValues = [8000, 5000, 8000, 3000, 2000, 1000, 4000];
+      for (var i = 0; i < 7; i++) {
+        await stepRepos.ingestion.upsertIngestionBucket(
           _bucket(
-            startTimeUtc: DateTime.utc(2026, 6, 2 - dayOffset, 10),
-            value: stepValues[dayOffset],
+            startTimeUtc: DateTime.utc(2026, 6, 2 - i, 10),
+            value: tieValues[i],
             zoneOffset: '+02:00',
           ),
         );
       }
-      final cubit = buildCubit();
-
-      await cubit.refresh();
-
-      expect(cubit.state.peakDay?.totalSteps, 8000);
-      expect(cubit.state.peakDay?.localDay, DateTime.utc(2026, 6, 2));
-      cubit.close();
+      final c2 = buildCubit();
+      await c2.refresh();
+      expect(c2.state.peakDay?.totalSteps, 8000);
+      expect(c2.state.peakDay?.localDay, DateTime.utc(2026, 6, 2));
+      c2.close();
     });
 
     test(
       'selectPeriod updates peakDay from cache without extra chart query',
       () async {
         for (var dayOffset = 0; dayOffset < 10; dayOffset++) {
-          await stepRepository.upsertIngestionBucket(
+          await stepRepos.ingestion.upsertIngestionBucket(
             _bucket(
               startTimeUtc: DateTime.utc(2026, 6, 2 - dayOffset, 10),
               value: dayOffset == 9 ? 9000 : 1000,
@@ -672,8 +665,8 @@ void main() {
             ),
           );
         }
-        final spy = _ChartAggregateSpyRepository(stepRepository);
-        final cubit = buildCubit(repository: spy);
+        final spy = _ChartAggregateSpyRepository(stepRepos.aggregation);
+        final cubit = buildCubit(stepAggregation: spy);
 
         await cubit.refresh();
         expect(spy.chartAggregateCallCount, 1);
@@ -682,7 +675,6 @@ void main() {
         cubit.selectPeriod(HistoryPeriod.days30);
         expect(spy.chartAggregateCallCount, 1);
         expect(cubit.state.peakDay?.totalSteps, 9000);
-        expect(cubit.state.peakDay?.dateLabel, '24/5');
 
         cubit.selectPeriod(HistoryPeriod.days7);
         expect(spy.chartAggregateCallCount, 1);
@@ -691,9 +683,9 @@ void main() {
       },
     );
 
-    test('peakDay is null when active window has no steps', () async {
+    test('7d window with no steps: null peakDay and null periodAverages after selectPeriod', () async {
       for (var dayOffset = 14; dayOffset < 21; dayOffset++) {
-        await stepRepository.upsertIngestionBucket(
+        await stepRepos.ingestion.upsertIngestionBucket(
           _bucket(
             startTimeUtc: DateTime.utc(2026, 6, 2 - dayOffset, 10),
             value: 3000,
@@ -702,50 +694,30 @@ void main() {
         );
       }
       final cubit = buildCubit();
-
       await cubit.refresh();
       expect(cubit.state.period, HistoryPeriod.days30);
       expect(cubit.state.peakDay, isNotNull);
+      expect(cubit.state.periodAverages, isNotNull);
 
       cubit.selectPeriod(HistoryPeriod.days7);
       expect(cubit.state.peakDay, isNull);
+      expect(cubit.state.periodAverages, isNull);
       cubit.close();
     });
 
-    test('refresh emits null peakDay when empty', () async {
-      final cubit = buildCubit();
+    // ── Monthly chart ────────────────────────────────────────────────────────
 
-      await cubit.refresh();
-
-      expect(cubit.state.peakDay, isNull);
-      cubit.close();
-    });
-
-    test('refresh fetches monthly aggregates in parallel with daily', () async {
-      await DataInjectService(repository: stepRepository).inject90Days(
+    test('monthly chart: parallel fetch, cache on period toggle, oldest-first ordering', () async {
+      await DataInjectService(repository: stepRepos.ingestion).inject90Days(
         clock: clock,
       );
-      final spy = _ChartAggregateSpyRepository(stepRepository);
-      final cubit = buildCubit(repository: spy);
-
-      await cubit.refresh();
-
-      expect(spy.chartAggregateCallCount, 1);
-      expect(spy.chartMonthlyAggregateCallCount, 1);
-      expect(cubit.state.monthlyChartPoints, isEmpty);
-      cubit.close();
-    });
-
-    test('selectPeriod months12 uses cache without extra repository calls', () async {
-      await DataInjectService(repository: stepRepository).inject90Days(
-        clock: clock,
-      );
-      final spy = _ChartAggregateSpyRepository(stepRepository);
-      final cubit = buildCubit(repository: spy);
+      final spy = _ChartAggregateSpyRepository(stepRepos.aggregation);
+      final cubit = buildCubit(stepAggregation: spy);
 
       await cubit.refresh();
       expect(spy.chartAggregateCallCount, 1);
       expect(spy.chartMonthlyAggregateCallCount, 1);
+      expect(cubit.state.monthlyChartPoints, isEmpty);
 
       cubit.selectPeriod(HistoryPeriod.months12);
       expect(spy.chartAggregateCallCount, 1);
@@ -756,6 +728,11 @@ void main() {
       expect(cubit.state.trend, isNull);
       expect(cubit.state.periodAverages, isNull);
       expect(cubit.state.peakDay, isNull);
+      expect(cubit.state.insightAvailability, isNull);
+
+      // oldest-first ordering
+      final points = cubit.state.monthlyChartPoints;
+      expect(points.first.monthStart.isBefore(points.last.monthStart), isTrue);
 
       cubit.selectPeriod(HistoryPeriod.days7);
       expect(spy.chartAggregateCallCount, 1);
@@ -763,25 +740,10 @@ void main() {
       cubit.close();
     });
 
-    test('monthly chart points are oldest-first for chart axis', () async {
-      await DataInjectService(repository: stepRepository).inject90Days(
-        clock: clock,
-      );
-      final cubit = buildCubit();
-
-      await cubit.refresh();
-      cubit.selectPeriod(HistoryPeriod.months12);
-
-      final points = cubit.state.monthlyChartPoints;
-      expect(points, hasLength(12));
-      expect(points.first.monthStart.isBefore(points.last.monthStart), isTrue);
-      cubit.close();
-    });
-
     test(
       'refresh emits ready when 30d sum is zero but twelve-month window has steps',
       () async {
-        await stepRepository.upsertIngestionBucket(
+        await stepRepos.ingestion.upsertIngestionBucket(
           _bucket(
             startTimeUtc: DateTime.utc(2026, 4, 15, 10),
             value: 5000,
@@ -789,7 +751,6 @@ void main() {
           ),
         );
         final cubit = buildCubit();
-
         await cubit.refresh();
 
         expect(cubit.state.status, HistoryStatus.ready);
@@ -798,11 +759,164 @@ void main() {
         cubit.close();
       },
     );
+
+    // ── Local insight cards (Story 20-2) ─────────────────────────────────────
+
+    test('insights: fewer than seven days with steps yields empty availability', () async {
+      for (var dayOffset = 0; dayOffset < 6; dayOffset++) {
+        await stepRepos.ingestion.upsertIngestionBucket(
+          _bucket(
+            startTimeUtc: DateTime.utc(2026, 6, 2 - dayOffset, 10),
+            value: 1000,
+            zoneOffset: '+02:00',
+          ),
+        );
+      }
+      final cubit = buildCubit();
+      await cubit.refresh();
+
+      expect(cubit.state.status, HistoryStatus.ready);
+      expect(cubit.state.insightAvailability?.hasMinimumHistory, isFalse);
+      expect(cubit.state.mostActiveWeekday, isNull);
+      expect(cubit.state.goalStreak, isNull);
+      cubit.close();
+    });
+
+    test('insights: seven to thirteen days enables weekday and streak but not weekly', () async {
+      for (var dayOffset = 0; dayOffset < 10; dayOffset++) {
+        await stepRepos.ingestion.upsertIngestionBucket(
+          _bucket(
+            startTimeUtc: DateTime.utc(2026, 6, 2 - dayOffset, 10),
+            value: 1000 + dayOffset,
+            zoneOffset: '+02:00',
+          ),
+        );
+      }
+      final cubit = buildCubit();
+      await cubit.refresh();
+
+      expect(cubit.state.insightAvailability?.hasMinimumHistory, isTrue);
+      expect(cubit.state.insightAvailability?.hasWeeklyComparison, isFalse);
+      expect(cubit.state.mostActiveWeekday, isNotNull);
+      expect(cubit.state.goalStreak, isNotNull);
+      cubit.close();
+    });
+
+    test('mostActiveWeekday: selects highest weekday average with tie-break', () async {
+      // Seed 14 days: Tuesdays get 5000, other weekdays get 1000.
+      for (var dayOffset = 0; dayOffset < 14; dayOffset++) {
+        final day = DateTime.utc(2026, 6, 2 - dayOffset, 10);
+        final isTuesday = day.weekday == DateTime.tuesday;
+        await stepRepos.ingestion.upsertIngestionBucket(
+          _bucket(
+            startTimeUtc: day,
+            value: isTuesday ? 5000 : 1000,
+            zoneOffset: '+02:00',
+          ),
+        );
+      }
+      final cubit = buildCubit();
+      await cubit.refresh();
+
+      expect(cubit.state.mostActiveWeekday?.weekday, DateTime.tuesday);
+      cubit.close();
+
+      // Tie-break: equal averages, higher sum wins (two Tuesdays at 8000 vs one Wednesday at 8000).
+      await db.delete('timeseries_samples');
+      for (final dayOffset in [0, 7, 1, 8, 2, 9, 3]) {
+        final day = DateTime.utc(2026, 6, 2 - dayOffset, 10);
+        final isTuesday = day.weekday == DateTime.tuesday;
+        await stepRepos.ingestion.upsertIngestionBucket(
+          _bucket(
+            startTimeUtc: day,
+            value: isTuesday ? 8000 : 1000,
+            zoneOffset: '+02:00',
+          ),
+        );
+      }
+      final c2 = buildCubit();
+      await c2.refresh();
+      expect(c2.state.mostActiveWeekday?.weekday, DateTime.tuesday);
+      c2.close();
+    });
+
+    test(
+      'mostActiveWeekday: equal average and sum tie-breaks to most recent weekday',
+      () async {
+        // Two Mondays and two Tuesdays at 5000 each — same avg (5000) and sum (10000).
+        // June 2 2026 is Tuesday (index 0); June 1 is Monday (index 1) → Tuesday wins.
+        for (final dayOffset in [0, 7, 1, 8, 2, 3, 4]) {
+          final day = DateTime.utc(2026, 6, 2 - dayOffset, 10);
+          final isMonOrTue =
+              day.weekday == DateTime.monday || day.weekday == DateTime.tuesday;
+          await stepRepos.ingestion.upsertIngestionBucket(
+            _bucket(
+              startTimeUtc: day,
+              value: isMonOrTue ? 5000 : 1000,
+              zoneOffset: '+02:00',
+            ),
+          );
+        }
+        final cubit = buildCubit();
+        await cubit.refresh();
+
+        expect(cubit.state.insightAvailability?.hasMinimumHistory, isTrue);
+        expect(cubit.state.mostActiveWeekday?.weekday, DateTime.tuesday);
+        cubit.close();
+      },
+    );
+
+    test('goalStreak: counts consecutive days above goal and respects goalsByDay', () async {
+      await db.insert('daily_goal_effective', {
+        'effective_from_local_day': '2026-06-01',
+        'goal': 8000,
+      });
+      for (var dayOffset = 0; dayOffset < 10; dayOffset++) {
+        await stepRepos.ingestion.upsertIngestionBucket(
+          _bucket(
+            startTimeUtc: DateTime.utc(2026, 6, 2 - dayOffset, 10),
+            value: dayOffset <= 2 ? 9000 : (dayOffset == 3 ? 3000 : 5000),
+            zoneOffset: '+02:00',
+          ),
+        );
+      }
+      final cubit = buildCubit();
+      await cubit.refresh();
+
+      expect(cubit.state.goalStreak?.consecutiveDays, 3);
+      cubit.close();
+    });
+
+    test(
+      'selectPeriod updates insights from cache without extra chart query',
+      () async {
+        await DataInjectService(repository: stepRepos.ingestion).inject90Days(
+          clock: clock,
+        );
+        final spy = _ChartAggregateSpyRepository(stepRepos.aggregation);
+        final cubit = buildCubit(stepAggregation: spy);
+
+        await cubit.refresh();
+        expect(spy.chartAggregateCallCount, 1);
+        final weekday7d = cubit.state.mostActiveWeekday?.weekday;
+        final streak7d = cubit.state.goalStreak?.consecutiveDays;
+
+        cubit.selectPeriod(HistoryPeriod.days30);
+        expect(spy.chartAggregateCallCount, 1);
+        expect(cubit.state.mostActiveWeekday?.weekday, weekday7d);
+        expect(cubit.state.goalStreak?.consecutiveDays, streak7d);
+        expect(cubit.state.insightAvailability?.hasMinimumHistory, isTrue);
+
+        cubit.selectPeriod(HistoryPeriod.days7);
+        expect(spy.chartAggregateCallCount, 1);
+        cubit.close();
+      },
+    );
   });
 }
 
 Future<void> _seedTwoWeekPattern(
-  StepRepository repository, {
+  StepIngestionRepository repository, {
   bool invert = false,
   bool equalWeeks = false,
 }) async {

@@ -3,22 +3,22 @@ import 'dart:io';
 import 'package:astra_app/core/database/app_database.dart';
 import 'package:astra_app/data/datasources/data_ingestion_source.dart';
 import 'package:astra_app/data/models/normalized_step_bucket.dart';
-import 'package:astra_app/data/repositories/step_repository.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:path/path.dart' as p;
 import 'package:sqflite/sqflite.dart';
 
 import '../../core/time/fake_time_provider.dart';
 import '../../helpers/sqflite_test_helper.dart';
+import '../../helpers/step_test_fixtures.dart';
 
 void main() {
   setUpAll(() async {
     await setUpSqfliteFfi();
   });
 
-  group('StepRepository.getFootprint', () {
+  group('StepAggregationRepository.getFootprint', () {
     late Database db;
-    late StepRepository repository;
+    late StepTestRepos stepRepos;
     late FakeTimeProvider clock;
 
     setUp(() async {
@@ -27,7 +27,7 @@ void main() {
         fixedNowUtc: DateTime.utc(2026, 6, 2, 8),
         zoneOffset: const Duration(hours: 2),
       );
-      repository = StepRepository(db: db, clock: clock);
+      stepRepos = StepTestFixtures.create(db: db, clock: clock);
     });
 
     tearDown(() async {
@@ -35,7 +35,7 @@ void main() {
     });
 
     test('returns zero count and zero file size for empty in-memory DB', () async {
-      final footprint = await repository.getFootprint(
+      final footprint = await stepRepos.aggregation.getFootprint(
         databasePath: inMemoryDatabasePath,
       );
 
@@ -44,20 +44,20 @@ void main() {
     });
 
     test('sample count matches injected step samples', () async {
-      await repository.upsertIngestionBucket(
+      await stepRepos.ingestion.upsertIngestionBucket(
         _bucket(
           startTimeUtc: DateTime.utc(2026, 6, 2, 8),
           endTimeUtc: DateTime.utc(2026, 6, 2, 8, 5),
         ),
       );
-      await repository.upsertIngestionBucket(
+      await stepRepos.ingestion.upsertIngestionBucket(
         _bucket(
           startTimeUtc: DateTime.utc(2026, 6, 2, 8, 5),
           endTimeUtc: DateTime.utc(2026, 6, 2, 8, 10),
         ),
       );
 
-      final footprint = await repository.getFootprint(
+      final footprint = await stepRepos.aggregation.getFootprint(
         databasePath: inMemoryDatabasePath,
       );
 
@@ -74,16 +74,16 @@ void main() {
       });
 
       final fileDb = await openAstraDatabase(databasePath: databasePath);
-      final fileRepository = StepRepository(db: fileDb, clock: clock);
+      final fileStepRepos = StepTestFixtures.create(db: fileDb, clock: clock);
 
-      await fileRepository.upsertIngestionBucket(
+      await fileStepRepos.ingestion.upsertIngestionBucket(
         _bucket(
           startTimeUtc: DateTime.utc(2026, 6, 2, 8),
           endTimeUtc: DateTime.utc(2026, 6, 2, 8, 5),
         ),
       );
 
-      final footprint = await fileRepository.getFootprint(
+      final footprint = await fileStepRepos.aggregation.getFootprint(
         databasePath: databasePath,
       );
 

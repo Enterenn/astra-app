@@ -36,6 +36,20 @@ Future stories must **not** re-add these files unless behavior regresses. Prefer
 
 Do **not** split these back into separate files unless a group grows substantially (>15 cases).
 
-## Follow-up (Phase C)
+## Phase C — Slow-tag and assertion merges (2026-06-19)
 
-- Tag `test/dev/` with `@Tags(['dev'])` and exclude from CI.
+| Action | Result |
+|--------|--------|
+| `@Tags(['slow']) library;` on `test/dev/data_inject_service_test.dart` | 5 heavy-I/O tests excluded by `--exclude-tags slow` |
+| `@Tags(['slow']) library;` on `test/dev/lifecycle_simulator_test.dart` | 5 compaction tests excluded |
+| `@Tags(['slow']) library;` on `test/dev/chart_benchmark_test.dart` | 11 benchmark tests excluded |
+| `@Tags(['slow']) library;` on `test/app_live_pipeline_lifecycle_test.dart` | 16 flaky/slow integration tests excluded |
+| `dart_test.yaml` updated with `tags: slow: {}` and usage docs | `flutter test --exclude-tags slow` is now the daily default |
+| `today_cubit_test.dart` assertion merges | 62 → 39 tests (−37 %) |
+| `user_preferences_repository_test.dart` assertion merges | 46 → 11 tests (−76 %) |
+| `history_cubit_test.dart` assertion merges | 35 → 24 tests (−31 %) |
+
+**Daily command:** `flutter test --exclude-tags slow`
+**Full suite (CI / epic close):** `flutter test`
+
+Note: tag name chosen as `slow` (not `dev`) to reflect the exclusion reason (runtime cost) rather than the folder location.

@@ -5,14 +5,112 @@ import 'package:flutter/material.dart';
 
 import 'astra_inset_shadow.dart';
 
+/// Bitmap cache for [paintGoalRingTrackInnerShadow].
+///
+/// Create once in [_GoalRingState] and dispose in [State.dispose].
+/// The shadow is static between layout changes, so it is rendered once
+/// into a [ui.Image] and re-drawn with a cheap [Canvas.drawImage] call on
+/// every subsequent frame (REF-08 / NFR-REF-01).
+class GoalRingInsetShadowCache {
+  ui.Image? _image;
+  Size? _size;
+  double? _devicePixelRatio;
+
+  /// Returns true when the cached bitmap matches [size] and [devicePixelRatio].
+  bool isValid(Size size, double devicePixelRatio) =>
+      _image != null &&
+      _size == size &&
+      _devicePixelRatio == devicePixelRatio;
+
+  /// Stores [image] as the cached bitmap for [size], disposing the previous one.
+  void update(ui.Image image, Size size, double devicePixelRatio) {
+    _image?.dispose();
+    _image = image;
+    _size = size;
+    _devicePixelRatio = devicePixelRatio;
+  }
+
+  /// Releases the cached bitmap. Call from [State.dispose].
+  void dispose() {
+    _image?.dispose();
+    _image = null;
+    _size = null;
+    _devicePixelRatio = null;
+  }
+}
+
+ui.Image _rasterizeInsetShadowPicture({
+  required ui.Picture picture,
+  required Size logicalSize,
+  required double devicePixelRatio,
+}) {
+  final image = picture.toImageSync(
+    (logicalSize.width * devicePixelRatio).ceil(),
+    (logicalSize.height * devicePixelRatio).ceil(),
+  );
+  picture.dispose();
+  return image;
+}
+
+void _blitInsetShadowImage(Canvas canvas, ui.Image image, Size logicalSize) {
+  canvas.drawImageRect(
+    image,
+    Rect.fromLTWH(0, 0, image.width.toDouble(), image.height.toDouble()),
+    Rect.fromLTWH(0, 0, logicalSize.width, logicalSize.height),
+    Paint(),
+  );
+}
+
 /// Paints an inset shadow at the top of the goal ring track (annulus).
 ///
-/// Technique (adapted from the neumorphism pattern): clip to the annulus, then
-/// draw only the **top half arc** of the outer circle as a thick blurred stroke,
-/// shifted down by [kAstraInsetShadowOffsetY].  Because only the upper arc is
-/// used as the shadow source, the blur bleeds inward from the top of the ring
-/// only — there is no shadow artefact at the bottom.
+/// On the first call (or after [size] changes), the shadow is rendered into an
+/// offscreen bitmap via [ui.Picture.toImageSync] and stored in [cache].
+/// Subsequent frames with the same size call [Canvas.drawImage] — one trivially
+/// cheap GPU blit instead of a full [ui.ImageFilter.blur] save-layer.
+///
+/// Technique: clip to the annulus, then draw only the **top half arc** of the
+/// outer circle as a thick blurred stroke shifted down by [kAstraInsetShadowOffsetY].
+/// The blur bleeds inward from the top only — no artefact at the bottom.
 void paintGoalRingTrackInnerShadow(
+  Canvas canvas,
+  Path annulusPath,
+  Offset center,
+  double innerRadius,
+  double outerRadius,
+  Size size,
+  double devicePixelRatio,
+  GoalRingInsetShadowCache cache,
+) {
+  if (size.isEmpty) return;
+
+  if (cache.isValid(size, devicePixelRatio)) {
+    _blitInsetShadowImage(canvas, cache._image!, size);
+    return;
+  }
+
+  // First paint (or after size / DPR change): render shadow into an offscreen bitmap.
+  final recorder = ui.PictureRecorder();
+  final tmpCanvas = Canvas(recorder)..scale(devicePixelRatio);
+  _renderGoalRingInsetShadow(tmpCanvas, annulusPath, center, innerRadius, outerRadius);
+  final picture = recorder.endRecording();
+  final image = _rasterizeInsetShadowPicture(
+    picture: picture,
+    logicalSize: size,
+    devicePixelRatio: devicePixelRatio,
+  );
+  cache.update(image, size, devicePixelRatio);
+
+  _blitInsetShadowImage(canvas, image, size);
+}
+
+/// Renders the inset shadow onto [canvas].
+///
+/// This is the extracted core of the original [paintGoalRingTrackInnerShadow].
+/// The clip + blur are applied directly to [canvas] — when called from a
+/// [ui.PictureRecorder] canvas the resulting [ui.Picture] already contains
+/// transparent pixels outside the annulus, so the bitmap can be blitted
+/// directly onto the main canvas without any additional clipping.
+void _renderGoalRingInsetShadow(
   Canvas canvas,
   Path annulusPath,
   Offset center,

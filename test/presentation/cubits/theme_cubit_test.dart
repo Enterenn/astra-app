@@ -1,6 +1,6 @@
 import 'package:astra_app/core/constants/astra_accent_preset.dart';
 import 'package:astra_app/core/database/app_database.dart';
-import 'package:astra_app/data/repositories/user_preferences_repository.dart';
+import 'package:astra_app/data/repositories/user_settings_repository.dart';
 import 'package:astra_app/presentation/cubits/theme_cubit.dart';
 import 'package:astra_app/presentation/cubits/theme_state.dart';
 import 'package:flutter/material.dart';
@@ -17,11 +17,11 @@ void main() {
 
   group('ThemeCubit', () {
     late Database db;
-    late UserPreferencesRepository repository;
+    late UserSettingsRepository repository;
 
     setUp(() async {
       db = await openAstraDatabase(databasePath: inMemoryDatabasePath);
-      repository = UserPreferencesRepository(db);
+      repository = UserSettingsRepository(db);
     });
 
     tearDown(() async {
@@ -29,7 +29,7 @@ void main() {
     });
 
     test('defaults to system preference and orange accent', () {
-      final cubit = ThemeCubit(userPreferences: repository);
+      final cubit = ThemeCubit(userSettings: repository);
 
       expect(cubit.state.preference, AstraThemePreference.system);
       expect(cubit.state.materialThemeMode, ThemeMode.system);
@@ -40,7 +40,7 @@ void main() {
 
     test('uses initialPreference from constructor', () {
       final cubit = ThemeCubit(
-        userPreferences: repository,
+        userSettings: repository,
         initialPreference: AstraThemePreference.dark,
       );
 
@@ -51,7 +51,7 @@ void main() {
     });
 
     test('setThemePreference persists and emits preference', () async {
-      final cubit = ThemeCubit(userPreferences: repository);
+      final cubit = ThemeCubit(userSettings: repository);
 
       await cubit.setThemePreference(AstraThemePreference.light);
 
@@ -64,7 +64,7 @@ void main() {
 
     test('setThemePreference no-ops when preference unchanged', () async {
       final cubit = ThemeCubit(
-        userPreferences: repository,
+        userSettings: repository,
         initialPreference: AstraThemePreference.dark,
       );
       await repository.setThemeMode(AstraThemePreference.light);
@@ -78,7 +78,7 @@ void main() {
     });
 
     test('setAccentPreset persists and emits preset', () async {
-      final cubit = ThemeCubit(userPreferences: repository);
+      final cubit = ThemeCubit(userSettings: repository);
 
       await cubit.setAccentPreset(AstraAccentPreset.magenta);
 
@@ -107,7 +107,7 @@ void main() {
 
     test('setAccentPreset no-ops when preset unchanged', () async {
       final cubit = ThemeCubit(
-        userPreferences: repository,
+        userSettings: repository,
         initialAccentPreset: AstraAccentPreset.green,
       );
       await repository.setAccentPreset(AstraAccentPreset.blue);
@@ -121,7 +121,7 @@ void main() {
     });
 
     test('rapid changes end on last preference in DB and state', () async {
-      final cubit = ThemeCubit(userPreferences: repository);
+      final cubit = ThemeCubit(userSettings: repository);
 
       await Future.wait([
         cubit.setThemePreference(AstraThemePreference.dark),
@@ -137,7 +137,7 @@ void main() {
 
     test('rapid theme and accent changes end on last values in DB and state',
         () async {
-      final cubit = ThemeCubit(userPreferences: repository);
+      final cubit = ThemeCubit(userSettings: repository);
 
       await Future.wait([
         cubit.setThemePreference(AstraThemePreference.light),

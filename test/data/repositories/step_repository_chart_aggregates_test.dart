@@ -3,24 +3,24 @@ import 'package:astra_app/data/datasources/data_ingestion_source.dart';
 import 'package:astra_app/data/models/chart_day_aggregate.dart';
 import 'package:astra_app/data/models/normalized_step_bucket.dart';
 import 'package:astra_app/data/models/timeseries_sample_model.dart';
-import 'package:astra_app/data/repositories/step_repository.dart';
-import 'package:astra_app/dev/data_inject_service.dart';
-import 'package:astra_app/dev/lifecycle_simulator.dart';
+import '../../dev/data_inject_service.dart';
+import '../../dev/lifecycle_simulator.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:sqflite/sqflite.dart';
 
 import '../../core/time/fake_time_provider.dart';
 import '../../helpers/sqflite_test_helper.dart';
+import '../../helpers/step_test_fixtures.dart';
 
 void main() {
   setUpAll(() async {
     await setUpSqfliteFfi();
   });
 
-  group('StepRepository.getChartDailyAggregates', () {
+  group('StepAggregationRepository.getChartDailyAggregates', () {
     late Database db;
     late FakeTimeProvider clock;
-    late StepRepository repository;
+    late StepTestRepos stepRepos;
 
     setUp(() async {
       db = await openAstraDatabase(databasePath: inMemoryDatabasePath);
@@ -28,7 +28,7 @@ void main() {
         fixedNowUtc: DateTime.utc(2026, 6, 2, 12),
         zoneOffset: const Duration(hours: 2),
       );
-      repository = StepRepository(db: db, clock: clock);
+      stepRepos = StepTestFixtures.create(db: db, clock: clock);
     });
 
     tearDown(() async {
@@ -36,10 +36,10 @@ void main() {
     });
 
     test('returns 7 or 30 items with positive totals on 90-day inject', () async {
-      await DataInjectService(repository: repository).inject90Days(clock: clock);
+      await DataInjectService(repository: stepRepos.ingestion).inject90Days(clock: clock);
 
-      final sevenDay = await repository.getChartDailyAggregates(days: 7);
-      final thirtyDay = await repository.getChartDailyAggregates(days: 30);
+      final sevenDay = await stepRepos.aggregation.getChartDailyAggregates(days: 7);
+      final thirtyDay = await stepRepos.aggregation.getChartDailyAggregates(days: 30);
 
       expect(sevenDay, hasLength(7));
       expect(thirtyDay, hasLength(30));
@@ -48,9 +48,9 @@ void main() {
     });
 
     test('7-day window boundaries align with reference today', () async {
-      await DataInjectService(repository: repository).inject90Days(clock: clock);
+      await DataInjectService(repository: stepRepos.ingestion).inject90Days(clock: clock);
 
-      final aggregates = await repository.getChartDailyAggregates(days: 7);
+      final aggregates = await stepRepos.aggregation.getChartDailyAggregates(days: 7);
       final referenceToday = DateTime.utc(2026, 6, 2);
       final windowStart = referenceToday.subtract(const Duration(days: 6));
 
@@ -68,9 +68,9 @@ void main() {
     });
 
     test('30-day window boundaries align with reference today', () async {
-      await DataInjectService(repository: repository).inject90Days(clock: clock);
+      await DataInjectService(repository: stepRepos.ingestion).inject90Days(clock: clock);
 
-      final aggregates = await repository.getChartDailyAggregates(days: 30);
+      final aggregates = await stepRepos.aggregation.getChartDailyAggregates(days: 30);
       final referenceToday = DateTime.utc(2026, 6, 2);
       final windowStart = referenceToday.subtract(const Duration(days: 29));
 
@@ -88,14 +88,14 @@ void main() {
     });
 
     test('groups mixed zone offsets into correct local day buckets', () async {
-      await repository.upsertIngestionBucket(
+      await stepRepos.ingestion.upsertIngestionBucket(
         _bucket(
           startTimeUtc: DateTime.utc(2026, 6, 1, 22, 30),
           value: 100,
           zoneOffset: '+02:00',
         ),
       );
-      await repository.upsertIngestionBucket(
+      await stepRepos.ingestion.upsertIngestionBucket(
         _bucket(
           startTimeUtc: DateTime.utc(2026, 6, 1, 22, 30),
           value: 50,
@@ -104,7 +104,7 @@ void main() {
           deviceId: 'ring',
         ),
       );
-      await repository.upsertIngestionBucket(
+      await stepRepos.ingestion.upsertIngestionBucket(
         _bucket(
           startTimeUtc: DateTime.utc(2026, 6, 2, 10),
           value: 200,
@@ -112,7 +112,7 @@ void main() {
         ),
       );
 
-      final aggregates = await repository.getChartDailyAggregates(days: 7);
+      final aggregates = await stepRepos.aggregation.getChartDailyAggregates(days: 7);
 
       expect(aggregates, hasLength(7));
       expect(
@@ -134,7 +134,7 @@ void main() {
       () async {
         // 7d windowStart = May 27; sqlLowerBound = May 26 00:00Z.
         // Earliest UTC for local May 27 at +14:00 is May 26 10:00Z.
-        await repository.upsertIngestionBucket(
+        await stepRepos.ingestion.upsertIngestionBucket(
           _bucket(
             startTimeUtc: DateTime.utc(2026, 5, 26, 10),
             value: 42,
@@ -144,7 +144,7 @@ void main() {
           ),
         );
 
-        final aggregates = await repository.getChartDailyAggregates(days: 7);
+        final aggregates = await stepRepos.aggregation.getChartDailyAggregates(days: 7);
 
         expect(
           aggregates
@@ -156,26 +156,26 @@ void main() {
     );
 
     test('preserves daily totals after lifecycle compaction', () async {
-      await DataInjectService(repository: repository).inject90Days(clock: clock);
+      await DataInjectService(repository: stepRepos.ingestion).inject90Days(clock: clock);
 
-      final beforeSevenDay = await repository.getChartDailyAggregates(days: 7);
-      final beforeThirtyDay = await repository.getChartDailyAggregates(days: 30);
+      final beforeSevenDay = await stepRepos.aggregation.getChartDailyAggregates(days: 7);
+      final beforeThirtyDay = await stepRepos.aggregation.getChartDailyAggregates(days: 30);
 
       await LifecycleSimulator(
-        repository: repository,
+        repository: stepRepos.aggregation,
         clock: clock,
       ).simulateDownsampling();
 
-      final afterSevenDay = await repository.getChartDailyAggregates(days: 7);
-      final afterThirtyDay = await repository.getChartDailyAggregates(days: 30);
+      final afterSevenDay = await stepRepos.aggregation.getChartDailyAggregates(days: 7);
+      final afterThirtyDay = await stepRepos.aggregation.getChartDailyAggregates(days: 30);
 
       _expectAggregatesUnchanged(beforeSevenDay, afterSevenDay);
       _expectAggregatesUnchanged(beforeThirtyDay, afterThirtyDay);
     });
 
     test('returns zero-filled entries when no samples exist', () async {
-      final sevenDay = await repository.getChartDailyAggregates(days: 7);
-      final thirtyDay = await repository.getChartDailyAggregates(days: 30);
+      final sevenDay = await stepRepos.aggregation.getChartDailyAggregates(days: 7);
+      final thirtyDay = await stepRepos.aggregation.getChartDailyAggregates(days: 30);
 
       expect(sevenDay, hasLength(7));
       expect(thirtyDay, hasLength(30));
@@ -185,7 +185,7 @@ void main() {
 
     test('throws ArgumentError for unsupported day ranges', () async {
       await expectLater(
-        repository.getChartDailyAggregates(days: 14),
+        stepRepos.aggregation.getChartDailyAggregates(days: 14),
         throwsA(isA<ArgumentError>()),
       );
     });
@@ -194,14 +194,14 @@ void main() {
       'uses finest resolution when mixed-resolution rows exist for the same day',
       () async {
         // 5min rows totalling 200 for 2026-06-01 (yesterday in window)
-        await repository.upsertIngestionBucket(
+        await stepRepos.ingestion.upsertIngestionBucket(
           _bucket(
             startTimeUtc: DateTime.utc(2026, 6, 1, 8),
             value: 120,
             zoneOffset: '+02:00',
           ),
         );
-        await repository.upsertIngestionBucket(
+        await stepRepos.ingestion.upsertIngestionBucket(
           _bucket(
             startTimeUtc: DateTime.utc(2026, 6, 1, 9),
             value: 80,
@@ -209,7 +209,7 @@ void main() {
           ),
         );
         // Simulate a malformed import: hourly row for the same day (500).
-        await repository.insertDevSamplesBatch([
+        await stepRepos.ingestion.insertDevSamplesBatch([
           TimeseriesSampleModel(
             id: 'bad-import-hourly',
             startTimeUtc: DateTime.utc(2026, 6, 1, 8),
@@ -224,7 +224,7 @@ void main() {
           ),
         ]);
 
-        final sevenDay = await repository.getChartDailyAggregates(days: 7);
+        final sevenDay = await stepRepos.aggregation.getChartDailyAggregates(days: 7);
         final june1 = sevenDay.firstWhere(
           (e) => e.localDay == DateTime.utc(2026, 6, 1),
         );

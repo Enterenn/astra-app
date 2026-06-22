@@ -2,7 +2,7 @@ import 'dart:io';
 
 import 'package:astra_app/core/database/app_database.dart';
 import 'package:astra_app/core/database/astra_database_session.dart';
-import 'package:astra_app/data/repositories/user_preferences_repository.dart';
+import 'package:astra_app/data/repositories/user_health_metrics_repository.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:path/path.dart' as p;
 
@@ -31,7 +31,7 @@ void main() {
         }
         await tempDir.delete(recursive: true);
       });
-      final repository = UserPreferencesRepository(session);
+      final repository = UserHealthMetricsRepository(session);
       await repository.setDisplayName('Ada');
 
       await session.database.close();

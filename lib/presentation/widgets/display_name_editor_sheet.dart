@@ -1,3 +1,4 @@
+import 'package:astra_app/l10n/app_localizations.dart';
 import 'package:flutter/material.dart';
 
 import '../../core/constants/astra_colors.dart';
@@ -63,6 +64,7 @@ class _DisplayNameEditorSheetBodyState extends State<_DisplayNameEditorSheetBody
 
   @override
   Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context);
     final colors = context.astraColors;
     final bottomInset = MediaQuery.viewInsetsOf(context).bottom;
 
@@ -91,7 +93,7 @@ class _DisplayNameEditorSheetBodyState extends State<_DisplayNameEditorSheetBody
                 ),
               ),
               const SizedBox(height: AstraSpacing.kSpaceMd),
-              Text('Display name', style: AstraTypography.title(context)),
+              Text(l10n.profileDisplayName, style: AstraTypography.title(context)),
               const SizedBox(height: AstraSpacing.kSpaceMd),
               TextField(
                 controller: _controller,
@@ -102,19 +104,19 @@ class _DisplayNameEditorSheetBodyState extends State<_DisplayNameEditorSheetBody
                 ),
                 decoration: profileSheetFieldDecoration(
                   colors: colors,
-                  labelText: 'First name',
+                  labelText: l10n.profileDisplayNameFirstName,
                 ),
               ),
               const SizedBox(height: AstraSpacing.kSpaceLg),
               AstraButton(
-                label: 'Save',
+                label: l10n.commonSave,
                 onPressed: _canSave
                     ? () => Navigator.of(context).pop(_trimmed)
                     : null,
               ),
               const SizedBox(height: AstraSpacing.kSpaceSm),
               AstraButton(
-                label: 'Cancel',
+                label: l10n.commonCancel,
                 variant: AstraButtonVariant.ghost,
                 onPressed: () => Navigator.of(context).pop(),
               ),

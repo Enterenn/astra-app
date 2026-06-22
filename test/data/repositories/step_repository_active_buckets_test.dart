@@ -1,21 +1,22 @@
 import 'package:astra_app/core/database/app_database.dart';
 import 'package:astra_app/data/datasources/data_ingestion_source.dart';
-import 'package:astra_app/core/time/time_provider.dart';
 import 'package:astra_app/data/models/normalized_step_bucket.dart';
 import 'package:astra_app/data/models/timeseries_sample_model.dart';
-import 'package:astra_app/data/repositories/step_repository.dart';
+import 'package:astra_app/data/repositories/step/step_aggregation_repository.dart';
+import 'package:astra_app/data/repositories/step/step_ingestion_repository.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:sqflite/sqflite.dart';
 
 import '../../core/time/fake_time_provider.dart';
 import '../../helpers/sqflite_test_helper.dart';
+import '../../helpers/step_test_fixtures.dart';
 
 void main() {
   setUpAll(() async {
     await setUpSqfliteFfi();
   });
 
-  group('StepRepository.getTodayActiveBuckets', () {
+  group('StepAggregationRepository.getTodayActiveBuckets', () {
     late Database db;
 
     setUp(() async {
@@ -27,22 +28,20 @@ void main() {
     });
 
     test('returns only 5min buckets for today with value > 0', () async {
-      final repository = StepRepository(
-        db: db,
-        clock: FakeTimeProvider(
-          fixedNowUtc: DateTime.utc(2026, 6, 2, 10),
-          zoneOffset: const Duration(hours: 2),
-        ),
+      final clock = FakeTimeProvider(
+        fixedNowUtc: DateTime.utc(2026, 6, 2, 10),
+        zoneOffset: const Duration(hours: 2),
       );
+      final stepRepos = StepTestFixtures.create(db: db, clock: clock);
 
-      await repository.upsertIngestionBucket(
+      await stepRepos.ingestion.upsertIngestionBucket(
         _bucket(
           startTimeUtc: DateTime.utc(2026, 6, 2, 8),
           value: 100,
           zoneOffset: '+02:00',
         ),
       );
-      await repository.upsertIngestionBucket(
+      await stepRepos.ingestion.upsertIngestionBucket(
         _bucket(
           startTimeUtc: DateTime.utc(2026, 6, 2, 9),
           value: 200,
@@ -50,14 +49,14 @@ void main() {
           resolution: kHourlyResolution,
         ),
       );
-      await repository.upsertIngestionBucket(
+      await stepRepos.ingestion.upsertIngestionBucket(
         _bucket(
           startTimeUtc: DateTime.utc(2026, 6, 1, 8),
           value: 50,
           zoneOffset: '+02:00',
         ),
       );
-      await repository.insertDevSamplesBatch([
+      await stepRepos.ingestion.insertDevSamplesBatch([
         TimeseriesSampleModel.fromNormalizedBucket(
           bucket: _bucket(
             startTimeUtc: DateTime.utc(2026, 6, 2, 10),
@@ -68,7 +67,7 @@ void main() {
         ),
       ]);
 
-      final buckets = await repository.getTodayActiveBuckets();
+      final buckets = await stepRepos.aggregation.getTodayActiveBuckets();
 
       expect(buckets, hasLength(1));
       expect(buckets.single.value, 100);
@@ -76,13 +75,7 @@ void main() {
     });
 
     test('excludes cross-day rows using stored zone offset', () async {
-      final writer = StepRepository(
-        db: db,
-        clock: FakeTimeProvider(
-          fixedNowUtc: DateTime.utc(2026, 6, 2, 10),
-          zoneOffset: const Duration(hours: 2),
-        ),
-      );
+      final writer = StepIngestionRepository(db);
       await writer.upsertIngestionBucket(
         _bucket(
           startTimeUtc: DateTime.utc(2026, 6, 1, 22, 30),
@@ -100,15 +93,15 @@ void main() {
         ),
       );
 
-      final parisToday = StepRepository(
-        db: db,
+      final parisToday = StepAggregationRepository(
+        db,
         clock: FakeTimeProvider(
           fixedNowUtc: DateTime.utc(2026, 6, 2, 10),
           zoneOffset: const Duration(hours: 2),
         ),
       );
-      final newYorkPreviousDay = StepRepository(
-        db: db,
+      final newYorkPreviousDay = StepAggregationRepository(
+        db,
         clock: FakeTimeProvider(
           fixedNowUtc: DateTime.utc(2026, 6, 2, 2),
           zoneOffset: const Duration(hours: -5),
@@ -120,7 +113,7 @@ void main() {
     });
   });
 
-  group('StepRepository.getActiveBucketsForLocalDay', () {
+  group('StepAggregationRepository.getActiveBucketsForLocalDay', () {
     late Database db;
 
     setUp(() async {
@@ -132,13 +125,7 @@ void main() {
     });
 
     test('returns buckets for parameter day and excludes other days', () async {
-      final writer = StepRepository(
-        db: db,
-        clock: FakeTimeProvider(
-          fixedNowUtc: DateTime.utc(2026, 6, 2, 10),
-          zoneOffset: const Duration(hours: 2),
-        ),
-      );
+      final writer = StepIngestionRepository(db);
       await writer.upsertIngestionBucket(
         _bucket(
           startTimeUtc: DateTime.utc(2026, 6, 1, 10),
@@ -154,10 +141,18 @@ void main() {
         ),
       );
 
+      final reader = StepAggregationRepository(
+        db,
+        clock: FakeTimeProvider(
+          fixedNowUtc: DateTime.utc(2026, 6, 2, 10),
+          zoneOffset: const Duration(hours: 2),
+        ),
+      );
+
       final monday = DateTime(2026, 6, 1);
       final tuesday = DateTime(2026, 6, 2);
-      final mondayBuckets = await writer.getActiveBucketsForLocalDay(monday);
-      final tuesdayBuckets = await writer.getActiveBucketsForLocalDay(tuesday);
+      final mondayBuckets = await reader.getActiveBucketsForLocalDay(monday);
+      final tuesdayBuckets = await reader.getActiveBucketsForLocalDay(tuesday);
 
       expect(mondayBuckets, hasLength(1));
       expect(mondayBuckets.single.value, 80);

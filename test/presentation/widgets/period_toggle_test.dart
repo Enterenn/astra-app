@@ -6,6 +6,8 @@ import 'dart:ui' show Tristate;
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 
+import '../../helpers/l10n_test_helper.dart';
+
 void main() {
   group('PeriodToggle', () {
     Future<void> pumpToggle(
@@ -14,7 +16,7 @@ void main() {
       ValueChanged<HistoryPeriod>? onChanged,
     }) async {
       await tester.pumpWidget(
-        MaterialApp(
+        TestMaterialApp(
           theme: buildAstraLightTheme(),
           home: Scaffold(
             body: PeriodToggle(

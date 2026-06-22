@@ -1,8 +1,8 @@
 import 'package:sqflite/sqflite.dart';
-import 'package:uuid/uuid.dart';
 
 import '../../data/models/normalized_step_bucket.dart';
 import '../../data/models/timeseries_sample_model.dart';
+import '../ids/sample_id_generator.dart';
 import 'lifecycle_compaction.dart';
 
 /// Result of a full FR11 downsampling pass (tiers 2 + 3).
@@ -20,7 +20,7 @@ class CompactionResult {
   final int hourlyDeleted;
 }
 
-/// Administrative write surface for compaction — implemented by [StepRepository].
+/// Administrative write surface for compaction — implemented by [StepAggregationRepository].
 abstract class CompactionWriter {
   Future<List<TimeseriesSampleModel>> loadStepSamples(String resolution);
 
@@ -68,11 +68,7 @@ class TransactionCompactionWriter implements CompactionWriter {
 
 /// Shared FR11 compaction orchestration for dev preview and production downsample.
 class SampleCompactionRunner {
-  SampleCompactionRunner({
-    Uuid? uuid,
-  }) : _uuid = uuid ?? const Uuid();
-
-  final Uuid _uuid;
+  SampleCompactionRunner();
 
   /// Runs tier 2 (5min→1hour), tier 3 (hourly→daily), and tier 3 catch-up passes.
   Future<CompactionResult> runAllTiers({
@@ -141,7 +137,10 @@ class SampleCompactionRunner {
 
         final hourlySample = mergeFiveMinuteBucketsToHourly(
           buckets: hourBuckets,
-          newId: _uuid.v4(),
+          newId: SampleIdGenerator.deterministicFromMergedBucket(
+            startTimeUtc: _hourlyMergeStartUtc(hourBuckets),
+            resolution: kHourlyResolution,
+          ),
         );
         await writer.insertCompactedSample(hourlySample);
         hourlyCreated++;
@@ -188,7 +187,10 @@ class SampleCompactionRunner {
 
         final dailySample = mergeHourlyBucketsToDaily(
           buckets: dayBuckets,
-          newId: _uuid.v4(),
+          newId: SampleIdGenerator.deterministicFromMergedBucket(
+            startTimeUtc: _dailyMergeStartUtc(dayBuckets),
+            resolution: kDailyResolution,
+          ),
         );
         await writer.insertCompactedSample(dailySample);
         dailyCreated++;
@@ -238,7 +240,10 @@ class SampleCompactionRunner {
 
         final dailySample = mergeFiveMinuteBucketsToDaily(
           buckets: dayBuckets,
-          newId: _uuid.v4(),
+          newId: SampleIdGenerator.deterministicFromMergedBucket(
+            startTimeUtc: _dailyMergeStartUtc(dayBuckets),
+            resolution: kDailyResolution,
+          ),
         );
         await writer.insertCompactedSample(dailySample);
         dailyCreated++;
@@ -252,4 +257,30 @@ class SampleCompactionRunner {
 
     return (dailyCreated: dailyCreated, fiveMinDeleted: fiveMinDeleted);
   }
+}
+
+DateTime _hourlyMergeStartUtc(List<TimeseriesSampleModel> buckets) {
+  final sortedBuckets = [...buckets]
+    ..sort((a, b) => a.startTimeUtc.compareTo(b.startTimeUtc));
+  final first = sortedBuckets.first;
+  return localBucketStartUtc(
+    localBucket: localHourBucketKey(
+      startTimeUtc: first.startTimeUtc,
+      zoneOffset: first.zoneOffset,
+    ),
+    zoneOffset: first.zoneOffset,
+  );
+}
+
+DateTime _dailyMergeStartUtc(List<TimeseriesSampleModel> buckets) {
+  final sortedBuckets = [...buckets]
+    ..sort((a, b) => a.startTimeUtc.compareTo(b.startTimeUtc));
+  final first = sortedBuckets.first;
+  return localBucketStartUtc(
+    localBucket: localDayBucketKey(
+      startTimeUtc: first.startTimeUtc,
+      zoneOffset: first.zoneOffset,
+    ),
+    zoneOffset: first.zoneOffset,
+  );
 }

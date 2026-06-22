@@ -3,10 +3,12 @@ import 'package:astra_app/presentation/widgets/goal_editor_sheet.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 
+import '../../helpers/l10n_test_helper.dart';
+
 Future<int?> _openSheet(WidgetTester tester, {required int currentGoal}) async {
   int? result;
   await tester.pumpWidget(
-    MaterialApp(
+    TestMaterialApp(
       theme: buildAstraLightTheme(),
       home: Builder(
         builder: (context) {
@@ -73,7 +75,7 @@ void main() {
   testWidgets('valid change returns new goal on Save', (tester) async {
     int? result;
     await tester.pumpWidget(
-      MaterialApp(
+      TestMaterialApp(
         theme: buildAstraLightTheme(),
         home: Builder(
           builder: (context) {

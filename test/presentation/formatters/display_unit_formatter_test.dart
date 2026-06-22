@@ -1,9 +1,13 @@
 import 'package:astra_app/core/constants/display_unit_preferences.dart';
 import 'package:astra_app/core/constants/preference_keys.dart';
+import 'package:astra_app/l10n/app_localizations.dart';
 import 'package:astra_app/presentation/formatters/display_unit_formatter.dart';
+import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 
 void main() {
+  final l10n = lookupAppLocalizations(const Locale('en'));
+
   group('formatDisplayDistanceValue', () {
     test('metric uses km formatter', () {
       expect(
@@ -33,49 +37,49 @@ void main() {
 
   group('displayDistanceUnitLabel', () {
     test('returns Km or Mi', () {
-      expect(displayDistanceUnitLabel(DistanceDisplayUnit.metric), 'Km');
-      expect(displayDistanceUnitLabel(DistanceDisplayUnit.imperial), 'Mi');
+      expect(displayDistanceUnitLabel(l10n, DistanceDisplayUnit.metric), 'Km');
+      expect(displayDistanceUnitLabel(l10n, DistanceDisplayUnit.imperial), 'Mi');
     });
   });
 
   group('formatDisplayHeight', () {
     test('null shows Not set', () {
-      expect(formatDisplayHeight(null, HeightDisplayUnit.cm), 'Not set');
-      expect(formatDisplayHeight(null, HeightDisplayUnit.ftIn), 'Not set');
+      expect(formatDisplayHeight(l10n, null, HeightDisplayUnit.cm), 'Not set');
+      expect(formatDisplayHeight(l10n, null, HeightDisplayUnit.ftIn), 'Not set');
     });
 
     test('metric shows cm', () {
-      expect(formatDisplayHeight(180, HeightDisplayUnit.cm), '180 cm');
+      expect(formatDisplayHeight(l10n, 180, HeightDisplayUnit.cm), '180 cm');
     });
 
     test('imperial shows ft and in', () {
-      expect(formatDisplayHeight(180, HeightDisplayUnit.ftIn), '5 ft 11 in');
+      expect(formatDisplayHeight(l10n, 180, HeightDisplayUnit.ftIn), '5 ft 11 in');
     });
 
     test('boundary heights at min and max cm', () {
-      expect(formatDisplayHeight(kMinHeightCm, HeightDisplayUnit.ftIn), '3 ft 3 in');
-      expect(formatDisplayHeight(kMaxHeightCm, HeightDisplayUnit.ftIn), '8 ft 2 in');
+      expect(formatDisplayHeight(l10n, kMinHeightCm, HeightDisplayUnit.ftIn), '3 ft 3 in');
+      expect(formatDisplayHeight(l10n, kMaxHeightCm, HeightDisplayUnit.ftIn), '8 ft 2 in');
     });
   });
 
   group('formatDisplayWeight', () {
     test('null shows Not set', () {
-      expect(formatDisplayWeight(null, WeightDisplayUnit.kg), 'Not set');
+      expect(formatDisplayWeight(l10n, null, WeightDisplayUnit.kg), 'Not set');
     });
 
     test('metric shows kg', () {
-      expect(formatDisplayWeight(72.5, WeightDisplayUnit.kg), '72.5 kg');
-      expect(formatDisplayWeight(72, WeightDisplayUnit.kg), '72 kg');
+      expect(formatDisplayWeight(l10n, 72.5, WeightDisplayUnit.kg), '72.5 kg');
+      expect(formatDisplayWeight(l10n, 72, WeightDisplayUnit.kg), '72 kg');
     });
 
     test('imperial shows lb', () {
-      expect(formatDisplayWeight(72.5, WeightDisplayUnit.lb), '159.8 lb');
-      expect(formatDisplayWeight(72, WeightDisplayUnit.lb), '158.7 lb');
+      expect(formatDisplayWeight(l10n, 72.5, WeightDisplayUnit.lb), '159.8 lb');
+      expect(formatDisplayWeight(l10n, 72, WeightDisplayUnit.lb), '158.7 lb');
     });
 
     test('boundary weights at min and max kg in lb', () {
-      expect(formatDisplayWeight(kMinWeightKg, WeightDisplayUnit.lb), '66.1 lb');
-      expect(formatDisplayWeight(kMaxWeightKg, WeightDisplayUnit.lb), '661.4 lb');
+      expect(formatDisplayWeight(l10n, kMinWeightKg, WeightDisplayUnit.lb), '66.1 lb');
+      expect(formatDisplayWeight(l10n, kMaxWeightKg, WeightDisplayUnit.lb), '661.4 lb');
     });
   });
 
@@ -100,7 +104,6 @@ void main() {
       final ftIn = heightCmToFtIn(kMinHeightCm);
       expect(ftIn.feet, 3);
       expect(ftIn.inches, 3);
-      // 3 ft 3 in → 99 cm; editor validation rejects (below kMinHeightCm).
       expect(heightFtInToCm(feet: ftIn.feet, inches: ftIn.inches), isNull);
     });
 

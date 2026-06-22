@@ -1,17 +1,22 @@
 import 'package:astra_app/core/constants/astra_theme.dart';
+import 'package:astra_app/l10n/app_localizations.dart';
 import 'package:astra_app/presentation/cubits/history_state.dart';
 import 'package:astra_app/presentation/widgets/trends_average_stats_row.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
-import 'package:phosphoricons_flutter/phosphoricons_flutter.dart';
+
+import '../../helpers/l10n_test_helper.dart';
+import 'package:astra_app/core/icons/phosphor_icons.dart';
 
 void main() {
+  final l10n = lookupAppLocalizations(const Locale('en'));
+
   Future<void> pumpRow(
     WidgetTester tester, {
     required TrendsPeriodAverages averages,
   }) async {
     await tester.pumpWidget(
-      MaterialApp(
+      TestMaterialApp(
         theme: buildAstraLightTheme(),
         home: Scaffold(
           body: TrendsAverageStatsRow(averages: averages),
@@ -31,9 +36,9 @@ void main() {
       );
 
       expect(find.text('167'), findsOneWidget);
-      expect(find.text('kcal'), findsOneWidget);
+      expect(find.text(l10n.todayStatsKcalLabel), findsOneWidget);
       expect(find.text('3532'), findsOneWidget);
-      expect(find.text('steps'), findsOneWidget);
+      expect(find.text(l10n.todayGoalRingStepsLabel), findsOneWidget);
     });
 
     testWidgets('renders captions from mockup copy', (tester) async {

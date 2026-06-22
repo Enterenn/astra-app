@@ -1,6 +1,6 @@
 /// Read model for Trends twelve-month monthly chart (D-21 extension).
 ///
-/// Produced by [StepRepository.getChartMonthlyAggregates]; consumed by
+/// Produced by [StepAggregationRepository.getChartMonthlyAggregates]; consumed by
 /// `HistoryCubit` / `TrendsMonthlyBarChart` in Story 12.3. Not a persistence entity.
 class ChartMonthAggregate {
   const ChartMonthAggregate({

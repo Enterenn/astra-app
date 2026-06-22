@@ -1,5 +1,6 @@
+import 'package:astra_app/l10n/app_localizations.dart';
 import 'package:flutter/material.dart';
-import 'package:phosphoricons_flutter/phosphoricons_flutter.dart';
+import 'package:astra_app/core/icons/phosphor_icons.dart';
 
 import '../../core/constants/astra_colors.dart';
 import '../../core/constants/astra_spacing.dart';
@@ -19,16 +20,17 @@ class TrendsAverageStatsRow extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context);
+
     return Row(
       children: [
         Expanded(
           child: _TrendsStatCard(
             icon: PhosphorIconsRegular.fire,
             value: formatKcal(averages.averageKcal),
-            unit: 'kcal',
-            caption: 'average calories burned per day',
-            semanticsLabel:
-                'Average ${averages.averageKcal} kilocalories burned per day',
+            unit: l10n.todayStatsKcalLabel,
+            caption: l10n.trendsAverageKcalCaption,
+            semanticsLabel: l10n.trendsAverageKcalSemantics(averages.averageKcal),
           ),
         ),
         const SizedBox(width: AstraSpacing.kSpaceSm),
@@ -36,10 +38,10 @@ class TrendsAverageStatsRow extends StatelessWidget {
           child: _TrendsStatCard(
             icon: PhosphorIconsRegular.footprints,
             value: averages.averageSteps.toString(),
-            unit: 'steps',
-            caption: 'average steps taken per day',
+            unit: l10n.todayGoalRingStepsLabel,
+            caption: l10n.trendsAverageStepsCaption,
             semanticsLabel:
-                'Average ${averages.averageSteps} steps taken per day',
+                l10n.trendsAverageStepsSemantics(averages.averageSteps),
           ),
         ),
       ],

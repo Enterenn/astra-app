@@ -2,15 +2,19 @@ import 'package:astra_app/core/database/app_database.dart';
 import 'package:astra_app/data/datasources/data_ingestion_source.dart';
 import 'package:astra_app/data/models/database_footprint.dart';
 import 'package:astra_app/data/models/normalized_step_bucket.dart';
-import 'package:astra_app/data/repositories/step_repository.dart';
-import 'package:astra_app/data/repositories/user_preferences_repository.dart';
+
+import 'package:astra_app/data/repositories/user_health_metrics_repository.dart';
+import 'package:astra_app/data/repositories/user_settings_repository.dart';
 import 'package:astra_app/presentation/cubits/my_data_cubit.dart';
 import 'package:astra_app/presentation/cubits/my_data_state.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:sqflite/sqflite.dart';
 
 import '../../core/time/fake_time_provider.dart';
+import 'package:astra_app/core/time/time_provider.dart';
 import '../../helpers/sqflite_test_helper.dart';
+import '../../helpers/step_test_fixtures.dart';
+import 'package:astra_app/data/repositories/step/step_aggregation_repository.dart';
 
 void main() {
   setUpAll(() async {
@@ -19,18 +23,20 @@ void main() {
 
   group('MyDataCubit', () {
     late Database db;
-    late UserPreferencesRepository userPreferences;
+    late UserSettingsRepository userSettings;
+    late UserHealthMetricsRepository userHealthMetrics;
     late FakeTimeProvider clock;
-    late StepRepository stepRepository;
+    late StepTestRepos stepRepos;
 
     setUp(() async {
       db = await openAstraDatabase(databasePath: inMemoryDatabasePath);
-      userPreferences = UserPreferencesRepository(db);
+      userSettings = UserSettingsRepository(db);
       clock = FakeTimeProvider(
         fixedNowUtc: DateTime.utc(2026, 6, 3, 12),
         zoneOffset: const Duration(hours: 2),
       );
-      stepRepository = StepRepository(db: db, clock: clock);
+      userHealthMetrics = UserHealthMetricsRepository(db, clock: clock);
+      stepRepos = StepTestFixtures.create(db: db, clock: clock);
     });
 
     tearDown(() async {
@@ -42,8 +48,11 @@ void main() {
       bool isIos = false,
     }) {
       return MyDataCubit(
-        stepRepository: stepRepository,
-        userPreferences: userPreferences,
+        stepAggregation: stepRepos.aggregation,
+        csvService: stepRepos.csv,
+        stepIngestion: stepRepos.ingestion,
+        userSettings: userSettings,
+        userHealthMetrics: userHealthMetrics,
         clock: clock,
         databasePath: inMemoryDatabasePath,
         activityPermissionGranted:
@@ -72,7 +81,7 @@ void main() {
     });
 
     test('refresh emits healthy Android when recent ingestion exists', () async {
-      await stepRepository.upsertIngestionBucket(
+      await stepRepos.ingestion.upsertIngestionBucket(
         _bucket(
           startTimeUtc: DateTime.utc(2026, 6, 3, 10),
           endTimeUtc: DateTime.utc(2026, 6, 3, 10, 5),
@@ -88,7 +97,7 @@ void main() {
     });
 
     test('refresh emits stale Android when last ingestion exceeds 12h', () async {
-      await stepRepository.upsertIngestionBucket(
+      await stepRepos.ingestion.upsertIngestionBucket(
         _bucket(
           startTimeUtc: DateTime.utc(2026, 6, 2, 20),
           endTimeUtc: DateTime.utc(2026, 6, 2, 20, 5),
@@ -104,7 +113,7 @@ void main() {
     });
 
     test('refresh emits stale iOS when last ingestion exceeds 4h', () async {
-      await stepRepository.upsertIngestionBucket(
+      await stepRepos.ingestion.upsertIngestionBucket(
         _bucket(
           startTimeUtc: DateTime.utc(2026, 6, 3, 6),
           endTimeUtc: DateTime.utc(2026, 6, 3, 6, 5),
@@ -119,7 +128,7 @@ void main() {
     });
 
     test('refresh emits iosBackfill when iOS ingestion is recent', () async {
-      await stepRepository.upsertIngestionBucket(
+      await stepRepos.ingestion.upsertIngestionBucket(
         _bucket(
           startTimeUtc: DateTime.utc(2026, 6, 3, 11),
           endTimeUtc: DateTime.utc(2026, 6, 3, 11, 5),
@@ -137,13 +146,13 @@ void main() {
     });
 
     test('refresh includes footprint sample count after inject', () async {
-      await stepRepository.upsertIngestionBucket(
+      await stepRepos.ingestion.upsertIngestionBucket(
         _bucket(
           startTimeUtc: DateTime.utc(2026, 6, 3, 10),
           endTimeUtc: DateTime.utc(2026, 6, 3, 10, 5),
         ),
       );
-      await stepRepository.upsertIngestionBucket(
+      await stepRepos.ingestion.upsertIngestionBucket(
         _bucket(
           startTimeUtc: DateTime.utc(2026, 6, 3, 10, 5),
           endTimeUtc: DateTime.utc(2026, 6, 3, 10, 10),
@@ -164,8 +173,11 @@ void main() {
         clock: clock,
       );
       final cubit = MyDataCubit(
-        stepRepository: failingRepository,
-        userPreferences: userPreferences,
+        stepAggregation: failingRepository,
+        csvService: stepRepos.csv,
+        stepIngestion: stepRepos.ingestion,
+        userSettings: userSettings,
+        userHealthMetrics: userHealthMetrics,
         activityPermissionGranted: () async => true,
         clock: clock,
         databasePath: inMemoryDatabasePath,
@@ -182,7 +194,7 @@ void main() {
     });
 
     test('refresh keeps last ready snapshot when silent refresh fails', () async {
-      await stepRepository.upsertIngestionBucket(
+      await stepRepos.ingestion.upsertIngestionBucket(
         _bucket(
           startTimeUtc: DateTime.utc(2026, 6, 3, 10),
           endTimeUtc: DateTime.utc(2026, 6, 3, 10, 5),
@@ -190,8 +202,11 @@ void main() {
       );
       final flakyRepository = _FlakyFootprintRepository(db: db, clock: clock);
       final cubit = MyDataCubit(
-        stepRepository: flakyRepository,
-        userPreferences: userPreferences,
+        stepAggregation: flakyRepository,
+        csvService: stepRepos.csv,
+        stepIngestion: stepRepos.ingestion,
+        userSettings: userSettings,
+        userHealthMetrics: userHealthMetrics,
         activityPermissionGranted: () async => true,
         clock: clock,
         databasePath: inMemoryDatabasePath,
@@ -212,8 +227,9 @@ void main() {
   });
 }
 
-class _ThrowingFootprintRepository extends StepRepository {
-  _ThrowingFootprintRepository({required super.db, required super.clock});
+class _ThrowingFootprintRepository extends StepAggregationRepository {
+  _ThrowingFootprintRepository({required Database db, required TimeProvider clock})
+      : super(db, clock: clock);
 
   @override
   Future<DatabaseFootprint> getFootprint({required String databasePath}) async {
@@ -221,8 +237,9 @@ class _ThrowingFootprintRepository extends StepRepository {
   }
 }
 
-class _FlakyFootprintRepository extends StepRepository {
-  _FlakyFootprintRepository({required super.db, required super.clock});
+class _FlakyFootprintRepository extends StepAggregationRepository {
+  _FlakyFootprintRepository({required Database db, required TimeProvider clock})
+      : super(db, clock: clock);
 
   var _failFootprint = false;
 

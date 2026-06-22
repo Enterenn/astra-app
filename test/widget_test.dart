@@ -2,10 +2,11 @@ import 'package:astra_app/app.dart';
 import 'package:astra_app/core/database/app_database.dart';
 import 'package:astra_app/core/di/app_dependencies.dart';
 import 'package:astra_app/data/datasources/data_ingestion_source.dart';
-import 'package:astra_app/presentation/widgets/goal_ring.dart';
 import 'package:astra_app/data/models/step_reading.dart';
-import 'package:astra_app/data/repositories/step_repository.dart';
-import 'package:astra_app/data/repositories/user_preferences_repository.dart';
+
+import 'package:astra_app/data/repositories/user_health_metrics_repository.dart';
+import 'package:astra_app/data/repositories/user_settings_repository.dart';
+import 'package:astra_app/l10n/app_localizations.dart';
 import 'package:astra_app/presentation/cubits/onboarding_cubit.dart';
 import 'package:astra_app/presentation/cubits/theme_state.dart';
 import 'package:astra_app/presentation/cubits/history_cubit.dart';
@@ -15,18 +16,20 @@ import 'package:astra_app/presentation/cubits/today_state.dart';
 import 'package:astra_app/presentation/widgets/app_bottom_nav.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
-import 'package:phosphoricons_flutter/phosphoricons_flutter.dart';
+import 'package:astra_app/core/icons/phosphor_icons.dart';
 import 'package:permission_handler/permission_handler.dart';
 import 'package:sqflite/sqflite.dart';
 import 'package:sqflite_common_ffi/sqflite_ffi.dart';
 
 import 'helpers/sqflite_test_helper.dart';
 import 'core/time/fake_time_provider.dart';
+import 'package:astra_app/data/repositories/step/step_aggregation_repository.dart';
 
 TodayCubit _testTodayCubit(AppDependencies deps) {
   return TodayCubit(
-    stepRepository: deps.stepRepository,
-    userPreferences: deps.userPreferences,
+    stepAggregation: deps.stepAggregation,
+    userSettings: deps.userSettings,
+    userHealthMetrics: deps.userHealthMetrics,
     clock: deps.timeProvider,
     activityPermissionGranted: () async => true,
   );
@@ -34,15 +37,18 @@ TodayCubit _testTodayCubit(AppDependencies deps) {
 
 HistoryCubit _testHistoryCubit(AppDependencies deps) {
   return HistoryCubit(
-    stepRepository: deps.stepRepository,
-    userPreferences: deps.userPreferences,
+    stepAggregation: deps.stepAggregation,
+    userHealthMetrics: deps.userHealthMetrics,
   );
 }
 
 MyDataCubit _testMyDataCubit(AppDependencies deps) {
   return MyDataCubit(
-    stepRepository: deps.stepRepository,
-    userPreferences: deps.userPreferences,
+    stepAggregation: deps.stepAggregation,
+    csvService: deps.csvService,
+    stepIngestion: deps.stepIngestion,
+    userSettings: deps.userSettings,
+    userHealthMetrics: deps.userHealthMetrics,
     clock: deps.timeProvider,
     databasePath: deps.databasePath,
     activityPermissionGranted: () async => true,
@@ -65,11 +71,13 @@ void main() {
         fixedNowUtc: DateTime.utc(2026, 6, 3, 12),
         zoneOffset: const Duration(hours: 2),
       );
-      final userPreferences = UserPreferencesRepository(db, clock: clock);
-      await userPreferences.setOnboardingComplete(true);
+      final userSettings = UserSettingsRepository(db);
+      await userSettings.setOnboardingComplete(true);
+      final userHealthMetrics = UserHealthMetricsRepository(db, clock: clock);
       deps = await AppDependencies.test(
         db: db,
-        userPreferences: userPreferences,
+        userSettings: userSettings,
+        userHealthMetrics: userHealthMetrics,
         timeProvider: clock,
       );
     });
@@ -77,9 +85,6 @@ void main() {
     tearDownAll(() async {
       await db.close();
     });
-
-    setUp(() => GoalRing.disableStepPersistence = true);
-    tearDown(() => GoalRing.disableStepPersistence = false);
 
     testWidgets('shows AppBottomNav and switches three tabs', (
       WidgetTester tester,
@@ -159,12 +164,12 @@ void main() {
 
     setUpAll(() async {
       db = await openAstraDatabase(databasePath: inMemoryDatabasePath);
-      final userPreferences = UserPreferencesRepository(db);
-      await userPreferences.setThemeMode(AstraThemePreference.dark);
-      await userPreferences.setOnboardingComplete(true);
+      final userSettings = UserSettingsRepository(db);
+      await userSettings.setThemeMode(AstraThemePreference.dark);
+      await userSettings.setOnboardingComplete(true);
       deps = await AppDependencies.test(
         db: db,
-        userPreferences: userPreferences,
+        userSettings: userSettings,
       );
     });
 
@@ -208,20 +213,20 @@ void main() {
 
     setUpAll(() async {
       completeDb = await openAstraDatabase(databasePath: inMemoryDatabasePath);
-      final completePrefs = UserPreferencesRepository(completeDb);
-      await completePrefs.setOnboardingComplete(true);
+      final completeSettings = UserSettingsRepository(completeDb);
+      await completeSettings.setOnboardingComplete(true);
       completeDeps = await AppDependencies.test(
         db: completeDb,
-        userPreferences: completePrefs,
+        userSettings: completeSettings,
       );
 
       incompleteDb = await openAstraDatabase(
         databasePath: inMemoryDatabasePath,
       );
-      final incompletePrefs = UserPreferencesRepository(incompleteDb);
+      final incompleteSettings = UserSettingsRepository(incompleteDb);
       incompleteDeps = await AppDependencies.test(
         db: incompleteDb,
-        userPreferences: incompletePrefs,
+        userSettings: incompleteSettings,
         initialOnboardingComplete: false,
       );
     });
@@ -283,9 +288,10 @@ void main() {
             deps: incompleteDeps,
             createTodayCubit: _testTodayCubit,
             createHistoryCubit: _testHistoryCubit,
-            createOnboardingCubit: (repo) {
+            createOnboardingCubit: (deps) {
               cubitRef = OnboardingCubit(
-                userPreferences: repo,
+                userSettings: deps.userSettings,
+                userHealthMetrics: deps.userHealthMetrics,
                 permissionRequester: (_) async => PermissionStatus.granted,
               );
               return cubitRef!;
@@ -334,17 +340,19 @@ void main() {
               deps: incompleteDeps,
               createTodayCubit: (deps) {
                 todayCubitRef = TodayCubit(
-                  stepRepository: deps.stepRepository,
-                  userPreferences: deps.userPreferences,
+                  stepAggregation: deps.stepAggregation,
+                  userSettings: deps.userSettings,
+                  userHealthMetrics: deps.userHealthMetrics,
                   clock: deps.timeProvider,
                   activityPermissionGranted: () async => false,
                 );
                 return todayCubitRef!;
               },
               createHistoryCubit: _testHistoryCubit,
-              createOnboardingCubit: (repo) {
+              createOnboardingCubit: (deps) {
                 cubitRef = OnboardingCubit(
-                  userPreferences: repo,
+                  userSettings: deps.userSettings,
+                  userHealthMetrics: deps.userHealthMetrics,
                   permissionRequester: (_) async => PermissionStatus.denied,
                 );
                 return cubitRef!;
@@ -359,7 +367,7 @@ void main() {
         await tester.tap(
           find.descendant(
             of: find.byKey(const ValueKey('onboarding-step-0')),
-            matching: find.text('Continue'),
+            matching: find.text('Start'),
           ),
         );
         await tester.pumpAndSettle();
@@ -386,7 +394,9 @@ void main() {
         await tester.pump();
 
         expect(
-          find.text('Open settings to allow step access'),
+          find.text(
+            lookupAppLocalizations(const Locale('en')).errorNoPermission,
+          ),
           findsOneWidget,
         );
         expect(todayCubitRef!.state.status, TodayStatus.noPermission);
@@ -402,20 +412,18 @@ void main() {
   group('AstraApp foreground backfill', () {
     late Database db;
     late AppDependencies deps;
-    late StepRepository stepRepository;
-
     setUp(() async {
       db = await openAstraDatabase(databasePath: inMemoryDatabasePath);
-      final userPreferences = UserPreferencesRepository(db);
-      await userPreferences.setOnboardingComplete(true);
+      final userSettings = UserSettingsRepository(db);
+      await userSettings.setOnboardingComplete(true);
       final clock = FakeTimeProvider(
         fixedNowUtc: DateTime.utc(2026, 6, 2, 8),
         zoneOffset: const Duration(hours: 2),
       );
-      await userPreferences.setLastDatabaseOptimizedAt(clock.snapshot().nowUtc);
+      await userSettings.setLastDatabaseOptimizedAt(clock.snapshot().nowUtc);
       deps = await AppDependencies.test(
         db: db,
-        userPreferences: userPreferences,
+        userSettings: userSettings,
         timeProvider: clock,
         ingestionSources: [
           _MutableStepSource([
@@ -430,7 +438,6 @@ void main() {
           ]),
         ],
       );
-      stepRepository = StepRepository(db: db, clock: clock);
     });
 
     tearDown(() async {
@@ -453,7 +460,7 @@ void main() {
         );
         await tester.pump();
         final last = await _waitForIngestion(
-          stepRepository,
+          deps.stepAggregation,
           DateTime.utc(2026, 6, 2, 8, 5),
         );
         expect(last, DateTime.utc(2026, 6, 2, 8, 5));
@@ -473,7 +480,7 @@ void main() {
           ),
         );
         await tester.pump();
-        await _waitForIngestion(stepRepository, DateTime.utc(2026, 6, 2, 8, 5));
+        await _waitForIngestion(deps.stepAggregation, DateTime.utc(2026, 6, 2, 8, 5));
 
         final source = deps.ingestionSources.single as _MutableStepSource;
         source.readings = [
@@ -491,7 +498,7 @@ void main() {
           AppLifecycleState.resumed,
         );
         final last = await _waitForIngestion(
-          stepRepository,
+          deps.stepAggregation,
           DateTime.utc(2026, 6, 2, 8, 10),
         );
         expect(last, DateTime.utc(2026, 6, 2, 8, 10));
@@ -511,7 +518,7 @@ void main() {
           ),
         );
         await tester.pump();
-        await _waitForIngestion(stepRepository, DateTime.utc(2026, 6, 2, 8, 5));
+        await _waitForIngestion(deps.stepAggregation, DateTime.utc(2026, 6, 2, 8, 5));
 
         final source = deps.ingestionSources.single as _MutableStepSource;
         source.readings = [
@@ -529,7 +536,7 @@ void main() {
           AppLifecycleState.paused,
         );
         final lastOnPause = await _waitForIngestion(
-          stepRepository,
+          deps.stepAggregation,
           DateTime.utc(2026, 6, 2, 8, 10),
         );
         expect(lastOnPause, DateTime.utc(2026, 6, 2, 8, 10));
@@ -555,7 +562,7 @@ void main() {
         );
         await tester.pump();
         await _waitForIngestion(
-          stepRepository,
+          deps.stepAggregation,
           DateTime.utc(2026, 6, 2, 8, 5),
         );
 
@@ -577,7 +584,7 @@ void main() {
           AppLifecycleState.resumed,
         );
         await _waitForIngestion(
-          stepRepository,
+          deps.stepAggregation,
           DateTime.utc(2026, 6, 2, 8, 10),
         );
 
@@ -615,7 +622,7 @@ Future<int> _waitForStableTodaySteps(
 /// await it directly; polling keeps the assertion deterministic without
 /// arbitrary fixed delays.
 Future<DateTime?> _waitForIngestion(
-  StepRepository repository,
+  StepAggregationRepository repository,
   DateTime expected,
 ) async {
   for (var attempt = 0; attempt < 100; attempt++) {

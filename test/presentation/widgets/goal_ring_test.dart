@@ -10,6 +10,68 @@ import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import '../../helpers/astra_theme_test_helper.dart';
 
+class _LoadingToReadyHarness extends StatefulWidget {
+  const _LoadingToReadyHarness({super.key});
+
+  @override
+  State<_LoadingToReadyHarness> createState() => _LoadingToReadyHarnessState();
+}
+
+class _LoadingToReadyHarnessState extends State<_LoadingToReadyHarness> {
+  TodayState ringState = const TodayState.loading();
+
+  void resolveLoading() {
+    setState(() {
+      ringState = TodayState.fromData(
+        steps: 520,
+        goal: 8000,
+        isStale: false,
+        lastDisplayedSteps: 470,
+        lastDisplayedStepsLoaded: true,
+      );
+    });
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return GoalRing(state: ringState);
+  }
+}
+
+class _LiveCoalesceHarness extends StatefulWidget {
+  const _LiveCoalesceHarness({super.key});
+
+  @override
+  State<_LiveCoalesceHarness> createState() => _LiveCoalesceHarnessState();
+}
+
+class _LiveCoalesceHarnessState extends State<_LiveCoalesceHarness> {
+  late TodayState ringState;
+
+  @override
+  void initState() {
+    super.initState();
+    ringState = TodayState.fromData(
+      steps: 100,
+      goal: 8000,
+      isStale: false,
+      lastDisplayedSteps: 100,
+      lastDisplayedStepsLoaded: true,
+    );
+  }
+
+  void bumpByMicroTickDelta() {
+    setState(() {
+      ringState = ringState.copyWith(steps: ringState.steps + 5);
+    });
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return GoalRing(state: ringState);
+  }
+}
+
 class _ForegroundCatchUpHarness extends StatefulWidget {
   const _ForegroundCatchUpHarness({super.key});
 
@@ -29,6 +91,8 @@ class _ForegroundCatchUpHarnessState extends State<_ForegroundCatchUpHarness> {
       steps: 100,
       goal: 8000,
       isStale: false,
+      lastDisplayedSteps: 100,
+      lastDisplayedStepsLoaded: true,
     );
   }
 
@@ -45,7 +109,6 @@ class _ForegroundCatchUpHarnessState extends State<_ForegroundCatchUpHarness> {
   Widget build(BuildContext context) {
     return GoalRing(
       state: ringState,
-      debugLastDisplayedSteps: 100,
       onForegroundCatchUpHandled: () {
         catchUpHandled = true;
         setState(() {
@@ -58,13 +121,16 @@ class _ForegroundCatchUpHarnessState extends State<_ForegroundCatchUpHarness> {
 
 void main() {
   group('GoalRing', () {
-    setUp(() {
-      GoalRing.disableStepPersistence = true;
-    });
+    TodayState displayReady(TodayState state) {
+      if (state.lastDisplayedStepsLoaded) {
+        return state;
+      }
+      return state.copyWith(
+        lastDisplayedSteps: state.steps,
+        lastDisplayedStepsLoaded: true,
+      );
+    }
 
-    tearDown(() {
-      GoalRing.disableStepPersistence = false;
-    });
     Future<void> pumpGoalRing(
       WidgetTester tester, {
       required TodayState state,
@@ -76,7 +142,7 @@ void main() {
           Center(
             child: SizedBox(
               width: width,
-              child: GoalRing(state: state),
+              child: GoalRing(state: displayReady(state)),
             ),
           ),
           preset: preset,
@@ -99,6 +165,28 @@ void main() {
         }
       }
       throw StateError('GoalRingPainter not found');
+    }
+
+    bool hasOverflowAmbientPainter(WidgetTester tester) {
+      return tester
+          .widgetList<CustomPaint>(
+            find.descendant(
+              of: find.byType(GoalRing),
+              matching: find.byType(CustomPaint),
+            ),
+          )
+          .any((p) => p.painter is GoalRingOverflowAmbientPainter);
+    }
+
+    Future<void> unmountGoalRingAndAssertNoLateTimers(
+      WidgetTester tester,
+    ) async {
+      expect(find.byType(GoalRing), findsOneWidget);
+      await tester.pumpWidget(const SizedBox.shrink());
+      await tester.pump();
+      expect(find.byType(GoalRing), findsNothing);
+      await tester.pump(const Duration(seconds: 2));
+      expect(tester.takeException(), isNull);
     }
 
     test('ringProgressFor caps overflow at 100%', () {
@@ -251,10 +339,12 @@ void main() {
               child: SizedBox(
                 width: 400,
                 child: GoalRing(
-                  state: TodayState.fromData(
-                    steps: 10_847,
-                    goal: 8000,
-                    isStale: false,
+                  state: displayReady(
+                    TodayState.fromData(
+                      steps: 10_847,
+                      goal: 8000,
+                      isStale: false,
+                    ),
                   ),
                 ),
               ),
@@ -276,6 +366,93 @@ void main() {
       );
     });
 
+    Future<void> pumpGoalRingRaw(
+      WidgetTester tester, {
+      required TodayState state,
+      double width = 400,
+    }) async {
+      await tester.pumpWidget(
+        wrapWithAstraTheme(
+          Center(
+            child: SizedBox(
+              width: width,
+              child: GoalRing(state: state),
+            ),
+          ),
+        ),
+      );
+      await tester.pump();
+      await tester.pump();
+    }
+
+    testWidgets('loading placeholder hides step digits and goal fraction', (
+      tester,
+    ) async {
+      await pumpGoalRingRaw(
+        tester,
+        state: const TodayState.loading(),
+      );
+
+      expect(find.byKey(const Key('goal_ring_loading_skeleton')), findsOneWidget);
+      expect(find.textContaining('/'), findsNothing);
+      expect(find.text('0'), findsNothing);
+    });
+
+    testWidgets('lastDisplayedStepsLoaded false hides numeric center content', (
+      tester,
+    ) async {
+      await pumpGoalRingRaw(
+        tester,
+        state: TodayState.fromData(
+          steps: 3200,
+          goal: 8000,
+          isStale: false,
+          lastDisplayedStepsLoaded: false,
+        ),
+      );
+
+      expect(find.byKey(const Key('goal_ring_loading_skeleton')), findsOneWidget);
+      expect(find.textContaining('/'), findsNothing);
+      expect(find.text('3 200'), findsNothing);
+    });
+
+    testWidgets('loading to ready triggers cold-start count-up', (
+      tester,
+    ) async {
+      final harnessKey = GlobalKey<_LoadingToReadyHarnessState>();
+
+      await tester.pumpWidget(
+        wrapWithAstraTheme(
+          Center(
+            child: SizedBox(
+              width: 400,
+              child: _LoadingToReadyHarness(key: harnessKey),
+            ),
+          ),
+        ),
+      );
+      await tester.pump();
+
+      expect(find.byKey(const Key('goal_ring_loading_skeleton')), findsOneWidget);
+
+      harnessKey.currentState!.resolveLoading();
+      await tester.pump();
+      await tester.pump();
+      await tester.pump(const Duration(milliseconds: 50));
+
+      expect(find.byKey(const Key('goal_ring_loading_skeleton')), findsNothing);
+      expect(find.textContaining('/'), findsOneWidget);
+
+      final initialProgress = ringPainter(tester).progress;
+      expect(initialProgress, closeTo(470 / 8000, 0.02));
+      expect(initialProgress, lessThan(520 / 8000));
+
+      await tester.pump(const Duration(milliseconds: 400));
+      await tester.pump();
+
+      expect(ringPainter(tester).progress, greaterThan(initialProgress));
+    });
+
     testWidgets('cold start shows stored count before animating to target', (
       tester,
     ) async {
@@ -289,8 +466,9 @@ void main() {
                   steps: 1024,
                   goal: 8000,
                   isStale: false,
+                  lastDisplayedSteps: 470,
+                  lastDisplayedStepsLoaded: true,
                 ),
-                debugLastDisplayedSteps: 470,
               ),
             ),
           ),
@@ -325,8 +503,9 @@ void main() {
                   steps: 1024,
                   goal: 8000,
                   isStale: false,
+                  lastDisplayedSteps: 470,
+                  lastDisplayedStepsLoaded: true,
                 ),
-                debugLastDisplayedSteps: 470,
               ),
             ),
           ),
@@ -448,6 +627,126 @@ void main() {
       handle.dispose();
     });
 
+    testWidgets('build returns RepaintBoundary as direct render root', (
+      tester,
+    ) async {
+      await pumpGoalRing(
+        tester,
+        state: TodayState.fromData(
+          steps: 3200,
+          goal: 8000,
+          isStale: false,
+        ),
+      );
+
+      late Widget firstBuiltChild;
+      var visited = false;
+      tester.element(find.byType(GoalRing)).visitChildren((element) {
+        if (!visited) {
+          firstBuiltChild = element.widget;
+          visited = true;
+        }
+      });
+      expect(visited, isTrue);
+      expect(firstBuiltChild, isA<RepaintBoundary>());
+      expect(
+        (firstBuiltChild as RepaintBoundary).child,
+        isA<LayoutBuilder>(),
+      );
+    });
+
+    testWidgets('dispose releases pulse animation without pending timers', (
+      tester,
+    ) async {
+      await pumpGoalRing(
+        tester,
+        state: const TodayState.loading(),
+      );
+      await tester.pump(const Duration(milliseconds: 100));
+
+      expect(
+        find.descendant(
+          of: find.byType(GoalRing),
+          matching: find.byType(FadeTransition),
+        ),
+        findsOneWidget,
+      );
+
+      await unmountGoalRingAndAssertNoLateTimers(tester);
+    });
+
+    testWidgets('dispose releases overflow animation without pending timers', (
+      tester,
+    ) async {
+      await pumpGoalRing(
+        tester,
+        state: TodayState.fromData(
+          steps: 10_847,
+          goal: 8000,
+          isStale: false,
+        ),
+      );
+      await tester.pump(const Duration(milliseconds: 100));
+
+      expect(hasOverflowAmbientPainter(tester), isTrue);
+
+      await unmountGoalRingAndAssertNoLateTimers(tester);
+    });
+
+    testWidgets('dispose cancels live coalesce timer before it fires', (
+      tester,
+    ) async {
+      final harnessKey = GlobalKey<_LiveCoalesceHarnessState>();
+
+      await tester.pumpWidget(
+        wrapWithAstraTheme(
+          Center(
+            child: SizedBox(
+              width: 400,
+              child: _LiveCoalesceHarness(key: harnessKey),
+            ),
+          ),
+        ),
+      );
+      await tester.pump();
+      await tester.pumpAndSettle();
+
+      expect(ringPainter(tester).progress, closeTo(100 / 8000, 0.001));
+
+      harnessKey.currentState!.bumpByMicroTickDelta();
+      await tester.pump(const Duration(milliseconds: 50));
+
+      expect(ringPainter(tester).progress, closeTo(100 / 8000, 0.001));
+
+      await unmountGoalRingAndAssertNoLateTimers(tester);
+    });
+
+    testWidgets('dispose cancels foreground catch-up timer before it fires', (
+      tester,
+    ) async {
+      final harnessKey = GlobalKey<_ForegroundCatchUpHarnessState>();
+
+      await tester.pumpWidget(
+        wrapWithAstraTheme(
+          Center(
+            child: SizedBox(
+              width: 400,
+              child: _ForegroundCatchUpHarness(key: harnessKey),
+            ),
+          ),
+        ),
+      );
+      await tester.pump();
+      await tester.pump();
+
+      harnessKey.currentState!.triggerForegroundCatchUp();
+      await tester.pump(const Duration(milliseconds: 500));
+
+      expect(harnessKey.currentState!.catchUpHandled, isFalse);
+
+      await unmountGoalRingAndAssertNoLateTimers(tester);
+    });
+
     testWidgets('ring diameter clamps to kGoalRingMaxDiameter', (
       tester,
     ) async {
@@ -472,8 +771,26 @@ void main() {
   });
 
   group('paintGoalRingTrackInnerShadow', () {
-    test('paints without error on annulus path', () {
-      const size = Size.square(280);
+    late GoalRingInsetShadowCache cache;
+    const size = Size.square(280);
+    const devicePixelRatio = 1.0;
+
+    setUp(() => cache = GoalRingInsetShadowCache());
+    tearDown(() => cache.dispose());
+
+    Path annulusFor(Size canvasSize) {
+      final center = Offset(canvasSize.width / 2, canvasSize.height / 2);
+      const strokeWidth = kGoalRingStrokeWidth;
+      final radius = (canvasSize.width - strokeWidth) / 2;
+      final innerRadius = radius - strokeWidth / 2;
+      final outerRadius = radius + strokeWidth / 2;
+      return Path()
+        ..fillType = PathFillType.evenOdd
+        ..addOval(Rect.fromCircle(center: center, radius: outerRadius))
+        ..addOval(Rect.fromCircle(center: center, radius: innerRadius));
+    }
+
+    test('paints without error on first call', () {
       final recorder = PictureRecorder();
       final canvas = Canvas(recorder);
       final center = Offset(size.width / 2, size.height / 2);
@@ -481,12 +798,79 @@ void main() {
       final radius = (size.width - strokeWidth) / 2;
       final innerRadius = radius - strokeWidth / 2;
       final outerRadius = radius + strokeWidth / 2;
-      final annulus = Path()
-        ..fillType = PathFillType.evenOdd
-        ..addOval(Rect.fromCircle(center: center, radius: outerRadius))
-        ..addOval(Rect.fromCircle(center: center, radius: innerRadius));
+      final annulus = annulusFor(size);
 
-      paintGoalRingTrackInnerShadow(canvas, annulus, center, innerRadius, outerRadius);
+      paintGoalRingTrackInnerShadow(
+        canvas,
+        annulus,
+        center,
+        innerRadius,
+        outerRadius,
+        size,
+        devicePixelRatio,
+        cache,
+      );
+
+      expect(cache.isValid(size, devicePixelRatio), isTrue);
+    });
+
+    test('cache hit on second call with same size', () {
+      final center = Offset(size.width / 2, size.height / 2);
+      const strokeWidth = kGoalRingStrokeWidth;
+      final radius = (size.width - strokeWidth) / 2;
+      final innerRadius = radius - strokeWidth / 2;
+      final outerRadius = radius + strokeWidth / 2;
+      final annulus = annulusFor(size);
+
+      final recorder = PictureRecorder();
+      paintGoalRingTrackInnerShadow(
+        Canvas(recorder),
+        annulus,
+        center,
+        innerRadius,
+        outerRadius,
+        size,
+        devicePixelRatio,
+        cache,
+      );
+      expect(cache.isValid(size, devicePixelRatio), isTrue);
+
+      final recorder2 = PictureRecorder();
+      paintGoalRingTrackInnerShadow(
+        Canvas(recorder2),
+        annulus,
+        center,
+        innerRadius,
+        outerRadius,
+        size,
+        devicePixelRatio,
+        cache,
+      );
+      expect(cache.isValid(size, devicePixelRatio), isTrue);
+    });
+
+    test('cache invalidates on size change', () {
+      final center = Offset(size.width / 2, size.height / 2);
+      const strokeWidth = kGoalRingStrokeWidth;
+      final radius = (size.width - strokeWidth) / 2;
+      final innerRadius = radius - strokeWidth / 2;
+      final outerRadius = radius + strokeWidth / 2;
+      final annulus = annulusFor(size);
+
+      paintGoalRingTrackInnerShadow(
+        Canvas(PictureRecorder()),
+        annulus,
+        center,
+        innerRadius,
+        outerRadius,
+        size,
+        devicePixelRatio,
+        cache,
+      );
+      expect(cache.isValid(size, devicePixelRatio), isTrue);
+
+      const newSize = Size.square(320);
+      expect(cache.isValid(newSize, devicePixelRatio), isFalse);
     });
   });
 }

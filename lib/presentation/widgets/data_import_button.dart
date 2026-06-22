@@ -1,3 +1,4 @@
+import 'package:astra_app/l10n/app_localizations.dart';
 import 'package:flutter/material.dart';
 
 import 'astra_button.dart';
@@ -7,22 +8,22 @@ class DataImportButton extends StatelessWidget {
   const DataImportButton({
     required this.onPressed,
     required this.isLoading,
-    this.label = 'Import CSV',
     super.key,
   });
 
   final VoidCallback? onPressed;
   final bool isLoading;
-  final String label;
 
   @override
   Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context);
+
     return Semantics(
-      label: 'Import CSV file',
+      label: l10n.myDataImportCsvSemantics,
       button: true,
       enabled: onPressed != null && !isLoading,
       child: AstraButton(
-        label: label,
+        label: l10n.myDataImportCsv,
         variant: AstraButtonVariant.secondary,
         isLoading: isLoading,
         onPressed: onPressed,

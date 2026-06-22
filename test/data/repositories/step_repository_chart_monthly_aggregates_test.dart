@@ -3,23 +3,23 @@ import 'package:astra_app/data/datasources/data_ingestion_source.dart';
 import 'package:astra_app/data/models/chart_month_aggregate.dart';
 import 'package:astra_app/data/models/normalized_step_bucket.dart';
 import 'package:astra_app/data/models/timeseries_sample_model.dart';
-import 'package:astra_app/data/repositories/step_repository.dart';
-import 'package:astra_app/dev/data_inject_service.dart';
+import '../../dev/data_inject_service.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:sqflite/sqflite.dart';
 
 import '../../core/time/fake_time_provider.dart';
 import '../../helpers/sqflite_test_helper.dart';
+import '../../helpers/step_test_fixtures.dart';
 
 void main() {
   setUpAll(() async {
     await setUpSqfliteFfi();
   });
 
-  group('StepRepository.getChartMonthlyAggregates', () {
+  group('StepAggregationRepository.getChartMonthlyAggregates', () {
     late Database db;
     late FakeTimeProvider clock;
-    late StepRepository repository;
+    late StepTestRepos stepRepos;
 
     setUp(() async {
       db = await openAstraDatabase(databasePath: inMemoryDatabasePath);
@@ -27,7 +27,7 @@ void main() {
         fixedNowUtc: DateTime.utc(2026, 6, 15, 12),
         zoneOffset: const Duration(hours: 2),
       );
-      repository = StepRepository(db: db, clock: clock);
+      stepRepos = StepTestFixtures.create(db: db, clock: clock);
     });
 
     tearDown(() async {
@@ -35,9 +35,9 @@ void main() {
     });
 
     test('returns 12 items for rolling window ending in current month', () async {
-      await DataInjectService(repository: repository).inject90Days(clock: clock);
+      await DataInjectService(repository: stepRepos.ingestion).inject90Days(clock: clock);
 
-      final aggregates = await repository.getChartMonthlyAggregates(months: 12);
+      final aggregates = await stepRepos.aggregation.getChartMonthlyAggregates(months: 12);
 
       expect(aggregates, hasLength(12));
       expect(aggregates.first.monthStart, DateTime.utc(2026, 6, 1));
@@ -47,7 +47,7 @@ void main() {
 
     test('partial current month uses elapsed days as denominator', () async {
       for (var day = 1; day <= 10; day++) {
-        await repository.upsertIngestionBucket(
+        await stepRepos.ingestion.upsertIngestionBucket(
           _bucket(
             startTimeUtc: DateTime.utc(2026, 6, day, 10),
             value: 1000,
@@ -56,7 +56,7 @@ void main() {
         );
       }
 
-      final aggregates = await repository.getChartMonthlyAggregates(months: 12);
+      final aggregates = await stepRepos.aggregation.getChartMonthlyAggregates(months: 12);
       final june = aggregates.firstWhere(
         (entry) => entry.monthStart == DateTime.utc(2026, 6, 1),
       );
@@ -68,7 +68,7 @@ void main() {
 
     test('complete past month uses full calendar day count', () async {
       for (var day = 1; day <= 31; day++) {
-        await repository.upsertIngestionBucket(
+        await stepRepos.ingestion.upsertIngestionBucket(
           _bucket(
             startTimeUtc: DateTime.utc(2026, 5, day, 10),
             value: 100,
@@ -77,7 +77,7 @@ void main() {
         );
       }
 
-      final aggregates = await repository.getChartMonthlyAggregates(months: 12);
+      final aggregates = await stepRepos.aggregation.getChartMonthlyAggregates(months: 12);
       final may = aggregates.firstWhere(
         (entry) => entry.monthStart == DateTime.utc(2026, 5, 1),
       );
@@ -88,7 +88,7 @@ void main() {
     });
 
     test('months with zero steps render as zero averages', () async {
-      await repository.upsertIngestionBucket(
+      await stepRepos.ingestion.upsertIngestionBucket(
         _bucket(
           startTimeUtc: DateTime.utc(2026, 6, 2, 10),
           value: 500,
@@ -96,7 +96,7 @@ void main() {
         ),
       );
 
-      final aggregates = await repository.getChartMonthlyAggregates(months: 12);
+      final aggregates = await stepRepos.aggregation.getChartMonthlyAggregates(months: 12);
       final may = aggregates.firstWhere(
         (entry) => entry.monthStart == DateTime.utc(2026, 5, 1),
       );
@@ -107,14 +107,14 @@ void main() {
     });
 
     test('groups mixed zone offsets into correct local day buckets', () async {
-      await repository.upsertIngestionBucket(
+      await stepRepos.ingestion.upsertIngestionBucket(
         _bucket(
           startTimeUtc: DateTime.utc(2026, 6, 1, 22, 30),
           value: 100,
           zoneOffset: '+02:00',
         ),
       );
-      await repository.upsertIngestionBucket(
+      await stepRepos.ingestion.upsertIngestionBucket(
         _bucket(
           startTimeUtc: DateTime.utc(2026, 6, 1, 22, 30),
           value: 50,
@@ -123,7 +123,7 @@ void main() {
           deviceId: 'ring',
         ),
       );
-      await repository.upsertIngestionBucket(
+      await stepRepos.ingestion.upsertIngestionBucket(
         _bucket(
           startTimeUtc: DateTime.utc(2026, 6, 2, 10),
           value: 200,
@@ -131,7 +131,7 @@ void main() {
         ),
       );
 
-      final aggregates = await repository.getChartMonthlyAggregates(months: 12);
+      final aggregates = await stepRepos.aggregation.getChartMonthlyAggregates(months: 12);
       final june = aggregates.firstWhere(
         (entry) => entry.monthStart == DateTime.utc(2026, 6, 1),
       );
@@ -142,21 +142,21 @@ void main() {
     test(
       'uses finest resolution when mixed-resolution rows exist for the same day',
       () async {
-        await repository.upsertIngestionBucket(
+        await stepRepos.ingestion.upsertIngestionBucket(
           _bucket(
             startTimeUtc: DateTime.utc(2026, 6, 1, 8),
             value: 120,
             zoneOffset: '+02:00',
           ),
         );
-        await repository.upsertIngestionBucket(
+        await stepRepos.ingestion.upsertIngestionBucket(
           _bucket(
             startTimeUtc: DateTime.utc(2026, 6, 1, 9),
             value: 80,
             zoneOffset: '+02:00',
           ),
         );
-        await repository.insertDevSamplesBatch([
+        await stepRepos.ingestion.insertDevSamplesBatch([
           TimeseriesSampleModel(
             id: 'bad-import-hourly',
             startTimeUtc: DateTime.utc(2026, 6, 1, 8),
@@ -171,7 +171,7 @@ void main() {
           ),
         ]);
 
-        final aggregates = await repository.getChartMonthlyAggregates(months: 12);
+        final aggregates = await stepRepos.aggregation.getChartMonthlyAggregates(months: 12);
         final june = aggregates.firstWhere(
           (entry) => entry.monthStart == DateTime.utc(2026, 6, 1),
         );
@@ -181,7 +181,7 @@ void main() {
     );
 
     test('returns zero-filled months when no samples exist', () async {
-      final aggregates = await repository.getChartMonthlyAggregates(months: 12);
+      final aggregates = await stepRepos.aggregation.getChartMonthlyAggregates(months: 12);
 
       expect(aggregates, hasLength(12));
       expect(aggregates.every((entry) => entry.totalSteps == 0), isTrue);
@@ -197,7 +197,7 @@ void main() {
 
     test('throws ArgumentError for unsupported month ranges', () async {
       await expectLater(
-        repository.getChartMonthlyAggregates(months: 6),
+        stepRepos.aggregation.getChartMonthlyAggregates(months: 6),
         throwsA(isA<ArgumentError>()),
       );
     });

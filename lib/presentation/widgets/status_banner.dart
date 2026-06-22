@@ -1,3 +1,4 @@
+import 'package:astra_app/l10n/app_localizations.dart';
 import 'package:flutter/material.dart';
 
 import '../../core/constants/astra_colors.dart';
@@ -35,15 +36,12 @@ class StatusBanner extends StatelessWidget {
   static const _kAccentWidth = 3.0;
   static const _kCompactMinHeight = 40.0;
 
-  String get _copy => switch (variant) {
-    StatusBannerVariant.staleCompact => 'Steps may be delayed — see My Data',
-    StatusBannerVariant.staleFull => isIos
-        ? 'No new steps in 4+ hours. Steps update when you open the app on this device.'
-        : 'No new steps in 12+ hours. Background collection may be delayed on this device.',
-    StatusBannerVariant.info =>
-      'Steps update when you open the app on this device.',
-    StatusBannerVariant.error =>
-      message ?? 'Something went wrong. Try again.',
+  String _copy(AppLocalizations l10n) => switch (variant) {
+    StatusBannerVariant.staleCompact => l10n.bannerStaleData,
+    StatusBannerVariant.staleFull =>
+      isIos ? l10n.bannerStaleFullIos : l10n.bannerStaleFullAndroid,
+    StatusBannerVariant.info => l10n.bannerInfoStepsSync,
+    StatusBannerVariant.error => message ?? l10n.commonErrorGeneric,
   };
 
   Color _accentColor(AstraColors colors) => switch (variant) {
@@ -66,6 +64,8 @@ class StatusBanner extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final colors = context.astraColors;
+    final l10n = AppLocalizations.of(context);
+    final copy = _copy(l10n);
 
     final banner = DecoratedBox(
       decoration: BoxDecoration(
@@ -84,7 +84,7 @@ class StatusBanner extends StatelessWidget {
           child: Align(
             alignment: Alignment.centerLeft,
             child: Text(
-              _copy,
+              copy,
               style: AstraTypography.captionFor(colors),
               maxLines: variant == StatusBannerVariant.staleCompact ? 1 : null,
               overflow: variant == StatusBannerVariant.staleCompact
@@ -98,13 +98,13 @@ class StatusBanner extends StatelessWidget {
 
     if (onTap == null) {
       return Semantics(
-        label: _copy,
+        label: copy,
         child: banner,
       );
     }
 
     return Semantics(
-      label: _copy,
+      label: copy,
       button: true,
       onTap: onTap,
       child: ExcludeSemantics(

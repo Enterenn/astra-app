@@ -1,12 +1,12 @@
 import 'package:flutter_bloc/flutter_bloc.dart';
 
 import '../../core/constants/display_unit_preferences.dart';
-import '../../data/repositories/user_preferences_repository.dart';
+import '../../data/contracts/user_settings_repository_contract.dart';
 import 'units_state.dart';
 
 class UnitsCubit extends Cubit<UnitsState> {
   UnitsCubit({
-    required this.userPreferences,
+    required this.userSettings,
     DistanceDisplayUnit initialDistanceUnit = DistanceDisplayUnit.metric,
     WeightDisplayUnit initialWeightUnit = WeightDisplayUnit.kg,
     HeightDisplayUnit initialHeightUnit = HeightDisplayUnit.cm,
@@ -18,7 +18,7 @@ class UnitsCubit extends Cubit<UnitsState> {
          ),
        );
 
-  final UserPreferencesRepository userPreferences;
+  final UserSettingsRepositoryContract userSettings;
 
   Future<void>? _setInFlight;
 
@@ -99,7 +99,7 @@ class UnitsCubit extends Cubit<UnitsState> {
       return false;
     }
     try {
-      await userPreferences.setDistanceDisplayUnit(unit);
+      await userSettings.setDistanceDisplayUnit(unit);
     } catch (_) {
       return false;
     }
@@ -127,7 +127,7 @@ class UnitsCubit extends Cubit<UnitsState> {
       return false;
     }
     try {
-      await userPreferences.setWeightDisplayUnit(unit);
+      await userSettings.setWeightDisplayUnit(unit);
     } catch (_) {
       return false;
     }
@@ -155,7 +155,7 @@ class UnitsCubit extends Cubit<UnitsState> {
       return false;
     }
     try {
-      await userPreferences.setHeightDisplayUnit(unit);
+      await userSettings.setHeightDisplayUnit(unit);
     } catch (_) {
       return false;
     }

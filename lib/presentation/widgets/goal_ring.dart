@@ -1,15 +1,14 @@
 import 'dart:async';
 import 'dart:math' as math;
 
+import 'package:astra_app/l10n/app_localizations.dart';
 import 'package:flutter/material.dart';
-import 'package:phosphoricons_flutter/phosphoricons_flutter.dart';
-import 'package:sqflite/sqflite.dart';
+import 'package:astra_app/core/icons/phosphor_icons.dart';
 
 import '../../core/constants/astra_colors.dart';
 import '../../core/debug/live_pipeline_log.dart';
 import '../../core/constants/astra_spacing.dart';
 import '../../core/constants/astra_typography.dart';
-import '../../data/repositories/user_preferences_repository.dart';
 import '../cubits/today_state.dart';
 import '../formatters/step_count_formatter.dart';
 import 'animated_step_count.dart';
@@ -63,27 +62,18 @@ int tabReturnDurationMs(int delta) {
 class GoalRing extends StatefulWidget {
   const GoalRing({
     required this.state,
-    this.userPreferences,
-    this.localDayIso,
     this.showRing = true,
     this.freezeMotion = false,
-    this.debugLastDisplayedSteps,
     this.onForegroundCatchUpHandled,
+    this.onLastDisplayedStepsChanged,
     super.key,
   });
 
-  @visibleForTesting
-  static bool disableStepPersistence = false;
-
-  /// Test-only: skip prefs I/O and seed [lastDisplayedSteps] for cold-start tests.
-  final int? debugLastDisplayedSteps;
-
   final TodayState state;
-  final UserPreferencesRepository? userPreferences;
-  final String? localDayIso;
   final bool showRing;
   final bool freezeMotion;
   final VoidCallback? onForegroundCatchUpHandled;
+  final ValueChanged<int>? onLastDisplayedStepsChanged;
 
   @visibleForTesting
   static double ringProgressFor(TodayState state) {
@@ -112,10 +102,8 @@ class _GoalRingState extends State<GoalRing> with TickerProviderStateMixin {
   int _displayedSteps = 0;
   int? _microTickPreviousSteps;
   double _animatedProgress = 0;
-  bool _prefsLoaded = false;
-  bool _prefsLoadHandled = false;
+  bool _displayStateHandled = false;
   bool _coldStartHandled = false;
-  int? _lastPersistedSteps;
   Timer? _liveCoalesceTimer;
   Timer? _foregroundCatchUpTimer;
   bool _foregroundCatchUpScheduled = false;
@@ -158,27 +146,17 @@ class _GoalRingState extends State<GoalRing> with TickerProviderStateMixin {
     if (widget.freezeMotion) {
       _displayedSteps = _targetSteps;
       _animatedProgress = _targetProgressRatio;
-      _prefsLoaded = true;
+      _displayStateHandled = true;
       _coldStartHandled = true;
       _lastDisplayedSteps = _targetSteps;
-    } else if (widget.debugLastDisplayedSteps != null) {
-      final seed = widget.debugLastDisplayedSteps!;
-      _lastDisplayedSteps = seed;
-      _displayedSteps = seed;
-      _animatedProgress = _progressRatioFor(seed);
-      _prefsLoaded = true;
-      WidgetsBinding.instance.addPostFrameCallback((_) {
-        if (!mounted || _prefsLoadHandled) {
-          return;
-        }
-        _prefsLoadHandled = true;
-        _afterLastDisplayedStepsLoaded();
-      });
     } else {
-      // Hold at zero until prefs resolve — avoids flashing the target count.
+      // Hold at zero until cubit loads display prefs — avoids flashing target count.
       _displayedSteps = 0;
       _animatedProgress = 0;
-      unawaited(_loadLastDisplayedSteps());
+      if (widget.state.lastDisplayedStepsLoaded) {
+        _seedFromDisplayState();
+        _scheduleAfterDisplayStateLoaded();
+      }
     }
   }
 
@@ -195,11 +173,25 @@ class _GoalRingState extends State<GoalRing> with TickerProviderStateMixin {
     _syncPulseAnimation();
     _syncOverflowAnimation();
 
-    if (oldWidget.localDayIso != widget.localDayIso) {
+    final displayDayChanged =
+        oldWidget.state.selectedLocalDay != widget.state.selectedLocalDay;
+    final displayStateBecameLoaded =
+        !oldWidget.state.lastDisplayedStepsLoaded &&
+        widget.state.lastDisplayedStepsLoaded;
+    final displaySeedChanged =
+        oldWidget.state.lastDisplayedSteps != widget.state.lastDisplayedSteps;
+
+    if (displayDayChanged || displayStateBecameLoaded || displaySeedChanged) {
       _coldStartHandled = false;
-      _prefsLoadHandled = false;
-      _lastDisplayedSteps = 0;
-      unawaited(_loadLastDisplayedSteps());
+      _displayStateHandled = false;
+      if (widget.state.lastDisplayedStepsLoaded) {
+        _seedFromDisplayState();
+        _scheduleAfterDisplayStateLoaded();
+      } else if (displayDayChanged) {
+        _lastDisplayedSteps = 0;
+        _displayedSteps = 0;
+        _animatedProgress = 0;
+      }
     }
 
     _handleStepChange(
@@ -208,73 +200,29 @@ class _GoalRingState extends State<GoalRing> with TickerProviderStateMixin {
     );
   }
 
-  Future<void> _loadLastDisplayedSteps() async {
-    final debugSeed = widget.debugLastDisplayedSteps;
-    if (debugSeed != null) {
-      if (!mounted) {
-        return;
-      }
-      setState(() {
-        _lastDisplayedSteps = debugSeed;
-        _displayedSteps = debugSeed;
-        _animatedProgress = _progressRatioFor(debugSeed);
-        _prefsLoaded = true;
-      });
-      _scheduleAfterPrefsLoaded();
-      return;
-    }
-    if (GoalRing.disableStepPersistence) {
-      if (!mounted) {
-        return;
-      }
-      setState(() => _prefsLoaded = true);
-      _scheduleAfterPrefsLoaded();
-      return;
-    }
-    final prefs = widget.userPreferences;
-    final day = widget.localDayIso;
-    if (prefs == null || day == null) {
-      if (!mounted) {
-        return;
-      }
-      setState(() => _prefsLoaded = true);
-      _scheduleAfterPrefsLoaded();
-      return;
-    }
-
-    final stored = await prefs.getLastDisplayedSteps(day);
-    if (!mounted) {
-      return;
-    }
-    setState(() {
-      _lastDisplayedSteps = stored ?? 0;
-      _displayedSteps = _lastDisplayedSteps;
-      _animatedProgress = _progressRatioFor(_lastDisplayedSteps);
-      _prefsLoaded = true;
-    });
-    _scheduleAfterPrefsLoaded();
+  void _seedFromDisplayState() {
+    final seed = widget.state.lastDisplayedSteps ?? 0;
+    _lastDisplayedSteps = seed;
+    _displayedSteps = seed;
+    _animatedProgress = _progressRatioFor(seed);
   }
 
-  void _scheduleAfterPrefsLoaded() {
-    if (_prefsLoadHandled) {
+  void _scheduleAfterDisplayStateLoaded() {
+    if (_displayStateHandled) {
       return;
     }
     WidgetsBinding.instance.addPostFrameCallback((_) {
-      if (!mounted || !_prefsLoaded || _prefsLoadHandled) {
+      if (!mounted ||
+          !widget.state.lastDisplayedStepsLoaded ||
+          _displayStateHandled) {
         return;
       }
-      _prefsLoadHandled = true;
-      _afterLastDisplayedStepsLoaded();
+      _displayStateHandled = true;
+      _afterDisplayStateLoaded();
     });
   }
 
-  void _afterLastDisplayedStepsLoaded() {
-    if (GoalRing.disableStepPersistence &&
-        widget.debugLastDisplayedSteps == null) {
-      _coldStartHandled = true;
-      _setDisplayedInstant(_targetSteps);
-      return;
-    }
+  void _afterDisplayStateLoaded() {
     _handleStepChange(
       oldStatus: TodayStatus.loading,
       oldSteps: 0,
@@ -290,7 +238,7 @@ class _GoalRingState extends State<GoalRing> with TickerProviderStateMixin {
     if (widget.freezeMotion) {
       return;
     }
-    if (!_prefsLoaded) {
+    if (!widget.state.lastDisplayedStepsLoaded) {
       return;
     }
 
@@ -452,7 +400,7 @@ class _GoalRingState extends State<GoalRing> with TickerProviderStateMixin {
       _displayedSteps = to;
       _animatedProgress = toRatio;
       _lastDisplayedSteps = to;
-      unawaited(_persistLastDisplayedSteps(to));
+      _notifyLastDisplayedStepsChanged(to);
       _releaseCountUpController();
       if (_pendingForegroundCatchUpClear) {
         _pendingForegroundCatchUpClear = false;
@@ -520,7 +468,7 @@ class _GoalRingState extends State<GoalRing> with TickerProviderStateMixin {
       if (status == AnimationStatus.completed) {
         _microTickPreviousSteps = null;
         _animatedProgress = toRatio;
-        unawaited(_persistLastDisplayedSteps(to));
+        _notifyLastDisplayedStepsChanged(to);
       }
     }
 
@@ -540,7 +488,11 @@ class _GoalRingState extends State<GoalRing> with TickerProviderStateMixin {
       _animatedProgress = _progressRatioFor(steps);
       _lastDisplayedSteps = steps;
     });
-    unawaited(_persistLastDisplayedSteps(steps));
+    _notifyLastDisplayedStepsChanged(steps);
+  }
+
+  void _notifyLastDisplayedStepsChanged(int steps) {
+    widget.onLastDisplayedStepsChanged?.call(steps);
   }
 
   void _resetDisplayed({required bool instant}) {
@@ -555,29 +507,10 @@ class _GoalRingState extends State<GoalRing> with TickerProviderStateMixin {
     }
   }
 
-  Future<void> _persistLastDisplayedSteps(int steps) async {
-    if (GoalRing.disableStepPersistence ||
-        _lastPersistedSteps == steps) {
-      return;
-    }
-    final prefs = widget.userPreferences;
-    final day = widget.localDayIso;
-    if (prefs == null || day == null || !mounted || !prefs.isDatabaseOpen) {
-      return;
-    }
-    try {
-      await prefs.setLastDisplayedSteps(localDayIso: day, steps: steps);
-    } on DatabaseException {
-      return;
-    }
-    if (!mounted) {
-      return;
-    }
-    _lastPersistedSteps = steps;
-  }
-
   void _syncPulseAnimation() {
-    final shouldPulse = widget.state.status == TodayStatus.loading;
+    final shouldPulse =
+        _isLoadingPlaceholder &&
+        widget.state.status != TodayStatus.noPermission;
     final disableAnimations = MediaQuery.disableAnimationsOf(context);
 
     if (shouldPulse && !disableAnimations) {
@@ -622,8 +555,12 @@ class _GoalRingState extends State<GoalRing> with TickerProviderStateMixin {
 
   double get _targetProgressRatio => GoalRing.ringProgressFor(widget.state);
 
+  bool get _isLoadingPlaceholder =>
+      widget.state.status == TodayStatus.loading ||
+      !widget.state.lastDisplayedStepsLoaded;
+
   double get _effectiveProgress {
-    if (widget.state.status == TodayStatus.loading ||
+    if (_isLoadingPlaceholder ||
         widget.state.status == TodayStatus.noPermission) {
       return 0;
     }
@@ -644,66 +581,77 @@ class _GoalRingState extends State<GoalRing> with TickerProviderStateMixin {
     return (steps / goal).clamp(0.0, 1.0);
   }
 
-  @override
-  void deactivate() {
-    if (!widget.freezeMotion) {
-      unawaited(_persistLastDisplayedSteps(_displayedSteps));
-    }
-    super.deactivate();
-  }
+  final _insetShadowCache = GoalRingInsetShadowCache();
 
   @override
   void dispose() {
     _liveCoalesceTimer?.cancel();
+    _liveCoalesceTimer = null;
     _foregroundCatchUpTimer?.cancel();
+    _foregroundCatchUpTimer = null;
     _releasePulseController();
     _releaseCountUpController();
     _releaseMicroTickController();
     _releaseLiveArcController();
     _releaseOverflowController();
+    _insetShadowCache.dispose();
+    assert(() {
+      assert(_pulseController == null);
+      assert(_countUpController == null);
+      assert(_microTickController == null);
+      assert(_liveArcController == null);
+      assert(_overflowController == null);
+      assert(_liveCoalesceTimer == null);
+      assert(_foregroundCatchUpTimer == null);
+      return true;
+    }());
     super.dispose();
   }
 
   @override
   Widget build(BuildContext context) {
     final colors = context.astraColors;
+    final l10n = AppLocalizations.of(context);
     final reduceMotion = MediaQuery.disableAnimationsOf(context);
 
-    return LayoutBuilder(
-      builder: (context, constraints) {
-        final diameter = (constraints.maxWidth * kGoalRingWidthFactor).clamp(
-          kGoalRingMinDiameter,
-          kGoalRingMaxDiameter,
-        );
-        final size = Size.square(diameter);
+    return RepaintBoundary(
+      child: LayoutBuilder(
+        builder: (context, constraints) {
+          final diameter = (constraints.maxWidth * kGoalRingWidthFactor).clamp(
+            kGoalRingMinDiameter,
+            kGoalRingMaxDiameter,
+          );
+          final size = Size.square(diameter);
 
-        return Semantics(
-          label: _semanticsLabel,
-          value: _semanticsValue,
-          increasedValue: _semanticsMaxValue,
-          decreasedValue: _semanticsDecreasedValue,
-          container: true,
-          child: ExcludeSemantics(
-            child: SizedBox(
-              width: diameter,
-              height: diameter,
-              child: Stack(
-                alignment: Alignment.center,
-                children: [
-                  if (widget.showRing)
-                    _buildRing(size, colors, reduceMotion),
-                  _buildCenterContent(colors, reduceMotion),
-                ],
+          return Semantics(
+            label: _semanticsLabel(l10n),
+            value: _semanticsValue,
+            increasedValue: _semanticsMaxValue,
+            decreasedValue: _semanticsDecreasedValue,
+            container: true,
+            child: ExcludeSemantics(
+              child: SizedBox(
+                width: diameter,
+                height: diameter,
+                child: Stack(
+                  alignment: Alignment.center,
+                  children: [
+                    if (widget.showRing)
+                      _buildRing(size, colors, reduceMotion),
+                    _buildCenterContent(colors, reduceMotion, l10n),
+                  ],
+                ),
               ),
             ),
-          ),
-        );
-      },
+          );
+        },
+      ),
     );
   }
 
   Widget _buildRing(Size size, AstraColors colors, bool reduceMotion) {
     final status = widget.state.status;
+    final devicePixelRatio = View.of(context).devicePixelRatio;
     final goalReached =
         status == TodayStatus.goalMet || status == TodayStatus.overflow;
     final progressColor = colors.accentPrimary.withValues(
@@ -717,12 +665,16 @@ class _GoalRingState extends State<GoalRing> with TickerProviderStateMixin {
         progressColor: progressColor,
         strokeWidth: kGoalRingStrokeWidth,
         dashedTrack: status == TodayStatus.noPermission,
+        shadowCache: status != TodayStatus.noPermission ? _insetShadowCache : null,
+        devicePixelRatio: devicePixelRatio,
       ),
     );
 
     Widget result = ring;
 
-    if (status == TodayStatus.loading && _pulseController != null) {
+    if (_isLoadingPlaceholder &&
+        widget.state.status != TodayStatus.noPermission &&
+        _pulseController != null) {
       result = FadeTransition(
         opacity: Tween<double>(begin: 0.35, end: 0.85).animate(
           CurvedAnimation(parent: _pulseController!, curve: Curves.easeInOut),
@@ -756,8 +708,15 @@ class _GoalRingState extends State<GoalRing> with TickerProviderStateMixin {
     return result;
   }
 
-  Widget _buildCenterContent(AstraColors colors, bool reduceMotion) {
+  Widget _buildCenterContent(
+    AstraColors colors,
+    bool reduceMotion,
+    AppLocalizations l10n,
+  ) {
     final status = widget.state.status;
+    final showLoadingSkeleton =
+        _isLoadingPlaceholder && status != TodayStatus.noPermission;
+
     final centerText = switch (status) {
       TodayStatus.loading => '',
       TodayStatus.noPermission => '--',
@@ -785,43 +744,62 @@ class _GoalRingState extends State<GoalRing> with TickerProviderStateMixin {
                 ),
               ),
               const SizedBox(width: AstraSpacing.kSpaceXs),
-              Text('Steps', style: AstraTypography.goalRingLabelFor(colors)),
+              Text(
+                l10n.todayGoalRingStepsLabel,
+                style: AstraTypography.goalRingLabelFor(colors),
+              ),
             ],
           ),
-          if (centerText != null)
-            Text(centerText, style: stepCountStyle)
-          else if (reduceMotion || widget.freezeMotion)
-            Text(formatStepCount(_targetSteps), style: stepCountStyle)
-          else
-            AnimatedStepCount(
-              value: _displayedSteps,
-              previousValue: _microTickPreviousSteps,
-              microTickProgress: _microTickController?.value ?? 0,
-              style: stepCountStyle,
+          if (showLoadingSkeleton)
+            _GoalRingCenterSkeleton(
+              key: const Key('goal_ring_loading_skeleton'),
+              colors: colors,
+              pulseController: reduceMotion ? null : _pulseController,
+            )
+          else ...[
+            if (centerText != null)
+              Text(centerText, style: stepCountStyle)
+            else if (reduceMotion || widget.freezeMotion)
+              Text(formatStepCount(_targetSteps), style: stepCountStyle)
+            else
+              AnimatedStepCount(
+                value: _displayedSteps,
+                previousValue: _microTickPreviousSteps,
+                microTickProgress: _microTickController?.value ?? 0,
+                style: stepCountStyle,
+              ),
+            const SizedBox(height: 2),
+            Text(
+              '/${formatStepCount(widget.state.goal)}',
+              style: AstraTypography.goalRingLabelFor(colors),
             ),
-          const SizedBox(height: 2),
-          Text(
-            '/${formatStepCount(widget.state.goal)}',
-            style: AstraTypography.goalRingLabelFor(colors),
-          ),
+          ],
         ],
       ),
     );
   }
 
-  String get _semanticsLabel {
+  String _semanticsLabel(AppLocalizations l10n) {
+    if (_isLoadingPlaceholder &&
+        widget.state.status != TodayStatus.noPermission) {
+      return l10n.todayGoalRingSemanticsLoading;
+    }
     final steps = _targetSteps;
     return switch (widget.state.status) {
-      TodayStatus.loading => 'Steps today: loading',
-      TodayStatus.noPermission => 'Steps today: permission required',
+      TodayStatus.loading => l10n.todayGoalRingSemanticsLoading,
+      TodayStatus.noPermission => l10n.todayGoalRingSemanticsNoPermission,
       TodayStatus.overflow ||
       TodayStatus.goalMet =>
-        'Steps today: $steps. Daily goal ${widget.state.goal} reached.',
-      _ => 'Steps today: $steps of ${widget.state.goal}',
+        l10n.todayGoalRingSemanticsGoalReached(steps, widget.state.goal),
+      _ => l10n.todayGoalRingSemanticsProgress(steps, widget.state.goal),
     };
   }
 
   String? get _semanticsValue {
+    if (_isLoadingPlaceholder &&
+        widget.state.status != TodayStatus.noPermission) {
+      return null;
+    }
     return switch (widget.state.status) {
       TodayStatus.loading || TodayStatus.noPermission => null,
       _ => _targetSteps.toString(),
@@ -850,6 +828,61 @@ class _GoalRingState extends State<GoalRing> with TickerProviderStateMixin {
   }
 }
 
+class _GoalRingCenterSkeleton extends StatelessWidget {
+  const _GoalRingCenterSkeleton({
+    super.key,
+    required this.colors,
+    this.pulseController,
+  });
+
+  final AstraColors colors;
+  final AnimationController? pulseController;
+
+  @override
+  Widget build(BuildContext context) {
+    Widget buildBars(double opacityScale) {
+      Color barColor() =>
+          colors.textMuted.withValues(alpha: 0.18 * opacityScale);
+      return Column(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          const SizedBox(height: 2),
+          Container(
+            width: 84,
+            height: 28,
+            decoration: BoxDecoration(
+              color: barColor(),
+              borderRadius: BorderRadius.circular(6),
+            ),
+          ),
+          const SizedBox(height: 8),
+          Container(
+            width: 48,
+            height: 14,
+            decoration: BoxDecoration(
+              color: barColor(),
+              borderRadius: BorderRadius.circular(4),
+            ),
+          ),
+        ],
+      );
+    }
+
+    final controller = pulseController;
+    if (controller == null) {
+      return buildBars(1);
+    }
+
+    return AnimatedBuilder(
+      animation: controller,
+      builder: (context, _) {
+        final opacityScale = 0.35 + (0.85 - 0.35) * controller.value;
+        return buildBars(opacityScale);
+      },
+    );
+  }
+}
+
 class GoalRingPainter extends CustomPainter {
   GoalRingPainter({
     required this.progress,
@@ -857,6 +890,8 @@ class GoalRingPainter extends CustomPainter {
     required this.progressColor,
     required this.strokeWidth,
     required this.dashedTrack,
+    this.shadowCache,
+    this.devicePixelRatio = 1.0,
   });
 
   final double progress;
@@ -864,6 +899,9 @@ class GoalRingPainter extends CustomPainter {
   final Color progressColor;
   final double strokeWidth;
   final bool dashedTrack;
+  /// Nullable: null when [dashedTrack] is true (dashed track has no inset shadow).
+  final GoalRingInsetShadowCache? shadowCache;
+  final double devicePixelRatio;
 
   static const _startAngle = -math.pi / 2;
   static const _fullSweep = math.pi * 2;
@@ -890,7 +928,12 @@ class GoalRingPainter extends CustomPainter {
         ..addOval(Rect.fromCircle(center: center, radius: innerRadius));
 
       canvas.drawPath(annulus, Paint()..color = trackColor);
-      paintGoalRingTrackInnerShadow(canvas, annulus, center, innerRadius, outerRadius);
+      if (shadowCache != null) {
+        paintGoalRingTrackInnerShadow(
+          canvas, annulus, center, innerRadius, outerRadius,
+          size, devicePixelRatio, shadowCache!,
+        );
+      }
     }
 
     if (progress <= 0) {

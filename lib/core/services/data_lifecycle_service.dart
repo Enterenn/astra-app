@@ -1,13 +1,12 @@
 import 'dart:io' show Platform;
 import 'dart:isolate';
-import 'dart:ui';
 
 import 'package:flutter/foundation.dart';
 import 'package:flutter/services.dart';
 import 'package:sqflite/sqflite.dart';
 
-import '../../data/repositories/step_repository.dart';
-import '../../data/repositories/user_preferences_repository.dart';
+import '../../data/repositories/step/step_aggregation_repository.dart';
+import '../../data/repositories/user_settings_repository.dart';
 import '../lifecycle/sample_compaction_runner.dart';
 import '../time/time_provider.dart';
 import '../time/system_time_provider.dart';
@@ -41,29 +40,29 @@ typedef DatabaseOptimizeRunner = Future<void> Function(
 Future<LifecycleRunResult> runMaintenanceOnConnection({
   required Database db,
   required String databasePath,
-  required StepRepository repository,
-  required UserPreferencesRepository userPreferences,
+  required StepAggregationRepository repository,
+  required UserSettingsRepository userSettings,
   required TimeProvider clock,
   required bool force,
   DatabaseOptimizeRunner optimizeAndVacuum =
       runPragmaOptimizeAndVacuumOnWorkerIsolate,
 }) async {
-  if (!force && !await _isMaintenanceDue(userPreferences, clock)) {
+  if (!force && !await _isMaintenanceDue(userSettings, clock)) {
     return const LifecycleRunResult(skipped: true);
   }
 
   final compaction = await repository.downsampleStepSamples();
   await optimizeAndVacuum(db, databasePath);
-  await userPreferences.setLastDatabaseOptimizedAt(clock.snapshot().nowUtc);
+  await userSettings.setLastDatabaseOptimizedAt(clock.snapshot().nowUtc);
 
   return LifecycleRunResult(skipped: false, compaction: compaction);
 }
 
 Future<bool> _isMaintenanceDue(
-  UserPreferencesRepository userPreferences,
+  UserSettingsRepository userSettings,
   TimeProvider clock,
 ) async {
-  final lastOptimized = await userPreferences.getLastDatabaseOptimizedAt();
+  final lastOptimized = await userSettings.getLastDatabaseOptimizedAt();
   if (lastOptimized == null) {
     return true;
   }
@@ -91,8 +90,8 @@ Future<LifecycleRunResult> _runFileMaintenanceIsolate(
     return runMaintenanceOnConnection(
       db: db,
       databasePath: request.databasePath,
-      repository: StepRepository(db: db, clock: clock),
-      userPreferences: UserPreferencesRepository(db),
+      repository: StepAggregationRepository(db, clock: clock),
+      userSettings: UserSettingsRepository(db),
       clock: clock,
       force: request.force,
     );
@@ -113,13 +112,13 @@ Future<LifecycleRunResult> _runFileMaintenanceIsolate(
 class DataLifecycleService {
   DataLifecycleService({
     required String databasePath,
-    required StepRepository repository,
-    required UserPreferencesRepository userPreferences,
-    required TimeProvider clock,
+    required this._repository,
+    required this._userSettings,
+    required this._clock,
     AstraDatabaseSession? session,
     Database? db,
     DatabaseOptimizeRunner? optimizeAndVacuum,
-    bool maintenanceOnCurrentConnection = false,
+    this._maintenanceOnCurrentConnection = false,
   }) : _session =
            session ??
            AstraDatabaseSession(
@@ -127,18 +126,14 @@ class DataLifecycleService {
              initial: db!,
            ),
        _databasePath = databasePath,
-       _repository = repository,
-       _userPreferences = userPreferences,
-       _clock = clock,
        _optimizeAndVacuum =
            optimizeAndVacuum ?? runPragmaOptimizeAndVacuumOnWorkerIsolate,
-       _maintenanceOnCurrentConnection = maintenanceOnCurrentConnection,
        assert(session != null || db != null);
 
   final AstraDatabaseSession _session;
   final String _databasePath;
-  final StepRepository _repository;
-  final UserPreferencesRepository _userPreferences;
+  final StepAggregationRepository _repository;
+  final UserSettingsRepository _userSettings;
   final TimeProvider _clock;
   final DatabaseOptimizeRunner _optimizeAndVacuum;
   final bool _maintenanceOnCurrentConnection;
@@ -147,7 +142,7 @@ class DataLifecycleService {
 
   /// True when no prior optimization timestamp exists or the weekly interval elapsed.
   Future<bool> isMaintenanceDue() async {
-    return _isMaintenanceDue(_userPreferences, _clock);
+    return _isMaintenanceDue(_userSettings, _clock);
   }
 
   /// Runs downsampling and database maintenance when due, unless [force] is true.
@@ -189,7 +184,7 @@ class DataLifecycleService {
         db: db,
         databasePath: _databasePath,
         repository: _repository,
-        userPreferences: _userPreferences,
+        userSettings: _userSettings,
         clock: _clock,
         force: force,
         optimizeAndVacuum: _optimizeAndVacuum,

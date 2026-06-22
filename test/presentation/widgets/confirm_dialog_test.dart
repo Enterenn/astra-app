@@ -3,12 +3,14 @@ import 'package:astra_app/presentation/widgets/confirm_dialog.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 
+import '../../helpers/l10n_test_helper.dart';
+
 void main() {
   group('import confirm dialog', () {
     testWidgets('shows row count and actions', (tester) async {
       var result = false;
       await tester.pumpWidget(
-        MaterialApp(
+        TestMaterialApp(
           theme: buildAstraLightTheme(),
           home: Builder(
             builder: (context) {
@@ -52,7 +54,7 @@ void main() {
   group('purge confirm dialog', () {
     testWidgets('shows three actions with UX copy', (tester) async {
       await tester.pumpWidget(
-        MaterialApp(
+        TestMaterialApp(
           theme: buildAstraLightTheme(),
           home: Builder(
             builder: (context) {
@@ -89,7 +91,7 @@ void main() {
       var exportFirstTapped = false;
 
       await tester.pumpWidget(
-        MaterialApp(
+        TestMaterialApp(
           theme: buildAstraLightTheme(),
           home: Builder(
             builder: (context) {
@@ -125,7 +127,7 @@ void main() {
       PurgeConfirmAction? result;
 
       await tester.pumpWidget(
-        MaterialApp(
+        TestMaterialApp(
           theme: buildAstraLightTheme(),
           home: Builder(
             builder: (context) {

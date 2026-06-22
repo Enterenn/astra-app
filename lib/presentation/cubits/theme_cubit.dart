@@ -1,12 +1,12 @@
 import 'package:flutter_bloc/flutter_bloc.dart';
 
 import '../../core/constants/astra_accent_preset.dart';
-import '../../data/repositories/user_preferences_repository.dart';
+import '../../data/contracts/user_settings_repository_contract.dart';
 import 'theme_state.dart';
 
 class ThemeCubit extends Cubit<ThemeState> {
   ThemeCubit({
-    required this.userPreferences,
+    required this.userSettings,
     AstraThemePreference initialPreference = AstraThemePreference.system,
     AstraAccentPreset initialAccentPreset = kDefaultAccentPreset,
   }) : super(
@@ -16,7 +16,7 @@ class ThemeCubit extends Cubit<ThemeState> {
          ),
        );
 
-  final UserPreferencesRepository userPreferences;
+  final UserSettingsRepositoryContract userSettings;
 
   Future<void>? _setInFlight;
 
@@ -66,7 +66,7 @@ class ThemeCubit extends Cubit<ThemeState> {
     if (isClosed || state.preference == preference) {
       return;
     }
-    await userPreferences.setThemeMode(preference);
+    await userSettings.setThemeMode(preference);
     if (isClosed || state.preference == preference) {
       return;
     }
@@ -83,7 +83,7 @@ class ThemeCubit extends Cubit<ThemeState> {
     if (isClosed || state.accentPreset == preset) {
       return;
     }
-    await userPreferences.setAccentPreset(preset);
+    await userSettings.setAccentPreset(preset);
     if (isClosed || state.accentPreset == preset) {
       return;
     }

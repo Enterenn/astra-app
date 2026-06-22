@@ -1,3 +1,4 @@
+import 'package:astra_app/l10n/app_localizations.dart';
 import 'package:flutter/material.dart';
 
 import '../../core/constants/astra_colors.dart';
@@ -22,8 +23,10 @@ class BackgroundStatusCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context);
     final colors = context.astraColors;
-    final lastSync = formatRelativeTime(
+    final lastSync = formatRelativeTimeLocalized(
+      l10n,
       instantUtc: lastIngestionUtc,
       nowUtc: nowUtc,
     );
@@ -37,12 +40,13 @@ class BackgroundStatusCard extends StatelessWidget {
 
     final primaryCopy = switch (status) {
       BackgroundCollectionStatus.healthy =>
-        'Background collection active · Last sync $lastSync',
+        l10n.myDataBackgroundHealthy(lastSync),
       BackgroundCollectionStatus.stale =>
-        'Background collection delayed · Last sync $lastSync',
+        l10n.myDataBackgroundStale(lastSync),
       BackgroundCollectionStatus.iosBackfill =>
-        'Steps sync when you open the app · Last sync $lastSync',
-      BackgroundCollectionStatus.permissionDenied => 'Activity permission off',
+        l10n.myDataBackgroundIosBackfill(lastSync),
+      BackgroundCollectionStatus.permissionDenied =>
+        l10n.myDataBackgroundPermissionDenied,
     };
 
     return Column(
@@ -54,7 +58,7 @@ class BackgroundStatusCard extends StatelessWidget {
             Padding(
               padding: const EdgeInsets.only(top: 4),
               child: Semantics(
-                label: 'Status indicator',
+                label: l10n.myDataStatusIndicator,
                 child: Container(
                   width: 8,
                   height: 8,
@@ -80,7 +84,7 @@ class BackgroundStatusCard extends StatelessWidget {
             alignment: Alignment.centerLeft,
             child: TextButton(
               onPressed: onOpenSettings,
-              child: const Text('Open settings'),
+              child: Text(l10n.myDataOpenSettings),
             ),
           ),
         ],

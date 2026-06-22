@@ -1,3 +1,4 @@
+import 'package:astra_app/l10n/app_localizations.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 
@@ -10,17 +11,18 @@ import '../widgets/period_toggle.dart';
 import '../widgets/step_bar_chart.dart';
 import '../widgets/trend_chip.dart';
 import '../widgets/trends_average_stats_row.dart';
+import '../widgets/trends_insight_cards.dart';
 import '../widgets/trends_monthly_bar_chart.dart';
 import '../widgets/trends_peak_day_card.dart';
 
 class HistoryScreen extends StatelessWidget {
   const HistoryScreen({super.key});
 
-  static const _kScreenTitle = 'Trends';
   static const _kMonthlyChartHeight = 360.0;
 
   @override
   Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context);
     final colors = context.astraColors;
     final bottomScrollPadding =
         AstraSpacing.kBottomNavBottomOffset +
@@ -34,7 +36,7 @@ class HistoryScreen extends StatelessWidget {
         child: BlocBuilder<HistoryCubit, HistoryState>(
           builder: (context, state) {
             return Semantics(
-              label: _kScreenTitle,
+              label: l10n.trendsScreenTitle,
               child: SingleChildScrollView(
                 child: Padding(
                   padding: EdgeInsets.fromLTRB(
@@ -47,7 +49,7 @@ class HistoryScreen extends StatelessWidget {
                     crossAxisAlignment: CrossAxisAlignment.stretch,
                     children: [
                       Text(
-                        _kScreenTitle,
+                        l10n.trendsScreenTitle,
                         style: AstraTypography.screenTitleFor(colors),
                       ),
                       const SizedBox(height: AstraSpacing.kSpaceMd),
@@ -63,17 +65,10 @@ class HistoryScreen extends StatelessWidget {
                           alignment: Alignment.centerLeft,
                           child: CaptionPill(
                             label: TrendsMonthlyBarChart.formatPeriodRange(
+                              l10n,
                               state.monthlyChartPoints,
                             )!,
                           ),
-                        ),
-                      ],
-                      if (state.trend != null &&
-                          state.period != HistoryPeriod.months12) ...[
-                        const SizedBox(height: AstraSpacing.kSpaceMd),
-                        Align(
-                          alignment: Alignment.centerLeft,
-                          child: TrendChip(trend: state.trend!),
                         ),
                       ],
                       const SizedBox(height: AstraSpacing.kSpaceMd),
@@ -102,8 +97,20 @@ class HistoryScreen extends StatelessWidget {
                           TrendsAverageStatsRow(averages: state.periodAverages!),
                           if (state.peakDay != null) ...[
                             const SizedBox(height: AstraSpacing.kSpaceSm),
-                            TrendsPeakDayCard(peakDay: state.peakDay!),
+                            TrendsPeakDayCard(
+                              peakDay: state.peakDay!,
+                              period: state.period,
+                            ),
                           ],
+                        ],
+                        if (state.insightAvailability != null) ...[
+                          const SizedBox(height: AstraSpacing.kSpaceMd),
+                          TrendsInsightCardsSection(
+                            trend: state.trend,
+                            mostActiveWeekday: state.mostActiveWeekday,
+                            goalStreak: state.goalStreak,
+                            insightAvailability: state.insightAvailability!,
+                          ),
                         ],
                       ],
                     ],

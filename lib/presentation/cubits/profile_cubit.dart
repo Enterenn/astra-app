@@ -4,7 +4,8 @@ import 'package:permission_handler/permission_handler.dart';
 
 import '../../core/constants/preference_keys.dart';
 import '../../core/services/notification_service.dart';
-import '../../data/repositories/user_preferences_repository.dart';
+import '../../data/contracts/contracts.dart';
+import 'profile_errors.dart';
 import 'profile_state.dart';
 
 typedef NotificationPermissionRequester = Future<PermissionStatus> Function(
@@ -15,17 +16,18 @@ typedef PostDisplayNameUpdateCallback = Future<void> Function();
 
 class ProfileCubit extends Cubit<ProfileState> {
   ProfileCubit({
-    required this.userPreferences,
+    required this.userSettings,
+    required this.userHealthMetrics,
     required this.notificationService,
     NotificationPermissionRequester? permissionRequester,
-    PostDisplayNameUpdateCallback? postDisplayNameUpdate,
+    this._postDisplayNameUpdate,
   }) : _requestPermission =
            permissionRequester ??
            ((permission) => permission.request()),
-       _postDisplayNameUpdate = postDisplayNameUpdate,
        super(const ProfileState.loading());
 
-  final UserPreferencesRepository userPreferences;
+  final UserSettingsRepositoryContract userSettings;
+  final UserHealthMetricsRepositoryContract userHealthMetrics;
   final NotificationService notificationService;
   final NotificationPermissionRequester _requestPermission;
   final PostDisplayNameUpdateCallback? _postDisplayNameUpdate;
@@ -55,11 +57,11 @@ class ProfileCubit extends Cubit<ProfileState> {
     }
 
     try {
-      final displayName = await userPreferences.getDisplayName();
-      final heightCm = await userPreferences.getHeightCm();
-      final weightKg = await userPreferences.getWeightKg();
+      final displayName = await userHealthMetrics.getDisplayName();
+      final heightCm = await userHealthMetrics.getHeightCm();
+      final weightKg = await userHealthMetrics.getWeightKg();
       final goalNotificationsEnabled =
-          await userPreferences.getGoalNotificationsEnabled();
+          await userSettings.getGoalNotificationsEnabled();
 
       if (isClosed) {
         return;
@@ -82,7 +84,7 @@ class ProfileCubit extends Cubit<ProfileState> {
         emit(
           ProfileState(
             status: ProfileStatus.error,
-            errorMessage: 'Could not load profile settings',
+            loadError: ProfileLoadError.generic,
           ),
         );
       }
@@ -101,7 +103,7 @@ class ProfileCubit extends Cubit<ProfileState> {
     }
 
     try {
-      await userPreferences.setDisplayName(trimmed.isEmpty ? null : trimmed);
+      await userHealthMetrics.setDisplayName(trimmed.isEmpty ? null : trimmed);
     } catch (error, stackTrace) {
       if (kDebugMode) {
         debugPrint('ProfileCubit.updateDisplayName failed: $error');
@@ -149,7 +151,7 @@ class ProfileCubit extends Cubit<ProfileState> {
     }
 
     try {
-      await userPreferences.setHeightCm(heightCm);
+      await userHealthMetrics.setHeightCm(heightCm);
     } catch (error, stackTrace) {
       if (kDebugMode) {
         debugPrint('ProfileCubit.updateHeightCm failed: $error');
@@ -186,7 +188,7 @@ class ProfileCubit extends Cubit<ProfileState> {
     }
 
     try {
-      await userPreferences.setWeightKg(weightKg);
+      await userHealthMetrics.setWeightKg(weightKg);
     } catch (error, stackTrace) {
       if (kDebugMode) {
         debugPrint('ProfileCubit.updateWeightKg failed: $error');
@@ -228,7 +230,6 @@ class ProfileCubit extends Cubit<ProfileState> {
           debugPrintStack(stackTrace: stackTrace);
         }
       }
-      // Re-check after the OS dialog: permission may still be denied.
       if (!await notificationService.hasNotificationPermission()) {
         return false;
       }
@@ -239,7 +240,7 @@ class ProfileCubit extends Cubit<ProfileState> {
     }
 
     try {
-      await userPreferences.setGoalNotificationsEnabled(enabled);
+      await userSettings.setGoalNotificationsEnabled(enabled);
     } catch (error, stackTrace) {
       if (kDebugMode) {
         debugPrint('ProfileCubit.setGoalNotificationsEnabled failed: $error');

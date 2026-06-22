@@ -101,6 +101,24 @@ Also update `README.md` version line when bumping. Historical checklist rows in 
 
 ---
 
+## Test commands
+
+| Context | Command |
+|---------|---------|
+| **Daily / story work (default)** | `flutter test --exclude-tags slow` |
+| **Full suite (CI / before epic close)** | `flutter test` |
+| **Single file** | `flutter test test/path/to/file_test.dart` |
+
+The `slow` tag is declared in `dart_test.yaml` and applied via `@Tags(['slow']) library;` in:
+- `test/dev/data_inject_service_test.dart` — 25 920-row inject
+- `test/dev/lifecycle_simulator_test.dart` — compaction on 90-day dataset
+- `test/dev/chart_benchmark_test.dart` — render + query benchmarks
+- `test/app_live_pipeline_lifecycle_test.dart` — ~41 s full-app integration
+
+Agent rule: **always run `flutter test --exclude-tags slow`** in the story verification step unless the story explicitly touches a `slow`-tagged file. When it does, add the targeted file to the command instead of running the full slow suite.
+
+---
+
 ## Story completion checklist (applies to every story)
 
 Before marking a story done:
@@ -109,6 +127,7 @@ Before marking a story done:
 - [ ] Acceptance criteria verified (agent states how in review brief)
 - [ ] No secrets in committed files (`.env`, keys, etc.)
 - [ ] `docs/DEPENDENCIES.md` updated if packages added
+- [ ] `flutter test --exclude-tags slow` passes (or explicit note if a slow-tagged file is the story's subject)
 
 ---
 

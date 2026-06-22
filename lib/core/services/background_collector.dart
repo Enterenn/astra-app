@@ -6,8 +6,10 @@ import '../../data/datasources/data_ingestion_source.dart';
 import '../../data/datasources/step_normalizer.dart';
 import '../../data/models/step_reading.dart';
 import '../../data/repositories/ingestion_baseline_repository.dart';
-import '../../data/repositories/step_repository.dart';
-import '../../data/repositories/user_preferences_repository.dart';
+import '../../data/repositories/step/step_aggregation_repository.dart';
+import '../../data/repositories/step/step_ingestion_repository.dart';
+import '../../data/repositories/user_health_metrics_repository.dart';
+import '../../data/repositories/user_settings_repository.dart';
 import '../time/local_day_formatter.dart';
 import '../time/time_provider.dart';
 import 'ingestion_collection_lock.dart';
@@ -18,8 +20,10 @@ class BackgroundCollector {
     required List<DataIngestionSource> sources,
     required this.normalizer,
     required this.repository,
+    required this.stepAggregation,
     required this.baselineRepository,
-    this.userPreferences,
+    this.userSettings,
+    this.userHealthMetrics,
     this.clock,
     this.notificationService,
     this.notificationPermissionGranted,
@@ -30,9 +34,11 @@ class BackgroundCollector {
 
   final List<DataIngestionSource> _sources;
   final StepNormalizer normalizer;
-  final StepRepository repository;
+  final StepIngestionRepository repository;
+  final StepAggregationRepository stepAggregation;
   final IngestionBaselineRepository baselineRepository;
-  final UserPreferencesRepository? userPreferences;
+  final UserSettingsRepository? userSettings;
+  final UserHealthMetricsRepository? userHealthMetrics;
   final TimeProvider? clock;
   final NotificationService? notificationService;
   final Future<bool> Function()? notificationPermissionGranted;
@@ -141,11 +147,13 @@ class BackgroundCollector {
   /// Only when the user is **not** on the app (`isUserFacingAppActive` false).
   /// Independent from in-app celebration dedup.
   Future<void> maybeNotifyGoalReachedIfGoalMet() async {
-    final prefs = userPreferences;
+    final settings = userSettings;
+    final health = userHealthMetrics;
     final notifications = notificationService;
     final time = clock;
     final permissionCheck = notificationPermissionGranted;
-    if (prefs == null ||
+    if (settings == null ||
+        health == null ||
         notifications == null ||
         time == null ||
         permissionCheck == null) {
@@ -156,7 +164,7 @@ class BackgroundCollector {
       return;
     }
 
-    if (!await prefs.getGoalNotificationsEnabled()) {
+    if (!await settings.getGoalNotificationsEnabled()) {
       return;
     }
 
@@ -166,23 +174,23 @@ class BackgroundCollector {
 
     final todayIso = formatLocalDayIso(time.snapshot());
 
-    final goal = await prefs.getGoalForLocalDay(todayIso);
+    final goal = await health.getGoalForLocalDay(todayIso);
     if (goal <= 0) {
       return;
     }
 
-    final steps = await repository.getTodaySteps();
+    final steps = await stepAggregation.getTodaySteps();
     if (steps < goal) {
       return;
     }
 
-    if (!await prefs.tryClaimGoalNotificationShownDate(todayIso)) {
+    if (!await settings.tryClaimGoalNotificationShownDate(todayIso)) {
       return;
     }
 
     final shown = await notifications.showGoalReached(stepsToday: steps);
     if (!shown) {
-      await prefs.clearGoalNotificationShownDateIfMatches(todayIso);
+      await settings.clearGoalNotificationShownDateIfMatches(todayIso);
     }
   }
 }

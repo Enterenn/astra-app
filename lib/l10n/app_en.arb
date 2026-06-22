@@ -1,0 +1,1316 @@
+{
+  "@@locale": "en",
+  "appTitle": "ASTRA",
+  "@appTitle": {
+    "description": "Application title shown in task switcher / OS shell"
+  },
+  "menuPrivacyAndData": "Privacy & My Data",
+  "@menuPrivacyAndData": {
+    "description": "My Data screen title and menu label (audit REF-21)"
+  },
+  "menuTrackingStatus": "Step Tracking Status",
+  "@menuTrackingStatus": {
+    "description": "My Data Background section headline (audit REF-21)"
+  },
+  "bannerStaleData": "Data outdated. Tap to refresh.",
+  "@bannerStaleData": {
+    "description": "Compact stale-data banner on Today screen (audit REF-21)"
+  },
+  "errorNoPermission": "Step access denied. Tap to fix.",
+  "@errorNoPermission": {
+    "description": "Today screen permission CTA when step access is denied (audit REF-21)"
+  },
+  "onboardingStartBtn": "Start",
+  "@onboardingStartBtn": {
+    "description": "Onboarding step 0 primary button label (audit REF-21)"
+  },
+  "trendsWeeklyGrowth": "Up {percentage}% from last week",
+  "@trendsWeeklyGrowth": {
+    "description": "Weekly step trend chip when steps increased",
+    "placeholders": {
+      "percentage": {
+        "type": "int"
+      }
+    }
+  },
+  "trendsWeeklyDecline": "Down {percentage}% from last week",
+  "@trendsWeeklyDecline": {
+    "description": "Weekly step trend chip when steps decreased",
+    "placeholders": {
+      "percentage": {
+        "type": "int"
+      }
+    }
+  },
+  "trendsWeeklyFlat": "Same as last week",
+  "@trendsWeeklyFlat": {
+    "description": "Weekly step trend chip when steps unchanged from prior week"
+  },
+  "trendsNoPriorWeek": "No prior week data",
+  "@trendsNoPriorWeek": {
+    "description": "Weekly step trend chip when prior week has no step data"
+  },
+  "menuTitle": "Menu",
+  "@menuTitle": {
+    "description": "Menu hub screen title"
+  },
+  "menuSectionInformations": "Informations",
+  "@menuSectionInformations": {
+    "description": "Menu hub section headline for profile and data links"
+  },
+  "menuProfile": "Profile",
+  "@menuProfile": {
+    "description": "Menu hub navigation label for Profile screen"
+  },
+  "menuData": "Data",
+  "@menuData": {
+    "description": "Short menu navigation label for My Data screen"
+  },
+  "menuOther": "Other",
+  "@menuOther": {
+    "description": "Menu hub section headline for settings and about"
+  },
+  "menuSettings": "Settings",
+  "@menuSettings": {
+    "description": "Menu hub navigation label for Settings screen"
+  },
+  "menuAbout": "About",
+  "@menuAbout": {
+    "description": "Menu hub navigation label for About screen"
+  },
+  "navSteps": "STEPS",
+  "@navSteps": {
+    "description": "Bottom navigation tab label for Today / steps"
+  },
+  "navTrends": "TRENDS",
+  "@navTrends": {
+    "description": "Bottom navigation tab label for History / trends"
+  },
+  "navMenu": "MENU",
+  "@navMenu": {
+    "description": "Bottom navigation tab label for Menu hub"
+  },
+  "commonSave": "Save",
+  "@commonSave": {
+    "description": "Generic save button label"
+  },
+  "commonCancel": "Cancel",
+  "@commonCancel": {
+    "description": "Generic cancel button label"
+  },
+  "commonBack": "Back",
+  "@commonBack": {
+    "description": "Back navigation button label and semantics"
+  },
+  "commonNotSet": "Not set",
+  "@commonNotSet": {
+    "description": "Placeholder when an optional profile field has no value"
+  },
+  "commonDoubleTapToOpen": "Double tap to open.",
+  "@commonDoubleTapToOpen": {
+    "description": "Default semantics hint for navigation rows"
+  },
+  "commonDoubleTapToEdit": "Double tap to edit.",
+  "@commonDoubleTapToEdit": {
+    "description": "Default semantics hint for editable profile rows"
+  },
+  "commonDoubleTapToChange": "Double tap to change.",
+  "@commonDoubleTapToChange": {
+    "description": "Default semantics hint for settings preference rows"
+  },
+  "settingsTitle": "Settings",
+  "@settingsTitle": {
+    "description": "Settings screen title"
+  },
+  "settingsLanguage": "Language",
+  "@settingsLanguage": {
+    "description": "Settings section headline for language preference"
+  },
+  "settingsLanguageEnglish": "English",
+  "@settingsLanguageEnglish": {
+    "description": "Language selector option for English"
+  },
+  "settingsLanguageFrench": "French",
+  "@settingsLanguageFrench": {
+    "description": "Language selector option for French"
+  },
+  "settingsLanguageAutomatic": "Using device language",
+  "@settingsLanguageAutomatic": {
+    "description": "Subtitle when no explicit language preference is saved"
+  },
+  "settingsLanguageUpdateError": "Could not update language",
+  "@settingsLanguageUpdateError": {
+    "description": "Snack bar when saving language preference fails"
+  },
+  "settingsUnits": "Units",
+  "@settingsUnits": {
+    "description": "Settings section headline for unit preferences"
+  },
+  "settingsDistance": "Distance",
+  "@settingsDistance": {
+    "description": "Distance unit preference label"
+  },
+  "settingsWeight": "Weight",
+  "@settingsWeight": {
+    "description": "Weight unit preference label"
+  },
+  "settingsHeight": "Height",
+  "@settingsHeight": {
+    "description": "Height unit preference label"
+  },
+  "settingsNotifications": "Notifications",
+  "@settingsNotifications": {
+    "description": "Settings section headline for notification preferences"
+  },
+  "settingsGoalNotifications": "Receive Goal notifications",
+  "@settingsGoalNotifications": {
+    "description": "Toggle label for goal notification preference"
+  },
+  "settingsTheme": "Theme",
+  "@settingsTheme": {
+    "description": "Settings section headline for theme and accent"
+  },
+  "settingsUnitPreferenceUpdateError": "Could not update unit preference",
+  "@settingsUnitPreferenceUpdateError": {
+    "description": "Snack bar when saving a unit preference fails"
+  },
+  "settingsNotificationUpdateError": "Could not update notification setting",
+  "@settingsNotificationUpdateError": {
+    "description": "Snack bar when saving notification preference fails"
+  },
+  "settingsThemeSystem": "System",
+  "@settingsThemeSystem": {
+    "description": "Theme selector option for system appearance"
+  },
+  "settingsThemeSystemSemantics": "System appearance",
+  "@settingsThemeSystemSemantics": {
+    "description": "Semantics label for system theme option"
+  },
+  "settingsThemeLight": "Light",
+  "@settingsThemeLight": {
+    "description": "Theme selector option for light appearance"
+  },
+  "settingsThemeLightSemantics": "Light appearance",
+  "@settingsThemeLightSemantics": {
+    "description": "Semantics label for light theme option"
+  },
+  "settingsThemeDark": "Dark",
+  "@settingsThemeDark": {
+    "description": "Theme selector option for dark appearance"
+  },
+  "settingsThemeDarkSemantics": "Dark appearance",
+  "@settingsThemeDarkSemantics": {
+    "description": "Semantics label for dark theme option"
+  },
+  "settingsThemeSemanticsHint": "App theme",
+  "@settingsThemeSemanticsHint": {
+    "description": "Semantics hint for theme segmented control"
+  },
+  "settingsAccentOrange": "Accent color, Orange",
+  "@settingsAccentOrange": {
+    "description": "Semantics label for orange accent preset chip"
+  },
+  "settingsAccentRed": "Accent color, Red",
+  "@settingsAccentRed": {
+    "description": "Semantics label for red accent preset chip"
+  },
+  "settingsAccentGreen": "Accent color, Green",
+  "@settingsAccentGreen": {
+    "description": "Semantics label for green accent preset chip"
+  },
+  "settingsAccentBlue": "Accent color, Blue",
+  "@settingsAccentBlue": {
+    "description": "Semantics label for blue accent preset chip"
+  },
+  "settingsAccentMagenta": "Accent color, Magenta",
+  "@settingsAccentMagenta": {
+    "description": "Semantics label for magenta accent preset chip"
+  },
+  "settingsAccentPink": "Accent color, Pink",
+  "@settingsAccentPink": {
+    "description": "Semantics label for pink accent preset chip"
+  },
+  "profileTitle": "Profile",
+  "@profileTitle": {
+    "description": "Profile screen title"
+  },
+  "profileSectionInformations": "Informations",
+  "@profileSectionInformations": {
+    "description": "Profile section headline for editable fields"
+  },
+  "profileCouldNotLoad": "Could not load profile",
+  "@profileCouldNotLoad": {
+    "description": "Fallback error message when profile screen fails to load"
+  },
+  "profileCouldNotSaveDisplayName": "Could not save display name",
+  "@profileCouldNotSaveDisplayName": {
+    "description": "Snack bar when display name save fails"
+  },
+  "profileCouldNotSaveHeight": "Could not save height",
+  "@profileCouldNotSaveHeight": {
+    "description": "Snack bar when height save fails"
+  },
+  "profileCouldNotSaveWeight": "Could not save weight",
+  "@profileCouldNotSaveWeight": {
+    "description": "Snack bar when weight save fails"
+  },
+  "profileLoadErrorGeneric": "Could not load profile settings",
+  "@profileLoadErrorGeneric": {
+    "description": "Error message when profile cubit refresh fails"
+  },
+  "profileDisplayName": "Display name",
+  "@profileDisplayName": {
+    "description": "Profile display name field label"
+  },
+  "profileDisplayNameFirstName": "First name",
+  "@profileDisplayNameFirstName": {
+    "description": "Text field label in display name editor sheet"
+  },
+  "profileDisplayNameEditSemantics": "Edit display name",
+  "@profileDisplayNameEditSemantics": {
+    "description": "Semantics label for display name edit chevron"
+  },
+  "profileDisplayNameSemantics": "Display name, {value}. {hint}",
+  "@profileDisplayNameSemantics": {
+    "description": "Semantics label for editable display name row",
+    "placeholders": {
+      "value": {
+        "type": "String"
+      },
+      "hint": {
+        "type": "String"
+      }
+    }
+  },
+  "profileDisplayNameReadOnlySemantics": "Display name, {value}.",
+  "@profileDisplayNameReadOnlySemantics": {
+    "description": "Semantics label for read-only display name row",
+    "placeholders": {
+      "value": {
+        "type": "String"
+      }
+    }
+  },
+  "profileHeight": "Height",
+  "@profileHeight": {
+    "description": "Profile height field label"
+  },
+  "profileWeight": "Weight",
+  "@profileWeight": {
+    "description": "Profile weight field label"
+  },
+  "profileHeightFeet": "Feet",
+  "@profileHeightFeet": {
+    "description": "Height editor feet input label"
+  },
+  "profileHeightInches": "Inches",
+  "@profileHeightInches": {
+    "description": "Height editor inches input label"
+  },
+  "profileHeightCentimeters": "Centimeters",
+  "@profileHeightCentimeters": {
+    "description": "Height editor centimeters input label"
+  },
+  "profileHeightEnterWholeNumberCm": "Enter a whole number in centimeters",
+  "@profileHeightEnterWholeNumberCm": {
+    "description": "Height editor validation when cm input is not a whole number"
+  },
+  "profileHeightRangeCm": "Height must be between {min} and {max} cm",
+  "@profileHeightRangeCm": {
+    "description": "Height editor validation when cm value is out of range",
+    "placeholders": {
+      "min": {
+        "type": "int"
+      },
+      "max": {
+        "type": "int"
+      }
+    }
+  },
+  "profileHeightEnterBothFtIn": "Enter both feet and inches",
+  "@profileHeightEnterBothFtIn": {
+    "description": "Height editor validation when only one of feet/inches is filled"
+  },
+  "profileHeightEnterWholeNumbersFtIn": "Enter whole numbers for feet and inches",
+  "@profileHeightEnterWholeNumbersFtIn": {
+    "description": "Height editor validation when ft/in input is not numeric"
+  },
+  "profileHeightInchesRange": "Inches must be between 0 and 11",
+  "@profileHeightInchesRange": {
+    "description": "Height editor validation when inches are out of range"
+  },
+  "profileHeightRangeFtIn": "Height must be between {minFeet} ft {minInches} in and {maxFeet} ft {maxInches} in",
+  "@profileHeightRangeFtIn": {
+    "description": "Height editor validation when ft/in value is out of range",
+    "placeholders": {
+      "minFeet": {
+        "type": "int"
+      },
+      "minInches": {
+        "type": "int"
+      },
+      "maxFeet": {
+        "type": "int"
+      },
+      "maxInches": {
+        "type": "int"
+      }
+    }
+  },
+  "profileWeightPounds": "Pounds",
+  "@profileWeightPounds": {
+    "description": "Weight editor pounds input label"
+  },
+  "profileWeightKilograms": "Kilograms",
+  "@profileWeightKilograms": {
+    "description": "Weight editor kilograms input label"
+  },
+  "profileWeightEnterValid": "Enter a valid weight",
+  "@profileWeightEnterValid": {
+    "description": "Weight editor validation when input is not a number"
+  },
+  "profileWeightOneDecimal": "Use at most one decimal place",
+  "@profileWeightOneDecimal": {
+    "description": "Weight editor validation when too many decimal places"
+  },
+  "profileWeightRangeKg": "Weight must be between {min} and {max} kg",
+  "@profileWeightRangeKg": {
+    "description": "Weight editor validation when kg value is out of range",
+    "placeholders": {
+      "min": {
+        "type": "int"
+      },
+      "max": {
+        "type": "int"
+      }
+    }
+  },
+  "profileWeightRangeLb": "Weight must be between {min} and {max} lb",
+  "@profileWeightRangeLb": {
+    "description": "Weight editor validation when lb value is out of range",
+    "placeholders": {
+      "min": {
+        "type": "String"
+      },
+      "max": {
+        "type": "String"
+      }
+    }
+  },
+  "myDataFootprint": "Footprint",
+  "@myDataFootprint": {
+    "description": "My Data section headline for database footprint KPIs"
+  },
+  "myDataYourData": "Your data",
+  "@myDataYourData": {
+    "description": "My Data section headline for export/import/purge actions"
+  },
+  "myDataExportSaved": "Export saved",
+  "@myDataExportSaved": {
+    "description": "Snack bar after successful CSV export"
+  },
+  "myDataImportComplete": "Import complete",
+  "@myDataImportComplete": {
+    "description": "Snack bar after successful CSV import"
+  },
+  "myDataPurgeSuccess": "All local data removed",
+  "@myDataPurgeSuccess": {
+    "description": "Snack bar after successful local data purge"
+  },
+  "myDataExportCsv": "Export CSV",
+  "@myDataExportCsv": {
+    "description": "Export CSV button label"
+  },
+  "myDataExportCsvSemantics": "Export data as CSV file",
+  "@myDataExportCsvSemantics": {
+    "description": "Semantics label for export CSV button"
+  },
+  "myDataImportCsv": "Import CSV",
+  "@myDataImportCsv": {
+    "description": "Import CSV button label"
+  },
+  "myDataImportCsvSemantics": "Import CSV file",
+  "@myDataImportCsvSemantics": {
+    "description": "Semantics label for import CSV button"
+  },
+  "myDataDeleteAllLocalData": "Delete all local data",
+  "@myDataDeleteAllLocalData": {
+    "description": "Purge button label on My Data screen"
+  },
+  "myDataExportErrorGeneric": "Export could not be completed. Try again.",
+  "@myDataExportErrorGeneric": {
+    "description": "Error banner when CSV export fails"
+  },
+  "myDataImportErrorGeneric": "Import could not be completed. Try again.",
+  "@myDataImportErrorGeneric": {
+    "description": "Error banner when CSV import fails"
+  },
+  "myDataPurgeErrorGeneric": "Purge could not be completed. Try again.",
+  "@myDataPurgeErrorGeneric": {
+    "description": "Error banner when data purge fails"
+  },
+  "myDataPurgeRefreshError": "All local data was removed, but the app could not refresh. Try again.",
+  "@myDataPurgeRefreshError": {
+    "description": "Error banner when purge succeeds but post-purge refresh fails"
+  },
+  "myDataBackgroundHealthy": "Background collection active · Last sync {relativeTime}",
+  "@myDataBackgroundHealthy": {
+    "description": "Background status when collection is healthy",
+    "placeholders": {
+      "relativeTime": {
+        "type": "String"
+      }
+    }
+  },
+  "myDataBackgroundStale": "Background collection delayed · Last sync {relativeTime}",
+  "@myDataBackgroundStale": {
+    "description": "Background status when collection is stale",
+    "placeholders": {
+      "relativeTime": {
+        "type": "String"
+      }
+    }
+  },
+  "myDataBackgroundIosBackfill": "Steps sync when you open the app · Last sync {relativeTime}",
+  "@myDataBackgroundIosBackfill": {
+    "description": "Background status on iOS when steps sync on app open",
+    "placeholders": {
+      "relativeTime": {
+        "type": "String"
+      }
+    }
+  },
+  "myDataBackgroundPermissionDenied": "Activity permission off",
+  "@myDataBackgroundPermissionDenied": {
+    "description": "Background status when activity permission is denied"
+  },
+  "myDataOpenSettings": "Open settings",
+  "@myDataOpenSettings": {
+    "description": "Button to open OS settings when activity permission is off"
+  },
+  "myDataStatusIndicator": "Status indicator",
+  "@myDataStatusIndicator": {
+    "description": "Semantics label for background status dot"
+  },
+  "myDataFootprintSamplesStored": "samples stored",
+  "@myDataFootprintSamplesStored": {
+    "description": "Footprint KPI caption for sample count"
+  },
+  "myDataFootprintSamplesStoredSemantics": "{count} samples stored",
+  "@myDataFootprintSamplesStoredSemantics": {
+    "description": "Semantics label for sample count KPI",
+    "placeholders": {
+      "count": {
+        "type": "String"
+      }
+    }
+  },
+  "myDataFootprintDatabaseSize": "database size",
+  "@myDataFootprintDatabaseSize": {
+    "description": "Footprint KPI caption for database file size"
+  },
+  "myDataFootprintDatabaseSizeSemantics": "Database size {size}",
+  "@myDataFootprintDatabaseSizeSemantics": {
+    "description": "Semantics label for database size KPI",
+    "placeholders": {
+      "size": {
+        "type": "String"
+      }
+    }
+  },
+  "myDataFootprintNotOptimizedYet": "not optimized yet",
+  "@myDataFootprintNotOptimizedYet": {
+    "description": "Footprint KPI caption when database has never been optimized"
+  },
+  "myDataFootprintOptimized": "optimized {relativeTime}",
+  "@myDataFootprintOptimized": {
+    "description": "Footprint KPI caption when database was optimized",
+    "placeholders": {
+      "relativeTime": {
+        "type": "String"
+      }
+    }
+  },
+  "myDataPurgeConfirmTitle": "Delete all local data?",
+  "@myDataPurgeConfirmTitle": {
+    "description": "Purge confirmation dialog title"
+  },
+  "myDataPurgeConfirmBody": "This removes all step history on this device. Export first if you want to keep a copy.",
+  "@myDataPurgeConfirmBody": {
+    "description": "Purge confirmation dialog body copy"
+  },
+  "myDataPurgeExportFirst": "Export first",
+  "@myDataPurgeExportFirst": {
+    "description": "Purge dialog button to export before deleting"
+  },
+  "myDataPurgeDeleteAnyway": "Delete anyway",
+  "@myDataPurgeDeleteAnyway": {
+    "description": "Purge dialog button to confirm deletion"
+  },
+  "myDataImportConfirmTitle": "Import data?",
+  "@myDataImportConfirmTitle": {
+    "description": "Import confirmation dialog title"
+  },
+  "myDataImportConfirmBody": "This file contains {csvRowCount} samples. Your database already has {existingSampleCount} samples. Rows with matching IDs or the same time bucket will be skipped — existing data is not overwritten.",
+  "@myDataImportConfirmBody": {
+    "description": "Import confirmation dialog body copy",
+    "placeholders": {
+      "csvRowCount": {
+        "type": "int"
+      },
+      "existingSampleCount": {
+        "type": "int"
+      }
+    }
+  },
+  "myDataImportConfirmImport": "Import",
+  "@myDataImportConfirmImport": {
+    "description": "Import confirmation dialog confirm button"
+  },
+  "aboutTitle": "About",
+  "@aboutTitle": {
+    "description": "About screen title"
+  },
+  "aboutAppName": "Astra Health",
+  "@aboutAppName": {
+    "description": "App name shown on About screen"
+  },
+  "aboutVersion": "Version: {version}",
+  "@aboutVersion": {
+    "description": "Version line on About screen",
+    "placeholders": {
+      "version": {
+        "type": "String"
+      }
+    }
+  },
+  "unitDistanceMetric": "Metric",
+  "@unitDistanceMetric": {
+    "description": "Distance unit preference label for metric"
+  },
+  "unitDistanceImperial": "Imperial",
+  "@unitDistanceImperial": {
+    "description": "Distance unit preference label for imperial"
+  },
+  "unitWeightKg": "Kg",
+  "@unitWeightKg": {
+    "description": "Weight unit preference label for kilograms"
+  },
+  "unitWeightLb": "lb",
+  "@unitWeightLb": {
+    "description": "Weight unit preference label for pounds"
+  },
+  "unitHeightCm": "cm",
+  "@unitHeightCm": {
+    "description": "Height unit preference label for centimeters"
+  },
+  "unitHeightFtIn": "ft+in",
+  "@unitHeightFtIn": {
+    "description": "Height unit preference label for feet and inches"
+  },
+  "unitDistanceKm": "Km",
+  "@unitDistanceKm": {
+    "description": "Display label for kilometers"
+  },
+  "unitDistanceMi": "Mi",
+  "@unitDistanceMi": {
+    "description": "Display label for miles"
+  },
+  "unitHeightFtInDisplay": "{feet} ft {inches} in",
+  "@unitHeightFtInDisplay": {
+    "description": "Formatted height in feet and inches",
+    "placeholders": {
+      "feet": {
+        "type": "int"
+      },
+      "inches": {
+        "type": "int"
+      }
+    }
+  },
+  "unitHeightCmDisplay": "{height} cm",
+  "@unitHeightCmDisplay": {
+    "description": "Formatted height in centimeters",
+    "placeholders": {
+      "height": {
+        "type": "int"
+      }
+    }
+  },
+  "unitWeightLbDisplay": "{weight} lb",
+  "@unitWeightLbDisplay": {
+    "description": "Formatted weight in pounds",
+    "placeholders": {
+      "weight": {
+        "type": "String"
+      }
+    }
+  },
+  "unitWeightKgDisplay": "{weight} kg",
+  "@unitWeightKgDisplay": {
+    "description": "Formatted weight in kilograms",
+    "placeholders": {
+      "weight": {
+        "type": "String"
+      }
+    }
+  },
+  "relativeTimeNever": "never",
+  "@relativeTimeNever": {
+    "description": "Relative time when no prior sync exists"
+  },
+  "relativeTimeJustNow": "just now",
+  "@relativeTimeJustNow": {
+    "description": "Relative time for very recent events"
+  },
+  "relativeTimeMinutesAgo": "{count, plural, =1{1 minute ago} other{{count} minutes ago}}",
+  "@relativeTimeMinutesAgo": {
+    "description": "Relative time in minutes",
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "relativeTimeHoursAgo": "{count, plural, =1{1 hour ago} other{{count} hours ago}}",
+  "@relativeTimeHoursAgo": {
+    "description": "Relative time in hours",
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "relativeTimeDaysAgo": "{count, plural, =1{1 day ago} other{{count} days ago}}",
+  "@relativeTimeDaysAgo": {
+    "description": "Relative time in days",
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "relativeTimeMinute": "minute",
+  "@relativeTimeMinute": {
+    "description": "Singular minute unit for relative time formatting"
+  },
+  "relativeTimeMinutes": "minutes",
+  "@relativeTimeMinutes": {
+    "description": "Plural minute unit for relative time formatting"
+  },
+  "relativeTimeHour": "hour",
+  "@relativeTimeHour": {
+    "description": "Singular hour unit for relative time formatting"
+  },
+  "relativeTimeHours": "hours",
+  "@relativeTimeHours": {
+    "description": "Plural hour unit for relative time formatting"
+  },
+  "relativeTimeDay": "day",
+  "@relativeTimeDay": {
+    "description": "Singular day unit for relative time formatting"
+  },
+  "relativeTimeDays": "days",
+  "@relativeTimeDays": {
+    "description": "Plural day unit for relative time formatting"
+  },
+  "todayScreenTitle": "Steps",
+  "@todayScreenTitle": {
+    "description": "Today screen title and screen semantics label"
+  },
+  "todayWeekSectionHeadline": "This week",
+  "@todayWeekSectionHeadline": {
+    "description": "Section headline above the week progress row on Today"
+  },
+  "todaySetGoalLabel": "Set goal",
+  "@todaySetGoalLabel": {
+    "description": "Button label to open the daily step goal editor"
+  },
+  "todayGoalSaveError": "Daily goal could not be saved. Try again.",
+  "@todayGoalSaveError": {
+    "description": "SnackBar when saving the daily step goal fails"
+  },
+  "bannerStaleFullIos": "No new steps in 4+ hours. Steps update when you open the app on this device.",
+  "@bannerStaleFullIos": {
+    "description": "Full stale-data banner on My Data when running on iOS"
+  },
+  "bannerStaleFullAndroid": "No new steps in 12+ hours. Background collection may be delayed on this device.",
+  "@bannerStaleFullAndroid": {
+    "description": "Full stale-data banner on My Data when running on Android"
+  },
+  "bannerInfoStepsSync": "Steps update when you open the app on this device.",
+  "@bannerInfoStepsSync": {
+    "description": "Info banner explaining foreground step sync behaviour"
+  },
+  "commonErrorGeneric": "Something went wrong. Try again.",
+  "@commonErrorGeneric": {
+    "description": "Generic fallback error message for action banners"
+  },
+  "todayCollectionHealthActive": "Collection active ●",
+  "@todayCollectionHealthActive": {
+    "description": "Collection health indicator when ingestion is current"
+  },
+  "todayCollectionHealthStale": "Last sync {relativeTime} ⚠",
+  "@todayCollectionHealthStale": {
+    "description": "Collection health indicator when data is stale",
+    "placeholders": {
+      "relativeTime": {
+        "type": "String"
+      }
+    }
+  },
+  "todayCollectionHealthPermissionDenied": "Sensor access revoked ✕",
+  "@todayCollectionHealthPermissionDenied": {
+    "description": "Collection health indicator when step sensor permission is denied"
+  },
+  "todayGoalRingStepsLabel": "Steps",
+  "@todayGoalRingStepsLabel": {
+    "description": "Label under the sneaker icon in the goal ring center"
+  },
+  "todayGoalRingSemanticsLoading": "Steps today: loading",
+  "@todayGoalRingSemanticsLoading": {
+    "description": "Goal ring accessibility label while step count is loading"
+  },
+  "todayGoalRingSemanticsNoPermission": "Steps today: permission required",
+  "@todayGoalRingSemanticsNoPermission": {
+    "description": "Goal ring accessibility label when step permission is denied"
+  },
+  "todayGoalRingSemanticsGoalReached": "Steps today: {steps}. Daily goal {goal} reached.",
+  "@todayGoalRingSemanticsGoalReached": {
+    "description": "Goal ring accessibility label when daily goal is met or exceeded",
+    "placeholders": {
+      "steps": {
+        "type": "int"
+      },
+      "goal": {
+        "type": "int"
+      }
+    }
+  },
+  "todayGoalRingSemanticsProgress": "Steps today: {steps} of {goal}",
+  "@todayGoalRingSemanticsProgress": {
+    "description": "Goal ring accessibility label showing progress toward daily goal",
+    "placeholders": {
+      "steps": {
+        "type": "int"
+      },
+      "goal": {
+        "type": "int"
+      }
+    }
+  },
+  "todayGoalCelebrationLabel": "Daily goal reached",
+  "@todayGoalCelebrationLabel": {
+    "description": "Celebration overlay copy when daily step goal is reached"
+  },
+  "todayGoalEditorTitle": "Daily step goal",
+  "@todayGoalEditorTitle": {
+    "description": "Title of the daily step goal editor bottom sheet"
+  },
+  "todayGoalValidationError": "Enter a value between 1,000 and 100,000.",
+  "@todayGoalValidationError": {
+    "description": "Validation error for invalid daily step goal input"
+  },
+  "todayWeekGoalsMetSemantics": "Goals met {count} of {total} days this week",
+  "@todayWeekGoalsMetSemantics": {
+    "description": "Week trophy badge accessibility label",
+    "placeholders": {
+      "count": {
+        "type": "int"
+      },
+      "total": {
+        "type": "int"
+      }
+    }
+  },
+  "todayWeekDaySemantics": "{weekdayLabel} {dayNumber}",
+  "@todayWeekDaySemantics": {
+    "description": "Week day pill accessibility label",
+    "placeholders": {
+      "weekdayLabel": {
+        "type": "String"
+      },
+      "dayNumber": {
+        "type": "int"
+      }
+    }
+  },
+  "todayStatsKcalLabel": "Kcal",
+  "@todayStatsKcalLabel": {
+    "description": "Kilocalorie unit label in Today activity stats row"
+  },
+  "todayStatsKmLabel": "Km",
+  "@todayStatsKmLabel": {
+    "description": "Kilometre unit label in Today activity stats row"
+  },
+  "todayStatsMiLabel": "Mi",
+  "@todayStatsMiLabel": {
+    "description": "Mile unit label in Today activity stats row"
+  },
+  "onboardingContinueBtn": "Continue",
+  "@onboardingContinueBtn": {
+    "description": "Onboarding primary button for weight and height steps"
+  },
+  "onboardingSkipBtn": "Skip",
+  "@onboardingSkipBtn": {
+    "description": "Onboarding secondary button to skip optional metrics"
+  },
+  "onboardingLetsGoBtn": "Let's Go",
+  "@onboardingLetsGoBtn": {
+    "description": "Onboarding final step primary button to complete setup"
+  },
+  "onboardingIntroHeadline": "Your Health. Your Phone. Period.",
+  "@onboardingIntroHeadline": {
+    "description": "Onboarding intro screen headline"
+  },
+  "onboardingIntroParagraphOne": "Astra tracks your movement, habits, and health metrics using only your device's built-in sensors. No accounts, no cloud leakage.",
+  "@onboardingIntroParagraphOne": {
+    "description": "Onboarding intro first card paragraph"
+  },
+  "onboardingIntroParagraphTwo": "Your personal evolution belongs to you—and only you.",
+  "@onboardingIntroParagraphTwo": {
+    "description": "Onboarding intro second card paragraph"
+  },
+  "onboardingTrustOfflineBadge": "100% offline",
+  "@onboardingTrustOfflineBadge": {
+    "description": "Trust badge on onboarding intro emphasising offline-only data"
+  },
+  "onboardingTrustNoAccountBadge": "No account required",
+  "@onboardingTrustNoAccountBadge": {
+    "description": "Trust badge on onboarding intro emphasising no account signup"
+  },
+  "onboardingWeightTitle": "What is your weight?",
+  "@onboardingWeightTitle": {
+    "description": "Onboarding weight picker screen title"
+  },
+  "onboardingHeightTitle": "What is your height?",
+  "@onboardingHeightTitle": {
+    "description": "Onboarding height picker screen title"
+  },
+  "onboardingOptionalMetricsHint": "Weight and height are optional, but help improve the accuracy of measurements in the app.",
+  "@onboardingOptionalMetricsHint": {
+    "description": "Hint below weight/height pickers explaining optional metrics"
+  },
+  "onboardingUnitKg": "kg",
+  "@onboardingUnitKg": {
+    "description": "Kilogram unit label on onboarding weight picker"
+  },
+  "onboardingUnitLb": "lb",
+  "@onboardingUnitLb": {
+    "description": "Pound unit label on onboarding weight picker"
+  },
+  "onboardingUnitCm": "cm",
+  "@onboardingUnitCm": {
+    "description": "Centimetre unit label on onboarding height picker"
+  },
+  "onboardingUnitIn": "in",
+  "@onboardingUnitIn": {
+    "description": "Inch unit label on onboarding height picker"
+  },
+  "onboardingWeightUnitSemantics": "Select weight unit",
+  "@onboardingWeightUnitSemantics": {
+    "description": "Semantics hint for weight unit segmented control"
+  },
+  "onboardingHeightUnitSemantics": "Select height unit",
+  "@onboardingHeightUnitSemantics": {
+    "description": "Semantics hint for height unit segmented control"
+  },
+  "trendsScreenTitle": "Trends",
+  "@trendsScreenTitle": {
+    "description": "Trends screen title and semantics label"
+  },
+  "trendsPeriod7Days": "7 days",
+  "@trendsPeriod7Days": {
+    "description": "Trends chart period toggle — seven day window"
+  },
+  "trendsPeriod30Days": "30 days",
+  "@trendsPeriod30Days": {
+    "description": "Trends chart period toggle — thirty day window"
+  },
+  "trendsPeriod12Months": "12 months",
+  "@trendsPeriod12Months": {
+    "description": "Trends chart period toggle — twelve month window"
+  },
+  "trendsChartRangeSemantics": "Chart range",
+  "@trendsChartRangeSemantics": {
+    "description": "Semantics hint for Trends period segmented control"
+  },
+  "trendsEmptyHistory": "No history yet. Walk a bit — data stays on this device.",
+  "@trendsEmptyHistory": {
+    "description": "Empty state copy when no step history exists for chart"
+  },
+  "trendsStepBarChartSemantics": "Step history bar chart",
+  "@trendsStepBarChartSemantics": {
+    "description": "Accessibility label for daily step bar chart"
+  },
+  "trendsMonthlyBarChartSemantics": "Twelve month step history bar chart",
+  "@trendsMonthlyBarChartSemantics": {
+    "description": "Accessibility label for twelve month bar chart"
+  },
+  "trendsAverageKcalCaption": "average calories burned per day",
+  "@trendsAverageKcalCaption": {
+    "description": "Caption under average kcal stat on Trends screen"
+  },
+  "trendsAverageStepsCaption": "average steps taken per day",
+  "@trendsAverageStepsCaption": {
+    "description": "Caption under average steps stat on Trends screen"
+  },
+  "trendsAverageKcalSemantics": "Average {kcal} kilocalories burned per day",
+  "@trendsAverageKcalSemantics": {
+    "description": "Accessibility label for average kcal stat card",
+    "placeholders": {
+      "kcal": {
+        "type": "int"
+      }
+    }
+  },
+  "trendsAverageStepsSemantics": "Average {steps} steps taken per day",
+  "@trendsAverageStepsSemantics": {
+    "description": "Accessibility label for average steps stat card",
+    "placeholders": {
+      "steps": {
+        "type": "int"
+      }
+    }
+  },
+  "trendsPeakDayCaption": "peak day in this period",
+  "@trendsPeakDayCaption": {
+    "description": "Caption under peak day stat on Trends screen"
+  },
+  "trendsPeakDaySemantics": "Peak day {dateLabel} with {steps} steps in this period",
+  "@trendsPeakDaySemantics": {
+    "description": "Accessibility label for peak day stat card",
+    "placeholders": {
+      "dateLabel": {
+        "type": "String"
+      },
+      "steps": {
+        "type": "int"
+      }
+    }
+  },
+  "trendsInsightWeeklyTitle": "Weekly change",
+  "@trendsInsightWeeklyTitle": {
+    "description": "Title for weekly change insight card on Trends screen"
+  },
+  "trendsInsightWeekdayTitle": "Most active day",
+  "@trendsInsightWeekdayTitle": {
+    "description": "Title for most active weekday insight card on Trends screen"
+  },
+  "trendsInsightStreakTitle": "Goal streak",
+  "@trendsInsightStreakTitle": {
+    "description": "Title for goal streak insight card on Trends screen"
+  },
+  "trendsInsightInsufficientData": "Not enough history yet. Keep walking — data stays on this device.",
+  "@trendsInsightInsufficientData": {
+    "description": "Calm empty state when fewer than seven days of step history exist"
+  },
+  "trendsInsightWeeklyInsufficientData": "Not enough history for weekly comparison.",
+  "@trendsInsightWeeklyInsufficientData": {
+    "description": "Calm empty state when weekly comparison needs fourteen days of history"
+  },
+  "trendsInsightMostActiveWeekday": "{weekday} averages the most steps",
+  "@trendsInsightMostActiveWeekday": {
+    "description": "Body copy for most active weekday insight card",
+    "placeholders": {
+      "weekday": {
+        "type": "String"
+      }
+    }
+  },
+  "trendsInsightGoalStreak": "{count} consecutive days above goal",
+  "@trendsInsightGoalStreak": {
+    "description": "Body copy for goal streak insight when count is greater than one",
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "trendsInsightGoalStreakOne": "1 consecutive day above goal",
+  "@trendsInsightGoalStreakOne": {
+    "description": "Body copy for goal streak insight when count is exactly one"
+  },
+  "trendsInsightWeeklyUp": "Up {percentage}% from last week",
+  "@trendsInsightWeeklyUp": {
+    "description": "Weekly change insight when steps increased",
+    "placeholders": {
+      "percentage": {
+        "type": "int"
+      }
+    }
+  },
+  "trendsInsightWeeklyDown": "Down {percentage}% from last week",
+  "@trendsInsightWeeklyDown": {
+    "description": "Weekly change insight when steps decreased",
+    "placeholders": {
+      "percentage": {
+        "type": "int"
+      }
+    }
+  },
+  "trendsInsightWeeklyFlat": "Same as last week",
+  "@trendsInsightWeeklyFlat": {
+    "description": "Weekly change insight when steps unchanged from prior week"
+  },
+  "trendsInsightWeeklyNoPrior": "No prior week data",
+  "@trendsInsightWeeklyNoPrior": {
+    "description": "Weekly change insight when prior week has no step data"
+  },
+  "trendsInsightWeeklySemantics": "Weekly change: {body}",
+  "@trendsInsightWeeklySemantics": {
+    "description": "Accessibility label for weekly change insight card",
+    "placeholders": {
+      "body": {
+        "type": "String"
+      }
+    }
+  },
+  "trendsInsightWeekdaySemantics": "Most active day: {body}",
+  "@trendsInsightWeekdaySemantics": {
+    "description": "Accessibility label for most active weekday insight card",
+    "placeholders": {
+      "body": {
+        "type": "String"
+      }
+    }
+  },
+  "trendsInsightStreakSemantics": "Goal streak: {body}",
+  "@trendsInsightStreakSemantics": {
+    "description": "Accessibility label for goal streak insight card",
+    "placeholders": {
+      "body": {
+        "type": "String"
+      }
+    }
+  },
+  "chartTooltipStepsOfGoal": "{steps}/{goal} steps",
+  "@chartTooltipStepsOfGoal": {
+    "description": "Daily bar chart tooltip steps versus goal",
+    "placeholders": {
+      "steps": {
+        "type": "int"
+      },
+      "goal": {
+        "type": "int"
+      }
+    }
+  },
+  "chartGoalStatusNoGoal": "no goal set",
+  "@chartGoalStatusNoGoal": {
+    "description": "Bar chart selection semantics when no daily goal is set"
+  },
+  "chartGoalStatusOverGoal": "{count} over goal",
+  "@chartGoalStatusOverGoal": {
+    "description": "Bar chart selection semantics when steps exceed goal",
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "chartGoalStatusBelowGoal": "{count} below goal",
+  "@chartGoalStatusBelowGoal": {
+    "description": "Bar chart selection semantics when steps are below goal",
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "chartGoalStatusMet": "goal met",
+  "@chartGoalStatusMet": {
+    "description": "Bar chart selection semantics when daily goal is exactly met"
+  },
+  "chartSelectionSemantics": "{date}, {steps} of {goal} steps, {status}",
+  "@chartSelectionSemantics": {
+    "description": "Bar chart accessibility label when a day bar is selected",
+    "placeholders": {
+      "date": {
+        "type": "String"
+      },
+      "steps": {
+        "type": "int"
+      },
+      "goal": {
+        "type": "int"
+      },
+      "status": {
+        "type": "String"
+      }
+    }
+  },
+  "trendsMonthlyTooltipStepsPerDay": "{steps} steps/day",
+  "@trendsMonthlyTooltipStepsPerDay": {
+    "description": "Monthly bar chart tooltip average steps per day",
+    "placeholders": {
+      "steps": {
+        "type": "int"
+      }
+    }
+  },
+  "trendsMonthlyTooltipTotal": "{total} total · {days} days",
+  "@trendsMonthlyTooltipTotal": {
+    "description": "Monthly bar chart tooltip total steps and day count",
+    "placeholders": {
+      "total": {
+        "type": "int"
+      },
+      "days": {
+        "type": "int"
+      }
+    }
+  },
+  "commonWeekdayMon": "Mon",
+  "@commonWeekdayMon": {
+    "description": "Short Monday label for charts"
+  },
+  "commonWeekdayTue": "Tue",
+  "@commonWeekdayTue": {
+    "description": "Short Tuesday label for charts"
+  },
+  "commonWeekdayWed": "Wed",
+  "@commonWeekdayWed": {
+    "description": "Short Wednesday label for charts"
+  },
+  "commonWeekdayThu": "Thu",
+  "@commonWeekdayThu": {
+    "description": "Short Thursday label for charts"
+  },
+  "commonWeekdayFri": "Fri",
+  "@commonWeekdayFri": {
+    "description": "Short Friday label for charts"
+  },
+  "commonWeekdaySat": "Sat",
+  "@commonWeekdaySat": {
+    "description": "Short Saturday label for charts"
+  },
+  "commonWeekdaySun": "Sun",
+  "@commonWeekdaySun": {
+    "description": "Short Sunday label for charts"
+  },
+  "todayWeekPillMon": "MON",
+  "@todayWeekPillMon": {
+    "description": "Uppercase Monday label for Today week progress pills"
+  },
+  "todayWeekPillTue": "TUE",
+  "@todayWeekPillTue": {
+    "description": "Uppercase Tuesday label for Today week progress pills"
+  },
+  "todayWeekPillWed": "WED",
+  "@todayWeekPillWed": {
+    "description": "Uppercase Wednesday label for Today week progress pills"
+  },
+  "todayWeekPillThu": "THU",
+  "@todayWeekPillThu": {
+    "description": "Uppercase Thursday label for Today week progress pills"
+  },
+  "todayWeekPillFri": "FRI",
+  "@todayWeekPillFri": {
+    "description": "Uppercase Friday label for Today week progress pills"
+  },
+  "todayWeekPillSat": "SAT",
+  "@todayWeekPillSat": {
+    "description": "Uppercase Saturday label for Today week progress pills"
+  },
+  "todayWeekPillSun": "SUN",
+  "@todayWeekPillSun": {
+    "description": "Uppercase Sunday label for Today week progress pills"
+  },
+  "commonMonthJan": "Jan",
+  "@commonMonthJan": {
+    "description": "Short January label for chart period captions"
+  },
+  "commonMonthFeb": "Feb",
+  "@commonMonthFeb": {
+    "description": "Short February label for chart period captions"
+  },
+  "commonMonthMar": "Mar",
+  "@commonMonthMar": {
+    "description": "Short March label for chart period captions"
+  },
+  "commonMonthApr": "Apr",
+  "@commonMonthApr": {
+    "description": "Short April label for chart period captions"
+  },
+  "commonMonthMay": "May",
+  "@commonMonthMay": {
+    "description": "Short May label for chart period captions"
+  },
+  "commonMonthJun": "Jun",
+  "@commonMonthJun": {
+    "description": "Short June label for chart period captions"
+  },
+  "commonMonthJul": "Jul",
+  "@commonMonthJul": {
+    "description": "Short July label for chart period captions"
+  },
+  "commonMonthAug": "Aug",
+  "@commonMonthAug": {
+    "description": "Short August label for chart period captions"
+  },
+  "commonMonthSep": "Sep",
+  "@commonMonthSep": {
+    "description": "Short September label for chart period captions"
+  },
+  "commonMonthOct": "Oct",
+  "@commonMonthOct": {
+    "description": "Short October label for chart period captions"
+  },
+  "commonMonthNov": "Nov",
+  "@commonMonthNov": {
+    "description": "Short November label for chart period captions"
+  },
+  "commonMonthDec": "Dec",
+  "@commonMonthDec": {
+    "description": "Short December label for chart period captions"
+  },
+  "commonMonthJanuary": "January",
+  "@commonMonthJanuary": {
+    "description": "Full January name for chart tooltips"
+  },
+  "commonMonthFebruary": "February",
+  "@commonMonthFebruary": {
+    "description": "Full February name for chart tooltips"
+  },
+  "commonMonthMarch": "March",
+  "@commonMonthMarch": {
+    "description": "Full March name for chart tooltips"
+  },
+  "commonMonthApril": "April",
+  "@commonMonthApril": {
+    "description": "Full April name for chart tooltips"
+  },
+  "commonMonthMayFull": "May",
+  "@commonMonthMayFull": {
+    "description": "Full May name for chart tooltips"
+  },
+  "commonMonthJune": "June",
+  "@commonMonthJune": {
+    "description": "Full June name for chart tooltips"
+  },
+  "commonMonthJuly": "July",
+  "@commonMonthJuly": {
+    "description": "Full July name for chart tooltips"
+  },
+  "commonMonthAugust": "August",
+  "@commonMonthAugust": {
+    "description": "Full August name for chart tooltips"
+  },
+  "commonMonthSeptember": "September",
+  "@commonMonthSeptember": {
+    "description": "Full September name for chart tooltips"
+  },
+  "commonMonthOctober": "October",
+  "@commonMonthOctober": {
+    "description": "Full October name for chart tooltips"
+  },
+  "commonMonthNovember": "November",
+  "@commonMonthNovember": {
+    "description": "Full November name for chart tooltips"
+  },
+  "commonMonthDecember": "December",
+  "@commonMonthDecember": {
+    "description": "Full December name for chart tooltips"
+  }
+}

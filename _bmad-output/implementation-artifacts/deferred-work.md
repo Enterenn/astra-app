@@ -75,7 +75,7 @@ Removed four low-value test files; see `_bmad-output/implementation-artifacts/sp
 
 **Phase B done (2026-06-05):** CSV/confirm_dialog merges, `screen_smoke_test.dart`, trimmed design-constant tests — see `spec-test-suite-cleanup.md`.
 
-**Phase C** (`@Tags(['dev'])` for `test/dev/`, exclude from CI) remains deferred.
+**Phase C done (2026-06-19):** `@Tags(['slow'])` on `test/dev/` + `app_live_pipeline_lifecycle_test.dart`, assertion merges on 3 cubit/repository files (−69 tests), `dart_test.yaml` updated. Daily command is now `flutter test --exclude-tags slow` — see `spec-test-suite-cleanup.md`.
 
 ## Flaky integration tests — skip by default (2026-06-15)
 

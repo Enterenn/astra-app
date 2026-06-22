@@ -1,6 +1,6 @@
 /// Read model for History chart daily totals (D-21).
 ///
-/// Produced by [StepRepository.getChartDailyAggregates]; consumed by
+/// Produced by [StepAggregationRepository.getChartDailyAggregates]; consumed by
 /// `HistoryCubit` / `StepBarChart` in Story 3.3. Not a persistence entity.
 class ChartDayAggregate {
   const ChartDayAggregate({

@@ -1,12 +1,13 @@
 import 'dart:async';
 
+import 'package:astra_app/l10n/app_localizations.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 
 import '../../core/constants/astra_colors.dart';
 import '../../core/di/app_dependencies.dart';
-import '../../dev/chart_benchmark_dev_fab.dart';
 import '../cubits/history_cubit.dart';
 import '../cubits/my_data_cubit.dart';
 import '../cubits/profile_cubit.dart';
@@ -75,8 +76,9 @@ class _AppScaffoldState extends State<AppScaffold> {
     _todayCubit =
         widget.createTodayCubit?.call(widget.deps) ??
         TodayCubit(
-          stepRepository: widget.deps.stepRepository,
-          userPreferences: widget.deps.userPreferences,
+          stepAggregation: widget.deps.stepAggregation,
+          userSettings: widget.deps.userSettings,
+          userHealthMetrics: widget.deps.userHealthMetrics,
           clock: widget.deps.timeProvider,
           activityPermissionGranted: widget.deps.activityPermissionGranted,
           postGoalUpdate: () async {
@@ -87,14 +89,17 @@ class _AppScaffoldState extends State<AppScaffold> {
     _historyCubit =
         widget.createHistoryCubit?.call(widget.deps) ??
         HistoryCubit(
-          stepRepository: widget.deps.stepRepository,
-          userPreferences: widget.deps.userPreferences,
+          stepAggregation: widget.deps.stepAggregation,
+          userHealthMetrics: widget.deps.userHealthMetrics,
         );
     _myDataCubit =
         widget.createMyDataCubit?.call(widget.deps) ??
         MyDataCubit(
-          stepRepository: widget.deps.stepRepository,
-          userPreferences: widget.deps.userPreferences,
+          stepAggregation: widget.deps.stepAggregation,
+          csvService: widget.deps.csvService,
+          stepIngestion: widget.deps.stepIngestion,
+          userSettings: widget.deps.userSettings,
+          userHealthMetrics: widget.deps.userHealthMetrics,
           clock: widget.deps.timeProvider,
           databasePath: widget.deps.databasePath,
           activityPermissionGranted: widget.deps.activityPermissionGranted,
@@ -103,18 +108,7 @@ class _AppScaffoldState extends State<AppScaffold> {
             await _historyCubit.refresh(silent: true);
             await _myDataCubit.refresh(silent: true);
           },
-          postPurgeRefresh: () async {
-            await widget.deps.userPreferences.clearLastDisplayedSteps();
-            await widget.deps.liveStepMonitor.reconcileFromDatabase();
-            await _todayCubit.refresh(silent: true);
-            await _todayCubit.syncSteps(
-              widget.deps.liveStepMonitor.currentTodaySteps,
-            );
-            await _todayCubit.refreshMetadata();
-            await _historyCubit.refresh(silent: true);
-            await _myDataCubit.refresh(silent: true);
-            unawaited(widget.deps.dataLifecycleService.runMaintenance(force: true));
-          },
+          postPurgeRefresh: _runPostPurgeRefresh,
           postGoalUpdate: () async {
             await _todayCubit.refreshMetadata();
             await _historyCubit.refreshGoal();
@@ -123,7 +117,8 @@ class _AppScaffoldState extends State<AppScaffold> {
     _profileCubit =
         widget.createProfileCubit?.call(widget.deps) ??
         ProfileCubit(
-          userPreferences: widget.deps.userPreferences,
+          userSettings: widget.deps.userSettings,
+          userHealthMetrics: widget.deps.userHealthMetrics,
           notificationService: widget.deps.notificationService,
           postDisplayNameUpdate: () async {
             await _todayCubit.refreshMetadata();
@@ -134,19 +129,25 @@ class _AppScaffoldState extends State<AppScaffold> {
     widget.onMyDataCubitReady?.call(_myDataCubit);
     widget.onProfileCubitReady?.call(_profileCubit);
     _tabScreens = [
-      BlocProvider.value(
-        value: _todayCubit,
-        child: const TodayScreen(),
+      RepaintBoundary(
+        child: BlocProvider.value(
+          value: _todayCubit,
+          child: const TodayScreen(),
+        ),
       ),
-      BlocProvider.value(
-        value: _historyCubit,
-        child: const HistoryScreen(),
+      RepaintBoundary(
+        child: BlocProvider.value(
+          value: _historyCubit,
+          child: const HistoryScreen(),
+        ),
       ),
-      Navigator(
-        key: _menuNavigatorKey,
-        onGenerateRoute: (_) => MaterialPageRoute<void>(
-          builder: (context) => MenuHubScreen(
-            onDestinationSelected: _onMenuDestinationSelected,
+      RepaintBoundary(
+        child: Navigator(
+          key: _menuNavigatorKey,
+          onGenerateRoute: (_) => MaterialPageRoute<void>(
+            builder: (context) => MenuHubScreen(
+              onDestinationSelected: _onMenuDestinationSelected,
+            ),
           ),
         ),
       ),
@@ -161,6 +162,54 @@ class _AppScaffoldState extends State<AppScaffold> {
     final backfill = widget.foregroundBackfill;
     if (backfill != null) {
       await backfill;
+    }
+  }
+
+  Future<void> _runPostPurgeRefresh() async {
+    var phase = '';
+    try {
+      phase = 'clearLastDisplayedSteps';
+      await widget.deps.userSettings.clearLastDisplayedSteps();
+      // TODO(refactor): If the widget is unmounted mid-flux, we return silently to avoid StateError.
+      // Trade-off: MyDataCubit might assume a full success while some late refreshes were skipped.
+      // Considered acceptable as the database purge itself is already complete at this stage.
+      if (!mounted) return;
+
+      phase = 'reconcileFromDatabase';
+      await widget.deps.liveStepMonitor.reconcileFromDatabase();
+      if (!mounted) return;
+
+      phase = 'todayRefresh';
+      await _todayCubit.refresh(silent: true);
+      if (!mounted) return;
+
+      phase = 'todaySyncSteps';
+      await _todayCubit.syncSteps(
+        widget.deps.liveStepMonitor.currentTodaySteps,
+      );
+      if (!mounted) return;
+
+      phase = 'todayRefreshMetadata';
+      await _todayCubit.refreshMetadata();
+      if (!mounted) return;
+
+      phase = 'historyRefresh';
+      await _historyCubit.refresh(silent: true);
+      if (!mounted) return;
+
+      phase = 'myDataRefresh';
+      await _myDataCubit.refresh(silent: true);
+      if (!mounted) return;
+
+      unawaited(widget.deps.dataLifecycleService.runMaintenance(force: true));
+    } catch (error, stackTrace) {
+      if (kDebugMode) {
+        debugPrint(
+          'AppScaffold.postPurgeRefresh failed at $phase: $error',
+        );
+        debugPrintStack(stackTrace: stackTrace);
+      }
+      rethrow;
     }
   }
 
@@ -185,6 +234,10 @@ class _AppScaffoldState extends State<AppScaffold> {
   }
 
   void _onDestinationSelected(int index) {
+    if (index == _selectedIndex) {
+      return;
+    }
+    unawaited(HapticFeedback.selectionClick());
     final returningToToday = index == 0 && _selectedIndex != 0;
     final openingTrends = index == 1 && _selectedIndex != 1;
     setState(() {
@@ -197,6 +250,23 @@ class _AppScaffoldState extends State<AppScaffold> {
     if (openingTrends) {
       unawaited(_historyCubit.refresh());
     }
+  }
+
+  void _clearMenuDestinationGuard(MenuHubDestination destination) {
+    if (_menuStackTopDestination == destination) {
+      _menuStackTopDestination = null;
+    }
+  }
+
+  Widget _wrapMenuPushRoute(MenuHubDestination destination, Widget child) {
+    return PopScope(
+      onPopInvokedWithResult: (didPop, _) {
+        if (didPop) {
+          _clearMenuDestinationGuard(destination);
+        }
+      },
+      child: child,
+    );
   }
 
   void _onMenuDestinationSelected(MenuHubDestination destination) {
@@ -216,13 +286,19 @@ class _AppScaffoldState extends State<AppScaffold> {
         pushFuture = navigator.push<void>(
           MaterialPageRoute<void>(
             settings: const RouteSettings(name: 'menu/profile'),
-            builder: (context) => BlocProvider.value(
-              value: _profileCubit,
-              child: const SecondaryScreenShell(
-                title: 'Profile',
-                child: ProfileScreen(showInlineTitle: false),
-              ),
-            ),
+            builder: (context) {
+              final l10n = AppLocalizations.of(context);
+              return _wrapMenuPushRoute(
+                destination,
+                BlocProvider.value(
+                  value: _profileCubit,
+                  child: SecondaryScreenShell(
+                    title: l10n.menuProfile,
+                    child: const ProfileScreen(showInlineTitle: false),
+                  ),
+                ),
+              );
+            },
           ),
         );
       case MenuHubDestination.data:
@@ -230,13 +306,19 @@ class _AppScaffoldState extends State<AppScaffold> {
         pushFuture = navigator.push<void>(
           MaterialPageRoute<void>(
             settings: const RouteSettings(name: 'menu/data'),
-            builder: (context) => BlocProvider.value(
-              value: _myDataCubit,
-              child: const SecondaryScreenShell(
-                title: 'Data',
-                child: MyDataScreen(showInlineTitle: false),
-              ),
-            ),
+            builder: (context) {
+              final l10n = AppLocalizations.of(context);
+              return _wrapMenuPushRoute(
+                destination,
+                BlocProvider.value(
+                  value: _myDataCubit,
+                  child: SecondaryScreenShell(
+                    title: l10n.menuData,
+                    child: const MyDataScreen(showInlineTitle: false),
+                  ),
+                ),
+              );
+            },
           ),
         );
       case MenuHubDestination.settings:
@@ -244,9 +326,12 @@ class _AppScaffoldState extends State<AppScaffold> {
         pushFuture = navigator.push<void>(
           MaterialPageRoute<void>(
             settings: const RouteSettings(name: 'menu/settings'),
-            builder: (context) => BlocProvider.value(
-              value: _profileCubit,
-              child: const SettingsScreen(),
+            builder: (context) => _wrapMenuPushRoute(
+              destination,
+              BlocProvider.value(
+                value: _profileCubit,
+                child: const SettingsScreen(),
+              ),
             ),
           ),
         );
@@ -254,15 +339,18 @@ class _AppScaffoldState extends State<AppScaffold> {
         pushFuture = navigator.push<void>(
           MaterialPageRoute<void>(
             settings: const RouteSettings(name: 'menu/about'),
-            builder: (context) => const AboutScreen(),
+            builder: (context) => _wrapMenuPushRoute(
+              destination,
+              const AboutScreen(),
+            ),
           ),
         );
     }
 
     unawaited(
       pushFuture.whenComplete(() {
-        if (mounted && _menuStackTopDestination == destination) {
-          _menuStackTopDestination = null;
+        if (mounted) {
+          _clearMenuDestinationGuard(destination);
         }
       }),
     );
@@ -274,9 +362,6 @@ class _AppScaffoldState extends State<AppScaffold> {
 
     return Scaffold(
       backgroundColor: colors.bgBase,
-      floatingActionButton: kDebugMode && _selectedIndex == 1
-          ? ChartBenchmarkDevFab(deps: widget.deps)
-          : null,
       body: IndexedStack(
         index: _selectedIndex,
         children: _tabScreens,

@@ -1,6 +1,7 @@
+import 'package:astra_app/l10n/app_localizations.dart';
 import 'package:flutter/material.dart';
 import 'package:package_info_plus/package_info_plus.dart';
-import 'package:phosphoricons_flutter/phosphoricons_flutter.dart';
+import 'package:astra_app/core/icons/phosphor_icons.dart';
 
 import '../../core/constants/astra_colors.dart';
 import '../../core/constants/astra_spacing.dart';
@@ -22,8 +23,10 @@ class AboutScreen extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context);
+
     return SecondaryScreenShell(
-      title: 'About',
+      title: l10n.aboutTitle,
       child: _AboutBody(
         packageInfoFuture: packageInfoFuture ?? _defaultPackageInfoFuture,
       ),
@@ -40,6 +43,7 @@ class _AboutBody extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context);
     final colors = context.astraColors;
     final horizontalPadding = AstraSpacing.kScreenHorizontalPadding;
     final bottomScrollPadding =
@@ -73,7 +77,7 @@ class _AboutBody extends StatelessWidget {
             ),
             const SizedBox(height: AstraSpacing.kSpaceMd),
             Text(
-              'Astra Health',
+              l10n.aboutAppName,
               style: AstraTypography.screenTitleFor(colors),
               textAlign: TextAlign.center,
             ),
@@ -85,7 +89,7 @@ class _AboutBody extends StatelessWidget {
                   return const SizedBox.shrink();
                 }
                 return Text(
-                  'Version: ${snapshot.data!.version}',
+                  l10n.aboutVersion(snapshot.data!.version),
                   style: AstraTypography.bodyFor(colors).copyWith(
                     color: colors.textMuted,
                   ),

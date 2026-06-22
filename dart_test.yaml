@@ -2,3 +2,20 @@
 concurrency: 1
 timeout: 60s
 reporter: expanded
+
+# === Test Tags ===
+#
+# Daily fast suite — excludes heavy I/O, benchmarks, and lifecycle integration:
+#   flutter test --exclude-tags slow
+#
+# Full suite (CI / nightly):
+#   flutter test
+#
+# Tag descriptions:
+#   slow  — tests that perform significant I/O or long computation:
+#           · dev/data_inject_service_test  (25 920 row inserts)
+#           · dev/lifecycle_simulator_test  (compaction on 25 920 rows)
+#           · dev/chart_benchmark_test      (render + query benchmarks)
+#           · app_live_pipeline_lifecycle_test (~41 s full-app integration)
+tags:
+  slow: {}

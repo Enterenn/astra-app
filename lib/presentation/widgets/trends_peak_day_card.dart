@@ -1,10 +1,12 @@
+import 'package:astra_app/l10n/app_localizations.dart';
 import 'package:flutter/material.dart';
-import 'package:phosphoricons_flutter/phosphoricons_flutter.dart';
+import 'package:astra_app/core/icons/phosphor_icons.dart';
 
 import '../../core/constants/astra_colors.dart';
 import '../../core/constants/astra_spacing.dart';
 import '../../core/constants/astra_typography.dart';
 import '../cubits/history_state.dart';
+import '../l10n/l10n_date_labels.dart';
 import 'elevated_card.dart';
 
 /// Full-width peak day stat card for the Trends screen.
@@ -12,15 +14,21 @@ class TrendsPeakDayCard extends StatelessWidget {
   const TrendsPeakDayCard({
     super.key,
     required this.peakDay,
+    required this.period,
   });
 
   final TrendsPeakDay peakDay;
+  final HistoryPeriod period;
 
   @override
   Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context);
     final colors = context.astraColors;
-    final semanticsLabel =
-        'Peak day ${peakDay.dateLabel} with ${peakDay.totalSteps} steps in this period';
+    final dateLabel = l10n.formatPeakDayLabel(peakDay.localDay, period);
+    final semanticsLabel = l10n.trendsPeakDaySemantics(
+      dateLabel,
+      peakDay.totalSteps,
+    );
 
     return Semantics(
       label: semanticsLabel,
@@ -40,7 +48,7 @@ class TrendsPeakDayCard extends StatelessWidget {
               textBaseline: TextBaseline.alphabetic,
               children: [
                 Text(
-                  peakDay.dateLabel,
+                  dateLabel,
                   style: AstraTypography.dataFor(colors).copyWith(
                     fontWeight: FontWeight.w700,
                   ),
@@ -54,7 +62,7 @@ class TrendsPeakDayCard extends StatelessWidget {
                 ),
                 const SizedBox(width: AstraSpacing.kSpaceXs),
                 Text(
-                  'steps',
+                  l10n.todayGoalRingStepsLabel,
                   style: AstraTypography.labelFor(colors).copyWith(
                     fontWeight: FontWeight.w400,
                     color: colors.textPrimary,
@@ -64,7 +72,7 @@ class TrendsPeakDayCard extends StatelessWidget {
             ),
             const SizedBox(height: AstraSpacing.kSpaceXs),
             Text(
-              'peak day in this period',
+              l10n.trendsPeakDayCaption,
               style: AstraTypography.captionFor(colors),
             ),
           ],

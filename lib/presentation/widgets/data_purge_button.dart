@@ -1,3 +1,4 @@
+import 'package:astra_app/l10n/app_localizations.dart';
 import 'package:flutter/material.dart';
 
 import '../../core/constants/astra_colors.dart';
@@ -9,19 +10,19 @@ class DataPurgeButton extends StatelessWidget {
   const DataPurgeButton({
     required this.onPressed,
     required this.isLoading,
-    this.label = 'Delete all local data',
     super.key,
   });
 
   final VoidCallback? onPressed;
   final bool isLoading;
-  final String label;
 
   bool get _isDisabled => onPressed == null || isLoading;
 
   @override
   Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context);
     final colors = context.astraColors;
+    final label = l10n.myDataDeleteAllLocalData;
     final labelStyle = AstraTypography.labelFor(colors).copyWith(
       color: _isDisabled ? colors.textMuted : colors.statusDanger,
     );

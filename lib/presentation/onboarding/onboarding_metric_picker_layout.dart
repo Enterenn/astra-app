@@ -1,3 +1,4 @@
+import 'package:astra_app/l10n/app_localizations.dart';
 import 'package:flutter/material.dart';
 
 import '../../core/constants/astra_colors.dart';
@@ -29,12 +30,9 @@ class OnboardingMetricPickerLayout extends StatelessWidget {
   /// Center selection indicator bar height.
   static const centerIndicatorHeight = 48.0;
 
-  static const _optionalMetricsHint =
-      'Weight and height are optional, but help improve the accuracy of '
-      'measurements in the app.';
-
   @override
   Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context);
     final colors = context.astraColors;
 
     return SingleChildScrollView(
@@ -52,7 +50,7 @@ class OnboardingMetricPickerLayout extends StatelessWidget {
           ruler,
           const SizedBox(height: AstraSpacing.kSpaceMd),
           Text(
-            _optionalMetricsHint,
+            l10n.onboardingOptionalMetricsHint,
             textAlign: TextAlign.center,
             style: AstraTypography.captionFor(colors),
           ),
