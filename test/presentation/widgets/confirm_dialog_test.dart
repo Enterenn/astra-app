@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:astra_app/core/constants/astra_theme.dart';
 import 'package:astra_app/presentation/widgets/confirm_dialog.dart';
 import 'package:flutter/material.dart';
@@ -61,10 +63,10 @@ void main() {
               return Scaffold(
                 body: ElevatedButton(
                   onPressed: () {
-                    showPurgeConfirmDialog(
+                    unawaited(showPurgeConfirmDialog(
                       context,
                       onExportFirst: () {},
-                    );
+                    ));
                   },
                   child: const Text('Open'),
                 ),
@@ -98,10 +100,10 @@ void main() {
               return Scaffold(
                 body: ElevatedButton(
                   onPressed: () {
-                    showPurgeConfirmDialog(
+                    unawaited(showPurgeConfirmDialog(
                       context,
                       onExportFirst: () => exportFirstTapped = true,
-                    );
+                    ));
                   },
                   child: const Text('Open'),
                 ),

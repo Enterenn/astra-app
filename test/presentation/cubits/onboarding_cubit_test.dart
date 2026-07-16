@@ -31,7 +31,7 @@ void main() {
       await db.close();
     });
 
-    test('starts on intro step', () {
+    test('starts on intro step', () async {
       final cubit = OnboardingCubit(
         userSettings: userSettings,
         userHealthMetrics: userHealthMetrics,
@@ -40,10 +40,10 @@ void main() {
       expect(cubit.state.currentStep, 0);
       expect(cubit.state.status, OnboardingStatus.inProgress);
 
-      cubit.close();
+      await cubit.close();
     });
 
-    test('nextStep and previousStep respect boundaries', () {
+    test('nextStep and previousStep respect boundaries', () async {
       final cubit = OnboardingCubit(
         userSettings: userSettings,
         userHealthMetrics: userHealthMetrics,
@@ -65,7 +65,7 @@ void main() {
       cubit.nextStep();
       expect(cubit.state.currentStep, 2);
 
-      cubit.close();
+      await cubit.close();
     });
 
     test('requestActivityPermission uses injected requester', () async {

@@ -35,14 +35,14 @@ void main() {
       await db.close();
     });
 
-    test('defaults to metric distance, kg weight, and cm height', () {
+    test('defaults to metric distance, kg weight, and cm height', () async {
       final cubit = UnitsCubit(userSettings: repository);
 
       expect(cubit.state.distanceUnit, DistanceDisplayUnit.metric);
       expect(cubit.state.weightUnit, WeightDisplayUnit.kg);
       expect(cubit.state.heightUnit, HeightDisplayUnit.cm);
 
-      cubit.close();
+      await cubit.close();
     });
 
     test('setDistanceUnit persists and emits', () async {

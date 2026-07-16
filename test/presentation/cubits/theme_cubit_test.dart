@@ -46,17 +46,17 @@ void main() {
       await db.close();
     });
 
-    test('defaults to system preference and orange accent', () {
+    test('defaults to system preference and orange accent', () async {
       final cubit = ThemeCubit(userSettings: repository);
 
       expect(cubit.state.preference, AstraThemePreference.system);
       expect(cubit.state.materialThemeMode, ThemeMode.system);
       expect(cubit.state.accentPreset, AstraAccentPreset.orange);
 
-      cubit.close();
+      await cubit.close();
     });
 
-    test('uses initialPreference from constructor', () {
+    test('uses initialPreference from constructor', () async {
       final cubit = ThemeCubit(
         userSettings: repository,
         initialPreference: AstraThemePreference.dark,
@@ -65,7 +65,7 @@ void main() {
       expect(cubit.state.preference, AstraThemePreference.dark);
       expect(cubit.state.materialThemeMode, ThemeMode.dark);
 
-      cubit.close();
+      await cubit.close();
     });
 
     test('setThemePreference persists and emits preference', () async {

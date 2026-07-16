@@ -61,10 +61,10 @@ void main() {
       );
     }
 
-    test('starts in loading state', () {
+    test('starts in loading state', () async {
       final cubit = buildCubit();
       expect(cubit.state.status, MyDataStatus.loading);
-      cubit.close();
+      await cubit.close();
     });
 
     test('refresh emits permissionDenied when activity permission denied', () async {

@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:astra_app/presentation/widgets/secondary_screen_header.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
@@ -32,13 +34,13 @@ void main() {
                     const SecondaryScreenHeader(title: 'Data'),
                     TextButton(
                       onPressed: () {
-                        Navigator.of(context).push<void>(
+                        unawaited(Navigator.of(context).push<void>(
                           MaterialPageRoute<void>(
                             builder: (context) => const Scaffold(
                               body: SecondaryScreenHeader(title: 'Nested'),
                             ),
                           ),
-                        );
+                        ));
                       },
                       child: const Text('Push'),
                     ),
