@@ -108,6 +108,18 @@ Object todayGoalRingSelectorSlice(TodayState state) =>
     _GoalRingViewModel.fromState(state);
 
 @visibleForTesting
+bool todaySetGoalEnabled(TodayState state) =>
+    state.status != TodayStatus.loading && state.lastDisplayedStepsLoaded;
+
+@visibleForTesting
+Object todaySetGoalSelectorSlice(TodayState state) =>
+    _SetGoalViewModel.fromState(state);
+
+@visibleForTesting
+bool todaySetGoalSliceEquals(TodayState a, TodayState b) =>
+    _SetGoalViewModel.fromState(a) == _SetGoalViewModel.fromState(b);
+
+@visibleForTesting
 bool todayHealthSliceEquals(TodayState a, TodayState b) =>
     _CollectionHealthViewModel.fromState(a) ==
     _CollectionHealthViewModel.fromState(b);
@@ -200,6 +212,27 @@ final class _ActivityStatsViewModel {
   @override
   int get hashCode =>
       Object.hash(status, metrics.distanceKm, metrics.kcal, metrics.walkingDuration);
+}
+
+@immutable
+final class _SetGoalViewModel {
+  const _SetGoalViewModel({required this.enabled});
+
+  final bool enabled;
+
+  static _SetGoalViewModel fromState(TodayState state) =>
+      _SetGoalViewModel(enabled: todaySetGoalEnabled(state));
+
+  @override
+  bool operator ==(Object other) {
+    if (identical(this, other)) {
+      return true;
+    }
+    return other is _SetGoalViewModel && enabled == other.enabled;
+  }
+
+  @override
+  int get hashCode => enabled.hashCode;
 }
 
 @immutable
@@ -513,28 +546,40 @@ class _GoalRingCard extends StatelessWidget {
             },
           ),
           const SizedBox(height: AstraSpacing.kSpaceLg),
-          Builder(
-            builder: (context) {
+          BlocSelector<TodayCubit, TodayState, _SetGoalViewModel>(
+            selector: _SetGoalViewModel.fromState,
+            builder: (context, vm) {
               _probeSectionBuild('staticSetGoal');
               final l10n = AppLocalizations.of(context);
+              final labelStyle = AstraTypography.labelFor(colors).copyWith(
+                color: vm.enabled ? null : colors.textMuted,
+              );
               return Center(
-                child: AstraPressable(
-                  child: Material(
-                    color: colors.bgSubtle,
-                    borderRadius:
-                        BorderRadius.circular(AstraSpacing.kRadiusFull),
-                    child: InkWell(
-                      onTap: () => _onSetGoalTapped(context),
+                child: Semantics(
+                  button: true,
+                  enabled: vm.enabled,
+                  label: l10n.todaySetGoalLabel,
+                  child: AstraPressable(
+                    enabled: vm.enabled,
+                    child: Material(
+                      color: colors.bgSubtle,
                       borderRadius:
                           BorderRadius.circular(AstraSpacing.kRadiusFull),
-                      child: Padding(
-                        padding: const EdgeInsets.symmetric(
-                          horizontal: AstraSpacing.kSpaceLg,
-                          vertical: AstraSpacing.kSpaceSm,
-                        ),
-                        child: Text(
-                          l10n.todaySetGoalLabel,
-                          style: AstraTypography.labelFor(colors),
+                      child: InkWell(
+                        onTap: vm.enabled
+                            ? () => _onSetGoalTapped(context)
+                            : null,
+                        borderRadius:
+                            BorderRadius.circular(AstraSpacing.kRadiusFull),
+                        child: Padding(
+                          padding: const EdgeInsets.symmetric(
+                            horizontal: AstraSpacing.kSpaceLg,
+                            vertical: AstraSpacing.kSpaceSm,
+                          ),
+                          child: Text(
+                            l10n.todaySetGoalLabel,
+                            style: labelStyle,
+                          ),
                         ),
                       ),
                     ),
@@ -550,6 +595,9 @@ class _GoalRingCard extends StatelessWidget {
 
   Future<void> _onSetGoalTapped(BuildContext context) async {
     final cubit = context.read<TodayCubit>();
+    if (!todaySetGoalEnabled(cubit.state)) {
+      return;
+    }
     final currentGoal = await cubit.todayEditableGoal;
     if (!context.mounted) {
       return;
