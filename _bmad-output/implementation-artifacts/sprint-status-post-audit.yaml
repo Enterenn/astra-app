@@ -1,6 +1,6 @@
 # generated: 2026-07-16
-# last_updated: 2026-07-16 (Story 21.1 context ready-for-dev)
-# NEXT: bmad-dev-story 21-1-fast-path-today-refresh-for-cold-start
+# last_updated: 2026-07-16 (Story 21.2 in-progress)
+# NEXT: bmad-dev-story 21-2-decouple-foreground-backfill-from-first-today-paint
 # Ref: planning-artifacts/epics-post-audit.md · planning-artifacts/audits/
 # project: astra-app
 # project_key: NOKEY
@@ -63,7 +63,7 @@
 # NAVIGATION: _bmad-output/README.md · planning-artifacts/epics-post-audit.md
 
 generated: 2026-07-16
-last_updated: 2026-07-16 (Story 21.1 done — code review fixes applied)
+last_updated: 2026-07-16 (Story 21.2 in-progress)
 project: astra-app
 project_key: NOKEY
 tracking_system: file-system
@@ -74,7 +74,7 @@ git_branch: main
 development_status:
   epic-21: in-progress
   21-1-fast-path-today-refresh-for-cold-start: done
-  21-2-decouple-foreground-backfill-from-first-today-paint: backlog
+  21-2-decouple-foreground-backfill-from-first-today-paint: in-progress
   21-3-deduplicate-cold-start-get-today-steps-queries: backlog
   21-4-route-ingestion-lock-through-session-with-retry: backlog
   21-5-batch-week-goal-resolution-and-reduce-n-plus-1: backlog
