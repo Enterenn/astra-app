@@ -615,7 +615,7 @@ class AppLifecycleCoordinator {
         _logColdStartPhase('cold start backfill DONE');
       }),
     );
-    await _bindLiveMonitorToToday();
+    await _bindLiveMonitorToToday(skipSqliteRefresh: true);
     if (!_mounted()) {
       return;
     }
@@ -852,3 +852,4 @@ class AppLifecycleCoordinator {
       },
     );
   }
+}

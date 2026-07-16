@@ -69,12 +69,12 @@ So that cold start is never blocked 1–2 s on ingestion backfill.
   - [x] Proceed to `_bindLiveMonitorToToday` with cold-start skip flag (Sub-task C)
   - [x] **Stop → review brief → wait for Baptiste OK → commit**
 
-- [ ] **Sub-task C — Skip redundant SQLite refresh on cold bind** (AC: #2)
-  - [ ] Add parameter to `_bindLiveMonitorToToday` e.g. `{bool sqliteAlreadyPainted = false}` or `{bool skipSqliteRefresh = false}`
-  - [ ] When `skipSqliteRefresh` / `sqliteAlreadyPainted`: skip `await _todayCubit?.refresh(silent: true)` block (L654–656)
-  - [ ] Cold-start call site: pass `skipSqliteRefresh: true` after successful `refreshFastPath`
-  - [ ] Resume path (`foregroundCatchUp: true`) and permission-denied branch: **unchanged** (still use full `refresh()` where today)
-  - [ ] **Stop → review brief → wait for Baptiste OK → commit**
+- [x] **Sub-task C — Skip redundant SQLite refresh on cold bind** (AC: #2)
+  - [x] Add parameter to `_bindLiveMonitorToToday` e.g. `{bool sqliteAlreadyPainted = false}` or `{bool skipSqliteRefresh = false}`
+  - [x] When `skipSqliteRefresh` / `sqliteAlreadyPainted`: skip `await _todayCubit?.refresh(silent: true)` block (L654–656)
+  - [x] Cold-start call site: pass `skipSqliteRefresh: true` after successful `refreshFastPath`
+  - [x] Resume path (`foregroundCatchUp: true`) and permission-denied branch: **unchanged** (still use full `refresh()` where today)
+  - [x] **Stop → review brief → wait for Baptiste OK → commit**
 
 - [ ] **Sub-task D — Post-backfill reconcile (non-blocking)** (AC: #3)
   - [ ] Schedule `unawaited(_foregroundBackfill.then((_) async { ... }))` from `_startLivePipelineFirstTime` after fast paint
@@ -290,6 +290,7 @@ Pattern: small commits per sub-task; coordinator change should be isolated from 
 
 - Sub-task A: Cold-start gate mapped — backfill starts L180, blocks at L609; bind re-reads SQLite L655; `refreshFastPath` ready but unused.
 - Sub-task B: `_startLivePipelineFirstTime` calls `refreshFastPath()` first; backfill log moved to `unawaited(whenComplete)`.
+- Sub-task C: `skipSqliteRefresh` on cold bind — avoids duplicate 7+ query refresh after fast path.
 ### File List
 
 ## Change Log
