@@ -72,14 +72,14 @@ So that first paint is not delayed by redundant SQLite round-trips.
   - [x] Do **not** pass seed into `_reconcileAfterBackfillCompletes` — always full reconcile after backfill
   - [x] **Stop → review brief → wait for Baptiste OK → commit**
 
-- [ ] **Sub-task D — Tests** (AC: #5)
-  - [ ] `test/core/services/live_step_monitor_test.dart`: recording fake or call-count wrapper on `StepAggregationRepository` — assert `start(seedPersistedSteps: 42)` leaves `getTodaySteps` call count at 0; `reconcileFromDatabase(seedPersistedSteps: 42)` also skips read
-  - [ ] `test/core/services/live_step_monitor_test.dart`: unseeded `start()` + `reconcileFromDatabase()` still reads DB (regression guard)
-  - [ ] Extend `test/core/services/app_lifecycle_coordinator_test.dart`: `_CountingStepAggregation` implementing contract with `getTodayStepsCallCount`; cold start with `skipSqliteRefresh` path → assert count == **1** before `syncSteps` completes (only fast path read)
-  - [ ] Run: `flutter test test/core/services/live_step_monitor_test.dart test/core/services/app_lifecycle_coordinator_test.dart`
-  - [ ] Run: `flutter test --exclude-tags slow`
-  - [ ] If monotonic tests fail, fix seed/reconcile monotonic floor — do not weaken Display Truth rules
-  - [ ] **Stop → review brief → wait for Baptiste OK → commit**
+- [x] **Sub-task D — Tests** (AC: #5)
+  - [x] `test/core/services/live_step_monitor_test.dart`: recording fake or call-count wrapper on `StepAggregationRepository` — assert `start(seedPersistedSteps: 42)` leaves `getTodaySteps` call count at 0; `reconcileFromDatabase(seedPersistedSteps: 42)` also skips read
+  - [x] `test/core/services/live_step_monitor_test.dart`: unseeded `start()` + `reconcileFromDatabase()` still reads DB (regression guard)
+  - [x] Extend `test/core/services/app_lifecycle_coordinator_test.dart`: `_CountingStepAggregation` implementing contract with `getTodayStepsCallCount`; cold start with `skipSqliteRefresh` path → assert count == **1** before `syncSteps` completes (only fast path read)
+  - [x] Run: `flutter test test/core/services/live_step_monitor_test.dart test/core/services/app_lifecycle_coordinator_test.dart`
+  - [x] Run: `flutter test --exclude-tags slow`
+  - [x] If monotonic tests fail, fix seed/reconcile monotonic floor — do not weaken Display Truth rules
+  - [x] **Stop → review brief → wait for Baptiste OK → commit**
 
 ## Dev Notes
 

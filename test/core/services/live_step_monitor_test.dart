@@ -3,9 +3,15 @@ import 'dart:async';
 import 'package:astra_app/core/database/app_database.dart';
 import 'package:astra_app/core/services/background_collector.dart';
 import 'package:astra_app/core/services/live_step_monitor.dart';
+import 'package:astra_app/core/time/time_provider.dart';
+import 'package:astra_app/data/contracts/step_aggregation_repository_contract.dart';
 import 'package:astra_app/data/datasources/monitor_drain_source.dart';
 import 'package:astra_app/data/datasources/phone_pedometer_source.dart';
 import 'package:astra_app/data/datasources/step_normalizer.dart';
+import 'package:astra_app/data/models/chart_day_aggregate.dart';
+import 'package:astra_app/data/models/chart_month_aggregate.dart';
+import 'package:astra_app/data/models/database_footprint.dart';
+import 'package:astra_app/data/models/timeseries_sample_model.dart';
 import 'package:astra_app/data/repositories/ingestion_baseline_repository.dart';
 
 import 'package:flutter_test/flutter_test.dart';
@@ -15,6 +21,53 @@ import '../../core/time/fake_time_provider.dart';
 import '../../helpers/sqflite_test_helper.dart';
 import 'package:astra_app/data/repositories/step/step_ingestion_repository.dart';
 import 'package:astra_app/data/repositories/step/step_aggregation_repository.dart';
+
+class _CountingStepAggregation implements StepAggregationRepositoryContract {
+  _CountingStepAggregation(this.clock, {this.stubbedSteps = 0});
+
+  @override
+  final TimeProvider clock;
+
+  final int stubbedSteps;
+  int getTodayStepsCallCount = 0;
+
+  @override
+  Future<int> getTodaySteps() async {
+    getTodayStepsCallCount++;
+    return stubbedSteps;
+  }
+
+  @override
+  Future<List<TimeseriesSampleModel>> getTodayActiveBuckets() async => [];
+
+  @override
+  Future<List<TimeseriesSampleModel>> getActiveBucketsForLocalDay(
+    DateTime localDay,
+  ) async =>
+      [];
+
+  @override
+  Future<List<ChartDayAggregate>> getChartDailyAggregates({
+    required int days,
+  }) async =>
+      [];
+
+  @override
+  Future<List<ChartMonthAggregate>> getChartMonthlyAggregates({
+    required int months,
+  }) async =>
+      [];
+
+  @override
+  Future<DateTime?> getLastIngestionUtc() async => null;
+
+  @override
+  Future<int> countStepSamples() async => 0;
+
+  @override
+  Future<DatabaseFootprint> getFootprint({required String databasePath}) async =>
+      const DatabaseFootprint(sampleCount: 0, fileSizeBytes: 0);
+}
 
 Future<void> _persistBufferedSteps(
   LiveStepMonitor monitor,
@@ -407,6 +460,61 @@ void main() {
       );
       await Future<void>.delayed(Duration.zero);
       expect(monitor.currentTodaySteps, greaterThan(30));
+    });
+
+    group('seed API (AUD-03 dedup)', () {
+      late _CountingStepAggregation countingAggregation;
+      late LiveStepMonitor seedMonitor;
+
+      setUp(() {
+        countingAggregation = _CountingStepAggregation(clock, stubbedSteps: 500);
+        seedMonitor = LiveStepMonitor(
+          stepAggregation: countingAggregation,
+          baselineRepository: baselineRepository,
+          clock: clock,
+          stepEventStreamFactory: () => events.stream,
+          emitThrottle: Duration.zero,
+        );
+      });
+
+      tearDown(() async {
+        await seedMonitor.stop();
+        seedMonitor.dispose();
+      });
+
+      test('start(seedPersistedSteps) skips getTodaySteps and initializes to seed', () async {
+        await seedMonitor.start(seedPersistedSteps: 42);
+
+        expect(countingAggregation.getTodayStepsCallCount, 0);
+        expect(seedMonitor.currentTodaySteps, 42);
+      });
+
+      test('reconcileFromDatabase(seedPersistedSteps) skips getTodaySteps', () async {
+        await seedMonitor.start(seedPersistedSteps: 42);
+        countingAggregation.getTodayStepsCallCount = 0;
+
+        await seedMonitor.reconcileFromDatabase(seedPersistedSteps: 42);
+
+        expect(countingAggregation.getTodayStepsCallCount, 0);
+        expect(seedMonitor.currentTodaySteps, 42);
+      });
+
+      test('unseeded start() reads DB (regression guard)', () async {
+        await seedMonitor.start();
+
+        expect(countingAggregation.getTodayStepsCallCount, 1);
+        expect(seedMonitor.currentTodaySteps, 500);
+      });
+
+      test('unseeded reconcileFromDatabase() reads DB (regression guard)', () async {
+        await seedMonitor.start(seedPersistedSteps: 42);
+        countingAggregation.getTodayStepsCallCount = 0;
+
+        await seedMonitor.reconcileFromDatabase();
+
+        expect(countingAggregation.getTodayStepsCallCount, 1);
+        expect(seedMonitor.currentTodaySteps, 500);
+      });
     });
   });
 }

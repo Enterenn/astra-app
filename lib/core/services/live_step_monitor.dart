@@ -7,8 +7,8 @@ import '../../data/datasources/data_ingestion_source.dart';
 import '../../data/datasources/phone_pedometer_source.dart';
 import '../../data/datasources/step_increment_calculator.dart';
 import '../../data/models/step_reading.dart';
+import '../../data/contracts/step_aggregation_repository_contract.dart';
 import '../../data/repositories/ingestion_baseline_repository.dart';
-import '../../data/repositories/step/step_aggregation_repository.dart';
 import '../debug/live_pipeline_log.dart';
 import '../time/local_day_formatter.dart';
 import '../time/time_provider.dart';
@@ -36,7 +36,7 @@ class LiveStepMonitor {
   }) : _stepEventStreamFactory =
            stepEventStreamFactory ?? PhonePedometerSource.defaultStepEventStreamFactory;
 
-  final StepAggregationRepository stepAggregation;
+  final StepAggregationRepositoryContract stepAggregation;
   final IngestionBaselineRepository baselineRepository;
   final TimeProvider clock;
   final StepIncrementCalculator incrementCalculator;

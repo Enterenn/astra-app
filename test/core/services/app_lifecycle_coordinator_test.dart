@@ -4,8 +4,10 @@ import 'package:astra_app/core/constants/preference_keys.dart';
 import 'package:astra_app/core/di/app_dependencies.dart';
 import 'package:astra_app/core/services/app_lifecycle_coordinator.dart';
 import 'package:astra_app/core/services/background_collector.dart';
+import 'package:astra_app/core/services/live_step_monitor.dart';
 import 'package:astra_app/core/time/time_provider.dart';
 import 'package:astra_app/data/contracts/contracts.dart';
+import 'package:astra_app/data/datasources/phone_pedometer_source.dart';
 import 'package:astra_app/data/models/chart_day_aggregate.dart';
 import 'package:astra_app/data/models/chart_month_aggregate.dart';
 import 'package:astra_app/data/models/database_footprint.dart';
@@ -66,6 +68,54 @@ class _ColdStartStepAggregation implements StepAggregationRepositoryContract {
       const DatabaseFootprint(sampleCount: 0, fileSizeBytes: 0);
 }
 
+/// Wraps a fixed step count and tracks getTodaySteps call count for AUD-03 assertions.
+class _CountingStepAggregation implements StepAggregationRepositoryContract {
+  _CountingStepAggregation(this.clock, {this.stubbedSteps = 1200});
+
+  @override
+  final TimeProvider clock;
+
+  final int stubbedSteps;
+  int getTodayStepsCallCount = 0;
+
+  @override
+  Future<int> getTodaySteps() async {
+    getTodayStepsCallCount++;
+    return stubbedSteps;
+  }
+
+  @override
+  Future<List<TimeseriesSampleModel>> getTodayActiveBuckets() async => [];
+
+  @override
+  Future<DateTime?> getLastIngestionUtc() async => null;
+
+  @override
+  Future<List<ChartDayAggregate>> getChartDailyAggregates({
+    required int days,
+  }) async =>
+      [];
+
+  @override
+  Future<List<TimeseriesSampleModel>> getActiveBucketsForLocalDay(
+    DateTime localDay,
+  ) async =>
+      [];
+
+  @override
+  Future<List<ChartMonthAggregate>> getChartMonthlyAggregates({
+    required int months,
+  }) async =>
+      [];
+
+  @override
+  Future<int> countStepSamples() async => 0;
+
+  @override
+  Future<DatabaseFootprint> getFootprint({required String databasePath}) async =>
+      const DatabaseFootprint(sampleCount: 0, fileSizeBytes: 0);
+}
+
 class _ColdStartUserSettings implements UserSettingsRepositoryContract {
   @override
   bool get isDatabaseOpen => true;
@@ -89,6 +139,38 @@ class _ColdStartUserHealthMetrics implements UserHealthMetricsRepositoryContract
 
   @override
   dynamic noSuchMethod(Invocation invocation) => super.noSuchMethod(invocation);
+}
+
+/// Wraps a [LiveStepMonitor] and captures the seed values passed to start/reconcile.
+class _SeedCapturingMonitor extends LiveStepMonitor {
+  _SeedCapturingMonitor({
+    required LiveStepMonitor inner,
+    required void Function(int?) onStart,
+    required void Function(int?) onReconcile,
+  })  : _onStart = onStart,
+        _onReconcile = onReconcile,
+        super(
+          stepAggregation: inner.stepAggregation,
+          baselineRepository: inner.baselineRepository,
+          clock: inner.clock,
+          stepEventStreamFactory: () => const Stream.empty(),
+          emitThrottle: Duration.zero,
+        );
+
+  final void Function(int?) _onStart;
+  final void Function(int?) _onReconcile;
+
+  @override
+  Future<void> start({int? seedPersistedSteps}) async {
+    _onStart(seedPersistedSteps);
+    return super.start(seedPersistedSteps: seedPersistedSteps);
+  }
+
+  @override
+  Future<void> reconcileFromDatabase({int? seedPersistedSteps}) async {
+    _onReconcile(seedPersistedSteps);
+    return super.reconcileFromDatabase(seedPersistedSteps: seedPersistedSteps);
+  }
 }
 
 class _DelayingBackgroundCollector extends BackgroundCollector {
@@ -332,6 +414,90 @@ void main() {
         expect(todayCubit.state.status, isNot(TodayStatus.loading));
 
         await todayCubit.close();
+      },
+    );
+
+    test(
+      'cold start bind seeds monitor from fast-path steps — no extra getTodaySteps on bind (AUD-03)',
+      () async {
+        // The coordinator must pass cubit.state.steps as seed on skipSqliteRefresh
+        // cold bind. start() always receives the seed (called once). reconcileFromDatabase()
+        // may be called multiple times (persist cycle + bind + post-backfill); at least
+        // one call must carry the fast-path seed.
+        int? capturedStartSeed;
+        final capturedReconcileSeeds = <int?>[];
+        final bindDone = Completer<void>();
+
+        final counting = _CountingStepAggregation(clock, stubbedSteps: 1200);
+
+        final todayCubit = TodayCubit(
+          stepAggregation: counting,
+          userSettings: _ColdStartUserSettings(),
+          userHealthMetrics: _ColdStartUserHealthMetrics(),
+          clock: clock,
+          activityPermissionGranted: () async => true,
+        );
+
+        final baselineRepo = IngestionBaselineRepository(
+          CoordinatorStubDatabase(),
+        );
+        final innerMonitor = LiveStepMonitor(
+          stepAggregation: counting,
+          baselineRepository: baselineRepo,
+          clock: clock,
+          stepEventStreamFactory: () => const Stream<PhoneStepEvent>.empty(),
+        );
+        final captureMonitor = _SeedCapturingMonitor(
+          inner: innerMonitor,
+          onStart: (seed) {
+            capturedStartSeed = seed;
+            if (!bindDone.isCompleted) bindDone.complete();
+          },
+          onReconcile: (seed) => capturedReconcileSeeds.add(seed),
+        );
+
+        final seedDeps = buildCoordinatorUnitTestDeps(timeProvider: clock);
+        final noOpCollector = _NoOpBackgroundCollector(
+          sources: seedDeps.ingestionSources,
+          normalizer: seedDeps.stepNormalizer,
+          repository: seedDeps.stepIngestion,
+          stepAggregation: seedDeps.stepAggregation,
+          baselineRepository: IngestionBaselineRepository(
+            seedDeps.databaseSession,
+          ),
+        );
+        final deps = buildCoordinatorUnitTestDeps(
+          timeProvider: clock,
+          liveStepMonitor: captureMonitor,
+          backgroundCollector: noOpCollector,
+        );
+
+        final coordinator = deps.appLifecycleCoordinator;
+        coordinator.bindToWidget(
+          isMounted: () => true,
+          showMainShell: () => true,
+          enablePeriodicPersist: false,
+          enableLiveStepPipeline: true,
+          maxPersistStaleness: const Duration(seconds: 1),
+          minPauseForPhoneCatchUp: const Duration(seconds: 10),
+          initialShowMainShell: true,
+        );
+        coordinator.onTodayCubitReady(todayCubit);
+
+        await bindDone.future.timeout(const Duration(seconds: 2));
+        await coordinator.foregroundBackfill;
+        await pumpEventQueue();
+
+        // start() is only called once (cold bind) and must carry the fast-path seed.
+        expect(capturedStartSeed, 1200,
+            reason: 'monitor.start must receive fast-path steps as seed');
+        // Among all reconcileFromDatabase calls, the cold-bind one must carry the seed.
+        expect(capturedReconcileSeeds, contains(1200),
+            reason: 'cold bind reconcile must receive same seed');
+        expect(todayCubit.state.steps, 1200);
+
+        await todayCubit.close();
+        captureMonitor.dispose();
       },
     );
   });
