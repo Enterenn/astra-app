@@ -67,11 +67,11 @@ So that multi-isolate ingestion does not fail spuriously after session reopen.
   - [x] Do **not** change `kIngestionCollectLockKey`, TTL default, or transaction shape
   - [x] **Stop → review brief → wait for Baptiste OK → commit**
 
-- [ ] **Sub-task C — Wire BackgroundCollector + repository session access** (AC: #1)
-  - [ ] Add `AstraDatabaseSession get databaseSession => _session.session` on `StepIngestionRepository` (or expose existing `_session.session` via getter)
-  - [ ] In `BackgroundCollector.collectOnce`: `IngestionCollectionLock(repository.databaseSession, clock: clock)` — remove `repository.db` usage for lock
-  - [ ] Verify isolate bootstrap (`background_collector_factory.dart`): `StepIngestionRepository(db)` already wraps raw `Database` in `StepRepositorySession` → session getter works without factory changes
-  - [ ] **Stop → review brief → wait for Baptiste OK → commit**
+- [x] **Sub-task C — Wire BackgroundCollector + repository session access** (AC: #1)
+  - [x] Add `AstraDatabaseSession get databaseSession => _session.session` on `StepIngestionRepository` (or expose existing `_session.session` via getter)
+  - [x] In `BackgroundCollector.collectOnce`: `IngestionCollectionLock(repository.databaseSession, clock: clock)` — remove `repository.db` usage for lock
+  - [x] Verify isolate bootstrap (`background_collector_factory.dart`): `StepIngestionRepository(db)` already wraps raw `Database` in `StepRepositorySession` → session getter works without factory changes
+  - [x] **Stop → review brief → wait for Baptiste OK → commit**
 
 - [ ] **Sub-task D — Tests** (AC: #4, #5)
   - [ ] Update `test/core/services/ingestion_collection_lock_test.dart`: construct lock with `AstraDatabaseSession(databasePath: ..., initial: db)` instead of raw `db`
@@ -292,6 +292,7 @@ Pattern: one concern per commit; lock refactor isolated from monitor/cubit work.
 
 - Sub-task A: Gap confirmed — `IngestionCollectionLock` uses raw `Database._db` with no `withRetry`; `BackgroundCollector.collectOnce` passes `repository.db`; `_StepRepositorySession.session` getter already exists (L19); fix plan clear.
 - Sub-task B: `IngestionCollectionLock` refactored — constructor now takes `AstraDatabaseSession`; `tryAcquire` and `release` wrapped in `withRetry`; TTL/key/transaction logic unchanged.
+- Sub-task C: `StepIngestionRepository.databaseSession` getter added; `BackgroundCollector.collectOnce` now passes `repository.databaseSession` to lock; factory unchanged (pre-existing `inMemoryDatabasePath` not in scope).
 
 ### File List
 
@@ -300,3 +301,4 @@ Pattern: one concern per commit; lock refactor isolated from monitor/cubit work.
 - 2026-07-16: Story context created (ready-for-dev) — ultimate context engine analysis completed
 - 2026-07-16: Sub-task A complete — gap mapped, no code changes
 - 2026-07-16: Sub-task B complete — IngestionCollectionLock refactored to AstraDatabaseSession + withRetry
+- 2026-07-16: Sub-task C complete — databaseSession getter + BackgroundCollector wired

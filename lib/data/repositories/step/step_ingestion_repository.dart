@@ -2,6 +2,7 @@ import 'package:flutter/foundation.dart';
 import 'package:sqflite/sqflite.dart';
 
 import '../../../core/constants/preference_keys.dart';
+import '../../../core/database/astra_database_session.dart';
 import '../../../core/ids/sample_id_generator.dart';
 import '../../contracts/step_ingestion_repository_contract.dart';
 import '../../models/normalized_step_bucket.dart';
@@ -21,6 +22,8 @@ class StepIngestionRepository implements StepIngestionRepositoryContract {
   final StepRepositorySession _session;
 
   Database get db => _session.db;
+
+  AstraDatabaseSession get databaseSession => _session.session;
 
   /// Persists an ingestion bucket from the background collection pipeline only.
   ///

@@ -68,7 +68,7 @@ class BackgroundCollector {
       return 0;
     }
     _collectInFlight = true;
-    final lock = IngestionCollectionLock(repository.db, clock: clock);
+    final lock = IngestionCollectionLock(repository.databaseSession, clock: clock);
     try {
       if (!await lock.tryAcquire()) {
         return 0;
