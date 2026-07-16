@@ -4,7 +4,7 @@ import '../constants/preference_keys.dart';
 import '../time/local_day_formatter.dart';
 import '../time/time_provider.dart';
 
-const kDbVersion = 3;
+const kDbVersion = 4;
 
 /// Runs migrations from [fromVersion] (exclusive) up to [targetVersion].
 Future<void> runMigrations(
@@ -20,6 +20,8 @@ Future<void> runMigrations(
         await onCreateV2(db);
       case 3:
         await onCreateV3(db);
+      case 4:
+        await onCreateV4(db);
       default:
         break;
     }
@@ -128,4 +130,12 @@ Future<void> onCreateV3(Database db) async {
     },
     conflictAlgorithm: ConflictAlgorithm.ignore,
   );
+}
+
+/// Migration v4: composite index on (type, end_time DESC) for last-ingestion query.
+Future<void> onCreateV4(Database db) async {
+  await db.execute('''
+    CREATE INDEX IF NOT EXISTS idx_timeseries_last_end
+      ON timeseries_samples (type, end_time DESC)
+  ''');
 }
