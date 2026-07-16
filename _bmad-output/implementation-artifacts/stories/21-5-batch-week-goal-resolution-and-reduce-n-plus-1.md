@@ -1,6 +1,6 @@
 # Story 21.5: Batch Week Goal Resolution and Reduce N+1
 
-Status: in-progress
+Status: review
 
 <!-- Post-audit Epic 21 — tracker: sprint-status-post-audit.yaml -->
 <!-- Source: epics-post-audit.md Story 21-5 · diagnostic-cold-start.md §B1 · AUD-06 · NFR-AUD-02 -->
@@ -71,10 +71,10 @@ So that post–fast-path enrichment stays snappy (NFR-AUD-02).
   - [x] Verify existing `goalMet respects per-day goals after mid-week change` still passes unchanged
   - [x] **Stop → review brief → wait for Baptiste OK → commit**
 
-- [ ] **Sub-task D — Regression** (AC: #5)
-  - [ ] Run: `flutter test test/presentation/cubits/today_cubit_test.dart`
-  - [ ] Run: `flutter test --exclude-tags slow`
-  - [ ] **Stop → review brief → wait for Baptiste OK → commit**
+- [x] **Sub-task D — Regression** (AC: #5)
+  - [x] Run: `flutter test test/presentation/cubits/today_cubit_test.dart`
+  - [x] Run: `flutter test --exclude-tags slow`
+  - [x] **Stop → review brief → wait for Baptiste OK → commit**
 
 ## Dev Notes
 
@@ -269,14 +269,26 @@ Pattern: one concern per commit; cubit perf change isolated from services/DB wor
 
 ### Agent Model Used
 
-{{agent_model_name_version}}
+claude-sonnet-4-5 (Cursor)
 
 ### Debug Log References
 
+- Sub-task D: `_FakeUserHealthMetricsRepository` and `_ColdStartUserHealthMetrics` fakes were missing `getGoalsForLocalDays` — added stub returning `kDefaultStepGoal` per requested ISO. Discovered via `flutter test --exclude-tags slow` regression run.
+
 ### Completion Notes List
 
+- Sub-task B: Replaced `Future.wait` + 7× `getGoalForLocalDay` with single `getGoalsForLocalDays` call in `_loadWeekDays`. `goalMet` formula preserved, indexed by `weekDayIsos[i]`.
+- Sub-task C: Added `_BatchGoalSpyHealthMetricsRepository` + 2 spy tests (refresh path + refreshFastPath deferred enrichment). 42/42 today_cubit_test.dart pass.
+- Sub-task D: 850/850 tests pass (`--exclude-tags slow`). Fixed 2 contract fakes missing batch method.
+
 ### File List
+
+- lib/presentation/cubits/today_cubit.dart
+- test/presentation/cubits/today_cubit_test.dart
+- test/presentation/cubits/today_cubit_contract_test.dart
+- test/core/services/app_lifecycle_coordinator_test.dart
 
 ## Change Log
 
 - 2026-07-16: Story context created (ready-for-dev) — ultimate context engine analysis completed
+- 2026-07-16: Implementation complete — batch goal resolution + spy tests + fake fixes (review)

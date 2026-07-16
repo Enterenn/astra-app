@@ -1,6 +1,6 @@
 # generated: 2026-07-16
-# last_updated: 2026-07-16 (Story 21.5 in-progress)
-# NEXT: dev-story 21-5
+# last_updated: 2026-07-16 (Story 21.5 review)
+# NEXT: code-review 21-5
 # Ref: planning-artifacts/epics-post-audit.md · planning-artifacts/audits/
 # project: astra-app
 # project_key: NOKEY
@@ -63,7 +63,7 @@
 # NAVIGATION: _bmad-output/README.md · planning-artifacts/epics-post-audit.md
 
 generated: 2026-07-16
-last_updated: 2026-07-16 (Story 21.5 in-progress)
+last_updated: 2026-07-16 (Story 21.5 review)
 project: astra-app
 project_key: NOKEY
 tracking_system: file-system
@@ -77,7 +77,7 @@ development_status:
   21-2-decouple-foreground-backfill-from-first-today-paint: done
   21-3-deduplicate-cold-start-get-today-steps-queries: done
   21-4-route-ingestion-lock-through-session-with-retry: done
-  21-5-batch-week-goal-resolution-and-reduce-n-plus-1: in-progress
+  21-5-batch-week-goal-resolution-and-reduce-n-plus-1: review
   21-6-add-end-time-index-for-last-ingestion-query: backlog
   21-7-guard-trends-refresh-on-ingestion-by-active-tab: backlog
   21-8-non-blocking-pedometer-drain-on-cold-backfill: backlog

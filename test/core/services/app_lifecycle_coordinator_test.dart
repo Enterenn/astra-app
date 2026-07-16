@@ -132,6 +132,12 @@ class _ColdStartUserHealthMetrics implements UserHealthMetricsRepositoryContract
   Future<int> getGoalForLocalDay(String localDayIso) async => kDefaultStepGoal;
 
   @override
+  Future<Map<String, int>> getGoalsForLocalDays(
+    List<String> localDayIsos,
+  ) async =>
+      {for (final iso in localDayIsos) iso: kDefaultStepGoal};
+
+  @override
   Future<int?> getHeightCm() async => null;
 
   @override
