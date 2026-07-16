@@ -541,7 +541,7 @@ void main() {
         expect(counting.getTodayStepsCallCount, greaterThan(1));
 
         await todayCubit.close();
-        captureMonitor.dispose();
+        await captureMonitor.dispose();
       },
     );
 

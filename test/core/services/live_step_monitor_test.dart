@@ -118,8 +118,7 @@ void main() {
     });
 
     tearDown(() async {
-      await monitor.stop();
-      monitor.dispose();
+      await monitor.dispose();
       await events.close();
       await db.close();
     });
@@ -245,8 +244,7 @@ void main() {
       countingMonitor.endReconcile();
 
       expect(streamListenCount, 1);
-      await countingMonitor.stop();
-      countingMonitor.dispose();
+      await countingMonitor.dispose();
     });
 
     test('endReconcile flushes buffered readings to live display', () async {
@@ -432,7 +430,7 @@ void main() {
 
       final peeked = await peekMonitor.peekPhoneStepEvent();
       expect(peeked?.steps, 200);
-      peekMonitor.dispose();
+      await peekMonitor.dispose();
     });
 
     test('stop and start re-subscribes and preserves monotonic display', () async {
@@ -478,8 +476,7 @@ void main() {
       });
 
       tearDown(() async {
-        await seedMonitor.stop();
-        seedMonitor.dispose();
+        await seedMonitor.dispose();
       });
 
       test('start(seedPersistedSteps) skips getTodaySteps and initializes to seed', () async {
@@ -533,6 +530,87 @@ void main() {
 
         expect(countingAggregation.getTodayStepsCallCount, 0);
         expect(seedMonitor.currentTodaySteps, greaterThanOrEqualTo(liveTotal));
+      });
+    });
+
+    group('dispose sequencing (AC: #1, #2, #3, #4)', () {
+      test('dispose blocks subsequent start — isRunning stays false', () async {
+        await monitor.start();
+        expect(monitor.isRunning, isTrue);
+
+        await monitor.dispose();
+        await monitor.start();
+
+        expect(monitor.isRunning, isFalse);
+      });
+
+      test('dispose is idempotent — second call does not throw', () async {
+        await monitor.start();
+        await monitor.dispose();
+        await expectLater(monitor.dispose(), completes);
+      });
+
+      test('peekPhoneStepEvent returns null after dispose', () async {
+        await monitor.dispose();
+        final result = await monitor.peekPhoneStepEvent(
+          timeout: const Duration(milliseconds: 50),
+        );
+        expect(result, isNull);
+      });
+
+      test('dispose cancels in-flight peekPhoneStepEvent', () async {
+        final peekEvents = StreamController<PhoneStepEvent>();
+        final peekMonitor = LiveStepMonitor(
+          stepAggregation: stepAggregation,
+          baselineRepository: baselineRepository,
+          clock: clock,
+          stepEventStreamFactory: () => peekEvents.stream,
+          emitThrottle: Duration.zero,
+        );
+
+        final peekFuture = peekMonitor.peekPhoneStepEvent(
+          timeout: const Duration(seconds: 30),
+        );
+        await pumpEventQueue();
+        expect(peekEvents.hasListener, isTrue);
+
+        await peekMonitor.dispose();
+
+        expect(await peekFuture, isNull);
+        expect(peekEvents.hasListener, isFalse);
+        await peekEvents.close();
+      });
+
+      test('hardware subscription cancelled before stepsController closes', () async {
+        final teardownOrder = <String>[];
+        var streamErrors = <Object>[];
+
+        final trackingMonitor = LiveStepMonitor(
+          stepAggregation: stepAggregation,
+          baselineRepository: baselineRepository,
+          clock: clock,
+          stepEventStreamFactory: () {
+            final ctrl = StreamController<PhoneStepEvent>(
+              onCancel: () => teardownOrder.add('cancel'),
+            );
+            return ctrl.stream;
+          },
+          emitThrottle: Duration.zero,
+        );
+
+        final sub = trackingMonitor.watchTodaySteps(replayLatest: false).listen(
+          (_) {},
+          onError: streamErrors.add,
+        );
+
+        await trackingMonitor.start();
+
+        await trackingMonitor.dispose();
+        teardownOrder.add('close');
+
+        expect(teardownOrder, ['cancel', 'close']);
+        expect(streamErrors, isEmpty);
+        await sub.cancel();
       });
     });
   });

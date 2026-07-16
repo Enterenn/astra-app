@@ -58,6 +58,7 @@ class LiveStepMonitor {
   String? _trackedLocalDay;
   bool _reconciling = false;
   bool _running = false;
+  bool _disposed = false;
   int _lastEmittedValue = 0;
 
   StreamSubscription<PhoneStepEvent>? _subscription;
@@ -66,6 +67,7 @@ class LiveStepMonitor {
   Timer? _emitTimer;
   bool _emitScheduled = false;
   Timer? _activityIdleTimer;
+  final List<Future<void> Function()> _activePeekCancels = [];
 
   bool get isRunning => _running;
 
@@ -83,12 +85,15 @@ class LiveStepMonitor {
   }
 
   Future<void> start({int? seedPersistedSteps}) async {
+    if (_disposed) return;
     if (_running) {
       return;
     }
     await _syncMemoryBaselineFromRepository();
+    if (_disposed) return;
     _persistedTodaySteps =
         seedPersistedSteps ?? await stepAggregation.getTodaySteps();
+    if (_disposed) return;
     _trackedLocalDay = formatLocalDayIso(clock.snapshot());
     _running = true;
     livePipelineLog(
@@ -140,46 +145,72 @@ class LiveStepMonitor {
   Future<PhoneStepEvent?> peekPhoneStepEvent({
     Duration timeout = const Duration(seconds: 2),
   }) async {
+    if (_disposed) return null;
     final completer = Completer<PhoneStepEvent?>();
     StreamSubscription<PhoneStepEvent>? subscription;
-    subscription = _stepEventStreamFactory().listen(
-      (event) {
-        unawaited(subscription?.cancel());
-        if (!completer.isCompleted) {
-          completer.complete(event);
-        }
-      },
-      onError: (Object error, StackTrace stackTrace) {
+
+    Future<void> endPeek({PhoneStepEvent? result}) async {
+      if (!completer.isCompleted) {
+        completer.complete(result);
+      }
+      await subscription?.cancel();
+      subscription = null;
+    }
+
+    Future<void> cancelPeek() => endPeek();
+
+    _activePeekCancels.add(cancelPeek);
+    try {
+      subscription = _stepEventStreamFactory().listen(
+        (event) {
+          unawaited(endPeek(result: _disposed ? null : event));
+        },
+        onError: (Object error, StackTrace stackTrace) {
+          livePipelineLog(
+            'monitor',
+            'peek stream ERROR',
+            details: {'error': error},
+          );
+          unawaited(cancelPeek());
+        },
+        cancelOnError: true,
+      );
+
+      if (_disposed) {
+        await cancelPeek();
+        return null;
+      }
+
+      try {
+        final event = await completer.future.timeout(timeout);
         livePipelineLog(
           'monitor',
-          'peek stream ERROR',
-          details: {'error': error},
+          event == null ? 'peek timeout' : 'peek ok',
+          details: {
+            'timeoutMs': timeout.inMilliseconds,
+            if (event != null) 'cumulative': event.steps,
+          },
         );
-        if (!completer.isCompleted) {
-          completer.complete(null);
-        }
-      },
-      cancelOnError: true,
-    );
-    try {
-      final event = await completer.future.timeout(timeout);
-      livePipelineLog(
-        'monitor',
-        event == null ? 'peek timeout' : 'peek ok',
-        details: {
-          'timeoutMs': timeout.inMilliseconds,
-          if (event != null) 'cumulative': event.steps,
-        },
-      );
-      return event;
-    } on TimeoutException {
-      await subscription.cancel();
-      livePipelineLog(
-        'monitor',
-        'peek timeout',
-        details: {'timeoutMs': timeout.inMilliseconds},
-      );
-      return null;
+        return event;
+      } on TimeoutException {
+        livePipelineLog(
+          'monitor',
+          'peek timeout',
+          details: {'timeoutMs': timeout.inMilliseconds},
+        );
+        await cancelPeek();
+        return null;
+      }
+    } finally {
+      _activePeekCancels.remove(cancelPeek);
+    }
+  }
+
+  Future<void> _cancelActivePeeks() async {
+    final cancels = List<Future<void> Function()>.from(_activePeekCancels);
+    _activePeekCancels.clear();
+    for (final cancel in cancels) {
+      await cancel();
     }
   }
 
@@ -315,9 +346,14 @@ class LiveStepMonitor {
         .toList(growable: false);
   }
 
-  void dispose() {
-    unawaited(stop());
-    _stepsController.close();
+  Future<void> dispose() async {
+    if (_disposed) return;
+    _disposed = true;
+    await _cancelActivePeeks();
+    await stop();
+    if (!_stepsController.isClosed) {
+      await _stepsController.close();
+    }
   }
 
   Future<void> _syncMemoryBaselineFromRepository() async {
@@ -328,6 +364,7 @@ class LiveStepMonitor {
   }
 
   void _onPhoneEvent(PhoneStepEvent event) {
+    if (_disposed) return;
     final reading = StepReading(
       cumulativeSteps: event.steps,
       observedAtUtc: event.timeStamp,
@@ -466,6 +503,7 @@ class LiveStepMonitor {
   }
 
   void _scheduleEmit() {
+    if (_disposed) return;
     if (emitThrottle == Duration.zero) {
       _emitNow();
       return;
@@ -485,6 +523,7 @@ class LiveStepMonitor {
   }
 
   void _emitNow({bool force = false}) {
+    if (_disposed || _stepsController.isClosed) return;
     final total = currentTodaySteps;
     if (!force && total == _lastEmittedValue) {
       return;

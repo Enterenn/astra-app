@@ -456,8 +456,7 @@ void main() {
       expect(cubit.state.steps, 3490);
       expect(cubit.state.status, TodayStatus.progress);
       await cubit.close();
-      await monitor.stop();
-      monitor.dispose();
+      await monitor.dispose();
       await events.close();
     });
 
@@ -489,8 +488,7 @@ void main() {
       expect(cubit.state.showCelebration, isTrue);
       expect(cubit.state.steps, 3000);
       await cubit.close();
-      await monitor.stop();
-      monitor.dispose();
+      await monitor.dispose();
       await events.close();
     });
 
@@ -523,8 +521,7 @@ void main() {
       expect(cubit.state.steps, greaterThanOrEqualTo(1050));
 
       await cubit.close();
-      await monitor.stop();
-      monitor.dispose();
+      await monitor.dispose();
       await events.close();
     });
 
@@ -563,8 +560,7 @@ void main() {
       expect(cubit.state.status, isNot(TodayStatus.loading));
       expect(cubit.state.steps, 490);
       await cubit.close();
-      await monitor.stop();
-      monitor.dispose();
+      await monitor.dispose();
       await events.close();
     });
 
@@ -743,8 +739,7 @@ void main() {
       );
 
       await cubit.close();
-      await monitor.stop();
-      monitor.dispose();
+      await monitor.dispose();
       await events.close();
     });
 

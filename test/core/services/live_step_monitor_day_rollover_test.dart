@@ -72,8 +72,7 @@ void main() {
     });
 
     tearDown(() async {
-      await monitor.stop();
-      monitor.dispose();
+      await monitor.dispose();
       await events.close();
       await db.close();
     });
