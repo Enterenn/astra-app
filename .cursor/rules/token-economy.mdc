@@ -1,0 +1,19 @@
+---
+description: Token-efficient agent output — no fluff, diffs only, compact code, ask before guessing
+alwaysApply: true
+---
+
+# Token economy
+
+Applies to all development work on this project.
+
+1. **No fluff** — No introductions, conclusions, or obvious code narration. Straight to the point.
+2. **Diff-only delivery** — Never rewrite an entire file in chat. Targeted code blocks / diffs only (file path, removed, added).
+3. **Compact code** — Clean code, no superfluous comments.
+4. **Step validation** — If architecture is unclear, ask ≤2 short lines before generating unused code.
+
+## OK commit gate
+
+After each sub-task: implement → stop → compact review (files / verify / commit msg + diffs) → wait for `OK commit` (or equivalent) → commit → next sub-task.
+
+No pedagogical brief. Keep the gate so steps chain with explicit approval.

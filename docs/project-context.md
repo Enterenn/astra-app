@@ -2,58 +2,55 @@
 
 Rules and conventions that apply across all development work on **astra-app** Phase 0.
 
-**Audience:** Baptiste — solo UI/UX designer, Flutter novice, learning mobile development while shipping the Hub App.
+**Audience:** Baptiste — solo UI/UX designer, Flutter novice, shipping the Hub App.
 
 ---
 
-## Development Workflow: Review Before Commit
+## Token economy (mandatory)
+
+All agent output and code delivery follows these rules. No exceptions unless Baptiste explicitly waives them.
+
+1. **No fluff** — No introductions, conclusions, or obvious code narration. Straight to the point.
+2. **Diff-only delivery** — Never rewrite an entire file in chat. Show targeted code blocks / diffs: file path, removed lines, added lines.
+3. **Compact code** — Clean code, no superfluous comments.
+4. **Step validation** — If architecture is unclear, ask ≤2 short lines before generating unused code.
+
+Chat responses: French (`communication_language`). Prefer bullets over paragraphs. Skip restating the task.
+
+---
+
+## Development Workflow: OK Commit Gate
 
 Every implementation increment follows this **mandatory gate**. No exceptions unless Baptiste explicitly waives it for a given step.
 
 ### Granularity
 
 - **One git commit per completed sub-task** within a story (not one commit per entire story unless the story is a single sub-task).
-- Sub-tasks should be logically separable: e.g. schema migration, then repository, then widget — each gets its own commit after review.
-- More commits is intentional: better history for future contributors picking up the project mid-stream.
+- Sub-tasks should be logically separable: e.g. schema migration, then repository, then widget — each gets its own commit after approval.
 
 ### Agent flow (after each sub-task)
 
 1. **Implement** the sub-task only — minimal scope, no drive-by refactors.
 2. **Stop** — do not commit yet.
-3. **Deliver a review brief** for Baptiste (see format below).
-4. **Wait** for explicit approval: e.g. `OK commit`, `c'est bon`, `valide`, or equivalent.
-5. **Only then** stage relevant files, commit with a clear message, and confirm success.
+3. **Show compact review** (format below).
+4. **Wait** for explicit approval: `OK commit`, `c'est bon`, `valide`, or equivalent.
+5. **Only then** stage, commit, confirm success — then continue to the next sub-task.
 
-### Review brief format (optimized for Flutter learning)
-
-Use this structure every time:
+### Compact review format
 
 ```markdown
 ## Review — [sub-task title]
 
-### What changed
-- Bullet list of files touched and one-line purpose each.
-
-### Why this way
-- Link to ASTRA architecture/PRD where relevant (e.g. single-writer rule, LocalDayCalculator).
-- Name the Flutter/Dart concept introduced (e.g. Cubit, FutureBuilder, sqflite migration).
-
-### How to verify
-- Concrete steps: command to run, screen to open, expected behavior.
-- Mention if `flutter analyze` / tests were run and result.
-
-### Learn this
-- 1–3 short notes: what to notice when reading the diff (patterns, pitfalls, vocabulary).
-
-### Suggested commit message
-`type(scope): short imperative summary`
+**Files:** `path` — one-line purpose (≤5 bullets)
+**Verify:** command / screen / expected (1–3 lines)
+**Commit:** `type(scope): short imperative summary`
 ```
 
-Keep prose calm and pedagogical — Baptiste reads the diff to learn, not just to approve.
+Then diffs only (file + −/+). No pedagogy, no "why this way", no "learn this".
 
 ### Commit message convention
 
-Follow repository style: imperative, focused on **why**, scoped where helpful.
+Imperative, focused on **why**, scoped where helpful.
 
 Examples:
 - `feat(database): add timeseries_samples schema v1 with bucket unique index`
@@ -62,9 +59,8 @@ Examples:
 
 ### What agents must NOT do
 
-- Commit without Baptiste's explicit OK after the review brief.
+- Commit without Baptiste's explicit OK.
 - Batch multiple sub-tasks into one commit unless Baptiste asks.
-- Skip the explanation because the change "seems small".
 - Push to remote unless Baptiste explicitly requests it.
 
 ---
@@ -123,8 +119,8 @@ Agent rule: **always run `flutter test --exclude-tags slow`** in the story verif
 
 Before marking a story done:
 
-- [ ] All sub-tasks implemented and each **reviewed + committed** separately
-- [ ] Acceptance criteria verified (agent states how in review brief)
+- [ ] All sub-tasks implemented and each **OK-commit gated** separately
+- [ ] Acceptance criteria verified (stated in compact review Verify line)
 - [ ] No secrets in committed files (`.env`, keys, etc.)
 - [ ] `docs/DEPENDENCIES.md` updated if packages added
 - [ ] `flutter test --exclude-tags slow` passes (or explicit note if a slow-tagged file is the story's subject)
