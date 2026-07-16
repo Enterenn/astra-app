@@ -356,6 +356,12 @@ abstract class AppLocalizations {
   /// **'Could not update notification setting'**
   String get settingsNotificationUpdateError;
 
+  /// Snack bar when saving theme mode or accent preset fails
+  ///
+  /// In en, this message translates to:
+  /// **'Could not update theme preference'**
+  String get settingsThemeUpdateError;
+
   /// Theme selector option for system appearance
   ///
   /// In en, this message translates to:

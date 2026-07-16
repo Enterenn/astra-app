@@ -1,6 +1,6 @@
 # Story 22.4: Align Theme Preference Error Feedback with Other Settings
 
-Status: review
+Status: done
 
 <!-- Post-audit Epic 22 — tracker: sprint-status-post-audit.yaml -->
 <!-- Source: epics-post-audit.md Story 22-4 · diagnostic-gestion-etat-erreur.md Synthèse #4 · AUD-19 -->
@@ -333,6 +333,9 @@ claude-sonnet-4-6
 - `lib/presentation/cubits/theme_cubit.dart` — `Future<bool>` contract + try/catch
 - `lib/l10n/app_en.arb` — `settingsThemeUpdateError` + metadata
 - `lib/l10n/app_fr.arb` — `settingsThemeUpdateError` + metadata
+- `lib/l10n/app_localizations.dart` — generated `settingsThemeUpdateError`
+- `lib/l10n/app_localizations_en.dart` — generated EN string
+- `lib/l10n/app_localizations_fr.dart` — generated FR string
 - `lib/presentation/screens/settings_screen.dart` — helpers + unawaited wiring
 - `test/presentation/cubits/theme_cubit_test.dart` — failure stubs + 2 tests
 - `test/presentation/screens/settings_screen_test.dart` — throwing stubs + 2 widget tests
@@ -341,3 +344,4 @@ claude-sonnet-4-6
 
 - 2026-07-17: Story context created (ready-for-dev) — ultimate context engine analysis completed
 - 2026-07-17: Story implemented (review) — Sub-tasks A/B/C complete; 879 tests pass
+- 2026-07-17: Story closed (done) — committed generated l10n for `settingsThemeUpdateError`

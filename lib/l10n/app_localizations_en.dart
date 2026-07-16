@@ -144,6 +144,9 @@ class AppLocalizationsEn extends AppLocalizations {
       'Could not update notification setting';
 
   @override
+  String get settingsThemeUpdateError => 'Could not update theme preference';
+
+  @override
   String get settingsThemeSystem => 'System';
 
   @override

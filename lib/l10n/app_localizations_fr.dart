@@ -146,6 +146,9 @@ class AppLocalizationsFr extends AppLocalizations {
       'Impossible de mettre à jour le paramètre de notification';
 
   @override
+  String get settingsThemeUpdateError => 'Impossible de mettre à jour le thème';
+
+  @override
   String get settingsThemeSystem => 'Système';
 
   @override
