@@ -21,6 +21,27 @@ import '../../core/time/fake_time_provider.dart';
 import '../../helpers/sqflite_test_helper.dart';
 import '../../helpers/step_test_fixtures.dart';
 
+class _BatchGoalSpyHealthMetricsRepository extends UserHealthMetricsRepository {
+  _BatchGoalSpyHealthMetricsRepository(super.db, {super.clock});
+
+  int getGoalsForLocalDaysCallCount = 0;
+  int getGoalForLocalDayCallCount = 0;
+
+  @override
+  Future<Map<String, int>> getGoalsForLocalDays(
+    List<String> localDayIsos,
+  ) async {
+    getGoalsForLocalDaysCallCount++;
+    return super.getGoalsForLocalDays(localDayIsos);
+  }
+
+  @override
+  Future<int> getGoalForLocalDay(String localDayIso) async {
+    getGoalForLocalDayCallCount++;
+    return super.getGoalForLocalDay(localDayIso);
+  }
+}
+
 void main() {
   setUpAll(() async {
     await setUpSqfliteFfi();
@@ -51,11 +72,12 @@ void main() {
     TodayCubit buildCubit({
       Future<bool> Function()? activityPermissionGranted,
       bool isIos = false,
+      UserHealthMetricsRepository? healthMetrics,
     }) {
       return TodayCubit(
         stepAggregation: stepRepos.aggregation,
         userSettings: userSettings,
-        userHealthMetrics: userHealthMetrics,
+        userHealthMetrics: healthMetrics ?? userHealthMetrics,
         clock: clock,
         activityPermissionGranted:
             activityPermissionGranted ?? () async => true,
@@ -909,6 +931,37 @@ void main() {
         expect(thursday.goalMet, isFalse);
         expect(thursday.isToday, isTrue);
         expect(cubit.state.goal, 10000);
+        cubit.close();
+      });
+    });
+
+    // ── Batch goal call-count (AC #4, #5) ──────────────────────────────────
+
+    group('batch goal call-count', () {
+      test('refresh() uses getGoalsForLocalDays once, getGoalForLocalDay once', () async {
+        final spy = _BatchGoalSpyHealthMetricsRepository(db, clock: clock);
+        final cubit = buildCubit(healthMetrics: spy);
+
+        await cubit.refresh();
+
+        expect(spy.getGoalsForLocalDaysCallCount, 1);
+        expect(spy.getGoalForLocalDayCallCount, 1); // only _resolveTodayGoal
+        cubit.close();
+      });
+
+      test('refreshFastPath() enrichment uses getGoalsForLocalDays once', () async {
+        final spy = _BatchGoalSpyHealthMetricsRepository(db, clock: clock);
+        final cubit = buildCubit(healthMetrics: spy);
+
+        await cubit.refreshFastPath();
+        // pump until enrichment delivers weekDays
+        for (var i = 0; i < 100; i++) {
+          if (cubit.state.weekDays.length == 7) break;
+          await pumpEventQueue();
+        }
+
+        expect(cubit.state.weekDays, hasLength(7));
+        expect(spy.getGoalsForLocalDaysCallCount, 1);
         cubit.close();
       });
     });

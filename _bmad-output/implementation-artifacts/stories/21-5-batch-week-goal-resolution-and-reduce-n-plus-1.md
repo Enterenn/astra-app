@@ -64,12 +64,12 @@ So that post–fast-path enrichment stays snappy (NFR-AUD-02).
   - [x] Do **not** modify `UserHealthMetricsRepository` — batch API is complete
   - [x] **Stop → review brief → wait for Baptiste OK → commit**
 
-- [ ] **Sub-task C — Spy test for batch call count** (AC: #4, #5)
-  - [ ] Add `_BatchGoalSpyHealthMetricsRepository` to `today_cubit_test.dart` (mirror `history_cubit_test.dart` L23–42)
-  - [ ] Test: `refresh()` → `getGoalsForLocalDaysCallCount == 1`, `getGoalForLocalDayCallCount == 1` (only `_resolveTodayGoal` in refresh path — not 7 extra)
-  - [ ] Test: `refreshFastPath()` + pump deferred enrichment → `getGoalsForLocalDaysCallCount == 1` on week load
-  - [ ] Verify existing `goalMet respects per-day goals after mid-week change` still passes unchanged
-  - [ ] **Stop → review brief → wait for Baptiste OK → commit**
+- [x] **Sub-task C — Spy test for batch call count** (AC: #4, #5)
+  - [x] Add `_BatchGoalSpyHealthMetricsRepository` to `today_cubit_test.dart` (mirror `history_cubit_test.dart` L23–42)
+  - [x] Test: `refresh()` → `getGoalsForLocalDaysCallCount == 1`, `getGoalForLocalDayCallCount == 1` (only `_resolveTodayGoal` in refresh path — not 7 extra)
+  - [x] Test: `refreshFastPath()` + pump deferred enrichment → `getGoalsForLocalDaysCallCount == 1` on week load
+  - [x] Verify existing `goalMet respects per-day goals after mid-week change` still passes unchanged
+  - [x] **Stop → review brief → wait for Baptiste OK → commit**
 
 - [ ] **Sub-task D — Regression** (AC: #5)
   - [ ] Run: `flutter test test/presentation/cubits/today_cubit_test.dart`
