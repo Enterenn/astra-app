@@ -426,6 +426,7 @@ void main() {
       expect(find.text(l10n.profileLoadErrorGeneric), findsOneWidget);
       expect(find.byKey(ProfileLoadErrorPanel.retryButtonKey), findsOneWidget);
       expect(find.text(l10n.settingsNotifications), findsNothing);
+      expect(profileCubit.refreshAttempts, 1);
     });
 
     testWidgets('switch reflects profile notification preference', (

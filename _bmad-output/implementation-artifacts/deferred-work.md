@@ -101,3 +101,15 @@ Removed four low-value test files; see `_bmad-output/implementation-artifacts/sp
 - **`release()` en `finally` masque l'exception de `_collectOnce`** — Si le second reopen de `withRetry` échoue dans `release()`, l'exception de `_collectOnce` est masquée. Risque réduit par `withRetry` (une tentative supplémentaire) ; comportement antérieur était pire. Pré-existant.
 
 - **`databaseSession` getter couple `BackgroundCollector` à `AstraDatabaseSession`** — Le getter expose directement la session interne de `StepIngestionRepository`. Trade-off architectural documenté dans story 21-4 Dev Notes. À revoir lors d'un éventuel refactor DI (epic 25).
+
+## Deferred from: code review of 22-3-add-retry-path-for-profile-and-settings-load-errors (2026-07-17)
+
+- **`Semantics(button: true)` may produce redundant button node** — If `AstraButton` already declares button semantics internally, the wrapping `Semantics(button: true, label: ...)` risks double-announcing "button" to screen readers. Deferred to Epic 23 a11y polish.
+
+- **`_RetryProfileCubit` duplicated verbatim in both test files** — `profile_screen_test.dart` and `settings_screen_test.dart` each define identical harness classes. Any change to `ProfileCubit.refresh()` contract must be patched in two places. Deferred to Epic 26 test infra refactor.
+
+- **`ProfileLoadErrorPanel` hard-coupled to `ProfileCubit` type** — `context.read<ProfileCubit>()` inside the shared widget breaks if either Profile or Settings ever migrates to a distinct cubit. Deferred to Epic 25 architecture work.
+
+- **`loadError == null` nullable passthrough** — `profileLoadErrorMessage` accepts `ProfileLoadError?` and was already receiving nullable values before this story; no regression. Deferred as pre-existing.
+
+- **No isolated `ProfileLoadErrorPanel` widget test** — Panel exercised only through full-screen tests. Screen-level coverage sufficient for story scope. Deferred to Epic 26.

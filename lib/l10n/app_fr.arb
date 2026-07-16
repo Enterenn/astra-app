@@ -21,6 +21,9 @@
   "navTrends": "STATS",
   "navMenu": "MENU",
   "commonRetry": "Réessayer",
+  "@commonRetry": {
+    "description": "Generic retry button label for error recovery"
+  },
   "commonSave": "Enregistrer",
   "commonCancel": "Annuler",
   "commonBack": "Retour",

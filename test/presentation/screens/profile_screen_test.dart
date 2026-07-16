@@ -378,6 +378,7 @@ void main() {
       expect(find.text(l10n.profileLoadErrorGeneric), findsOneWidget);
       expect(find.byKey(ProfileLoadErrorPanel.retryButtonKey), findsOneWidget);
       expect(find.text(l10n.profileSectionInformations), findsNothing);
+      expect(cubit.refreshAttempts, 1);
     });
 
     testWidgets('formats height and weight values', (tester) async {
