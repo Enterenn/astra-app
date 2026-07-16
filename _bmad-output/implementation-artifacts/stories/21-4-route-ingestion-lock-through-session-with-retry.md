@@ -1,6 +1,6 @@
 # Story 21.4: Route Ingestion Lock Through Session withRetry
 
-Status: review
+Status: done
 
 <!-- Post-audit Epic 21 — tracker: sprint-status-post-audit.yaml -->
 <!-- Source: epics-post-audit.md Story 21-4 · diagnostic-acces-concurrents.md §1 · AUD-04 · NFR-AUD-03 -->
@@ -80,6 +80,13 @@ So that multi-isolate ingestion does not fail spuriously after session reopen.
   - [x] Run: `flutter test test/core/services/ingestion_collection_lock_test.dart test/core/services/background_collector_test.dart`
   - [x] Run: `flutter test --exclude-tags slow`
   - [x] **Stop → review brief → wait for Baptiste OK → commit**
+
+### Review Findings
+
+- [x] [Review][Patch] tearDown appelle `session.database.isOpen` qui peut lever `StateError` si `_db` est null/fermé [`test/core/services/ingestion_collection_lock_test.dart:31-34`] — try-catch `StateError` ajouté
+- [x] [Review][Defer] Reopen isolate background sur `inMemoryDatabasePath` crée une base vide [`lib/data/repositories/step/_step_repository_session.dart`] — deferred, pre-existing
+- [x] [Review][Defer] `release()` en `finally` masque l'exception de `_collectOnce` si le second reopen échoue [`lib/core/services/background_collector.dart:82-84`] — deferred, pre-existing
+- [x] [Review][Defer] `databaseSession` getter expose `AstraDatabaseSession` depuis `StepIngestionRepository`, créant un couplage vers `BackgroundCollector` [`lib/data/repositories/step/step_ingestion_repository.dart:26`] — deferred, pre-existing (trade-off architectural explicite)
 
 ## Dev Notes
 

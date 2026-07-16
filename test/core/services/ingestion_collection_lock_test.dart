@@ -29,8 +29,12 @@ void main() {
     });
 
     tearDown(() async {
-      if (session.database.isOpen) {
-        await session.database.close();
+      try {
+        if (session.database.isOpen) {
+          await session.database.close();
+        }
+      } on StateError {
+        // _db null/closed — withRetry did not finish reopening (failing test path)
       }
     });
 

@@ -93,3 +93,11 @@ Removed four low-value test files; see `_bmad-output/implementation-artifacts/sp
 - **`StatusBannerVariant.staleCompact` / `staleFull` unused in production** — enum variants and widget tests remain as stubs; delete or wire when stale UX is redesigned.
 
 - **Story AC / UX docs still reference Today compact stale → My Data** — stories 5.9, 4.2 and UX §2.3 need amendment to match 5.10 sovereignty layout pivot.
+
+## Deferred from: code review of 21-4-route-ingestion-lock-through-session-with-retry (2026-07-16)
+
+- **Reopen isolate background sur `inMemoryDatabasePath`** — `StepRepositorySession(db)` passé par la factory utilise `:memory:` comme chemin de reopen ; un `database_closed` dans l'isolate WorkManager/FGS crée une base neuve vide plutôt que de rouvrir le fichier. Pré-existant, hors scope story 21-4 ; à corriger si les tests de lock sur DB fichier révèlent le problème.
+
+- **`release()` en `finally` masque l'exception de `_collectOnce`** — Si le second reopen de `withRetry` échoue dans `release()`, l'exception de `_collectOnce` est masquée. Risque réduit par `withRetry` (une tentative supplémentaire) ; comportement antérieur était pire. Pré-existant.
+
+- **`databaseSession` getter couple `BackgroundCollector` à `AstraDatabaseSession`** — Le getter expose directement la session interne de `StepIngestionRepository`. Trade-off architectural documenté dans story 21-4 Dev Notes. À revoir lors d'un éventuel refactor DI (epic 25).
