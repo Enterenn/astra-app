@@ -108,7 +108,7 @@ void main() {
       }
     });
 
-    test('creates query and unique bucket identity indexes', () async {
+    test('creates query, bucket identity, and last-end indexes', () async {
       final indexes = await db.rawQuery(
         'PRAGMA index_list(timeseries_samples);',
       );
@@ -118,6 +118,7 @@ void main() {
 
       expect(indexByName, contains('idx_timeseries_query'));
       expect(indexByName, contains('idx_bucket_identity'));
+      expect(indexByName, contains('idx_timeseries_last_end'));
       expect(indexByName['idx_bucket_identity']?['unique'], 1);
 
       final queryIndexColumns = await db.rawQuery(
@@ -150,6 +151,22 @@ void main() {
           'resolution',
         ]),
       );
+
+      final lastEndColumns = await db.rawQuery(
+        'PRAGMA index_info(idx_timeseries_last_end);',
+      );
+      expect(
+        lastEndColumns.map((c) => c['name']),
+        orderedEquals(<String>['type', 'end_time']),
+      );
+
+      final lastEndXinfo = await db.rawQuery(
+        'PRAGMA index_xinfo(idx_timeseries_last_end);',
+      );
+      final endTimeCol = lastEndXinfo.firstWhere(
+        (c) => c['name'] == 'end_time',
+      );
+      expect(endTimeCol['desc'], 1);
     });
 
     test('enforces non-negative and whole-number step values', () async {
@@ -339,6 +356,67 @@ void main() {
           '${local.month.toString().padLeft(2, '0')}-'
           '${local.day.toString().padLeft(2, '0')}';
       expect(rows.single['effective_from_local_day'], todayIso);
+    });
+  });
+
+  group('migration v3 to v4 upgrade', () {
+    test('preserves existing data and adds idx_timeseries_last_end', () async {
+      final tempDir = await Directory.systemTemp.createTemp(
+        'astra_db_v4_upgrade_test',
+      );
+      addTearDown(() async {
+        if (tempDir.existsSync()) {
+          await tempDir.delete(recursive: true);
+        }
+      });
+
+      final databasePath = p.join(tempDir.path, 'astra_app.db');
+      final v3Db = await openDatabase(
+        databasePath,
+        version: 3,
+        onCreate: (db, version) => runMigrations(db, version),
+      );
+      await v3Db.insert('timeseries_samples', {
+        'id': '00000000-0000-4000-8000-000000000001',
+        'start_time': '2026-06-01T08:00:00Z',
+        'end_time': '2026-06-01T08:05:00Z',
+        'type': 'steps',
+        'value': 100,
+        'unit': 'count',
+        'resolution': '5min',
+        'provider': 'internal_phone',
+        'device_id': 'smartphone',
+        'zone_offset': '+02:00',
+      });
+      await v3Db.insert('daily_goal_effective', {
+        'effective_from_local_day': '2026-06-01',
+        'goal': 8000,
+      }, conflictAlgorithm: ConflictAlgorithm.ignore);
+      await v3Db.close();
+
+      final upgradedDb = await openAstraDatabase(databasePath: databasePath);
+      addTearDown(() => upgradedDb.close());
+
+      final rows = await upgradedDb.query('timeseries_samples');
+      expect(rows.length, 1);
+      expect(rows.single['id'], '00000000-0000-4000-8000-000000000001');
+      expect(rows.single['value'], 100);
+
+      final goalRows = await upgradedDb.query('daily_goal_effective');
+      expect(goalRows.any((r) => r['goal'] == 8000), isTrue);
+
+      final indexes = await upgradedDb.rawQuery(
+        'PRAGMA index_list(timeseries_samples);',
+      );
+      final indexNames = indexes.map((i) => i['name'] as String);
+      expect(
+        indexNames,
+        containsAll([
+          'idx_timeseries_query',
+          'idx_bucket_identity',
+          'idx_timeseries_last_end',
+        ]),
+      );
     });
   });
 
