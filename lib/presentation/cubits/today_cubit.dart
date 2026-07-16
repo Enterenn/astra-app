@@ -234,7 +234,39 @@ class TodayCubit extends Cubit<TodayState> {
   ///     enrichment aborts to avoid regressing the newer full-refresh state.
   Future<void> refreshFastPath() async {
     if (isClosed) return;
-    // Sub-task B: implement fast-path emit (3 queries + _applyTodaySnapshot).
+
+    final granted = await _activityPermissionGranted();
+    if (isClosed) return;
+    if (!granted) {
+      emit(const TodayState(status: TodayStatus.noPermission, weekDays: []));
+      unawaited(_enrichAfterFastPath(_refreshGeneration));
+      return;
+    }
+
+    final todayIso = formatLocalDayIso(clock.snapshot());
+    final results = await Future.wait<Object?>([
+      stepAggregation.getTodaySteps(),
+      _resolveTodayGoal(),
+      userSettings.getLastDisplayedSteps(todayIso),
+    ]);
+    if (isClosed) return;
+
+    final steps = results[0]! as int;
+    final goal = results[1]! as int;
+    final lastDisplayed = results[2] as int?;
+
+    await _applyTodaySnapshot(
+      steps: steps,
+      goal: goal,
+      isStale: false,
+      lastIngestionUtc: null,
+      weekDays: const [],
+      activityMetrics: _liveMetricsForSteps(steps),
+      lastDisplayedSteps: lastDisplayed,
+      lastDisplayedStepsLoaded: true,
+    );
+    if (isClosed) return;
+
     unawaited(_enrichAfterFastPath(_refreshGeneration));
   }
 

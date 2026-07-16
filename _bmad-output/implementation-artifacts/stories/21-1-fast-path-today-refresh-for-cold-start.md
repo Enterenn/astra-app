@@ -60,17 +60,17 @@ So that I see my local steps within ~100 ms instead of waiting for week metrics 
   - [x] Plan concurrency vs `_refreshInFlight`: fast path must not deadlock with `refresh()`; document chosen rule in code comment
   - [x] **Stop → review brief → wait for Baptiste OK → commit**
 
-- [ ] **Sub-task B — Implement fast path emit** (AC: #1, #4)
-  - [ ] Permission check first (same as `_refreshImpl`)
-  - [ ] `Future.wait` of exactly: `getTodaySteps()`, `_resolveTodayGoal()`, `getLastDisplayedSteps(todayIso)`
-  - [ ] Emit via `_applyTodaySnapshot` (or equivalent) with:
+- [x] **Sub-task B — Implement fast path emit** (AC: #1, #4)
+  - [x] Permission check first (same as `_refreshImpl`)
+  - [x] `Future.wait` of exactly: `getTodaySteps()`, `_resolveTodayGoal()`, `getLastDisplayedSteps(todayIso)`
+  - [x] Emit via `_applyTodaySnapshot` (or equivalent) with:
     - `lastDisplayedSteps` + `lastDisplayedStepsLoaded: true`
     - `weekDays: const []` (or leave empty)
     - `activityMetrics: _liveMetricsForSteps(steps)` (distance-only)
     - `isStale: false` / `lastIngestionUtc: null` until enrichment (do not invent stale=true)
-  - [ ] **Do not** call `_resolveSelectedLocalDay([])` — it uses `weekDays.first` and will throw on empty list; leave `selectedLocalDay` null/unset until week loads
-  - [ ] Schedule enrichment with `unawaited(...)` from `dart:async` (already imported)
-  - [ ] **Stop → review brief → wait for Baptiste OK → commit**
+  - [x] **Do not** call `_resolveSelectedLocalDay([])` — it uses `weekDays.first` and will throw on empty list; leave `selectedLocalDay` null/unset until week loads
+  - [x] Schedule enrichment with `unawaited(...)` from `dart:async` (already imported)
+  - [x] **Stop → review brief → wait for Baptiste OK → commit**
 
 - [ ] **Sub-task C — Implement deferred enrichment** (AC: #2)
   - [ ] After fast emit, load in background (may `Future.wait` internally):
