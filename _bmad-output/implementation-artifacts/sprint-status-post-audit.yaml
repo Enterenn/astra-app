@@ -1,6 +1,6 @@
 # generated: 2026-07-16
-# last_updated: 2026-07-16 (Story 21-6 done — code review fixes)
-# NEXT: dev-story 21-7
+# last_updated: 2026-07-16 (Story 21-7 ready-for-dev)
+# NEXT: dev-story 21-7-guard-trends-refresh-on-ingestion-by-active-tab
 # Ref: planning-artifacts/epics-post-audit.md · planning-artifacts/audits/
 # project: astra-app
 # project_key: NOKEY
@@ -63,7 +63,7 @@
 # NAVIGATION: _bmad-output/README.md · planning-artifacts/epics-post-audit.md
 
 generated: 2026-07-16
-last_updated: 2026-07-16 (Story 21-6 done — code review fixes)
+last_updated: 2026-07-16 (Story 21-7 ready-for-dev)
 project: astra-app
 project_key: NOKEY
 tracking_system: file-system
@@ -79,7 +79,7 @@ development_status:
   21-4-route-ingestion-lock-through-session-with-retry: done
   21-5-batch-week-goal-resolution-and-reduce-n-plus-1: done
   21-6-add-end-time-index-for-last-ingestion-query: done
-  21-7-guard-trends-refresh-on-ingestion-by-active-tab: backlog
+  21-7-guard-trends-refresh-on-ingestion-by-active-tab: in-progress
   21-8-non-blocking-pedometer-drain-on-cold-backfill: backlog
   epic-21-retrospective: optional
 

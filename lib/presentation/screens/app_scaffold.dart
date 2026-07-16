@@ -229,7 +229,9 @@ class _AppScaffoldState extends State<AppScaffold> {
 
   void _onIngestionComplete() {
     unawaited(_todayCubit.refreshMetadata());
-    unawaited(_historyCubit.refresh(silent: true));
+    if (_selectedIndex == 1) {
+      unawaited(_historyCubit.refresh(silent: true));
+    }
     unawaited(_myDataCubit.refresh(silent: true));
   }
 
