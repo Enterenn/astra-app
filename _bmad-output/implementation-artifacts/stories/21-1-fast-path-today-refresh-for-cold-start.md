@@ -82,17 +82,17 @@ So that I see my local steps within ~100 ms instead of waiting for week metrics 
   - [x] Handle `noPermission` enrichment: populate `weekDays` only
   - [x] **Stop → review brief → wait for Baptiste OK → commit**
 
-- [ ] **Sub-task D — Tests** (AC: #5)
-  - [ ] Extend `test/presentation/cubits/today_cubit_test.dart` and/or `today_cubit_contract_test.dart`
-  - [ ] Prefer a recording/fake aggregation + settings contract that counts query calls (pattern in `today_cubit_contract_test.dart`)
-  - [ ] Cases:
+- [x] **Sub-task D — Tests** (AC: #5)
+  - [x] Extend `test/presentation/cubits/today_cubit_test.dart` and/or `today_cubit_contract_test.dart`
+  - [x] Prefer a recording/fake aggregation + settings contract that counts query calls (pattern in `today_cubit_contract_test.dart`)
+  - [x] Cases:
     1. Fast path emits ready/`progress`/`empty` with `lastDisplayedStepsLoaded: true` and empty `weekDays` before enrichment finishes
     2. Critical path does not call `getChartDailyAggregates` / `getTodayActiveBuckets` / `getLastIngestionUtc` before first emit
     3. After enrichment settles, `weekDays.length == 7` and metrics/stale match full-refresh expectations for same fixtures
     4. Concurrent `refresh()` after fast path still works (no hang on `_refreshInFlight`)
-  - [ ] Run `flutter test test/presentation/cubits/today_cubit_test.dart test/presentation/cubits/today_cubit_contract_test.dart`
-  - [ ] Run `flutter test --exclude-tags slow`
-  - [ ] **Stop → review brief → wait for Baptiste OK → commit**
+  - [x] Run `flutter test test/presentation/cubits/today_cubit_test.dart test/presentation/cubits/today_cubit_contract_test.dart`
+  - [x] Run `flutter test --exclude-tags slow`
+  - [x] **Stop → review brief → wait for Baptiste OK → commit**
 
 ## Dev Notes
 
