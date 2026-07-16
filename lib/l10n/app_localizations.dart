@@ -218,6 +218,12 @@ abstract class AppLocalizations {
   /// **'MENU'**
   String get navMenu;
 
+  /// Generic retry button label for error recovery
+  ///
+  /// In en, this message translates to:
+  /// **'Retry'**
+  String get commonRetry;
+
   /// Generic save button label
   ///
   /// In en, this message translates to:

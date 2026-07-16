@@ -73,6 +73,9 @@ class AppLocalizationsEn extends AppLocalizations {
   String get navMenu => 'MENU';
 
   @override
+  String get commonRetry => 'Retry';
+
+  @override
   String get commonSave => 'Save';
 
   @override

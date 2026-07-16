@@ -20,6 +20,7 @@
   "navSteps": "PAS",
   "navTrends": "STATS",
   "navMenu": "MENU",
+  "commonRetry": "Réessayer",
   "commonSave": "Enregistrer",
   "commonCancel": "Annuler",
   "commonBack": "Retour",

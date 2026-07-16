@@ -90,6 +90,10 @@
   "@navMenu": {
     "description": "Bottom navigation tab label for Menu hub"
   },
+  "commonRetry": "Retry",
+  "@commonRetry": {
+    "description": "Generic retry button label for error recovery"
+  },
   "commonSave": "Save",
   "@commonSave": {
     "description": "Generic save button label"

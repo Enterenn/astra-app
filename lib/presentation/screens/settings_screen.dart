@@ -17,8 +17,8 @@ import '../cubits/units_cubit.dart';
 import '../cubits/units_state.dart';
 import '../l10n/display_unit_l10n.dart';
 import '../l10n/language_l10n.dart';
-import '../l10n/profile_error_messages.dart';
 import '../widgets/accent_preset_selector.dart';
+import '../widgets/profile_load_error_panel.dart';
 import '../widgets/secondary_screen_shell.dart';
 import '../widgets/section_card.dart';
 import '../widgets/settings_preference_row.dart';
@@ -52,19 +52,7 @@ class _SettingsScreenBody extends StatelessWidget {
         }
 
         if (state.status == ProfileStatus.error) {
-          final l10n = AppLocalizations.of(context);
-          return Center(
-            child: Padding(
-              padding: const EdgeInsets.all(
-                AstraSpacing.kScreenHorizontalPadding,
-              ),
-              child: Text(
-                profileLoadErrorMessage(l10n, state.loadError),
-                style: AstraTypography.body(context),
-                textAlign: TextAlign.center,
-              ),
-            ),
-          );
+          return ProfileLoadErrorPanel(loadError: state.loadError);
         }
 
         return const _SettingsScrollBody();

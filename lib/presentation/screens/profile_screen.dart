@@ -10,9 +10,9 @@ import '../cubits/profile_state.dart';
 import '../cubits/units_cubit.dart';
 import '../cubits/units_state.dart';
 import '../formatters/display_unit_formatter.dart';
-import '../l10n/profile_error_messages.dart';
 import '../widgets/display_name_editor_row.dart';
 import '../widgets/display_name_editor_sheet.dart';
+import '../widgets/profile_load_error_panel.dart';
 import '../widgets/height_editor_sheet.dart';
 import '../widgets/profile_info_row.dart';
 import '../widgets/section_card.dart';
@@ -37,19 +37,7 @@ class ProfileScreen extends StatelessWidget {
         }
 
         if (state.status == ProfileStatus.error) {
-          final l10n = AppLocalizations.of(context);
-          return Center(
-            child: Padding(
-              padding: const EdgeInsets.all(
-                AstraSpacing.kScreenHorizontalPadding,
-              ),
-              child: Text(
-                profileLoadErrorMessage(l10n, state.loadError),
-                style: AstraTypography.body(context),
-                textAlign: TextAlign.center,
-              ),
-            ),
-          );
+          return ProfileLoadErrorPanel(loadError: state.loadError);
         }
 
         return _ProfileScreenBody(showInlineTitle: showInlineTitle);
