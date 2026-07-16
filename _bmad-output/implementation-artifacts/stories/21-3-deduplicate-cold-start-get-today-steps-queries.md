@@ -65,12 +65,12 @@ So that first paint is not delayed by redundant SQLite round-trips.
   - [x] Log seed usage in `livePipelineLog` details for cold-start diagnostics
   - [x] **Stop → review brief → wait for Baptiste OK → commit**
 
-- [ ] **Sub-task C — Wire coordinator cold bind seed** (AC: #1, #3, #4)
-  - [ ] In `_bindLiveMonitorToToday`, when `skipSqliteRefresh: true` and cubit has painted steps: capture `final seed = _todayCubit?.state.steps` (after 21-2, fast path already ran)
-  - [ ] Call `await monitor.start(seedPersistedSteps: seed)` then `await monitor.reconcileFromDatabase(seedPersistedSteps: seed)` on cold bind only
-  - [ ] Resume / `foregroundCatchUp` / `skipSqliteRefresh: false` paths: pass **no** seed — full DB reads unchanged
-  - [ ] Do **not** pass seed into `_reconcileAfterBackfillCompletes` — always full reconcile after backfill
-  - [ ] **Stop → review brief → wait for Baptiste OK → commit**
+- [x] **Sub-task C — Wire coordinator cold bind seed** (AC: #1, #3, #4)
+  - [x] In `_bindLiveMonitorToToday`, when `skipSqliteRefresh: true` and cubit has painted steps: capture `final seed = _todayCubit?.state.steps` (after 21-2, fast path already ran)
+  - [x] Call `await monitor.start(seedPersistedSteps: seed)` then `await monitor.reconcileFromDatabase(seedPersistedSteps: seed)` on cold bind only
+  - [x] Resume / `foregroundCatchUp` / `skipSqliteRefresh: false` paths: pass **no** seed — full DB reads unchanged
+  - [x] Do **not** pass seed into `_reconcileAfterBackfillCompletes` — always full reconcile after backfill
+  - [x] **Stop → review brief → wait for Baptiste OK → commit**
 
 - [ ] **Sub-task D — Tests** (AC: #5)
   - [ ] `test/core/services/live_step_monitor_test.dart`: recording fake or call-count wrapper on `StepAggregationRepository` — assert `start(seedPersistedSteps: 42)` leaves `getTodaySteps` call count at 0; `reconcileFromDatabase(seedPersistedSteps: 42)` also skips read

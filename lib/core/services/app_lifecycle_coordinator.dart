@@ -673,8 +673,12 @@ class AppLifecycleCoordinator {
 
     final monitor = deps.liveStepMonitor;
     if (!monitor.isRunning) {
-      await monitor.start();
-      await monitor.reconcileFromDatabase();
+      // On cold start (skipSqliteRefresh: true), fast path already read the
+      // authoritative SQLite aggregate — seed the monitor to avoid duplicate reads.
+      // Resume / foregroundCatchUp paths pass no seed (full DB reads preserved).
+      final seedSteps = skipSqliteRefresh ? _todayCubit?.state.steps : null;
+      await monitor.start(seedPersistedSteps: seedSteps);
+      await monitor.reconcileFromDatabase(seedPersistedSteps: seedSteps);
     }
 
     // SQLite daily sum before live overlay (Today Display Truth Model).
