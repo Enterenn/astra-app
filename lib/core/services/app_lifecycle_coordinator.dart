@@ -610,11 +610,7 @@ class AppLifecycleCoordinator {
     if (!_mounted()) {
       return;
     }
-    unawaited(
-      _foregroundBackfill.whenComplete(() {
-        _logColdStartPhase('cold start backfill DONE');
-      }),
-    );
+    unawaited(_reconcileAfterBackfillCompletes());
     await _bindLiveMonitorToToday(skipSqliteRefresh: true);
     if (!_mounted()) {
       return;
@@ -632,6 +628,30 @@ class AppLifecycleCoordinator {
     _wireLiveMonitorDayBoundaryCallbacks();
     _startActivityBasedPersist();
     _scheduleMidnightBoundaryTimer();
+  }
+
+  /// Non-blocking: after foreground backfill upserts, reconcile monitor + Today
+  /// without regressing the fast-path display (Today Display Truth Model).
+  Future<void> _reconcileAfterBackfillCompletes() async {
+    try {
+      await _foregroundBackfill;
+      _logColdStartPhase('cold start backfill DONE');
+      if (!_mounted()) {
+        return;
+      }
+      final monitor = deps.liveStepMonitor;
+      if (monitor.isRunning) {
+        await monitor.reconcileFromDatabase();
+        await _todayCubit?.syncSteps(
+          monitor.currentTodaySteps,
+          clampStaleDisplay: true,
+        );
+      } else {
+        await _todayCubit?.refresh(silent: true);
+      }
+    } catch (_) {
+      // Backfill failure must not crash; fast-path SQLite remains visible.
+    }
   }
 
   Future<void> _reattachLivePipeline() async {

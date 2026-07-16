@@ -76,12 +76,12 @@ So that cold start is never blocked 1–2 s on ingestion backfill.
   - [x] Resume path (`foregroundCatchUp: true`) and permission-denied branch: **unchanged** (still use full `refresh()` where today)
   - [x] **Stop → review brief → wait for Baptiste OK → commit**
 
-- [ ] **Sub-task D — Post-backfill reconcile (non-blocking)** (AC: #3)
-  - [ ] Schedule `unawaited(_foregroundBackfill.then((_) async { ... }))` from `_startLivePipelineFirstTime` after fast paint
-  - [ ] On completion + `_mounted()`: if monitor running, `reconcileFromDatabase()` then `syncSteps` (or `refresh(silent: true)` only if monitor not yet attached — prefer monitor path)
-  - [ ] Guard: monotonic rules in `TodayCubit.syncSteps` / `_applyTodaySnapshot` must prevent regression
-  - [ ] Do not duplicate `_onIngestionComplete` work (AppScaffold already refreshes metadata/history on upsert)
-  - [ ] **Stop → review brief → wait for Baptiste OK → commit**
+- [x] **Sub-task D — Post-backfill reconcile (non-blocking)** (AC: #3)
+  - [x] Schedule `unawaited(_foregroundBackfill.then((_) async { ... }))` from `_startLivePipelineFirstTime` after fast paint
+  - [x] On completion + `_mounted()`: if monitor running, `reconcileFromDatabase()` then `syncSteps` (or `refresh(silent: true)` only if monitor not yet attached — prefer monitor path)
+  - [x] Guard: monotonic rules in `TodayCubit.syncSteps` / `_applyTodaySnapshot` must prevent regression
+  - [x] Do not duplicate `_onIngestionComplete` work (AppScaffold already refreshes metadata/history on upsert)
+  - [x] **Stop → review brief → wait for Baptiste OK → commit**
 
 - [ ] **Sub-task E — Tests** (AC: #6)
   - [ ] Extend `test/core/services/app_lifecycle_coordinator_test.dart` with delaying collector + recording/mocked `TodayCubit` or spy on `refreshFastPath` call order vs backfill end
@@ -291,6 +291,7 @@ Pattern: small commits per sub-task; coordinator change should be isolated from 
 - Sub-task A: Cold-start gate mapped — backfill starts L180, blocks at L609; bind re-reads SQLite L655; `refreshFastPath` ready but unused.
 - Sub-task B: `_startLivePipelineFirstTime` calls `refreshFastPath()` first; backfill log moved to `unawaited(whenComplete)`.
 - Sub-task C: `skipSqliteRefresh` on cold bind — avoids duplicate 7+ query refresh after fast path.
+- Sub-task D: `_reconcileAfterBackfillCompletes` — monitor reconcile + syncSteps after backfill, non-blocking.
 ### File List
 
 ## Change Log
