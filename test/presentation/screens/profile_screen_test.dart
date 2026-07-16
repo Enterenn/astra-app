@@ -13,6 +13,7 @@ import 'package:astra_app/presentation/cubits/profile_state.dart';
 import 'package:astra_app/presentation/cubits/units_cubit.dart';
 import 'package:astra_app/presentation/screens/profile_screen.dart';
 import 'package:astra_app/presentation/widgets/accent_preset_selector.dart';
+import 'package:astra_app/presentation/widgets/profile_load_error_panel.dart';
 import 'package:astra_app/presentation/widgets/section_card.dart';
 import 'package:astra_app/presentation/widgets/theme_selector.dart';
 import 'package:flutter/material.dart';
@@ -41,6 +42,39 @@ class _SeededProfileCubit extends ProfileCubit {
       return;
     }
     emit(_seededState);
+  }
+}
+
+class _RetryProfileCubit extends ProfileCubit {
+  _RetryProfileCubit({
+    required super.userSettings,
+    required super.userHealthMetrics,
+    required super.notificationService,
+  }) {
+    emit(const ProfileState(
+      status: ProfileStatus.error,
+      loadError: ProfileLoadError.generic,
+    ));
+  }
+
+  var refreshAttempts = 0;
+  var succeedOnRetry = true;
+
+  @override
+  Future<void> refresh() async {
+    if (isClosed) return;
+    refreshAttempts++;
+    emit(const ProfileState.loading());
+    await Future<void>.value();
+    if (isClosed) return;
+    emit(
+      succeedOnRetry
+          ? ProfileState.ready(goalNotificationsEnabled: false)
+          : const ProfileState(
+              status: ProfileStatus.error,
+              loadError: ProfileLoadError.generic,
+            ),
+    );
   }
 }
 
@@ -264,6 +298,7 @@ void main() {
       );
 
       expect(find.text(l10n.profileLoadErrorGeneric), findsOneWidget);
+      expect(find.byKey(ProfileLoadErrorPanel.retryButtonKey), findsOneWidget);
       expect(find.text(l10n.profileSectionInformations), findsNothing);
     });
 
@@ -287,6 +322,62 @@ void main() {
       );
 
       expect(find.text(l10n.profileCouldNotLoad), findsOneWidget);
+      expect(find.byKey(ProfileLoadErrorPanel.retryButtonKey), findsOneWidget);
+    });
+
+    testWidgets('retry tap → loading → ready shows profile content', (
+      tester,
+    ) async {
+      final cubit = _RetryProfileCubit(
+        userSettings: userSettings,
+        userHealthMetrics: userHealthMetrics,
+        notificationService: NotificationService(
+          permissionChecker: () async => PermissionStatus.granted,
+        ),
+      );
+      addTearDown(cubit.close);
+
+      await _pumpProfileScreen(
+        tester,
+        profileCubit: cubit,
+        unitsCubit: unitsCubit,
+      );
+
+      expect(find.byKey(ProfileLoadErrorPanel.retryButtonKey), findsOneWidget);
+
+      await tester.tap(find.byKey(ProfileLoadErrorPanel.retryButtonKey));
+      await tester.pump();
+
+      expect(find.text(l10n.profileSectionInformations), findsOneWidget);
+      expect(find.byKey(ProfileLoadErrorPanel.retryButtonKey), findsNothing);
+      expect(cubit.refreshAttempts, 1);
+    });
+
+    testWidgets('retry tap → loading → error keeps retry button visible', (
+      tester,
+    ) async {
+      final cubit = _RetryProfileCubit(
+        userSettings: userSettings,
+        userHealthMetrics: userHealthMetrics,
+        notificationService: NotificationService(
+          permissionChecker: () async => PermissionStatus.granted,
+        ),
+      )..succeedOnRetry = false;
+      addTearDown(cubit.close);
+
+      await _pumpProfileScreen(
+        tester,
+        profileCubit: cubit,
+        unitsCubit: unitsCubit,
+      );
+
+      await tester.tap(find.byKey(ProfileLoadErrorPanel.retryButtonKey));
+      await tester.pump();
+      await tester.pump();
+
+      expect(find.text(l10n.profileLoadErrorGeneric), findsOneWidget);
+      expect(find.byKey(ProfileLoadErrorPanel.retryButtonKey), findsOneWidget);
+      expect(find.text(l10n.profileSectionInformations), findsNothing);
     });
 
     testWidgets('formats height and weight values', (tester) async {

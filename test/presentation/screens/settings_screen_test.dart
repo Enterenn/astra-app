@@ -14,6 +14,7 @@ import 'package:astra_app/presentation/cubits/theme_state.dart';
 import 'package:astra_app/presentation/cubits/units_cubit.dart';
 import 'package:astra_app/presentation/screens/settings_screen.dart';
 import 'package:astra_app/presentation/widgets/accent_preset_selector.dart';
+import 'package:astra_app/presentation/widgets/profile_load_error_panel.dart';
 import 'package:astra_app/presentation/widgets/section_card.dart';
 import 'package:astra_app/presentation/widgets/settings_preference_row.dart';
 import 'package:astra_app/presentation/widgets/theme_selector.dart';
@@ -44,6 +45,39 @@ class _SeededProfileCubit extends ProfileCubit {
       return;
     }
     emit(_seededState);
+  }
+}
+
+class _RetryProfileCubit extends ProfileCubit {
+  _RetryProfileCubit({
+    required super.userSettings,
+    required super.userHealthMetrics,
+    required super.notificationService,
+  }) {
+    emit(const ProfileState(
+      status: ProfileStatus.error,
+      loadError: ProfileLoadError.generic,
+    ));
+  }
+
+  var refreshAttempts = 0;
+  var succeedOnRetry = true;
+
+  @override
+  Future<void> refresh() async {
+    if (isClosed) return;
+    refreshAttempts++;
+    emit(const ProfileState.loading());
+    await Future<void>.value();
+    if (isClosed) return;
+    emit(
+      succeedOnRetry
+          ? ProfileState.ready(goalNotificationsEnabled: false)
+          : const ProfileState(
+              status: ProfileStatus.error,
+              loadError: ProfileLoadError.generic,
+            ),
+    );
   }
 }
 
@@ -311,8 +345,87 @@ void main() {
       );
 
       expect(find.text(l10n.profileLoadErrorGeneric), findsOneWidget);
+      expect(find.byKey(ProfileLoadErrorPanel.retryButtonKey), findsOneWidget);
       expect(find.text(l10n.settingsNotifications), findsNothing);
       expect(find.text(l10n.settingsUnits), findsNothing);
+    });
+
+    testWidgets('retry tap → loading → ready shows settings content', (
+      tester,
+    ) async {
+      final profileCubit = _RetryProfileCubit(
+        userSettings: userSettings,
+        userHealthMetrics: userHealthMetrics,
+        notificationService: NotificationService(
+          permissionChecker: () async => PermissionStatus.granted,
+        ),
+      );
+      addTearDown(profileCubit.close);
+
+      final themeCubit = ThemeCubit(userSettings: userSettings);
+      addTearDown(themeCubit.close);
+
+      final unitsCubit = UnitsCubit(userSettings: userSettings);
+      addTearDown(unitsCubit.close);
+
+      final localeCubit = LocaleCubit(userSettings: userSettings);
+      addTearDown(localeCubit.close);
+
+      await _pumpSettingsScreen(
+        tester,
+        profileCubit: profileCubit,
+        themeCubit: themeCubit,
+        unitsCubit: unitsCubit,
+        localeCubit: localeCubit,
+      );
+
+      expect(find.byKey(ProfileLoadErrorPanel.retryButtonKey), findsOneWidget);
+
+      await tester.tap(find.byKey(ProfileLoadErrorPanel.retryButtonKey));
+      await tester.pump();
+
+      expect(find.text(l10n.settingsNotifications), findsOneWidget);
+      expect(find.text(l10n.settingsUnits), findsOneWidget);
+      expect(find.byKey(ProfileLoadErrorPanel.retryButtonKey), findsNothing);
+      expect(profileCubit.refreshAttempts, 1);
+    });
+
+    testWidgets('retry tap → loading → error keeps retry button visible', (
+      tester,
+    ) async {
+      final profileCubit = _RetryProfileCubit(
+        userSettings: userSettings,
+        userHealthMetrics: userHealthMetrics,
+        notificationService: NotificationService(
+          permissionChecker: () async => PermissionStatus.granted,
+        ),
+      )..succeedOnRetry = false;
+      addTearDown(profileCubit.close);
+
+      final themeCubit = ThemeCubit(userSettings: userSettings);
+      addTearDown(themeCubit.close);
+
+      final unitsCubit = UnitsCubit(userSettings: userSettings);
+      addTearDown(unitsCubit.close);
+
+      final localeCubit = LocaleCubit(userSettings: userSettings);
+      addTearDown(localeCubit.close);
+
+      await _pumpSettingsScreen(
+        tester,
+        profileCubit: profileCubit,
+        themeCubit: themeCubit,
+        unitsCubit: unitsCubit,
+        localeCubit: localeCubit,
+      );
+
+      await tester.tap(find.byKey(ProfileLoadErrorPanel.retryButtonKey));
+      await tester.pump();
+      await tester.pump();
+
+      expect(find.text(l10n.profileLoadErrorGeneric), findsOneWidget);
+      expect(find.byKey(ProfileLoadErrorPanel.retryButtonKey), findsOneWidget);
+      expect(find.text(l10n.settingsNotifications), findsNothing);
     });
 
     testWidgets('switch reflects profile notification preference', (
