@@ -72,7 +72,7 @@ epics_source: planning-artifacts/epics-post-audit.md
 git_branch: main
 
 development_status:
-  epic-21: in-progress
+  epic-21: done
   21-1-fast-path-today-refresh-for-cold-start: done
   21-2-decouple-foreground-backfill-from-first-today-paint: done
   21-3-deduplicate-cold-start-get-today-steps-queries: done
