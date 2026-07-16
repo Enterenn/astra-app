@@ -1,6 +1,6 @@
 # generated: 2026-07-16
-# last_updated: 2026-07-16 (Story 22-1 done)
-# NEXT: dev-story 22-2-disable-goal-cta-during-today-loading-states
+# last_updated: 2026-07-17 (Story 22-2 in-progress)
+# NEXT: code-review 22-2-disable-goal-cta-during-today-loading-states
 # Ref: planning-artifacts/epics-post-audit.md · planning-artifacts/audits/
 # project: astra-app
 # project_key: NOKEY
@@ -63,7 +63,7 @@
 # NAVIGATION: _bmad-output/README.md · planning-artifacts/epics-post-audit.md
 
 generated: 2026-07-16
-last_updated: 2026-07-16 (Story 22-1 done)
+last_updated: 2026-07-17 (Story 22-2 in-progress)
 project: astra-app
 project_key: NOKEY
 tracking_system: file-system
@@ -85,7 +85,7 @@ development_status:
 
   epic-22: in-progress
   22-1-harden-live-step-monitor-dispose-sequencing: done
-  22-2-disable-goal-cta-during-today-loading-states: backlog
+  22-2-disable-goal-cta-during-today-loading-states: review
   22-3-add-retry-path-for-profile-and-settings-load-errors: backlog
   22-4-align-theme-preference-error-feedback-with-other-settings: backlog
   22-5-enable-discarded-futures-lint-and-fix-callback-sites: backlog
