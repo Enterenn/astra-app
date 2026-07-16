@@ -220,10 +220,10 @@ class _AppScaffoldState extends State<AppScaffold> {
     widget.onHistoryCubitDisposed?.call();
     widget.onMyDataCubitDisposed?.call();
     widget.onProfileCubitDisposed?.call();
-    _todayCubit.close();
-    _historyCubit.close();
-    _myDataCubit.close();
-    _profileCubit.close();
+    unawaited(_todayCubit.close());
+    unawaited(_historyCubit.close());
+    unawaited(_myDataCubit.close());
+    unawaited(_profileCubit.close());
     super.dispose();
   }
 

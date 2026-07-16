@@ -72,8 +72,8 @@ class _GoalCelebrationState extends State<GoalCelebration>
         : GoalCelebration.celebrationSequenceDuration;
 
     _sequenceController?.dispose();
-    _sequenceController = AnimationController(vsync: this, duration: duration)
-      ..forward();
+    _sequenceController = AnimationController(vsync: this, duration: duration);
+    unawaited(_sequenceController!.forward());
 
     _sequenceTimer?.cancel();
     _sequenceTimer = Timer(duration, _finishSequence);
@@ -91,9 +91,9 @@ class _GoalCelebrationState extends State<GoalCelebration>
       }
       _hapticFired = true;
       if (Platform.isAndroid) {
-        HapticFeedback.lightImpact();
+        unawaited(HapticFeedback.lightImpact());
       } else if (Platform.isIOS) {
-        HapticFeedback.mediumImpact();
+        unawaited(HapticFeedback.mediumImpact());
       }
     });
   }

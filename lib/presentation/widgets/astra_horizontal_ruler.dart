@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'dart:math' as math;
 
 import 'package:flutter/material.dart';
@@ -181,8 +182,8 @@ class _AstraHorizontalRulerState extends State<AstraHorizontalRuler>
         if (status == AnimationStatus.completed && mounted) {
           setState(() => _readoutPreviousInt = null);
         }
-      })
-      ..forward();
+      });
+    unawaited(_readoutMicroTickController!.forward());
   }
 
   void _applyDisplayValue(
@@ -274,7 +275,7 @@ class _AstraHorizontalRulerState extends State<AstraHorizontalRuler>
     }
 
     _syncingScroll = true;
-    _scrollController
+    unawaited(_scrollController
         .animateTo(
           targetOffset,
           duration: AstraHorizontalRuler.snapDuration,
@@ -284,7 +285,7 @@ class _AstraHorizontalRulerState extends State<AstraHorizontalRuler>
       if (!mounted) return;
       _syncingScroll = false;
       _finalizeValueChange(snapped, fromUserGesture: false);
-    });
+    }));
   }
 
   void _syncScrollToValue(double value, {required bool animate}) {
@@ -295,7 +296,7 @@ class _AstraHorizontalRulerState extends State<AstraHorizontalRuler>
 
     _syncingScroll = true;
     if (animate && !MediaQuery.disableAnimationsOf(context)) {
-      _scrollController
+      unawaited(_scrollController
           .animateTo(
             targetOffset,
             duration: AstraHorizontalRuler.snapDuration,
@@ -304,7 +305,7 @@ class _AstraHorizontalRulerState extends State<AstraHorizontalRuler>
           .whenComplete(() {
         if (!mounted) return;
         _syncingScroll = false;
-      });
+      }));
     } else {
       _scrollController.jumpTo(targetOffset);
       _syncingScroll = false;
@@ -332,7 +333,7 @@ class _AstraHorizontalRulerState extends State<AstraHorizontalRuler>
 
   void _pulseIndicator() {
     if (MediaQuery.disableAnimationsOf(context)) return;
-    _pulseController.forward(from: 0);
+    unawaited(_pulseController.forward(from: 0));
   }
 
   void _finalizeValueChange(double newValue, {required bool fromUserGesture}) {
@@ -387,7 +388,7 @@ class _AstraHorizontalRulerState extends State<AstraHorizontalRuler>
         _syncingScroll = false;
         _finalizeValueChange(newValue, fromUserGesture: fromUserGesture);
       } else {
-        _scrollController
+        unawaited(_scrollController
             .animateTo(
               targetOffset,
               duration: AstraHorizontalRuler.snapDuration,
@@ -397,7 +398,7 @@ class _AstraHorizontalRulerState extends State<AstraHorizontalRuler>
           if (!mounted) return;
           _syncingScroll = false;
           _finalizeValueChange(newValue, fromUserGesture: fromUserGesture);
-        });
+        }));
       }
     } else {
       _finalizeValueChange(newValue, fromUserGesture: fromUserGesture);

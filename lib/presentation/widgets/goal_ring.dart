@@ -417,7 +417,7 @@ class _GoalRingState extends State<GoalRing> with TickerProviderStateMixin {
     _countUpTo = to;
     _countUpFromRatio = fromRatio;
     _countUpToRatio = toRatio;
-    _countUpController!.forward();
+    unawaited(_countUpController!.forward());
   }
 
   int _countUpFrom = 0;
@@ -473,8 +473,8 @@ class _GoalRingState extends State<GoalRing> with TickerProviderStateMixin {
     }
 
     _microTickController!.addStatusListener(onMicroTickDone);
-    _liveArcController!.forward();
-    _microTickController!.forward();
+    unawaited(_liveArcController!.forward());
+    unawaited(_microTickController!.forward());
   }
 
   void _setDisplayedInstant(int steps) {
@@ -514,10 +514,14 @@ class _GoalRingState extends State<GoalRing> with TickerProviderStateMixin {
     final disableAnimations = MediaQuery.disableAnimationsOf(context);
 
     if (shouldPulse && !disableAnimations) {
-      _pulseController ??= AnimationController(
-        vsync: this,
-        duration: const Duration(milliseconds: 1200),
-      )..repeat(reverse: true);
+      if (_pulseController == null) {
+        final c = AnimationController(
+          vsync: this,
+          duration: const Duration(milliseconds: 1200),
+        );
+        _pulseController = c;
+        unawaited(c.repeat(reverse: true));
+      }
     } else {
       _releasePulseController();
     }
@@ -532,10 +536,14 @@ class _GoalRingState extends State<GoalRing> with TickerProviderStateMixin {
     final disableAnimations = MediaQuery.disableAnimationsOf(context);
 
     if (shouldAnimate && !disableAnimations) {
-      _overflowController ??= AnimationController(
-        vsync: this,
-        duration: const Duration(milliseconds: _kOverflowAmbientCycleMs),
-      )..repeat();
+      if (_overflowController == null) {
+        final c = AnimationController(
+          vsync: this,
+          duration: const Duration(milliseconds: _kOverflowAmbientCycleMs),
+        );
+        _overflowController = c;
+        unawaited(c.repeat());
+      }
     } else {
       _releaseOverflowController();
     }

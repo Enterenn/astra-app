@@ -106,7 +106,7 @@ class TodayCubit extends Cubit<TodayState> {
     bool replayLatest = true,
   }) {
     _attachedMonitor = monitor;
-    _liveStepsSubscription?.cancel();
+    unawaited(_liveStepsSubscription?.cancel());
     livePipelineLog(
       'cubit',
       'attachLiveMonitor',
