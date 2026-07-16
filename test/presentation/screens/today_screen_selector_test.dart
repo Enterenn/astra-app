@@ -249,6 +249,83 @@ void main() {
         isFalse,
       );
     });
+
+    test('todaySetGoalEnabled false during loading', () {
+      expect(
+        todaySetGoalEnabled(
+          TodayState.fromData(steps: 0, goal: 8000, isStale: false)
+              .copyWith(status: TodayStatus.loading),
+        ),
+        isFalse,
+      );
+    });
+
+    test('todaySetGoalEnabled false when lastDisplayedStepsLoaded false', () {
+      expect(
+        todaySetGoalEnabled(
+          TodayState.fromData(steps: 100, goal: 8000, isStale: false)
+              .copyWith(lastDisplayedStepsLoaded: false),
+        ),
+        isFalse,
+      );
+    });
+
+    test('todaySetGoalEnabled true when display-ready', () {
+      expect(
+        todaySetGoalEnabled(
+          TodayState.fromData(
+            steps: 100,
+            goal: 8000,
+            isStale: false,
+            lastDisplayedStepsLoaded: true,
+          ),
+        ),
+        isTrue,
+      );
+    });
+
+    test('set goal slice unchanged when only steps and metrics tick', () {
+      final before = TodayState.fromData(
+        steps: 1200,
+        goal: 8000,
+        isStale: false,
+        lastDisplayedStepsLoaded: true,
+      );
+      final after = before.copyWith(
+        steps: 1201,
+        activityMetrics: const ActivityMetricsSnapshot(
+          distanceKm: 0.91,
+          walkingDuration: Duration(minutes: 12),
+          kcal: 49,
+        ),
+      );
+
+      expect(todaySetGoalSliceEquals(before, after), isTrue);
+    });
+
+    test('set goal slice changes when status becomes loading', () {
+      final before = TodayState.fromData(
+        steps: 1200,
+        goal: 8000,
+        isStale: false,
+        lastDisplayedStepsLoaded: true,
+      );
+      final after = before.copyWith(status: TodayStatus.loading);
+
+      expect(todaySetGoalSliceEquals(before, after), isFalse);
+    });
+
+    test('set goal slice changes when lastDisplayedStepsLoaded toggles', () {
+      final before = TodayState.fromData(
+        steps: 1200,
+        goal: 8000,
+        isStale: false,
+        lastDisplayedStepsLoaded: true,
+      );
+      final after = before.copyWith(lastDisplayedStepsLoaded: false);
+
+      expect(todaySetGoalSliceEquals(before, after), isFalse);
+    });
   });
 
   group('TodayScreen BlocSelector build isolation', () {
@@ -738,6 +815,133 @@ void main() {
       );
       await tester.pump();
       expect(builds, 2);
+    });
+
+    Future<_SeededTodayCubit> pumpTodayScreen(
+      WidgetTester tester, {
+      required TodayState initial,
+    }) async {
+      final cubit = buildCubit(initial);
+      addTearDown(cubit.close);
+
+      await tester.pumpWidget(
+        TestMaterialApp(
+          theme: buildAstraLightTheme(),
+          home: MediaQuery(
+            data: const MediaQueryData(disableAnimations: true),
+            child: MultiBlocProvider(
+              providers: [
+                BlocProvider<TodayCubit>.value(value: cubit),
+                BlocProvider<UnitsCubit>.value(value: unitsCubit),
+              ],
+              child: const TodayScreen(),
+            ),
+          ),
+        ),
+      );
+      await tester.pump();
+      return cubit;
+    }
+
+    testWidgets('Set goal tap blocked during loading', (tester) async {
+      await pumpTodayScreen(
+        tester,
+        initial: const TodayState.loading(),
+      );
+
+      await tester.ensureVisible(find.text('Set goal'));
+      await tester.tap(find.text('Set goal'));
+      await tester.pump();
+
+      expect(find.text('Daily step goal'), findsNothing);
+    });
+
+    testWidgets('Set goal tap blocked when lastDisplayedStepsLoaded false', (
+      tester,
+    ) async {
+      final cubit = await pumpTodayScreen(
+        tester,
+        initial: TodayState.fromData(
+          steps: 100,
+          goal: 8000,
+          isStale: false,
+        ),
+      );
+      cubit.emit(cubit.state.copyWith(lastDisplayedStepsLoaded: false));
+      await tester.pump();
+
+      await tester.ensureVisible(find.text('Set goal'));
+      await tester.tap(find.text('Set goal'));
+      await tester.pump();
+
+      expect(find.text('Daily step goal'), findsNothing);
+    });
+
+    testWidgets('live step tick does not rebuild set goal selector', (
+      tester,
+    ) async {
+      const initialSteps = 1200;
+      final cubit = await pumpTodayScreen(
+        tester,
+        initial: TodayState.fromData(
+          steps: initialSteps,
+          goal: 8000,
+          isStale: false,
+          weekDays: sampleWeekDays(),
+        ),
+      );
+
+      final setGoalBuildsAfterPump = buildCounts['staticSetGoal'] ?? 0;
+      expect(setGoalBuildsAfterPump, greaterThan(0));
+
+      final before = cubit.state;
+      final nextState = before.copyWith(steps: initialSteps + 1);
+      expect(todaySetGoalSliceEquals(before, nextState), isTrue);
+
+      cubit.emit(nextState);
+      await tester.pump();
+
+      expect(buildCounts['staticSetGoal'], setGoalBuildsAfterPump);
+    });
+
+    testWidgets('set goal selector rebuilds when loading starts', (
+      tester,
+    ) async {
+      var builds = 0;
+      final cubit = buildCubit(
+        TodayState.fromData(
+          steps: 1200,
+          goal: 8000,
+          isStale: false,
+          lastDisplayedStepsLoaded: true,
+        ),
+      );
+      addTearDown(cubit.close);
+
+      await tester.pumpWidget(
+        TestMaterialApp(
+          home: BlocProvider<TodayCubit>.value(
+            value: cubit,
+            child: BlocSelector<TodayCubit, TodayState, Object>(
+              selector: todaySetGoalSelectorSlice,
+              builder: (context, slice) {
+                builds++;
+                final enabled = todaySetGoalEnabled(
+                  context.read<TodayCubit>().state,
+                );
+                return Text(enabled ? 'enabled' : 'disabled');
+              },
+            ),
+          ),
+        ),
+      );
+      expect(builds, 1);
+      expect(find.text('enabled'), findsOneWidget);
+
+      cubit.emit(cubit.state.copyWith(status: TodayStatus.loading));
+      await tester.pump();
+      expect(builds, 2);
+      expect(find.text('disabled'), findsOneWidget);
     });
 
     testWidgets(
