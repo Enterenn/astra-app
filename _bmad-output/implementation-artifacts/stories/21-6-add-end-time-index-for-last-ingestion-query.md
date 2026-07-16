@@ -1,6 +1,6 @@
 # Story 21.6: Add end_time Index for Last Ingestion Query
 
-Status: review
+Status: done
 
 <!-- Post-audit Epic 21 — tracker: sprint-status-post-audit.yaml -->
 <!-- Source: epics-post-audit.md Story 21-6 · diagnostic-cold-start.md §B2 · AUD-07 · NFR-AUD-02 -->
@@ -266,3 +266,4 @@ claude-sonnet-4-5
 
 - 2026-07-16: Story context created (ready-for-dev) — ultimate context engine analysis completed
 - 2026-07-16: Implementation complete — migration v4 + tests; all 851 tests pass (review)
+- 2026-07-16: Code review fixes — v3→v4 + v1→v4 upgrade tests assert index shape; story done

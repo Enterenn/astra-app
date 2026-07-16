@@ -10,6 +10,24 @@ import 'package:flutter_test/flutter_test.dart';
 
 import '../../helpers/sqflite_test_helper.dart';
 
+Future<void> expectLastEndIndexShape(Database db) async {
+  final lastEndColumns = await db.rawQuery(
+    'PRAGMA index_info(idx_timeseries_last_end);',
+  );
+  expect(
+    lastEndColumns.map((c) => c['name']),
+    orderedEquals(<String>['type', 'end_time']),
+  );
+
+  final lastEndXinfo = await db.rawQuery(
+    'PRAGMA index_xinfo(idx_timeseries_last_end);',
+  );
+  final endTimeCol = lastEndXinfo.firstWhere(
+    (c) => c['name'] == 'end_time',
+  );
+  expect(endTimeCol['desc'], 1);
+}
+
 void main() {
   setUpAll(() async {
     await setUpSqfliteFfi();
@@ -152,21 +170,7 @@ void main() {
         ]),
       );
 
-      final lastEndColumns = await db.rawQuery(
-        'PRAGMA index_info(idx_timeseries_last_end);',
-      );
-      expect(
-        lastEndColumns.map((c) => c['name']),
-        orderedEquals(<String>['type', 'end_time']),
-      );
-
-      final lastEndXinfo = await db.rawQuery(
-        'PRAGMA index_xinfo(idx_timeseries_last_end);',
-      );
-      final endTimeCol = lastEndXinfo.firstWhere(
-        (c) => c['name'] == 'end_time',
-      );
-      expect(endTimeCol['desc'], 1);
+      await expectLastEndIndexShape(db);
     });
 
     test('enforces non-negative and whole-number step values', () async {
@@ -324,8 +328,13 @@ void main() {
       final indexNames = indexes.map((index) => index['name'] as String);
       expect(
         indexNames,
-        containsAll(['idx_timeseries_query', 'idx_bucket_identity']),
+        containsAll([
+          'idx_timeseries_query',
+          'idx_bucket_identity',
+          'idx_timeseries_last_end',
+        ]),
       );
+      await expectLastEndIndexShape(upgradedDb);
     });
   });
 
@@ -417,6 +426,7 @@ void main() {
           'idx_timeseries_last_end',
         ]),
       );
+      await expectLastEndIndexShape(upgradedDb);
     });
   });
 
