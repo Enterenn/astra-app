@@ -1006,10 +1006,11 @@ class TodayCubit extends Cubit<TodayState> {
         aggregate.localDay: aggregate.totalSteps,
     };
 
-    final goals = await Future.wait<int>([
-      for (final day in weekDayKeys)
-        userHealthMetrics.getGoalForLocalDay(localDayIsoFromDateOnly(day)),
-    ]);
+    final weekDayIsos = [
+      for (final day in weekDayKeys) localDayIsoFromDateOnly(day),
+    ];
+    final goalsByIso =
+        await userHealthMetrics.getGoalsForLocalDays(weekDayIsos);
 
     return [
       for (var i = 0; i < weekDayKeys.length; i++)
@@ -1019,8 +1020,8 @@ class TodayCubit extends Cubit<TodayState> {
           dayNumber: weekDayKeys[i].day,
           isToday: weekDayKeys[i] == referenceToday,
           isFuture: weekDayKeys[i].isAfter(referenceToday),
-          goalMet:
-              goals[i] > 0 && (stepsByDay[weekDayKeys[i]] ?? 0) >= goals[i],
+          goalMet: goalsByIso[weekDayIsos[i]]! > 0 &&
+              (stepsByDay[weekDayKeys[i]] ?? 0) >= goalsByIso[weekDayIsos[i]]!,
         ),
     ];
   }
