@@ -72,15 +72,15 @@ So that I see my local steps within ~100 ms instead of waiting for week metrics 
   - [x] Schedule enrichment with `unawaited(...)` from `dart:async` (already imported)
   - [x] **Stop → review brief → wait for Baptiste OK → commit**
 
-- [ ] **Sub-task C — Implement deferred enrichment** (AC: #2)
-  - [ ] After fast emit, load in background (may `Future.wait` internally):
+- [x] **Sub-task C — Implement deferred enrichment** (AC: #2)
+  - [x] After fast emit, load in background (may `Future.wait` internally):
     - `_loadWeekDays()`
     - `getTodayActiveBuckets()` + `getHeightCm` / `getWeightKg` → `DerivedActivityMetrics.compute` → `_toMetricsSnapshot`
     - `getLastIngestionUtc()` → `isStaleData(...)`
-  - [ ] Patch state with week strip, full metrics, stale banner — preserve `_todaySteps` / monotonic rules (prefer reusing `_applyTodaySnapshot` with current `_todaySteps` if live overlay advanced steps meanwhile)
-  - [ ] If a full `refresh()` completed meanwhile, enrichment must not regress steps or wipe live overlay (generation token / early-return if a newer refresh finished is acceptable)
-  - [ ] Handle `noPermission` enrichment: populate `weekDays` only
-  - [ ] **Stop → review brief → wait for Baptiste OK → commit**
+  - [x] Patch state with week strip, full metrics, stale banner — preserve `_todaySteps` / monotonic rules (prefer reusing `_applyTodaySnapshot` with current `_todaySteps` if live overlay advanced steps meanwhile)
+  - [x] If a full `refresh()` completed meanwhile, enrichment must not regress steps or wipe live overlay (generation token / early-return if a newer refresh finished is acceptable)
+  - [x] Handle `noPermission` enrichment: populate `weekDays` only
+  - [x] **Stop → review brief → wait for Baptiste OK → commit**
 
 - [ ] **Sub-task D — Tests** (AC: #5)
   - [ ] Extend `test/presentation/cubits/today_cubit_test.dart` and/or `today_cubit_contract_test.dart`

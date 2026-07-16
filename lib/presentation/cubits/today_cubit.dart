@@ -271,8 +271,85 @@ class TodayCubit extends Cubit<TodayState> {
   }
 
   Future<void> _enrichAfterFastPath(int expectedGeneration) async {
-    if (isClosed || expectedGeneration != _refreshGeneration) return;
-    // Sub-task C: implement week + buckets + stale enrichment.
+    try {
+      if (isClosed || expectedGeneration != _refreshGeneration) return;
+
+      // noPermission fast path: populate week strip only.
+      if (state.status == TodayStatus.noPermission) {
+        final weekDays = await _loadWeekDays();
+        if (isClosed || expectedGeneration != _refreshGeneration) return;
+        emit(
+          state.copyWith(
+            weekDays: weekDays,
+            selectedLocalDay: _resolveSelectedLocalDay(weekDays),
+          ),
+        );
+        return;
+      }
+
+      final results = await Future.wait<Object?>([
+        stepAggregation.getTodayActiveBuckets(),
+        userHealthMetrics.getHeightCm(),
+        userHealthMetrics.getWeightKg(),
+        stepAggregation.getLastIngestionUtc(),
+      ]);
+      if (isClosed || expectedGeneration != _refreshGeneration) return;
+
+      final buckets = results[0]! as List<TimeseriesSampleModel>;
+      final heightCm = results[1] as int?;
+      final weightKg = results[2] as double?;
+      final lastUtc = results[3] as DateTime?;
+
+      final weekDays = await _loadWeekDays();
+      if (isClosed || expectedGeneration != _refreshGeneration) return;
+
+      final stale = isStaleData(
+        lastIngestionUtc: lastUtc,
+        nowUtc: clock.nowUtc(),
+        isIos: _isIos,
+      );
+
+      final currentSteps = _todaySteps ?? state.steps;
+      final metrics = _toMetricsSnapshot(
+        DerivedActivityMetrics.compute(
+          displaySteps: currentSteps,
+          activeBuckets: buckets,
+          heightCm: heightCm,
+          weightKg: weightKg,
+        ),
+      );
+
+      await _applyTodaySnapshot(
+        steps: currentSteps,
+        goal: _todayGoal ?? state.goal,
+        isStale: stale,
+        lastIngestionUtc: lastUtc,
+        weekDays: weekDays,
+        activityMetrics: metrics,
+        heightCm: heightCm,
+        weightKg: weightKg,
+        selectedLocalDay: _resolveSelectedLocalDay(weekDays),
+      );
+      if (isClosed || expectedGeneration != _refreshGeneration) return;
+
+      if (!_isViewingToday()) {
+        emit(
+          state.copyWith(
+            weekDays: weekDays,
+            isStale: stale,
+            lastIngestionUtc: lastUtc,
+            heightCm: heightCm,
+            weightKg: weightKg,
+            selectedLocalDay: _resolveSelectedLocalDay(weekDays),
+          ),
+        );
+      }
+    } catch (error, stackTrace) {
+      if (kDebugMode) {
+        debugPrint('TodayCubit._enrichAfterFastPath error: $error');
+        debugPrintStack(stackTrace: stackTrace);
+      }
+    }
   }
 
   /// Applies [steps] from the live monitor after resume or reconcile.
