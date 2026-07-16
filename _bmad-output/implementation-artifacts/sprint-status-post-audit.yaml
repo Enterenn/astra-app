@@ -1,0 +1,108 @@
+# generated: 2026-07-16
+# last_updated: 2026-07-16 (Post-audit epics initialized from audits/README.md)
+# NEXT: create first story from Epic 21 (cold-start fast path)
+# Ref: planning-artifacts/audits/README.md · planning-artifacts/audits/diagnostic-*.md
+# project: astra-app
+# project_key: NOKEY
+# tracking_system: file-system
+# story_location: _bmad-output/implementation-artifacts/stories
+#
+# STATUS DEFINITIONS:
+# ==================
+# Epic Status:
+#   - backlog: Epic not yet started
+#   - in-progress: Epic actively being worked on
+#   - done: All stories in epic completed
+#
+# Story Status:
+#   - backlog: Story only exists in epic file
+#   - ready-for-dev: Story file created in stories folder
+#   - in-progress: Developer actively working on implementation
+#   - review: Ready for code review
+#   - done: Story completed
+#
+# VERSIONING (mandatory at each epic close — stay on 0.x.y, no 1.0.0):
+# - Epic 21 (performance + behavior visible): minor+1, patch=0, build+1
+# - Epic 22 (robustesse/fix): patch+1, build+1
+# - Epic 23 (a11y improvements): minor+1, patch=0, build+1
+# - Epic 24 (design/loading consistency): patch+1, build+1 unless user-facing behavior expands
+# - Epic 25 (architecture debt): patch+1, build+1 (or minor if broad UX-visible refactor)
+# - Epic 26 (tests only): patch+1, build+1
+# - Update pubspec.yaml + README.md before marking epic done
+# - Ref: docs/project-context.md · .cursor/rules/app-versioning.mdc
+#
+# EPIC TITLES (human-readable):
+#   epic-21: Cold Start & SQLite
+#   epic-22: Runtime Robustness & UI Error Handling
+#   epic-23: Accessibility WCAG
+#   epic-24: Design System & Loading States
+#   epic-25: Architecture & Structural Debt
+#   epic-26: Orchestration Tests & Resilience
+#
+# PRIORITY ORDER:
+#   1) epic-21 (P0)
+#   2) epic-22 + epic-23 + epic-26 (P1)
+#   3) epic-24 (P2)
+#   4) epic-25 (P3)
+
+generated: 2026-07-16
+last_updated: 2026-07-16 (Post-audit epics initialized from audits index)
+project: astra-app
+project_key: NOKEY
+tracking_system: file-system
+story_location: _bmad-output/implementation-artifacts/stories
+epics_source: planning-artifacts/audits/README.md
+git_branch: main
+
+development_status:
+  epic-21: backlog
+  21-1-fast-path-today-refresh-for-cold-start: backlog
+  21-2-decouple-foreground-backfill-from-first-today-paint: backlog
+  21-3-deduplicate-cold-start-get-today-steps-queries: backlog
+  21-4-route-ingestion-lock-through-session-with-retry: backlog
+  21-5-batch-week-goal-resolution-and-reduce-n-plus-1: backlog
+  21-6-add-end-time-index-for-last-ingestion-query: backlog
+  21-7-guard-trends-refresh-on-ingestion-by-active-tab: backlog
+  epic-21-retrospective: optional
+
+  epic-22: backlog
+  22-1-harden-live-step-monitor-dispose-sequencing: backlog
+  22-2-disable-goal-cta-during-today-loading-states: backlog
+  22-3-add-retry-path-for-profile-and-settings-load-errors: backlog
+  22-4-align-theme-preference-error-feedback-with-other-settings: backlog
+  22-5-enable-discarded-futures-lint-and-fix-callback-sites: backlog
+  epic-22-retrospective: optional
+
+  epic-23: backlog
+  23-1-add-semantic-button-label-for-today-goal-action: backlog
+  23-2-add-semantic-coverage-for-unit-option-tiles: backlog
+  23-3-introduce-live-region-for-goal-ring-and-activity-stats: backlog
+  23-4-restore-visible-keyboard-focus-on-segmented-controls: backlog
+  23-5-complete-chart-keyboard-and-semantic-selection-support: backlog
+  23-6-add-goal-achieved-semantics-in-week-day-pills: backlog
+  epic-23-retrospective: optional
+
+  epic-24: backlog
+  24-1-extract-shared-sheet-drag-handle-component: backlog
+  24-2-remove-or-wire-dead-typography-and-color-tokens: backlog
+  24-3-unify-loading-patterns-for-week-and-trends-surfaces: backlog
+  24-4-centralize-repeated-chart-layout-and-typography-values: backlog
+  24-5-clean-orphan-preference-default-constants: backlog
+  epic-24-retrospective: optional
+
+  epic-25: backlog
+  25-1-split-today-cubit-by-responsibility-boundaries: backlog
+  25-2-split-app-lifecycle-coordinator-into-focused-services: backlog
+  25-3-remove-presentation-dependency-from-core-di-layer: backlog
+  25-4-decouple-my-data-cubit-from-ui-dialog-types: backlog
+  25-5-add-core-data-class-doc-comments-for-public-services: backlog
+  epic-25-retrospective: optional
+
+  epic-26: backlog
+  26-1-cover-on-today-cubit-ready-cold-start-orchestration: backlog
+  26-2-cover-on-lifecycle-state-resumed-failure-and-recovery: backlog
+  26-3-cover-goal-notification-evaluation-and-rollback-path: backlog
+  26-4-cover-refresh-after-day-rollover-contract: backlog
+  26-5-cover-isolate-background-collector-factory-bootstrap: backlog
+  26-6-add-fault-injection-tests-for-live-monitor-stream-errors: backlog
+  epic-26-retrospective: optional
