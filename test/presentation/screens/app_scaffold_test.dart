@@ -3,6 +3,8 @@ import 'package:astra_app/core/constants/astra_spacing.dart';
 import 'package:astra_app/core/constants/astra_theme.dart';
 import 'package:astra_app/core/database/app_database.dart';
 import 'package:astra_app/core/di/app_dependencies.dart';
+import 'package:astra_app/data/datasources/data_ingestion_source.dart';
+import 'package:astra_app/data/models/step_reading.dart';
 import 'package:astra_app/data/repositories/user_health_metrics_repository.dart';
 import 'package:astra_app/data/repositories/user_settings_repository.dart';
 import 'package:astra_app/presentation/cubits/history_cubit.dart';
@@ -127,6 +129,26 @@ class _ThrowingRefreshTodayCubit extends TodayCubit {
   @override
   Future<void> refresh({bool silent = true}) async {
     throw StateError('today refresh failed');
+  }
+}
+
+class _OneShotStepSource implements DataIngestionSource {
+  @override
+  String get providerId => kInternalPhoneProvider;
+
+  @override
+  String get deviceId => kSmartphoneDeviceId;
+
+  @override
+  Stream<StepReading> watchStepReadings() async* {
+    yield StepReading(
+      cumulativeSteps: 100,
+      observedAtUtc: DateTime.utc(2026, 6, 3, 10, 55),
+    );
+    yield StepReading(
+      cumulativeSteps: 200,
+      observedAtUtc: DateTime.utc(2026, 6, 3, 11, 0),
+    );
   }
 }
 
@@ -882,6 +904,118 @@ void main() {
       expect(find.text('Menu'), findsOneWidget);
 
       await _disposeScaffold(tester);
+    });
+
+    group('ingestion tab guard', () {
+      late Database guardDb;
+      late AppDependencies guardDeps;
+
+      setUp(() async {
+        guardDb = await openAstraDatabase(databasePath: inMemoryDatabasePath);
+        final clock = FakeTimeProvider(
+          fixedNowUtc: DateTime.utc(2026, 6, 3, 12),
+          zoneOffset: const Duration(hours: 2),
+        );
+        final userSettings = UserSettingsRepository(guardDb);
+        await userSettings.setOnboardingComplete(true);
+        final userHealthMetrics = UserHealthMetricsRepository(
+          guardDb,
+          clock: clock,
+        );
+        guardDeps = await AppDependencies.test(
+          db: guardDb,
+          userSettings: userSettings,
+          userHealthMetrics: userHealthMetrics,
+          timeProvider: clock,
+          ingestionSources: [_OneShotStepSource()],
+        );
+      });
+
+      tearDown(() async {
+        await guardDb.close();
+      });
+
+      testWidgets(
+        'ingestion on Today tab skips history refresh',
+        (tester) async {
+          _RefreshCountingHistoryCubit? historyCubit;
+          _RefreshCountingCubit? todayCubit;
+
+          await _pumpAppScaffold(
+            tester,
+            AppScaffold(
+              deps: guardDeps,
+              createTodayCubit: (deps) {
+                todayCubit = _RefreshCountingCubit(
+                  stepAggregation: deps.stepAggregation,
+                  userSettings: deps.userSettings,
+                  userHealthMetrics: deps.userHealthMetrics,
+                  clock: deps.timeProvider,
+                );
+                return todayCubit!;
+              },
+              createHistoryCubit: (deps) {
+                historyCubit = _RefreshCountingHistoryCubit(
+                  stepAggregation: deps.stepAggregation,
+                  userHealthMetrics: deps.userHealthMetrics,
+                );
+                return historyCubit!;
+              },
+            ),
+            userSettings: guardDeps.userSettings,
+          );
+          await tester.pump();
+
+          await tester.runAsync(() async {
+            await guardDeps.backgroundCollector.collectOnce();
+          });
+          await tester.pump();
+
+          expect(historyCubit!.refreshCallCount, 0);
+          expect(todayCubit!.refreshMetadataCallCount, greaterThanOrEqualTo(1));
+
+          await _disposeScaffold(tester);
+        },
+      );
+
+      testWidgets(
+        'ingestion on Trends tab fires history refresh',
+        (tester) async {
+          _RefreshCountingHistoryCubit? historyCubit;
+
+          await _pumpAppScaffold(
+            tester,
+            AppScaffold(
+              deps: guardDeps,
+              createTodayCubit: _testTodayCubit,
+              createHistoryCubit: (deps) {
+                historyCubit = _RefreshCountingHistoryCubit(
+                  stepAggregation: deps.stepAggregation,
+                  userHealthMetrics: deps.userHealthMetrics,
+                );
+                return historyCubit!;
+              },
+            ),
+            userSettings: guardDeps.userSettings,
+          );
+          await tester.pump();
+
+          await tester.tap(find.byIcon(PhosphorIconsRegular.chartBar));
+          await tester.pump();
+          await _awaitHistoryRefresh(tester);
+
+          final baselineCount = historyCubit!.refreshCallCount;
+
+          await tester.runAsync(() async {
+            await guardDeps.backgroundCollector.collectOnce();
+          });
+          await tester.pump();
+
+          expect(historyCubit!.refreshCallCount, baselineCount + 1);
+
+          await _disposeScaffold(tester);
+        },
+      );
     });
 
     testWidgets(
