@@ -20,17 +20,21 @@ class ThemeCubit extends Cubit<ThemeState> {
 
   Future<void>? _setInFlight;
 
-  Future<void> setThemePreference(AstraThemePreference preference) async {
+  Future<bool> setThemePreference(AstraThemePreference preference) async {
     if (state.preference == preference) {
-      return;
+      return false;
     }
 
     final waitFor = _setInFlight;
     late final Future<void> operation;
-    operation = _persistThemeAndEmit(preference, waitFor);
+    var success = false;
+    operation = () async {
+      success = await _persistThemeAndEmit(preference, waitFor);
+    }();
     _setInFlight = operation;
     try {
       await operation;
+      return success;
     } finally {
       if (_setInFlight == operation) {
         _setInFlight = null;
@@ -38,17 +42,21 @@ class ThemeCubit extends Cubit<ThemeState> {
     }
   }
 
-  Future<void> setAccentPreset(AstraAccentPreset preset) async {
+  Future<bool> setAccentPreset(AstraAccentPreset preset) async {
     if (state.accentPreset == preset) {
-      return;
+      return false;
     }
 
     final waitFor = _setInFlight;
     late final Future<void> operation;
-    operation = _persistAccentAndEmit(preset, waitFor);
+    var success = false;
+    operation = () async {
+      success = await _persistAccentAndEmit(preset, waitFor);
+    }();
     _setInFlight = operation;
     try {
       await operation;
+      return success;
     } finally {
       if (_setInFlight == operation) {
         _setInFlight = null;
@@ -56,7 +64,7 @@ class ThemeCubit extends Cubit<ThemeState> {
     }
   }
 
-  Future<void> _persistThemeAndEmit(
+  Future<bool> _persistThemeAndEmit(
     AstraThemePreference preference,
     Future<void>? waitFor,
   ) async {
@@ -64,16 +72,21 @@ class ThemeCubit extends Cubit<ThemeState> {
       await waitFor;
     }
     if (isClosed || state.preference == preference) {
-      return;
+      return false;
     }
-    await userSettings.setThemeMode(preference);
+    try {
+      await userSettings.setThemeMode(preference);
+    } catch (_) {
+      return false;
+    }
     if (isClosed || state.preference == preference) {
-      return;
+      return false;
     }
     emit(ThemeState(preference: preference, accentPreset: state.accentPreset));
+    return true;
   }
 
-  Future<void> _persistAccentAndEmit(
+  Future<bool> _persistAccentAndEmit(
     AstraAccentPreset preset,
     Future<void>? waitFor,
   ) async {
@@ -81,12 +94,17 @@ class ThemeCubit extends Cubit<ThemeState> {
       await waitFor;
     }
     if (isClosed || state.accentPreset == preset) {
-      return;
+      return false;
     }
-    await userSettings.setAccentPreset(preset);
+    try {
+      await userSettings.setAccentPreset(preset);
+    } catch (_) {
+      return false;
+    }
     if (isClosed || state.accentPreset == preset) {
-      return;
+      return false;
     }
     emit(ThemeState(preference: state.preference, accentPreset: preset));
+    return true;
   }
 }
