@@ -1,6 +1,6 @@
 # Story 22.5: Enable discarded_futures Lint and Fix Callback Sites
 
-Status: review
+Status: done
 
 <!-- Post-audit Epic 22 — tracker: sprint-status-post-audit.yaml -->
 <!-- Source: epics-post-audit.md Story 22-5 · diagnostic-convention-structure.md §2.2 · AUD-20 -->
@@ -297,8 +297,15 @@ claude-sonnet-4-5
 - `lib/presentation/widgets/goal_ring.dart`
 - `lib/presentation/widgets/goal_celebration.dart`
 - `lib/presentation/widgets/astra_horizontal_ruler.dart`
+- `test/presentation/cubits/my_data_cubit_test.dart`
+- `test/presentation/cubits/onboarding_cubit_test.dart`
+- `test/presentation/cubits/theme_cubit_test.dart`
+- `test/presentation/cubits/units_cubit_test.dart`
+- `test/presentation/widgets/confirm_dialog_test.dart`
+- `test/presentation/widgets/secondary_screen_header_test.dart`
 
 ## Change Log
 
 - 2026-07-17: Story context created (ready-for-dev) — ultimate context engine analysis completed
 - 2026-07-17: Implemented all sub-tasks A–D; status → review
+- 2026-07-17: Code review passed; test/ discarded_futures cleanup; status → done

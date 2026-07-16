@@ -1,6 +1,6 @@
 # generated: 2026-07-16
-# last_updated: 2026-07-17 (Story 22-5 ready-for-dev)
-# NEXT: dev-story 22-5-enable-discarded-futures-lint-and-fix-callback-sites
+# last_updated: 2026-07-17 (Epic 22 done — Story 22-5 closed)
+# NEXT: create-story 23-1-add-semantic-button-label-for-today-goal-action
 # Ref: planning-artifacts/epics-post-audit.md · planning-artifacts/audits/
 # project: astra-app
 # project_key: NOKEY
@@ -63,7 +63,7 @@
 # NAVIGATION: _bmad-output/README.md · planning-artifacts/epics-post-audit.md
 
 generated: 2026-07-16
-last_updated: 2026-07-17 (Story 22-5 ready-for-dev)
+last_updated: 2026-07-17 (Epic 22 done — Story 22-5 closed)
 project: astra-app
 project_key: NOKEY
 tracking_system: file-system
@@ -83,12 +83,12 @@ development_status:
   21-8-non-blocking-pedometer-drain-on-cold-backfill: done
   epic-21-retrospective: optional
 
-  epic-22: in-progress
+  epic-22: done
   22-1-harden-live-step-monitor-dispose-sequencing: done
   22-2-disable-goal-cta-during-today-loading-states: done
   22-3-add-retry-path-for-profile-and-settings-load-errors: done
   22-4-align-theme-preference-error-feedback-with-other-settings: done
-  22-5-enable-discarded-futures-lint-and-fix-callback-sites: review
+  22-5-enable-discarded-futures-lint-and-fix-callback-sites: done
   epic-22-retrospective: optional
 
   epic-23: backlog
