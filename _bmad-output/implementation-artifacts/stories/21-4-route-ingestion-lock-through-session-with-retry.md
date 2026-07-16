@@ -60,12 +60,12 @@ So that multi-isolate ingestion does not fail spuriously after session reopen.
   - [x] Confirm gap: lock uses `repository.db` → `_session.database` with **no** reopen wrapper [Source: diagnostic-acces-concurrents §1]
   - [x] **Stop → review brief → wait for Baptiste OK → commit** (docs-only map if no code yet)
 
-- [ ] **Sub-task B — Refactor IngestionCollectionLock to session API** (AC: #1, #2, #3)
-  - [ ] Change constructor: accept `AstraDatabaseSession` instead of raw `Database`
-  - [ ] `tryAcquire()`: wrap transaction in `session.withRetry((db) => db.transaction<bool>(...))` — preserve query/insert/TTL logic verbatim
-  - [ ] `release()`: wrap delete in `session.withRetry((db) => db.delete(...))`
-  - [ ] Do **not** change `kIngestionCollectLockKey`, TTL default, or transaction shape
-  - [ ] **Stop → review brief → wait for Baptiste OK → commit**
+- [x] **Sub-task B — Refactor IngestionCollectionLock to session API** (AC: #1, #2, #3)
+  - [x] Change constructor: accept `AstraDatabaseSession` instead of raw `Database`
+  - [x] `tryAcquire()`: wrap transaction in `session.withRetry((db) => db.transaction<bool>(...))` — preserve query/insert/TTL logic verbatim
+  - [x] `release()`: wrap delete in `session.withRetry((db) => db.delete(...))`
+  - [x] Do **not** change `kIngestionCollectLockKey`, TTL default, or transaction shape
+  - [x] **Stop → review brief → wait for Baptiste OK → commit**
 
 - [ ] **Sub-task C — Wire BackgroundCollector + repository session access** (AC: #1)
   - [ ] Add `AstraDatabaseSession get databaseSession => _session.session` on `StepIngestionRepository` (or expose existing `_session.session` via getter)
@@ -291,6 +291,7 @@ Pattern: one concern per commit; lock refactor isolated from monitor/cubit work.
 ### Completion Notes List
 
 - Sub-task A: Gap confirmed — `IngestionCollectionLock` uses raw `Database._db` with no `withRetry`; `BackgroundCollector.collectOnce` passes `repository.db`; `_StepRepositorySession.session` getter already exists (L19); fix plan clear.
+- Sub-task B: `IngestionCollectionLock` refactored — constructor now takes `AstraDatabaseSession`; `tryAcquire` and `release` wrapped in `withRetry`; TTL/key/transaction logic unchanged.
 
 ### File List
 
@@ -298,3 +299,4 @@ Pattern: one concern per commit; lock refactor isolated from monitor/cubit work.
 
 - 2026-07-16: Story context created (ready-for-dev) — ultimate context engine analysis completed
 - 2026-07-16: Sub-task A complete — gap mapped, no code changes
+- 2026-07-16: Sub-task B complete — IngestionCollectionLock refactored to AstraDatabaseSession + withRetry
