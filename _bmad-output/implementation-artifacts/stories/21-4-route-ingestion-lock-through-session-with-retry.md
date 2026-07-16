@@ -1,6 +1,6 @@
 # Story 21.4: Route Ingestion Lock Through Session withRetry
 
-Status: ready-for-dev
+Status: review
 
 <!-- Post-audit Epic 21 — tracker: sprint-status-post-audit.yaml -->
 <!-- Source: epics-post-audit.md Story 21-4 · diagnostic-acces-concurrents.md §1 · AUD-04 · NFR-AUD-03 -->
@@ -73,13 +73,13 @@ So that multi-isolate ingestion does not fail spuriously after session reopen.
   - [x] Verify isolate bootstrap (`background_collector_factory.dart`): `StepIngestionRepository(db)` already wraps raw `Database` in `StepRepositorySession` → session getter works without factory changes
   - [x] **Stop → review brief → wait for Baptiste OK → commit**
 
-- [ ] **Sub-task D — Tests** (AC: #4, #5)
-  - [ ] Update `test/core/services/ingestion_collection_lock_test.dart`: construct lock with `AstraDatabaseSession(databasePath: ..., initial: db)` instead of raw `db`
-  - [ ] Add test: close session DB after setup, call `tryAcquire`/`release` — expect success (mirrors `astra_database_session_test.dart` pattern)
-  - [ ] Update `test/core/services/background_collector_test.dart` contention test if it constructs `IngestionCollectionLock(db)` directly
-  - [ ] Run: `flutter test test/core/services/ingestion_collection_lock_test.dart test/core/services/background_collector_test.dart`
-  - [ ] Run: `flutter test --exclude-tags slow`
-  - [ ] **Stop → review brief → wait for Baptiste OK → commit**
+- [x] **Sub-task D — Tests** (AC: #4, #5)
+  - [x] Update `test/core/services/ingestion_collection_lock_test.dart`: construct lock with `AstraDatabaseSession(databasePath: ..., initial: db)` instead of raw `db`
+  - [x] Add test: close session DB after setup, call `tryAcquire`/`release` — expect success (mirrors `astra_database_session_test.dart` pattern)
+  - [x] Update `test/core/services/background_collector_test.dart` contention test if it constructs `IngestionCollectionLock(db)` directly
+  - [x] Run: `flutter test test/core/services/ingestion_collection_lock_test.dart test/core/services/background_collector_test.dart`
+  - [x] Run: `flutter test --exclude-tags slow`
+  - [x] **Stop → review brief → wait for Baptiste OK → commit**
 
 ## Dev Notes
 
@@ -293,8 +293,15 @@ Pattern: one concern per commit; lock refactor isolated from monitor/cubit work.
 - Sub-task A: Gap confirmed — `IngestionCollectionLock` uses raw `Database._db` with no `withRetry`; `BackgroundCollector.collectOnce` passes `repository.db`; `_StepRepositorySession.session` getter already exists (L19); fix plan clear.
 - Sub-task B: `IngestionCollectionLock` refactored — constructor now takes `AstraDatabaseSession`; `tryAcquire` and `release` wrapped in `withRetry`; TTL/key/transaction logic unchanged.
 - Sub-task C: `StepIngestionRepository.databaseSession` getter added; `BackgroundCollector.collectOnce` now passes `repository.databaseSession` to lock; factory unchanged (pre-existing `inMemoryDatabasePath` not in scope).
+- Sub-task D: `ingestion_collection_lock_test.dart` updated to `AstraDatabaseSession` construction + `database_closed` retry test added; `background_collector_test.dart` contention test updated; 24/24 lock+collector tests pass; 848/848 regression suite passes.
 
 ### File List
+
+- `lib/core/services/ingestion_collection_lock.dart`
+- `lib/core/services/background_collector.dart`
+- `lib/data/repositories/step/step_ingestion_repository.dart`
+- `test/core/services/ingestion_collection_lock_test.dart`
+- `test/core/services/background_collector_test.dart`
 
 ## Change Log
 
@@ -302,3 +309,4 @@ Pattern: one concern per commit; lock refactor isolated from monitor/cubit work.
 - 2026-07-16: Sub-task A complete — gap mapped, no code changes
 - 2026-07-16: Sub-task B complete — IngestionCollectionLock refactored to AstraDatabaseSession + withRetry
 - 2026-07-16: Sub-task C complete — databaseSession getter + BackgroundCollector wired
+- 2026-07-16: Sub-task D complete — tests updated, database_closed retry test added, 848/848 pass

@@ -1,4 +1,5 @@
 import 'package:astra_app/core/constants/preference_keys.dart';
+import 'package:astra_app/core/database/astra_database_session.dart';
 import 'package:astra_app/core/services/ingestion_collection_lock.dart';
 import 'package:astra_app/core/database/app_database.dart';
 import 'package:astra_app/core/services/background_collector.dart';
@@ -109,7 +110,9 @@ void main() {
     });
 
     test('collectOnce no-ops when ingestion lock is held', () async {
-      final lock = IngestionCollectionLock(db);
+      final lock = IngestionCollectionLock(
+        AstraDatabaseSession(databasePath: inMemoryDatabasePath, initial: db),
+      );
       expect(await lock.tryAcquire(), isTrue);
       addTearDown(lock.release);
 
