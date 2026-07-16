@@ -230,11 +230,11 @@ class _SettingsScrollBody extends StatelessWidget {
                     localeState.explicitLanguageCode,
                   ),
                   valueLabel: '',
-                  onTap: () => _pickLanguage(
+                  onTap: () => unawaited(_pickLanguage(
                     context,
                     localeCubit: localeCubit,
                     selected: localeState.explicitLanguageCode,
-                  ),
+                  )),
                 ),
               );
             },
@@ -255,11 +255,11 @@ class _SettingsScrollBody extends StatelessWidget {
                         l10n,
                         unitsState.distanceUnit,
                       ),
-                      onTap: () => _pickDistanceUnit(
+                      onTap: () => unawaited(_pickDistanceUnit(
                         context,
                         unitsCubit: unitsCubit,
                         selected: unitsState.distanceUnit,
-                      ),
+                      )),
                     ),
                     SettingsPreferenceRow(
                       label: l10n.settingsWeight,
@@ -267,11 +267,11 @@ class _SettingsScrollBody extends StatelessWidget {
                         l10n,
                         unitsState.weightUnit,
                       ),
-                      onTap: () => _pickWeightUnit(
+                      onTap: () => unawaited(_pickWeightUnit(
                         context,
                         unitsCubit: unitsCubit,
                         selected: unitsState.weightUnit,
-                      ),
+                      )),
                     ),
                     SettingsPreferenceRow(
                       label: l10n.settingsHeight,
@@ -279,11 +279,11 @@ class _SettingsScrollBody extends StatelessWidget {
                         l10n,
                         unitsState.heightUnit,
                       ),
-                      onTap: () => _pickHeightUnit(
+                      onTap: () => unawaited(_pickHeightUnit(
                         context,
                         unitsCubit: unitsCubit,
                         selected: unitsState.heightUnit,
-                      ),
+                      )),
                     ),
                   ],
                 ),

@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:astra_app/l10n/app_localizations.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
@@ -97,7 +99,7 @@ class _OnboardingFlowView extends StatelessWidget {
                   primaryLoading: isRequestingActivity,
                   onPrimary: isRequestingActivity
                       ? null
-                      : () => _onIntroContinue(context),
+                      : () => unawaited(_onIntroContinue(context)),
                   content: const OnboardingIntroPage(),
                 ),
                 OnboardingShell(
@@ -118,8 +120,8 @@ class _OnboardingFlowView extends StatelessWidget {
                   primaryLabel: l10n.onboardingLetsGoBtn,
                   secondaryLabel: l10n.onboardingSkipBtn,
                   onBack: cubit.previousStep,
-                  onSecondary: () => _onHeightSkip(context),
-                  onPrimary: () => _onHeightLetsGo(context),
+                  onSecondary: () => unawaited(_onHeightSkip(context)),
+                  onPrimary: () => unawaited(_onHeightLetsGo(context)),
                   content: const OnboardingHeightPage(),
                 ),
               ],

@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:astra_app/l10n/app_localizations.dart';
 import 'package:flutter/foundation.dart' show immutable, listEquals, visibleForTesting;
 import 'package:flutter/material.dart';
@@ -370,8 +372,9 @@ class _StaleBannerSlot extends StatelessWidget {
             SizedBox(height: AstraSpacing.kSpaceMd),
             StatusBanner(
               variant: StatusBannerVariant.staleCompact,
-              onTap: () =>
-                  context.read<TodayCubit>().refresh(silent: false),
+              onTap: () => unawaited(
+                context.read<TodayCubit>().refresh(silent: false),
+              ),
             ),
           ],
         );
@@ -443,7 +446,7 @@ class _PermissionCta extends StatelessWidget {
           children: [
             const SizedBox(height: AstraSpacing.kSpaceSm),
             TextButton(
-              onPressed: () => openAppSettings(),
+              onPressed: () => unawaited(openAppSettings()),
               child: Text(
                 l10n.errorNoPermission,
                 style: AstraTypography.captionFor(colors),

@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:astra_app/l10n/app_localizations.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
@@ -133,7 +135,7 @@ class _MyDataScreenBody extends StatelessWidget {
             StatusBanner(
               variant: StatusBannerVariant.error,
               message: exportErrorMessage,
-              onTap: () => cubit.exportAndShare(),
+              onTap: () => unawaited(cubit.exportAndShare()),
             ),
           ],
           if (importErrorMessage != null) ...[
@@ -141,14 +143,14 @@ class _MyDataScreenBody extends StatelessWidget {
             StatusBanner(
               variant: StatusBannerVariant.error,
               message: importErrorMessage,
-              onTap: () => cubit.pickAndImport(
+              onTap: () => unawaited(cubit.pickAndImport(
                 confirmImport: (csvRowCount, existingSampleCount) =>
                     showImportConfirmDialog(
                   context,
                   csvRowCount: csvRowCount,
                   existingSampleCount: existingSampleCount,
                 ),
-              ),
+              )),
             ),
           ],
           if (purgeErrorMessage != null) ...[
@@ -156,9 +158,9 @@ class _MyDataScreenBody extends StatelessWidget {
             StatusBanner(
               variant: StatusBannerVariant.error,
               message: purgeErrorMessage,
-              onTap: () => cubit.confirmAndPurge(
+              onTap: () => unawaited(cubit.confirmAndPurge(
                 confirmedAction: PurgeConfirmAction.deleteConfirmed,
-              ),
+              )),
             ),
           ],
           if (state.isStale) ...[
