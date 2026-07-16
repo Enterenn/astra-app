@@ -73,7 +73,7 @@ git_branch: main
 
 development_status:
   epic-21: in-progress
-  21-1-fast-path-today-refresh-for-cold-start: in-progress
+  21-1-fast-path-today-refresh-for-cold-start: review
   21-2-decouple-foreground-backfill-from-first-today-paint: backlog
   21-3-deduplicate-cold-start-get-today-steps-queries: backlog
   21-4-route-ingestion-lock-through-session-with-retry: backlog

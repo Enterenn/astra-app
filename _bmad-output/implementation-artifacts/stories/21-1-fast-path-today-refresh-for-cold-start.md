@@ -1,6 +1,6 @@
 # Story 21.1: Fast-Path Today Refresh for Cold Start
 
-Status: ready-for-dev
+Status: review
 
 <!-- Post-audit Epic 21 — tracker: sprint-status-post-audit.yaml -->
 <!-- Source: epics-post-audit.md Story 21-1 · diagnostic-cold-start.md §A2 · AUD-02 · NFR-AUD-01 -->
@@ -258,14 +258,28 @@ Pattern: small, reviewed commits per sub-task; no drive-by refactors.
 
 ### Agent Model Used
 
-{{agent_model_name_version}}
+claude-sonnet-4-5
 
 ### Debug Log References
 
+- Sub-task B: `unawaited(_enrichAfterFastPath(...))` schedulé après `_applyTodaySnapshot` — le future retourne immédiatement, enrichissement fire-and-forget
+- Sub-task D: Test 2 revu — compteurs de `Future.wait` incrémentés synchroniquement avant le premier `await`, donc le timing-gate ne fonctionnait pas ; remplacé par assertion de totaux post-enrichissement
+
 ### Completion Notes List
 
+- `refreshFastPath()` : 3 queries critiques (`getTodaySteps`, `_resolveTodayGoal`, `getLastDisplayedSteps`) puis émet via `_applyTodaySnapshot` avec `weekDays: const []` et `lastDisplayedStepsLoaded: true`
+- `_enrichAfterFastPath(expectedGeneration)` : buckets + height/weight + lastIngestion en `Future.wait`, puis `_loadWeekDays()`, guard `expectedGeneration != _refreshGeneration` avant chaque emit
+- `_refreshGeneration` incrémenté dans le `finally` de `refresh()` — enrichissement avorte si un refresh complet a eu lieu entre-temps
+- `noPermission` fast path : émet immédiatement, enrichissement peuple seulement `weekDays`
+- 838 tests `--exclude-tags slow` passent sans régression
+
 ### File List
+
+- `lib/presentation/cubits/today_cubit.dart`
+- `test/presentation/cubits/today_cubit_contract_test.dart`
+- `_bmad-output/implementation-artifacts/sprint-status-post-audit.yaml`
 
 ## Change Log
 
 - 2026-07-16: Story context created (ready-for-dev) — ultimate context engine analysis completed
+- 2026-07-16: Implemented — Sub-tasks A/B/C/D done, status → review
