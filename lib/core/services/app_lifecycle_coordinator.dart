@@ -178,7 +178,10 @@ class AppLifecycleCoordinator {
       livePipelineLog('app', 'cold start START', details: {'elapsedMs': 0});
     }
     _foregroundBackfill = enableLiveStepPipeline
-        ? _runPersistCycle(enableGoalNotification: false)
+        ? _runPersistCycle(
+            enableGoalNotification: false,
+            sourceTimeout: Duration.zero,
+          )
         : deps.backgroundCollector.collectOnce(
             enableGoalNotification: false,
           );
