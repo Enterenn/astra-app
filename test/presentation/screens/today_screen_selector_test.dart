@@ -85,6 +85,22 @@ class _TrackingRefreshCubit extends _SeededTodayCubit {
   }
 }
 
+class _InstantGoalCubit extends _SeededTodayCubit {
+  _InstantGoalCubit({
+    required super.stepAggregation,
+    required super.userSettings,
+    required super.userHealthMetrics,
+    required super.clock,
+    required super.initial,
+    this.editableGoal = 8000,
+  });
+
+  final int editableGoal;
+
+  @override
+  Future<int> get todayEditableGoal async => editableGoal;
+}
+
 void main() {
   setUpAll(() async {
     await setUpSqfliteFfi();
@@ -875,6 +891,49 @@ void main() {
       await tester.pump();
 
       expect(find.text('Daily step goal'), findsNothing);
+    });
+
+    testWidgets('Set goal tap opens editor when display-ready', (
+      tester,
+    ) async {
+      final cubit = _InstantGoalCubit(
+        stepAggregation: stepAggregation,
+        userSettings: userSettings,
+        userHealthMetrics: userHealthMetrics,
+        clock: clock,
+        initial: TodayState.fromData(
+          steps: 1200,
+          goal: 8000,
+          isStale: false,
+          weekDays: sampleWeekDays(),
+          lastDisplayedStepsLoaded: true,
+        ),
+      );
+      addTearDown(cubit.close);
+
+      await tester.pumpWidget(
+        TestMaterialApp(
+          theme: buildAstraLightTheme(),
+          home: MediaQuery(
+            data: const MediaQueryData(disableAnimations: true),
+            child: MultiBlocProvider(
+              providers: [
+                BlocProvider<TodayCubit>.value(value: cubit),
+                BlocProvider<UnitsCubit>.value(value: unitsCubit),
+              ],
+              child: const TodayScreen(),
+            ),
+          ),
+        ),
+      );
+      await tester.pump();
+
+      await tester.ensureVisible(find.text('Set goal'));
+      await tester.tap(find.text('Set goal'));
+      await tester.pump();
+      await tester.pump();
+
+      expect(find.text('Daily step goal'), findsWidgets);
     });
 
     testWidgets('live step tick does not rebuild set goal selector', (

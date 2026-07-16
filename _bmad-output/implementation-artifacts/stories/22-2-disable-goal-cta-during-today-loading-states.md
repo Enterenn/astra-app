@@ -1,6 +1,6 @@
 # Story 22.2: Disable Goal CTA During Today Loading States
 
-Status: review
+Status: done
 
 <!-- Post-audit Epic 22 — tracker: sprint-status-post-audit.yaml -->
 <!-- Source: epics-post-audit.md Story 22-2 · diagnostic-etat-chargement.md §3.1 · AUD-17 -->
@@ -279,6 +279,7 @@ Composer
 - Sub-task A: `_SetGoalViewModel` + BlocSelector gate Set goal CTA on display-ready; disabled visuals + Semantics; tap guard in `_onSetGoalTapped`
 - Sub-task B: 7 unit + 5 widget tests in `today_screen_selector_test.dart` (disabled tap, slice isolation, loading rebuild)
 - Sub-task C: selector/smoke/goal_ring + full `flutter test --exclude-tags slow` — all green
+- Code review: async re-check after `todayEditableGoal`; enabled-path widget test (`_InstantGoalCubit`)
 
 ### File List
 
@@ -291,3 +292,4 @@ Composer
 
 - 2026-07-16: Story context created (ready-for-dev) — ultimate context engine analysis completed
 - 2026-07-17: Implemented Set goal CTA loading gate (AUD-17) — status review
+- 2026-07-17: Code review fixes + marked done

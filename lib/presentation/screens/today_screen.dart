@@ -599,7 +599,7 @@ class _GoalRingCard extends StatelessWidget {
       return;
     }
     final currentGoal = await cubit.todayEditableGoal;
-    if (!context.mounted) {
+    if (!context.mounted || !todaySetGoalEnabled(cubit.state)) {
       return;
     }
     final result = await showGoalEditorSheet(
