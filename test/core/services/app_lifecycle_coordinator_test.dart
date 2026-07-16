@@ -226,6 +226,28 @@ class _NoOpBackgroundCollector extends BackgroundCollector {
       0;
 }
 
+class _SourceTimeoutCapturingBackgroundCollector extends BackgroundCollector {
+  _SourceTimeoutCapturingBackgroundCollector({
+    required super.sources,
+    required super.normalizer,
+    required super.repository,
+    required super.stepAggregation,
+    required super.baselineRepository,
+  });
+
+  final List<Duration?> capturedTimeouts = [];
+
+  @override
+  Future<int> collectOnce({
+    int maxReadingsPerSource = 50,
+    bool enableGoalNotification = false,
+    Duration? sourceTimeout,
+  }) async {
+    capturedTimeouts.add(sourceTimeout);
+    return 0;
+  }
+}
+
 Future<AppLifecycleCoordinator> _boundCoordinator(
   AppDependencies deps, {
   bool enableLiveStepPipeline = false,
@@ -520,6 +542,103 @@ void main() {
 
         await todayCubit.close();
         captureMonitor.dispose();
+      },
+    );
+
+    test(
+      'cold-start backfill passes Duration.zero to collectOnce (AUD-05)',
+      () async {
+        final seedDeps = buildCoordinatorUnitTestDeps(timeProvider: clock);
+        final capturingCollector = _SourceTimeoutCapturingBackgroundCollector(
+          sources: seedDeps.ingestionSources,
+          normalizer: seedDeps.stepNormalizer,
+          repository: seedDeps.stepIngestion,
+          stepAggregation: seedDeps.stepAggregation,
+          baselineRepository: IngestionBaselineRepository(
+            seedDeps.databaseSession,
+          ),
+        );
+        final deps = buildCoordinatorUnitTestDeps(
+          timeProvider: clock,
+          backgroundCollector: capturingCollector,
+        );
+
+        deps.appLifecycleCoordinator.bindToWidget(
+          isMounted: () => true,
+          showMainShell: () => true,
+          enablePeriodicPersist: false,
+          enableLiveStepPipeline: true,
+          maxPersistStaleness: const Duration(seconds: 1),
+          minPauseForPhoneCatchUp: const Duration(seconds: 10),
+          initialShowMainShell: true,
+        );
+        await deps.appLifecycleCoordinator.foregroundBackfill;
+
+        expect(capturingCollector.capturedTimeouts, isNotEmpty);
+        expect(
+          capturingCollector.capturedTimeouts.first,
+          Duration.zero,
+          reason:
+              'cold-start backfill must skip empty phone drain via Duration.zero',
+        );
+      },
+    );
+
+    test(
+      'post-pipeline persist cycle uses null (default 2 s) sourceTimeout (AC #2)',
+      () async {
+        final seedDeps = buildCoordinatorUnitTestDeps(timeProvider: clock);
+        final capturingCollector = _SourceTimeoutCapturingBackgroundCollector(
+          sources: seedDeps.ingestionSources,
+          normalizer: seedDeps.stepNormalizer,
+          repository: seedDeps.stepIngestion,
+          stepAggregation: seedDeps.stepAggregation,
+          baselineRepository: IngestionBaselineRepository(
+            seedDeps.databaseSession,
+          ),
+        );
+        final deps = buildCoordinatorUnitTestDeps(
+          timeProvider: clock,
+          backgroundCollector: capturingCollector,
+        );
+        final todayCubit = TodayCubit(
+          stepAggregation: _ColdStartStepAggregation(clock),
+          userSettings: _ColdStartUserSettings(),
+          userHealthMetrics: _ColdStartUserHealthMetrics(),
+          clock: clock,
+          activityPermissionGranted: () async => true,
+        );
+
+        final coordinator = deps.appLifecycleCoordinator;
+        coordinator.bindToWidget(
+          isMounted: () => true,
+          showMainShell: () => true,
+          enablePeriodicPersist: false,
+          enableLiveStepPipeline: true,
+          maxPersistStaleness: const Duration(seconds: 1),
+          minPauseForPhoneCatchUp: const Duration(seconds: 10),
+          initialShowMainShell: true,
+        );
+        coordinator.onTodayCubitReady(todayCubit);
+        await coordinator.foregroundBackfill;
+        await pumpEventQueue();
+        await pumpEventQueue();
+
+        capturingCollector.capturedTimeouts.clear();
+
+        await coordinator.enqueuePersistCycleForTest(
+          enableGoalNotification: false,
+        );
+
+        expect(capturingCollector.capturedTimeouts, isNotEmpty);
+        expect(
+          capturingCollector.capturedTimeouts.last,
+          isNull,
+          reason:
+              'post-pipeline persist must not override sourceTimeout (keeps 2 s default)',
+        );
+
+        await todayCubit.close();
       },
     );
   });
