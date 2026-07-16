@@ -598,7 +598,7 @@ class AppLifecycleCoordinator {
   }
 
   /// Cold-start live pipeline (permission granted):
-  /// foreground backfill → SQLite baseline via [TodayCubit.refresh] → live attach.
+  /// fast-path SQLite paint → live attach; backfill runs in parallel.
   ///
   /// See Today Display Truth Model in
   /// `_bmad-output/planning-artifacts/architecture.md`.
@@ -606,11 +606,15 @@ class AppLifecycleCoordinator {
     if (!enableLiveStepPipeline) {
       return;
     }
-    await _foregroundBackfill;
-    _logColdStartPhase('cold start backfill DONE');
+    await _todayCubit?.refreshFastPath();
     if (!_mounted()) {
       return;
     }
+    unawaited(
+      _foregroundBackfill.whenComplete(() {
+        _logColdStartPhase('cold start backfill DONE');
+      }),
+    );
     await _bindLiveMonitorToToday();
     if (!_mounted()) {
       return;
@@ -637,7 +641,10 @@ class AppLifecycleCoordinator {
     await _bindLiveMonitorToToday();
   }
 
-  Future<void> _bindLiveMonitorToToday({bool foregroundCatchUp = false}) async {
+  Future<void> _bindLiveMonitorToToday({
+    bool foregroundCatchUp = false,
+    bool skipSqliteRefresh = false,
+  }) async {
     if (!await deps.activityPermissionGranted()) {
       livePipelineLog('app', 'bind SKIPPED reason=no_permission');
       await _todayCubit?.refresh();
@@ -651,7 +658,7 @@ class AppLifecycleCoordinator {
     }
 
     // SQLite daily sum before live overlay (Today Display Truth Model).
-    if (!foregroundCatchUp) {
+    if (!foregroundCatchUp && !skipSqliteRefresh) {
       await _todayCubit?.refresh(silent: true);
     }
 
@@ -685,7 +692,7 @@ class AppLifecycleCoordinator {
         'catchUp': _todayCubit?.state.foregroundCatchUp ?? false,
       },
     );
-    // Cold-start bind already ran refresh(silent); resume catch-up skips it.
+    // Cold-start fast path already painted SQLite; resume catch-up skips refresh.
     if (foregroundCatchUp) {
       await _todayCubit?.refreshMetadata();
     } else {
@@ -845,4 +852,3 @@ class AppLifecycleCoordinator {
       },
     );
   }
-}

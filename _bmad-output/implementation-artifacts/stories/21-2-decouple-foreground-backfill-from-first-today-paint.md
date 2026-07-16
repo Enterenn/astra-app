@@ -62,12 +62,12 @@ So that cold start is never blocked 1–2 s on ingestion backfill.
   - [x] Confirm: `_bindLiveMonitorToToday` calls `refresh(silent: true)` (L655) — redundant after fast path
   - [x] **Stop → review brief → wait for Baptiste OK → commit** (docs-only / comment map if no code yet)
 
-- [ ] **Sub-task B — Reorder `_startLivePipelineFirstTime`** (AC: #1, #4)
-  - [ ] At start of `_startLivePipelineFirstTime`: `await _todayCubit?.refreshFastPath()` when permission will be checked downstream (fast path handles denied permission itself)
-  - [ ] Remove blocking `await _foregroundBackfill` from critical path
-  - [ ] Move `_logColdStartPhase('cold start backfill DONE')` to async backfill completion (e.g. `unawaited(_foregroundBackfill.then((upserted) { ... }))`) — log only, do not block UI
-  - [ ] Proceed to `_bindLiveMonitorToToday` with cold-start skip flag (Sub-task C)
-  - [ ] **Stop → review brief → wait for Baptiste OK → commit**
+- [x] **Sub-task B — Reorder `_startLivePipelineFirstTime`** (AC: #1, #4)
+  - [x] At start of `_startLivePipelineFirstTime`: `await _todayCubit?.refreshFastPath()` when permission will be checked downstream (fast path handles denied permission itself)
+  - [x] Remove blocking `await _foregroundBackfill` from critical path
+  - [x] Move `_logColdStartPhase('cold start backfill DONE')` to async backfill completion (e.g. `unawaited(_foregroundBackfill.then((upserted) { ... }))`) — log only, do not block UI
+  - [x] Proceed to `_bindLiveMonitorToToday` with cold-start skip flag (Sub-task C)
+  - [x] **Stop → review brief → wait for Baptiste OK → commit**
 
 - [ ] **Sub-task C — Skip redundant SQLite refresh on cold bind** (AC: #2)
   - [ ] Add parameter to `_bindLiveMonitorToToday` e.g. `{bool sqliteAlreadyPainted = false}` or `{bool skipSqliteRefresh = false}`
@@ -289,6 +289,7 @@ Pattern: small commits per sub-task; coordinator change should be isolated from 
 ### Completion Notes List
 
 - Sub-task A: Cold-start gate mapped — backfill starts L180, blocks at L609; bind re-reads SQLite L655; `refreshFastPath` ready but unused.
+- Sub-task B: `_startLivePipelineFirstTime` calls `refreshFastPath()` first; backfill log moved to `unawaited(whenComplete)`.
 ### File List
 
 ## Change Log
