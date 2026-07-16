@@ -1,6 +1,6 @@
 # Story 21.3: Deduplicate Cold-Start getTodaySteps Queries
 
-Status: review
+Status: done
 
 <!-- Post-audit Epic 21 — tracker: sprint-status-post-audit.yaml -->
 <!-- Source: epics-post-audit.md Story 21-3 · diagnostic-cold-start.md §A3 · diagnostic-acces-concurrents.md §3 · AUD-03 -->
@@ -255,13 +255,14 @@ Pattern: small commits per sub-task; monitor API change isolated from cubit.
 - Sub-task B: Added optional seedPersistedSteps to start() and reconcileFromDatabase() in LiveStepMonitor. Seed bypasses getTodaySteps; baseline sync + monotonic floor + emit preserved. All existing call sites rétrocompatibles (no changes needed). Changed stepAggregation field type to StepAggregationRepositoryContract for testability.
 - Sub-task C: Coordinator _bindLiveMonitorToToday computes seedSteps = skipSqliteRefresh ? _todayCubit?.state.steps : null and passes it to start + reconcileFromDatabase. Resume/foregroundCatchUp/post-backfill paths unchanged (no seed, full DB reads).
 - Sub-task D: 4 monitor-level seed tests + 1 coordinator cold-bind seed test. 846 tests pass, 0 regressions.
+- Post-review: AC #5 coordinator call-count assertion + stale-seed monotonic test; 848 tests pass.
 
 ### File List
 
 - `lib/core/services/live_step_monitor.dart` — modified (seed API + contract type)
 - `lib/core/services/app_lifecycle_coordinator.dart` — modified (seed wiring on cold bind)
-- `test/core/services/live_step_monitor_test.dart` — modified (4 seed tests + _CountingStepAggregation)
-- `test/core/services/app_lifecycle_coordinator_test.dart` — modified (_CountingStepAggregation, _SeedCapturingMonitor, 1 coordinator test)
+- `test/core/services/live_step_monitor_test.dart` — modified (5 seed tests + _CountingStepAggregation)
+- `test/core/services/app_lifecycle_coordinator_test.dart` — modified (_CountingStepAggregation, _SeedCapturingMonitor, call-count assertion)
 - `_bmad-output/implementation-artifacts/stories/21-3-deduplicate-cold-start-get-today-steps-queries.md` — story file
 - `_bmad-output/implementation-artifacts/sprint-status-post-audit.yaml` — status updated
 
@@ -269,3 +270,4 @@ Pattern: small commits per sub-task; monitor API change isolated from cubit.
 
 - 2026-07-16: Story context created (ready-for-dev) — ultimate context engine analysis completed
 - 2026-07-16: Implementation complete — all 4 sub-tasks done; cold-start getTodaySteps reduced from 3× to 1× before first paint; 846 tests pass
+- 2026-07-16: Code review follow-up — AC #5 call-count test + stale-seed monotonic guard; story done

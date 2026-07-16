@@ -515,6 +515,25 @@ void main() {
         expect(countingAggregation.getTodayStepsCallCount, 1);
         expect(seedMonitor.currentTodaySteps, 500);
       });
+
+      test('seeded reconcile preserves live overlay when seed is stale', () async {
+        await seedMonitor.start(seedPersistedSteps: 100);
+        events.add(
+          PhoneStepEvent(steps: 200, timeStamp: DateTime.utc(2026, 6, 2, 12)),
+        );
+        events.add(
+          PhoneStepEvent(steps: 271, timeStamp: DateTime.utc(2026, 6, 2, 12, 1)),
+        );
+        await Future<void>.delayed(Duration.zero);
+        final liveTotal = seedMonitor.currentTodaySteps;
+        expect(liveTotal, 171);
+
+        countingAggregation.getTodayStepsCallCount = 0;
+        await seedMonitor.reconcileFromDatabase(seedPersistedSteps: 100);
+
+        expect(countingAggregation.getTodayStepsCallCount, 0);
+        expect(seedMonitor.currentTodaySteps, greaterThanOrEqualTo(liveTotal));
+      });
     });
   });
 }

@@ -457,7 +457,9 @@ void main() {
         );
 
         final seedDeps = buildCoordinatorUnitTestDeps(timeProvider: clock);
-        final noOpCollector = _NoOpBackgroundCollector(
+        // Delay backfill collect so parallel _runPersistCycle cannot reconcile
+        // before bind completes — isolates bind-path dedup from AC #4 race.
+        final delayingCollector = _DelayingBackgroundCollector(
           sources: seedDeps.ingestionSources,
           normalizer: seedDeps.stepNormalizer,
           repository: seedDeps.stepIngestion,
@@ -465,11 +467,14 @@ void main() {
           baselineRepository: IngestionBaselineRepository(
             seedDeps.databaseSession,
           ),
+          collectDelay: const Duration(milliseconds: 500),
+          onCollectStart: () {},
+          onCollectEnd: () {},
         );
         final deps = buildCoordinatorUnitTestDeps(
           timeProvider: clock,
           liveStepMonitor: captureMonitor,
-          backgroundCollector: noOpCollector,
+          backgroundCollector: delayingCollector,
         );
 
         final coordinator = deps.appLifecycleCoordinator;
@@ -485,6 +490,15 @@ void main() {
         coordinator.onTodayCubitReady(todayCubit);
 
         await bindDone.future.timeout(const Duration(seconds: 2));
+        await pumpEventQueue();
+
+        // AC #5: only refreshFastPath reads getTodaySteps before monitor bind/syncSteps.
+        expect(
+          counting.getTodayStepsCallCount,
+          1,
+          reason: 'bind path must not add getTodaySteps beyond fast path',
+        );
+
         await coordinator.foregroundBackfill;
         await pumpEventQueue();
 
@@ -495,6 +509,8 @@ void main() {
         expect(capturedReconcileSeeds, contains(1200),
             reason: 'cold bind reconcile must receive same seed');
         expect(todayCubit.state.steps, 1200);
+        // Post-backfill: persist-cycle reconcile + _reconcileAfterBackfillCompletes.
+        expect(counting.getTodayStepsCallCount, greaterThan(1));
 
         await todayCubit.close();
         captureMonitor.dispose();
