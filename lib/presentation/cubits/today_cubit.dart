@@ -49,10 +49,12 @@ class TodayCubit extends Cubit<TodayState> {
 
   Future<void>? _refreshInFlight;
 
-  // Incremented each time a full refresh() completes.
-  // _enrichAfterFastPath reads this at start and aborts if it changes,
-  // preventing stale-enrichment from regressing a newer full-refresh state.
+  // Bumped when a new refreshFastPath starts or a full refresh/rollover succeeds.
+  // Enrichment captures the generation at schedule time and aborts if it changes.
   int _refreshGeneration = 0;
+
+  bool _generationStillValid(int expectedGeneration) =>
+      !isClosed && expectedGeneration == _refreshGeneration;
 
   StreamSubscription<int>? _liveStepsSubscription;
   LiveStepMonitor? _attachedMonitor;
@@ -215,11 +217,15 @@ class TodayCubit extends Cubit<TodayState> {
     }
 
     _refreshInFlight = _refreshImpl(silent: silent);
+    var succeeded = false;
     try {
       await _refreshInFlight!;
+      succeeded = true;
     } finally {
       _refreshInFlight = null;
-      _refreshGeneration++;
+      if (succeeded) {
+        _refreshGeneration++;
+      }
     }
   }
 
@@ -229,17 +235,17 @@ class TodayCubit extends Cubit<TodayState> {
   /// Concurrency policy — Option A (no shared in-flight gate):
   ///   • This method returns after the first emit; it does NOT await enrichment.
   ///   • A concurrent [refresh] call runs independently.
-  ///   • Enrichment captures [_refreshGeneration] on entry; if [refresh]
-  ///     completes and increments the generation before enrichment emits,
-  ///     enrichment aborts to avoid regressing the newer full-refresh state.
+  ///   • Each call bumps [_refreshGeneration] on entry so overlapping fast paths
+  ///     and stale enrichments abort before emit.
   Future<void> refreshFastPath() async {
     if (isClosed) return;
+    final fastPathGeneration = ++_refreshGeneration;
 
     final granted = await _activityPermissionGranted();
-    if (isClosed) return;
+    if (!_generationStillValid(fastPathGeneration)) return;
     if (!granted) {
       emit(const TodayState(status: TodayStatus.noPermission, weekDays: []));
-      unawaited(_enrichAfterFastPath(_refreshGeneration));
+      unawaited(_enrichAfterFastPath(fastPathGeneration));
       return;
     }
 
@@ -249,7 +255,7 @@ class TodayCubit extends Cubit<TodayState> {
       _resolveTodayGoal(),
       userSettings.getLastDisplayedSteps(todayIso),
     ]);
-    if (isClosed) return;
+    if (!_generationStillValid(fastPathGeneration)) return;
 
     final steps = results[0]! as int;
     final goal = results[1]! as int;
@@ -264,20 +270,21 @@ class TodayCubit extends Cubit<TodayState> {
       activityMetrics: _liveMetricsForSteps(steps),
       lastDisplayedSteps: lastDisplayed,
       lastDisplayedStepsLoaded: true,
+      skipCelebration: true,
     );
-    if (isClosed) return;
+    if (!_generationStillValid(fastPathGeneration)) return;
 
-    unawaited(_enrichAfterFastPath(_refreshGeneration));
+    unawaited(_enrichAfterFastPath(fastPathGeneration));
   }
 
   Future<void> _enrichAfterFastPath(int expectedGeneration) async {
     try {
-      if (isClosed || expectedGeneration != _refreshGeneration) return;
+      if (!_generationStillValid(expectedGeneration)) return;
 
       // noPermission fast path: populate week strip only.
       if (state.status == TodayStatus.noPermission) {
         final weekDays = await _loadWeekDays();
-        if (isClosed || expectedGeneration != _refreshGeneration) return;
+        if (!_generationStillValid(expectedGeneration)) return;
         emit(
           state.copyWith(
             weekDays: weekDays,
@@ -293,7 +300,7 @@ class TodayCubit extends Cubit<TodayState> {
         userHealthMetrics.getWeightKg(),
         stepAggregation.getLastIngestionUtc(),
       ]);
-      if (isClosed || expectedGeneration != _refreshGeneration) return;
+      if (!_generationStillValid(expectedGeneration)) return;
 
       final buckets = results[0]! as List<TimeseriesSampleModel>;
       final heightCm = results[1] as int?;
@@ -301,7 +308,7 @@ class TodayCubit extends Cubit<TodayState> {
       final lastUtc = results[3] as DateTime?;
 
       final weekDays = await _loadWeekDays();
-      if (isClosed || expectedGeneration != _refreshGeneration) return;
+      if (!_generationStillValid(expectedGeneration)) return;
 
       final stale = isStaleData(
         lastIngestionUtc: lastUtc,
@@ -330,7 +337,7 @@ class TodayCubit extends Cubit<TodayState> {
         weightKg: weightKg,
         selectedLocalDay: _resolveSelectedLocalDay(weekDays),
       );
-      if (isClosed || expectedGeneration != _refreshGeneration) return;
+      if (!_generationStillValid(expectedGeneration)) return;
 
       if (!_isViewingToday()) {
         emit(
@@ -348,6 +355,9 @@ class TodayCubit extends Cubit<TodayState> {
       if (kDebugMode) {
         debugPrint('TodayCubit._enrichAfterFastPath error: $error');
         debugPrintStack(stackTrace: stackTrace);
+      }
+      if (_generationStillValid(expectedGeneration)) {
+        unawaited(refresh());
       }
     }
   }
@@ -527,10 +537,15 @@ class TodayCubit extends Cubit<TodayState> {
       return _refreshInFlight!;
     }
     _refreshInFlight = _refreshImpl(silent: true, allowDayDecrease: true);
+    var succeeded = false;
     try {
       await _refreshInFlight!;
+      succeeded = true;
     } finally {
       _refreshInFlight = null;
+      if (succeeded) {
+        _refreshGeneration++;
+      }
     }
   }
 
@@ -1084,6 +1099,7 @@ class TodayCubit extends Cubit<TodayState> {
     DateTime? selectedLocalDay,
     int? lastDisplayedSteps,
     bool? lastDisplayedStepsLoaded,
+    bool skipCelebration = false,
   }) async {
     if (isClosed) {
       return;
@@ -1148,6 +1164,10 @@ class TodayCubit extends Cubit<TodayState> {
       lastDisplayedStepsLoaded:
           lastDisplayedStepsLoaded ?? state.lastDisplayedStepsLoaded,
     );
+    if (skipCelebration) {
+      emit(baseState);
+      return;
+    }
     await _maybeTriggerCelebration(
       steps: effectiveSteps,
       goal: goal,

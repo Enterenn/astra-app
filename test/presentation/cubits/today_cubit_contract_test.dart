@@ -109,15 +109,17 @@ class _RecordingStepAggregation implements StepAggregationRepositoryContract {
     this.clock, {
     this.fixedSteps = 0,
     this.chartGate,
+    this.bucketsGate,
+    this.stepsGate,
   });
 
   @override
   final TimeProvider clock;
   final int fixedSteps;
 
-  /// If non-null, [getChartDailyAggregates] awaits this before returning.
-  /// Use a [Completer.future] to block enrichment in tests.
   final Future<void>? chartGate;
+  final Future<void>? bucketsGate;
+  final Future<void>? stepsGate;
 
   int getTodayStepsCallCount = 0;
   int getTodayActiveBucketsCallCount = 0;
@@ -127,12 +129,14 @@ class _RecordingStepAggregation implements StepAggregationRepositoryContract {
   @override
   Future<int> getTodaySteps() async {
     getTodayStepsCallCount++;
+    if (stepsGate != null && getTodayStepsCallCount == 1) await stepsGate;
     return fixedSteps;
   }
 
   @override
   Future<List<TimeseriesSampleModel>> getTodayActiveBuckets() async {
     getTodayActiveBucketsCallCount++;
+    if (bucketsGate != null) await bucketsGate;
     return [];
   }
 
@@ -178,7 +182,11 @@ class _RecordingStepAggregation implements StepAggregationRepositoryContract {
 }
 
 class _RecordingUserSettings implements UserSettingsRepositoryContract {
+  _RecordingUserSettings({this.tryClaimCelebrationResult = false});
+
   int getLastDisplayedStepsCallCount = 0;
+  int tryClaimCelebrationShownDateCallCount = 0;
+  final bool tryClaimCelebrationResult;
 
   @override
   bool get isDatabaseOpen => true;
@@ -187,6 +195,12 @@ class _RecordingUserSettings implements UserSettingsRepositoryContract {
   Future<int?> getLastDisplayedSteps(String localDayIso) async {
     getLastDisplayedStepsCallCount++;
     return null;
+  }
+
+  @override
+  Future<bool> tryClaimCelebrationShownDate(String localDayIso) async {
+    tryClaimCelebrationShownDateCallCount++;
+    return tryClaimCelebrationResult;
   }
 
   @override
@@ -276,48 +290,94 @@ void main() {
     }
 
     test(
-      'fast path emits lastDisplayedStepsLoaded:true and empty weekDays '
-      'before enrichment (chart gate) completes',
+      'fast path emits before buckets and chart enrichment complete',
       () async {
-        final gate = Completer<void>();
+        final bucketsGate = Completer<void>();
+        final chartGate = Completer<void>();
         final stepAgg = _RecordingStepAggregation(
           clock,
           fixedSteps: 3000,
-          chartGate: gate.future,
+          bucketsGate: bucketsGate.future,
+          chartGate: chartGate.future,
         );
         final cubit = _buildCubit(stepAgg: stepAgg);
 
-        // Fast path returns after first emit; enrichment is blocked at chart gate.
         await cubit.refreshFastPath();
 
         expect(cubit.state.lastDisplayedStepsLoaded, isTrue);
         expect(cubit.state.weekDays, isEmpty);
-        expect(cubit.state.status, TodayStatus.progress);
+        expect(stepAgg.getChartDailyAggregatesCallCount, 0);
+        expect(stepAgg.getLastIngestionUtcCallCount, lessThanOrEqualTo(1));
 
-        gate.complete(); // release enrichment
+        bucketsGate.complete();
+        chartGate.complete();
+        await pumpEventQueue();
         await cubit.close();
       },
     );
 
     test(
-      '≤3 data queries in critical path: getTodaySteps called once by fast path, '
-      'not by enrichment; enrichment queries run exactly once each',
+      '≤3 data queries at first emit; enrichment queries run after return',
       () async {
         final stepAgg = _RecordingStepAggregation(clock, fixedSteps: 1000);
         final settings = _RecordingUserSettings();
         final cubit = _buildCubit(stepAgg: stepAgg, settings: settings);
 
         await cubit.refreshFastPath();
-        await pumpEventQueue(); // drain unawaited enrichment
 
-        // Fast-path-only queries: called exactly once, never by enrichment.
         expect(stepAgg.getTodayStepsCallCount, 1);
         expect(settings.getLastDisplayedStepsCallCount, 1);
-        // Enrichment-only queries: called exactly once, never in critical path.
+        expect(settings.tryClaimCelebrationShownDateCallCount, 0);
+        expect(stepAgg.getChartDailyAggregatesCallCount, 0);
+
+        await pumpEventQueue();
+
         expect(stepAgg.getTodayActiveBucketsCallCount, 1);
         expect(stepAgg.getChartDailyAggregatesCallCount, 1);
         expect(stepAgg.getLastIngestionUtcCallCount, 1);
 
+        await cubit.close();
+      },
+    );
+
+    test(
+      'goal-met fast path skips celebration prefs on critical path',
+      () async {
+        final stepAgg = _RecordingStepAggregation(clock, fixedSteps: 9000);
+        final settings = _RecordingUserSettings();
+        final cubit = _buildCubit(stepAgg: stepAgg, settings: settings);
+
+        await cubit.refreshFastPath();
+
+        expect(settings.tryClaimCelebrationShownDateCallCount, 0);
+
+        await pumpEventQueue();
+
+        expect(settings.tryClaimCelebrationShownDateCallCount, 1);
+        await cubit.close();
+      },
+    );
+
+    test(
+      'fast path aborts emit when refresh completes during critical path',
+      () async {
+        final stepsGate = Completer<void>();
+        final stepAgg = _RecordingStepAggregation(
+          clock,
+          fixedSteps: 1500,
+          stepsGate: stepsGate.future,
+        );
+        final cubit = _buildCubit(stepAgg: stepAgg);
+
+        final fastPathFuture = cubit.refreshFastPath();
+        await cubit.refresh();
+        expect(cubit.state.weekDays, hasLength(7));
+
+        stepsGate.complete();
+        await fastPathFuture;
+
+        expect(cubit.state.weekDays, hasLength(7));
+        expect(stepAgg.getTodayStepsCallCount, 2);
         await cubit.close();
       },
     );

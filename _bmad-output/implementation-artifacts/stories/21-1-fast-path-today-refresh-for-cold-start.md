@@ -1,6 +1,6 @@
 # Story 21.1: Fast-Path Today Refresh for Cold Start
 
-Status: review
+Status: done
 
 <!-- Post-audit Epic 21 — tracker: sprint-status-post-audit.yaml -->
 <!-- Source: epics-post-audit.md Story 21-1 · diagnostic-cold-start.md §A2 · AUD-02 · NFR-AUD-01 -->
@@ -93,6 +93,15 @@ So that I see my local steps within ~100 ms instead of waiting for week metrics 
   - [x] Run `flutter test test/presentation/cubits/today_cubit_test.dart test/presentation/cubits/today_cubit_contract_test.dart`
   - [x] Run `flutter test --exclude-tags slow`
   - [x] **Stop → review brief → wait for Baptiste OK → commit**
+
+### Review Findings
+
+- [x] [Review][Decision] Enrichment failure recovery — fallback `unawaited(refresh())` on catch when generation still valid.
+- [x] [Review][Patch] Generation guard — bump on fast-path entry; `_generationStillValid` before every emit; refresh/rollover bump only on success.
+- [x] [Review][Patch] Overlapping `refreshFastPath` — entry bump invalidates prior enrichments.
+- [x] [Review][Patch] Generation bump policy — success-only for `refresh()` / `refreshAfterDayRollover()`.
+- [x] [Review][Patch] AC1 query budget — `skipCelebration: true` on fast-path emit; celebration deferred to enrichment.
+- [x] [Review][Patch] AC5 tests — buckets/chart gates, goal-met celebration timing, generation abort via stepsGate.
 
 ## Dev Notes
 
@@ -282,4 +291,4 @@ claude-sonnet-4-5
 ## Change Log
 
 - 2026-07-16: Story context created (ready-for-dev) — ultimate context engine analysis completed
-- 2026-07-16: Implemented — Sub-tasks A/B/C/D done, status → review
+- 2026-07-16: Code review fixes — generation guards, skipCelebration fast path, enrich fallback refresh, test hardening

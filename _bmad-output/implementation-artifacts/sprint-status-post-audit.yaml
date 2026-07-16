@@ -63,7 +63,7 @@
 # NAVIGATION: _bmad-output/README.md · planning-artifacts/epics-post-audit.md
 
 generated: 2026-07-16
-last_updated: 2026-07-16 (Story 21.1 context ready-for-dev)
+last_updated: 2026-07-16 (Story 21.1 done — code review fixes applied)
 project: astra-app
 project_key: NOKEY
 tracking_system: file-system
@@ -73,7 +73,7 @@ git_branch: main
 
 development_status:
   epic-21: in-progress
-  21-1-fast-path-today-refresh-for-cold-start: review
+  21-1-fast-path-today-refresh-for-cold-start: done
   21-2-decouple-foreground-backfill-from-first-today-paint: backlog
   21-3-deduplicate-cold-start-get-today-steps-queries: backlog
   21-4-route-ingestion-lock-through-session-with-retry: backlog
