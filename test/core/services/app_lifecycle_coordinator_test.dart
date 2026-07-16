@@ -262,9 +262,22 @@ void main() {
     test(
       'live cold start paints Today before foreground backfill completes',
       () async {
-        TodayCubit? todayCubit;
         final events = <String>[];
         final backfillDone = Completer<void>();
+
+        // Created before the collector so closures capture a non-null reference.
+        final todayCubit = TodayCubit(
+          stepAggregation: _ColdStartStepAggregation(clock),
+          userSettings: _ColdStartUserSettings(),
+          userHealthMetrics: _ColdStartUserHealthMetrics(),
+          clock: clock,
+          activityPermissionGranted: () async => true,
+        );
+        todayCubit.stream.listen((state) {
+          if (state.lastDisplayedStepsLoaded && !events.contains('fast_path')) {
+            events.add('fast_path');
+          }
+        });
 
         final seedDeps = buildCoordinatorUnitTestDeps(timeProvider: clock);
         final delayingCollector = _DelayingBackgroundCollector(
@@ -279,11 +292,11 @@ void main() {
           onCollectStart: () => events.add('backfill_start'),
           onCollectEnd: () {
             expect(
-              todayCubit!.state.lastDisplayedStepsLoaded,
+              todayCubit.state.lastDisplayedStepsLoaded,
               isTrue,
               reason: 'refreshFastPath must emit before backfill ends',
             );
-            expect(todayCubit!.state.status, isNot(TodayStatus.loading));
+            expect(todayCubit.state.status, isNot(TodayStatus.loading));
             events.add('backfill_end');
             if (!backfillDone.isCompleted) {
               backfillDone.complete();
@@ -305,19 +318,6 @@ void main() {
           minPauseForPhoneCatchUp: const Duration(seconds: 10),
           initialShowMainShell: true,
         );
-
-        todayCubit = TodayCubit(
-          stepAggregation: _ColdStartStepAggregation(clock),
-          userSettings: _ColdStartUserSettings(),
-          userHealthMetrics: _ColdStartUserHealthMetrics(),
-          clock: clock,
-          activityPermissionGranted: () async => true,
-        );
-        todayCubit.stream.listen((state) {
-          if (state.lastDisplayedStepsLoaded && !events.contains('fast_path')) {
-            events.add('fast_path');
-          }
-        });
 
         coordinator.onTodayCubitReady(todayCubit);
 

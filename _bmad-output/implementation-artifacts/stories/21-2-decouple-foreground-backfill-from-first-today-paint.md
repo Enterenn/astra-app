@@ -1,6 +1,6 @@
 # Story 21.2: Decouple Foreground Backfill from First Today Paint
 
-Status: review
+Status: done
 
 <!-- Post-audit Epic 21 — tracker: sprint-status-post-audit.yaml -->
 <!-- Source: epics-post-audit.md Story 21-2 · diagnostic-cold-start.md §A1 · AUD-01 · NFR-AUD-01 -->
@@ -94,7 +94,11 @@ So that cold start is never blocked 1–2 s on ingestion backfill.
 
 ### Review Findings
 
-- (empty — populated during code review)
+- **M1 (fixed)**: `unawaited(_reconcileAfterBackfillCompletes())` was scheduled before `_bindLiveMonitorToToday`, creating a race where reconcile could resume (on fast backfill) with `monitor.isRunning == false`, triggering a redundant 7-query `refresh(silent)` while bind was in progress. Fixed by moving the `unawaited(...)` call to after `await _bindLiveMonitorToToday(...)` — monitor is guaranteed started when reconcile resumes.
+- **M2 (fixed)**: Test created `TodayCubit` after `_DelayingBackgroundCollector`, so `onCollectEnd` captured a `null`-initialised nullable via force-unwrap (`todayCubit!`). Fixed by creating `todayCubit` first; closures now capture a non-nullable reference.
+- **L3 (accepted)**: Blanket `catch (_)` in `_reconcileAfterBackfillCompletes` — intentional; `_mounted()` guard covers the primary window. Log-only improvement deferred to Epic 22 telemetry pass.
+- **L4 (accepted)**: `TodayCubit` in ordering test uses isolated `_ColdStartStepAggregation` — lower integration fidelity; adequate for ordering contract. Full integration covered by `app_live_pipeline_lifecycle_test.dart`.
+- **L5 (accepted)**: `_DelayingBackgroundCollector` / `_NoOpBackgroundCollector` not in `test/helpers/` — deferred to Story 26 test infrastructure.
 
 ## Dev Notes
 
@@ -304,3 +308,4 @@ Pattern: small commits per sub-task; coordinator change should be isolated from 
 
 - 2026-07-16: Sub-task A — cold-start gate mapped (ready-for-dev → in-progress)
 - 2026-07-16: Story implementation complete — cold start decoupled from backfill gate (status: review)
+- 2026-07-16: Code review fixes applied — M1 reconcile race + M2 test null-deref (status: done)

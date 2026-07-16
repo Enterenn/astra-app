@@ -610,11 +610,11 @@ class AppLifecycleCoordinator {
     if (!_mounted()) {
       return;
     }
-    unawaited(_reconcileAfterBackfillCompletes());
     await _bindLiveMonitorToToday(skipSqliteRefresh: true);
     if (!_mounted()) {
       return;
     }
+    unawaited(_reconcileAfterBackfillCompletes());
     _livePipelineStarted = true;
     _logColdStartPhase(
       'cold start pipeline DONE',
