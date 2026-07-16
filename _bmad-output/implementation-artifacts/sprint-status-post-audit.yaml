@@ -1,6 +1,6 @@
 # generated: 2026-07-16
-# last_updated: 2026-07-17 (Story 22-3 done)
-# NEXT: create-story 22-4-align-theme-preference-error-feedback-with-other-settings
+# last_updated: 2026-07-17 (Story 22-4 ready-for-dev)
+# NEXT: dev-story 22-4-align-theme-preference-error-feedback-with-other-settings
 # Ref: planning-artifacts/epics-post-audit.md · planning-artifacts/audits/
 # project: astra-app
 # project_key: NOKEY
@@ -63,7 +63,7 @@
 # NAVIGATION: _bmad-output/README.md · planning-artifacts/epics-post-audit.md
 
 generated: 2026-07-16
-last_updated: 2026-07-17 (Story 22-3 done)
+last_updated: 2026-07-17 (Story 22-4 ready-for-dev)
 project: astra-app
 project_key: NOKEY
 tracking_system: file-system
@@ -87,7 +87,7 @@ development_status:
   22-1-harden-live-step-monitor-dispose-sequencing: done
   22-2-disable-goal-cta-during-today-loading-states: done
   22-3-add-retry-path-for-profile-and-settings-load-errors: done
-  22-4-align-theme-preference-error-feedback-with-other-settings: backlog
+  22-4-align-theme-preference-error-feedback-with-other-settings: review
   22-5-enable-discarded-futures-lint-and-fix-callback-sites: backlog
   epic-22-retrospective: optional
 

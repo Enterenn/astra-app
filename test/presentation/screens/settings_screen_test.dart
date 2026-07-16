@@ -27,6 +27,24 @@ import 'package:sqflite/sqflite.dart';
 import '../../helpers/l10n_test_helper.dart';
 import '../../helpers/sqflite_test_helper.dart';
 
+class _ThrowingThemeModeSettingsRepository extends UserSettingsRepository {
+  _ThrowingThemeModeSettingsRepository(Database super.db);
+
+  @override
+  Future<void> setThemeMode(AstraThemePreference preference) async {
+    throw StateError('write failed');
+  }
+}
+
+class _ThrowingAccentSettingsRepository extends UserSettingsRepository {
+  _ThrowingAccentSettingsRepository(Database super.db);
+
+  @override
+  Future<void> setAccentPreset(AstraAccentPreset preset) async {
+    throw StateError('write failed');
+  }
+}
+
 class _SeededProfileCubit extends ProfileCubit {
   _SeededProfileCubit({
     required super.userSettings,
@@ -461,5 +479,101 @@ void main() {
 
       expect(tester.widget<Switch>(find.byType(Switch)).value, isTrue);
     });
+
+    testWidgets(
+      'tap Dark segment shows settingsThemeUpdateError SnackBar on persist failure',
+      (tester) async {
+        final throwingRepo = _ThrowingThemeModeSettingsRepository(db);
+        final profileCubit = _SeededProfileCubit(
+          userSettings: userSettings,
+          userHealthMetrics: userHealthMetrics,
+          notificationService: NotificationService(
+            permissionChecker: () async => PermissionStatus.granted,
+          ),
+          seededState: ProfileState.ready(),
+        );
+        addTearDown(profileCubit.close);
+
+        final themeCubit = ThemeCubit(
+          userSettings: throwingRepo,
+          initialPreference: AstraThemePreference.light,
+        );
+        addTearDown(themeCubit.close);
+
+        final unitsCubit = UnitsCubit(userSettings: userSettings);
+        addTearDown(unitsCubit.close);
+
+        final localeCubit = LocaleCubit(userSettings: userSettings);
+        addTearDown(localeCubit.close);
+
+        await _pumpSettingsScreen(
+          tester,
+          profileCubit: profileCubit,
+          themeCubit: themeCubit,
+          unitsCubit: unitsCubit,
+          localeCubit: localeCubit,
+        );
+
+        final darkFinder = find.text(l10n.settingsThemeDark);
+        await tester.ensureVisible(darkFinder);
+        await tester.pump();
+        await tester.tap(darkFinder);
+        await tester.pumpAndSettle();
+
+        expect(
+          find.text(l10n.settingsThemeUpdateError),
+          findsOneWidget,
+        );
+        expect(themeCubit.state.preference, AstraThemePreference.light);
+      },
+    );
+
+    testWidgets(
+      'tap Red accent chip shows settingsThemeUpdateError SnackBar on persist failure',
+      (tester) async {
+        final throwingRepo = _ThrowingAccentSettingsRepository(db);
+        final profileCubit = _SeededProfileCubit(
+          userSettings: userSettings,
+          userHealthMetrics: userHealthMetrics,
+          notificationService: NotificationService(
+            permissionChecker: () async => PermissionStatus.granted,
+          ),
+          seededState: ProfileState.ready(),
+        );
+        addTearDown(profileCubit.close);
+
+        final themeCubit = ThemeCubit(
+          userSettings: throwingRepo,
+          initialAccentPreset: AstraAccentPreset.orange,
+        );
+        addTearDown(themeCubit.close);
+
+        final unitsCubit = UnitsCubit(userSettings: userSettings);
+        addTearDown(unitsCubit.close);
+
+        final localeCubit = LocaleCubit(userSettings: userSettings);
+        addTearDown(localeCubit.close);
+
+        await _pumpSettingsScreen(
+          tester,
+          profileCubit: profileCubit,
+          themeCubit: themeCubit,
+          unitsCubit: unitsCubit,
+          localeCubit: localeCubit,
+        );
+
+        final redChipFinder = find.bySemanticsLabel(l10n.settingsAccentRed);
+        await tester.ensureVisible(redChipFinder);
+        await tester.pump();
+        await tester.tap(redChipFinder);
+        await tester.pumpAndSettle();
+
+        expect(
+          find.text(l10n.settingsThemeUpdateError),
+          findsOneWidget,
+        );
+        expect(themeCubit.state.accentPreset, AstraAccentPreset.orange);
+      },
+    );
   });
 }

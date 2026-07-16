@@ -10,6 +10,24 @@ import 'package:sqflite_common_ffi/sqflite_ffi.dart';
 
 import '../../helpers/sqflite_test_helper.dart';
 
+class _ThrowingThemeModeSettingsRepository extends UserSettingsRepository {
+  _ThrowingThemeModeSettingsRepository(Database super.db);
+
+  @override
+  Future<void> setThemeMode(AstraThemePreference preference) async {
+    throw StateError('write failed');
+  }
+}
+
+class _ThrowingAccentSettingsRepository extends UserSettingsRepository {
+  _ThrowingAccentSettingsRepository(Database super.db);
+
+  @override
+  Future<void> setAccentPreset(AstraAccentPreset preset) async {
+    throw StateError('write failed');
+  }
+}
+
 void main() {
   setUpAll(() async {
     await setUpSqfliteFfi();
@@ -150,6 +168,38 @@ void main() {
       expect(cubit.state.accentPreset, AstraAccentPreset.pink);
       expect(await repository.getThemeMode(), AstraThemePreference.dark);
       expect(await repository.getAccentPreset(), AstraAccentPreset.pink);
+
+      await cubit.close();
+    });
+
+    test('setThemePreference returns false and leaves state unchanged on DB failure',
+        () async {
+      final throwingRepo = _ThrowingThemeModeSettingsRepository(db);
+      final cubit = ThemeCubit(
+        userSettings: throwingRepo,
+        initialPreference: AstraThemePreference.light,
+      );
+
+      final result = await cubit.setThemePreference(AstraThemePreference.dark);
+
+      expect(result, isFalse);
+      expect(cubit.state.preference, AstraThemePreference.light);
+
+      await cubit.close();
+    });
+
+    test('setAccentPreset returns false and leaves state unchanged on DB failure',
+        () async {
+      final throwingRepo = _ThrowingAccentSettingsRepository(db);
+      final cubit = ThemeCubit(
+        userSettings: throwingRepo,
+        initialAccentPreset: AstraAccentPreset.orange,
+      );
+
+      final result = await cubit.setAccentPreset(AstraAccentPreset.blue);
+
+      expect(result, isFalse);
+      expect(cubit.state.accentPreset, AstraAccentPreset.orange);
 
       await cubit.close();
     });
