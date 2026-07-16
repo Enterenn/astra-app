@@ -1,7 +1,6 @@
 import 'package:astra_app/l10n/app_localizations.dart';
 import 'package:flutter/material.dart';
 import 'package:package_info_plus/package_info_plus.dart';
-import 'package:astra_app/core/icons/phosphor_icons.dart';
 
 import '../../core/constants/astra_colors.dart';
 import '../../core/constants/astra_spacing.dart';
@@ -10,10 +9,7 @@ import '../widgets/secondary_screen_shell.dart';
 
 /// About destination — app identity and version (Story 10.8).
 class AboutScreen extends StatelessWidget {
-  const AboutScreen({
-    this.packageInfoFuture,
-    super.key,
-  });
+  const AboutScreen({this.packageInfoFuture, super.key});
 
   /// Injectable for tests; production uses [_defaultPackageInfoFuture].
   final Future<PackageInfo>? packageInfoFuture;
@@ -39,7 +35,8 @@ class _AboutBody extends StatelessWidget {
 
   final Future<PackageInfo> packageInfoFuture;
 
-  static const _kIconSize = 72.0;
+  static const _kIconSize = 120.0;
+  static const _kAppLogoAsset = 'assets/images/app_logo.png';
 
   @override
   Widget build(BuildContext context) {
@@ -65,14 +62,14 @@ class _AboutBody extends StatelessWidget {
             Container(
               width: _kIconSize,
               height: _kIconSize,
+              clipBehavior: Clip.antiAlias,
               decoration: BoxDecoration(
                 color: colors.bgElevated,
-                borderRadius: BorderRadius.circular(AstraSpacing.kRadiusMd),
+                borderRadius: BorderRadius.circular(AstraSpacing.kRadiusLg),
               ),
-              child: Icon(
-                PhosphorIconsRegular.footprints,
-                size: 36,
-                color: colors.accentPrimary,
+              child: Padding(
+                padding: const EdgeInsets.all(AstraSpacing.kSpaceLg),
+                child: Image.asset(_kAppLogoAsset, fit: BoxFit.contain),
               ),
             ),
             const SizedBox(height: AstraSpacing.kSpaceMd),
@@ -90,9 +87,9 @@ class _AboutBody extends StatelessWidget {
                 }
                 return Text(
                   l10n.aboutVersion(snapshot.data!.version),
-                  style: AstraTypography.bodyFor(colors).copyWith(
-                    color: colors.textMuted,
-                  ),
+                  style: AstraTypography.bodyFor(
+                    colors,
+                  ).copyWith(color: colors.textMuted),
                   textAlign: TextAlign.center,
                 );
               },
