@@ -1,7 +1,10 @@
+import 'dart:async';
+
 import 'package:astra_app/l10n/app_localizations.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 
+import '../../core/constants/astra_accent_preset.dart';
 import '../../core/constants/astra_colors.dart';
 import '../../core/constants/astra_spacing.dart';
 import '../../core/constants/astra_typography.dart';
@@ -165,6 +168,32 @@ Future<void> _pickHeightUnit(
   }
 }
 
+Future<void> _setThemePreference(
+  BuildContext context, {
+  required AstraThemePreference preference,
+}) async {
+  final l10n = AppLocalizations.of(context);
+  final saved = await context.read<ThemeCubit>().setThemePreference(preference);
+  if (!saved && context.mounted) {
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(content: Text(l10n.settingsThemeUpdateError)),
+    );
+  }
+}
+
+Future<void> _setAccentPreset(
+  BuildContext context, {
+  required AstraAccentPreset preset,
+}) async {
+  final l10n = AppLocalizations.of(context);
+  final saved = await context.read<ThemeCubit>().setAccentPreset(preset);
+  if (!saved && context.mounted) {
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(content: Text(l10n.settingsThemeUpdateError)),
+    );
+  }
+}
+
 class _SettingsScrollBody extends StatelessWidget {
   const _SettingsScrollBody();
 
@@ -303,9 +332,9 @@ class _SettingsScrollBody extends StatelessWidget {
                   builder: (context, themeState) {
                     return ThemeSelector(
                       selected: themeState.preference,
-                      onChanged: (preference) => context
-                          .read<ThemeCubit>()
-                          .setThemePreference(preference),
+                      onChanged: (preference) => unawaited(
+                        _setThemePreference(context, preference: preference),
+                      ),
                     );
                   },
                 ),
@@ -314,9 +343,9 @@ class _SettingsScrollBody extends StatelessWidget {
                   builder: (context, themeState) {
                     return AccentPresetSelector(
                       selected: themeState.accentPreset,
-                      onSelected: (preset) => context
-                          .read<ThemeCubit>()
-                          .setAccentPreset(preset),
+                      onSelected: (preset) => unawaited(
+                        _setAccentPreset(context, preset: preset),
+                      ),
                     );
                   },
                 ),

@@ -46,6 +46,10 @@
   "settingsTheme": "Thème",
   "settingsUnitPreferenceUpdateError": "Impossible de mettre à jour l'unité",
   "settingsNotificationUpdateError": "Impossible de mettre à jour le paramètre de notification",
+  "settingsThemeUpdateError": "Impossible de mettre à jour le thème",
+  "@settingsThemeUpdateError": {
+    "description": "Snack bar when saving theme mode or accent preset fails"
+  },
   "settingsThemeSystem": "Système",
   "settingsThemeSystemSemantics": "Apparence système",
   "settingsThemeLight": "Clair",

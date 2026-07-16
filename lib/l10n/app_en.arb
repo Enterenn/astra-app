@@ -182,6 +182,10 @@
   "@settingsNotificationUpdateError": {
     "description": "Snack bar when saving notification preference fails"
   },
+  "settingsThemeUpdateError": "Could not update theme preference",
+  "@settingsThemeUpdateError": {
+    "description": "Snack bar when saving theme mode or accent preset fails"
+  },
   "settingsThemeSystem": "System",
   "@settingsThemeSystem": {
     "description": "Theme selector option for system appearance"
