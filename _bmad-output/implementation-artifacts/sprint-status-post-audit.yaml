@@ -1,7 +1,7 @@
 # generated: 2026-07-16
-# last_updated: 2026-07-16 (Post-audit epics initialized from audits/README.md)
-# NEXT: create first story from Epic 21 (cold-start fast path)
-# Ref: planning-artifacts/audits/README.md · planning-artifacts/audits/diagnostic-*.md
+# last_updated: 2026-07-16 (Story 21.1 context ready-for-dev)
+# NEXT: bmad-dev-story 21-1-fast-path-today-refresh-for-cold-start
+# Ref: planning-artifacts/epics-post-audit.md · planning-artifacts/audits/
 # project: astra-app
 # project_key: NOKEY
 # tracking_system: file-system
@@ -14,12 +14,27 @@
 #   - in-progress: Epic actively being worked on
 #   - done: All stories in epic completed
 #
+# Epic Status Transitions:
+#   - backlog → in-progress: Automatically when first story is created (via create-story)
+#   - in-progress → done: Manually when all stories reach 'done' status
+#
 # Story Status:
 #   - backlog: Story only exists in epic file
 #   - ready-for-dev: Story file created in stories folder
 #   - in-progress: Developer actively working on implementation
 #   - review: Ready for code review
 #   - done: Story completed
+#
+# Retrospective Status:
+#   - optional: Can be completed but not required
+#   - done: Retrospective has been completed
+#
+# WORKFLOW NOTES:
+# ===============
+# - Strict priority: Epic 21 (P0) → 22+23+26 (P1) → 24 (P2) → 25 (P3, after 21/22/26)
+# - Epic transitions to 'in-progress' automatically when first story is created
+# - Developer typically creates next story after previous one is 'done'
+# - Dev moves story to 'review', then runs code-review
 #
 # VERSIONING (mandatory at each epic close — stay on 0.x.y, no 1.0.0):
 # - Epic 21 (performance + behavior visible): minor+1, patch=0, build+1
@@ -44,25 +59,28 @@
 #   2) epic-22 + epic-23 + epic-26 (P1)
 #   3) epic-24 (P2)
 #   4) epic-25 (P3)
+#
+# NAVIGATION: _bmad-output/README.md · planning-artifacts/epics-post-audit.md
 
 generated: 2026-07-16
-last_updated: 2026-07-16 (Post-audit epics initialized from audits index)
+last_updated: 2026-07-16 (Story 21.1 context ready-for-dev)
 project: astra-app
 project_key: NOKEY
 tracking_system: file-system
 story_location: _bmad-output/implementation-artifacts/stories
-epics_source: planning-artifacts/audits/README.md
+epics_source: planning-artifacts/epics-post-audit.md
 git_branch: main
 
 development_status:
-  epic-21: backlog
-  21-1-fast-path-today-refresh-for-cold-start: backlog
+  epic-21: in-progress
+  21-1-fast-path-today-refresh-for-cold-start: in-progress
   21-2-decouple-foreground-backfill-from-first-today-paint: backlog
   21-3-deduplicate-cold-start-get-today-steps-queries: backlog
   21-4-route-ingestion-lock-through-session-with-retry: backlog
   21-5-batch-week-goal-resolution-and-reduce-n-plus-1: backlog
   21-6-add-end-time-index-for-last-ingestion-query: backlog
   21-7-guard-trends-refresh-on-ingestion-by-active-tab: backlog
+  21-8-non-blocking-pedometer-drain-on-cold-backfill: backlog
   epic-21-retrospective: optional
 
   epic-22: backlog
@@ -80,6 +98,7 @@ development_status:
   23-4-restore-visible-keyboard-focus-on-segmented-controls: backlog
   23-5-complete-chart-keyboard-and-semantic-selection-support: backlog
   23-6-add-goal-achieved-semantics-in-week-day-pills: backlog
+  23-7-merge-semantics-for-settings-notifications-switch: backlog
   epic-23-retrospective: optional
 
   epic-24: backlog
@@ -88,6 +107,7 @@ development_status:
   24-3-unify-loading-patterns-for-week-and-trends-surfaces: backlog
   24-4-centralize-repeated-chart-layout-and-typography-values: backlog
   24-5-clean-orphan-preference-default-constants: backlog
+  24-6-disable-period-toggle-during-history-loading: backlog
   epic-24-retrospective: optional
 
   epic-25: backlog

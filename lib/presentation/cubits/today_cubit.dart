@@ -48,6 +48,12 @@ class TodayCubit extends Cubit<TodayState> {
   final PostGoalUpdateCallback? postGoalUpdate;
 
   Future<void>? _refreshInFlight;
+
+  // Incremented each time a full refresh() completes.
+  // _enrichAfterFastPath reads this at start and aborts if it changes,
+  // preventing stale-enrichment from regressing a newer full-refresh state.
+  int _refreshGeneration = 0;
+
   StreamSubscription<int>? _liveStepsSubscription;
   LiveStepMonitor? _attachedMonitor;
   String? _lastAppliedLocalDay;
@@ -213,7 +219,28 @@ class TodayCubit extends Cubit<TodayState> {
       await _refreshInFlight!;
     } finally {
       _refreshInFlight = null;
+      _refreshGeneration++;
     }
+  }
+
+  /// Loads only the 3 queries needed for the first GoalRing paint, then defers
+  /// enrichment (week, buckets, stale) via [_enrichAfterFastPath].
+  ///
+  /// Concurrency policy — Option A (no shared in-flight gate):
+  ///   • This method returns after the first emit; it does NOT await enrichment.
+  ///   • A concurrent [refresh] call runs independently.
+  ///   • Enrichment captures [_refreshGeneration] on entry; if [refresh]
+  ///     completes and increments the generation before enrichment emits,
+  ///     enrichment aborts to avoid regressing the newer full-refresh state.
+  Future<void> refreshFastPath() async {
+    if (isClosed) return;
+    // Sub-task B: implement fast-path emit (3 queries + _applyTodaySnapshot).
+    unawaited(_enrichAfterFastPath(_refreshGeneration));
+  }
+
+  Future<void> _enrichAfterFastPath(int expectedGeneration) async {
+    if (isClosed || expectedGeneration != _refreshGeneration) return;
+    // Sub-task C: implement week + buckets + stale enrichment.
   }
 
   /// Applies [steps] from the live monitor after resume or reconcile.
