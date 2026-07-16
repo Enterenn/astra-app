@@ -1,6 +1,6 @@
 # Story 21.5: Batch Week Goal Resolution and Reduce N+1
 
-Status: review
+Status: done
 
 <!-- Post-audit Epic 21 — tracker: sprint-status-post-audit.yaml -->
 <!-- Source: epics-post-audit.md Story 21-5 · diagnostic-cold-start.md §B1 · AUD-06 · NFR-AUD-02 -->
@@ -288,7 +288,12 @@ claude-sonnet-4-5 (Cursor)
 - test/presentation/cubits/today_cubit_contract_test.dart
 - test/core/services/app_lifecycle_coordinator_test.dart
 
+### Review Findings
+
+- [x] [Review][Patch] refreshFastPath spy missing getGoalForLocalDay upper bound [`today_cubit_test.dart`:965] — fixed
+
 ## Change Log
 
 - 2026-07-16: Story context created (ready-for-dev) — ultimate context engine analysis completed
 - 2026-07-16: Implementation complete — batch goal resolution + spy tests + fake fixes (review)
+- 2026-07-16: Code review complete — refreshFastPath spy assertion added, story done

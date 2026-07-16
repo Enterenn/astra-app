@@ -962,6 +962,7 @@ void main() {
 
         expect(cubit.state.weekDays, hasLength(7));
         expect(spy.getGoalsForLocalDaysCallCount, 1);
+        expect(spy.getGoalForLocalDayCallCount, 1); // only _resolveTodayGoal
         cubit.close();
       });
     });
