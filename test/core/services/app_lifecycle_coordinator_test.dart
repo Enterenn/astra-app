@@ -1,12 +1,95 @@
+import 'dart:async';
+
+import 'package:astra_app/core/constants/preference_keys.dart';
 import 'package:astra_app/core/di/app_dependencies.dart';
 import 'package:astra_app/core/services/app_lifecycle_coordinator.dart';
 import 'package:astra_app/core/services/background_collector.dart';
+import 'package:astra_app/core/time/time_provider.dart';
+import 'package:astra_app/data/contracts/contracts.dart';
+import 'package:astra_app/data/models/chart_day_aggregate.dart';
+import 'package:astra_app/data/models/chart_month_aggregate.dart';
+import 'package:astra_app/data/models/database_footprint.dart';
+import 'package:astra_app/data/models/timeseries_sample_model.dart';
 import 'package:astra_app/data/repositories/ingestion_baseline_repository.dart';
+import 'package:astra_app/presentation/cubits/today_cubit.dart';
+import 'package:astra_app/presentation/cubits/today_state.dart';
 import 'package:flutter_test/flutter_test.dart';
 
 import '../../helpers/coordinator_unit_test_deps.dart';
 import '../../helpers/recording_health_fgs.dart';
 import '../time/fake_time_provider.dart';
+
+class _ColdStartStepAggregation implements StepAggregationRepositoryContract {
+  _ColdStartStepAggregation(this.clock);
+
+  @override
+  final TimeProvider clock;
+
+  @override
+  Future<int> getTodaySteps() async => 1200;
+
+  @override
+  Future<List<TimeseriesSampleModel>> getTodayActiveBuckets() async => [];
+
+  @override
+  Future<DateTime?> getLastIngestionUtc() async => null;
+
+  @override
+  Future<List<ChartDayAggregate>> getChartDailyAggregates({
+    required int days,
+  }) async =>
+      List.generate(
+        days,
+        (index) => ChartDayAggregate(
+          localDay: DateTime.utc(2026, 6, 19).subtract(Duration(days: index)),
+          totalSteps: 0,
+        ),
+      );
+
+  @override
+  Future<List<TimeseriesSampleModel>> getActiveBucketsForLocalDay(
+    DateTime localDay,
+  ) async =>
+      [];
+
+  @override
+  Future<List<ChartMonthAggregate>> getChartMonthlyAggregates({
+    required int months,
+  }) async =>
+      [];
+
+  @override
+  Future<int> countStepSamples() async => 0;
+
+  @override
+  Future<DatabaseFootprint> getFootprint({required String databasePath}) async =>
+      const DatabaseFootprint(sampleCount: 0, fileSizeBytes: 0);
+}
+
+class _ColdStartUserSettings implements UserSettingsRepositoryContract {
+  @override
+  bool get isDatabaseOpen => true;
+
+  @override
+  Future<int?> getLastDisplayedSteps(String localDayIso) async => null;
+
+  @override
+  dynamic noSuchMethod(Invocation invocation) => super.noSuchMethod(invocation);
+}
+
+class _ColdStartUserHealthMetrics implements UserHealthMetricsRepositoryContract {
+  @override
+  Future<int> getGoalForLocalDay(String localDayIso) async => kDefaultStepGoal;
+
+  @override
+  Future<int?> getHeightCm() async => null;
+
+  @override
+  Future<double?> getWeightKg() async => null;
+
+  @override
+  dynamic noSuchMethod(Invocation invocation) => super.noSuchMethod(invocation);
+}
 
 class _DelayingBackgroundCollector extends BackgroundCollector {
   _DelayingBackgroundCollector({
@@ -175,5 +258,81 @@ void main() {
       expect(calls, contains('uiActive:false'));
       expect(calls, contains('start'));
     });
+
+    test(
+      'live cold start paints Today before foreground backfill completes',
+      () async {
+        TodayCubit? todayCubit;
+        final events = <String>[];
+        final backfillDone = Completer<void>();
+
+        final seedDeps = buildCoordinatorUnitTestDeps(timeProvider: clock);
+        final delayingCollector = _DelayingBackgroundCollector(
+          sources: seedDeps.ingestionSources,
+          normalizer: seedDeps.stepNormalizer,
+          repository: seedDeps.stepIngestion,
+          stepAggregation: seedDeps.stepAggregation,
+          baselineRepository: IngestionBaselineRepository(
+            seedDeps.databaseSession,
+          ),
+          collectDelay: const Duration(milliseconds: 150),
+          onCollectStart: () => events.add('backfill_start'),
+          onCollectEnd: () {
+            expect(
+              todayCubit!.state.lastDisplayedStepsLoaded,
+              isTrue,
+              reason: 'refreshFastPath must emit before backfill ends',
+            );
+            expect(todayCubit!.state.status, isNot(TodayStatus.loading));
+            events.add('backfill_end');
+            if (!backfillDone.isCompleted) {
+              backfillDone.complete();
+            }
+          },
+        );
+
+        final deps = buildCoordinatorUnitTestDeps(
+          timeProvider: clock,
+          backgroundCollector: delayingCollector,
+        );
+        final coordinator = deps.appLifecycleCoordinator;
+        coordinator.bindToWidget(
+          isMounted: () => true,
+          showMainShell: () => true,
+          enablePeriodicPersist: false,
+          enableLiveStepPipeline: true,
+          maxPersistStaleness: const Duration(seconds: 1),
+          minPauseForPhoneCatchUp: const Duration(seconds: 10),
+          initialShowMainShell: true,
+        );
+
+        todayCubit = TodayCubit(
+          stepAggregation: _ColdStartStepAggregation(clock),
+          userSettings: _ColdStartUserSettings(),
+          userHealthMetrics: _ColdStartUserHealthMetrics(),
+          clock: clock,
+          activityPermissionGranted: () async => true,
+        );
+        todayCubit.stream.listen((state) {
+          if (state.lastDisplayedStepsLoaded && !events.contains('fast_path')) {
+            events.add('fast_path');
+          }
+        });
+
+        coordinator.onTodayCubitReady(todayCubit);
+
+        await backfillDone.future.timeout(const Duration(seconds: 2));
+        await pumpEventQueue();
+
+        expect(
+          events.indexOf('fast_path'),
+          lessThan(events.indexOf('backfill_end')),
+        );
+        expect(todayCubit.state.lastDisplayedStepsLoaded, isTrue);
+        expect(todayCubit.state.status, isNot(TodayStatus.loading));
+
+        await todayCubit.close();
+      },
+    );
   });
 }

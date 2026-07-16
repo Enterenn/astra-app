@@ -1,6 +1,6 @@
 # Story 21.2: Decouple Foreground Backfill from First Today Paint
 
-Status: in-progress
+Status: review
 
 <!-- Post-audit Epic 21 — tracker: sprint-status-post-audit.yaml -->
 <!-- Source: epics-post-audit.md Story 21-2 · diagnostic-cold-start.md §A1 · AUD-01 · NFR-AUD-01 -->
@@ -83,14 +83,14 @@ So that cold start is never blocked 1–2 s on ingestion backfill.
   - [x] Do not duplicate `_onIngestionComplete` work (AppScaffold already refreshes metadata/history on upsert)
   - [x] **Stop → review brief → wait for Baptiste OK → commit**
 
-- [ ] **Sub-task E — Tests** (AC: #6)
-  - [ ] Extend `test/core/services/app_lifecycle_coordinator_test.dart` with delaying collector + recording/mocked `TodayCubit` or spy on `refreshFastPath` call order vs backfill end
-  - [ ] Pattern: reuse `_DelayingBackgroundCollector` from existing coordinator test (50ms+ delay)
-  - [ ] Assert: `refreshFastPath` completes / cubit leaves `loading` before backfill `onCollectEnd`
-  - [ ] Run targeted: `flutter test test/core/services/app_lifecycle_coordinator_test.dart`
-  - [ ] Run: `flutter test --exclude-tags slow`
-  - [ ] If cold-start monotonic tests fail, adjust post-backfill reconcile — do not weaken Display Truth rules
-  - [ ] **Stop → review brief → wait for Baptiste OK → commit**
+- [x] **Sub-task E — Tests** (AC: #6)
+  - [x] Extend `test/core/services/app_lifecycle_coordinator_test.dart` with delaying collector + recording/mocked `TodayCubit` or spy on `refreshFastPath` call order vs backfill end
+  - [x] Pattern: reuse `_DelayingBackgroundCollector` from existing coordinator test (50ms+ delay)
+  - [x] Assert: `refreshFastPath` completes / cubit leaves `loading` before backfill `onCollectEnd`
+  - [x] Run targeted: `flutter test test/core/services/app_lifecycle_coordinator_test.dart`
+  - [x] Run: `flutter test --exclude-tags slow`
+  - [x] If cold-start monotonic tests fail, adjust post-backfill reconcile — do not weaken Display Truth rules
+  - [x] **Stop → review brief → wait for Baptiste OK → commit**
 
 ### Review Findings
 
@@ -292,8 +292,15 @@ Pattern: small commits per sub-task; coordinator change should be isolated from 
 - Sub-task B: `_startLivePipelineFirstTime` calls `refreshFastPath()` first; backfill log moved to `unawaited(whenComplete)`.
 - Sub-task C: `skipSqliteRefresh` on cold bind — avoids duplicate 7+ query refresh after fast path.
 - Sub-task D: `_reconcileAfterBackfillCompletes` — monitor reconcile + syncSteps after backfill, non-blocking.
+- Sub-task E: Ordering test — fast path emits before 150ms delayed backfill; `flutter test --exclude-tags slow` green (841 tests).
 ### File List
+
+- `lib/core/services/app_lifecycle_coordinator.dart`
+- `test/core/services/app_lifecycle_coordinator_test.dart`
+- `_bmad-output/implementation-artifacts/sprint-status-post-audit.yaml`
+- `_bmad-output/implementation-artifacts/stories/21-2-decouple-foreground-backfill-from-first-today-paint.md`
 
 ## Change Log
 
 - 2026-07-16: Sub-task A — cold-start gate mapped (ready-for-dev → in-progress)
+- 2026-07-16: Story implementation complete — cold start decoupled from backfill gate (status: review)
