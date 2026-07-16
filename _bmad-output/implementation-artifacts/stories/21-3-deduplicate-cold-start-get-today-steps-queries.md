@@ -1,6 +1,6 @@
 # Story 21.3: Deduplicate Cold-Start getTodaySteps Queries
 
-Status: in-progress
+Status: review
 
 <!-- Post-audit Epic 21 — tracker: sprint-status-post-audit.yaml -->
 <!-- Source: epics-post-audit.md Story 21-3 · diagnostic-cold-start.md §A3 · diagnostic-acces-concurrents.md §3 · AUD-03 -->
@@ -252,9 +252,20 @@ Pattern: small commits per sub-task; monitor API change isolated from cubit.
 ### Completion Notes List
 
 - Sub-task A: Confirmed 3× getTodaySteps before first paint — fast path (read #1, authoritative) + monitor.start (read #2, dup) + reconcileFromDatabase on bind (read #3, dup). Post-backfill reconcile (#4, intentional). No code changes in this sub-task.
+- Sub-task B: Added optional seedPersistedSteps to start() and reconcileFromDatabase() in LiveStepMonitor. Seed bypasses getTodaySteps; baseline sync + monotonic floor + emit preserved. All existing call sites rétrocompatibles (no changes needed). Changed stepAggregation field type to StepAggregationRepositoryContract for testability.
+- Sub-task C: Coordinator _bindLiveMonitorToToday computes seedSteps = skipSqliteRefresh ? _todayCubit?.state.steps : null and passes it to start + reconcileFromDatabase. Resume/foregroundCatchUp/post-backfill paths unchanged (no seed, full DB reads).
+- Sub-task D: 4 monitor-level seed tests + 1 coordinator cold-bind seed test. 846 tests pass, 0 regressions.
 
 ### File List
+
+- `lib/core/services/live_step_monitor.dart` — modified (seed API + contract type)
+- `lib/core/services/app_lifecycle_coordinator.dart` — modified (seed wiring on cold bind)
+- `test/core/services/live_step_monitor_test.dart` — modified (4 seed tests + _CountingStepAggregation)
+- `test/core/services/app_lifecycle_coordinator_test.dart` — modified (_CountingStepAggregation, _SeedCapturingMonitor, 1 coordinator test)
+- `_bmad-output/implementation-artifacts/stories/21-3-deduplicate-cold-start-get-today-steps-queries.md` — story file
+- `_bmad-output/implementation-artifacts/sprint-status-post-audit.yaml` — status updated
 
 ## Change Log
 
 - 2026-07-16: Story context created (ready-for-dev) — ultimate context engine analysis completed
+- 2026-07-16: Implementation complete — all 4 sub-tasks done; cold-start getTodaySteps reduced from 3× to 1× before first paint; 846 tests pass

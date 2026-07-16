@@ -75,7 +75,7 @@ development_status:
   epic-21: in-progress
   21-1-fast-path-today-refresh-for-cold-start: done
   21-2-decouple-foreground-backfill-from-first-today-paint: done
-  21-3-deduplicate-cold-start-get-today-steps-queries: in-progress
+  21-3-deduplicate-cold-start-get-today-steps-queries: review
   21-4-route-ingestion-lock-through-session-with-retry: backlog
   21-5-batch-week-goal-resolution-and-reduce-n-plus-1: backlog
   21-6-add-end-time-index-for-last-ingestion-query: backlog
