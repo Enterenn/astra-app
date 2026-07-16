@@ -82,12 +82,13 @@ class LiveStepMonitor {
     yield* _stepsController.stream;
   }
 
-  Future<void> start() async {
+  Future<void> start({int? seedPersistedSteps}) async {
     if (_running) {
       return;
     }
     await _syncMemoryBaselineFromRepository();
-    _persistedTodaySteps = await stepAggregation.getTodaySteps();
+    _persistedTodaySteps =
+        seedPersistedSteps ?? await stepAggregation.getTodaySteps();
     _trackedLocalDay = formatLocalDayIso(clock.snapshot());
     _running = true;
     livePipelineLog(
@@ -97,6 +98,7 @@ class LiveStepMonitor {
         'persisted': _persistedTodaySteps,
         'pendingDelta': _pendingDelta,
         'baseline': _memoryBaseline,
+        if (seedPersistedSteps != null) 'seeded': true,
       },
     );
     _subscription = _stepEventStreamFactory().listen(
@@ -218,12 +220,17 @@ class LiveStepMonitor {
 
   /// Re-reads persisted totals and baseline; never lowers the displayed total
   /// within the same local day.
-  Future<void> reconcileFromDatabase() async {
+  ///
+  /// When [seedPersistedSteps] is non-null, skips the DB read for the persisted
+  /// total (cold-start fast-path dedup); baseline sync and monotonic floor still run.
+  /// Post-backfill calls must NOT pass a seed — that reconcile is intentional.
+  Future<void> reconcileFromDatabase({int? seedPersistedSteps}) async {
     final todayIso = formatLocalDayIso(clock.snapshot());
     final crossDay =
         _trackedLocalDay != null && _trackedLocalDay != todayIso;
     final floorDisplay = crossDay ? 0 : currentTodaySteps;
-    _persistedTodaySteps = await stepAggregation.getTodaySteps();
+    _persistedTodaySteps =
+        seedPersistedSteps ?? await stepAggregation.getTodaySteps();
     await _syncMemoryBaselineFromRepository();
 
     final syncedTotal = _persistedTodaySteps;
@@ -242,6 +249,7 @@ class LiveStepMonitor {
         'persisted': _persistedTodaySteps,
         'pendingDelta': _pendingDelta,
         'total': currentTodaySteps,
+        if (seedPersistedSteps != null) 'seeded': true,
       },
     );
     _emitNow(force: true);

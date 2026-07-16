@@ -58,12 +58,12 @@ So that first paint is not delayed by redundant SQLite round-trips.
   - [x] Confirm current count: `refreshFastPath` (1×) + `start` (1×) + `reconcileFromDatabase` on bind (1×) = **3×** before `syncSteps`; post-backfill adds 4th after paint
   - [x] **Stop → review brief → wait for Baptiste OK → commit** (docs-only map if no code yet)
 
-- [ ] **Sub-task B — Add seed API to LiveStepMonitor** (AC: #1, #2)
-  - [ ] Extend `start({int? seedPersistedSteps})` — when non-null, assign `_persistedTodaySteps = seedPersistedSteps` instead of `await stepAggregation.getTodaySteps()`
-  - [ ] Extend `reconcileFromDatabase({int? seedPersistedSteps})` — when non-null, skip DB read for persisted total; still run `_syncMemoryBaselineFromRepository()`, monotonic floor, `_trackedLocalDay`, `_emitNow`
-  - [ ] Keep `_syncMemoryBaselineFromRepository()` in `start()` before seed assignment (baseline still required for live delta)
-  - [ ] Log seed usage in `livePipelineLog` details for cold-start diagnostics
-  - [ ] **Stop → review brief → wait for Baptiste OK → commit**
+- [x] **Sub-task B — Add seed API to LiveStepMonitor** (AC: #1, #2)
+  - [x] Extend `start({int? seedPersistedSteps})` — when non-null, assign `_persistedTodaySteps = seedPersistedSteps` instead of `await stepAggregation.getTodaySteps()`
+  - [x] Extend `reconcileFromDatabase({int? seedPersistedSteps})` — when non-null, skip DB read for persisted total; still run `_syncMemoryBaselineFromRepository()`, monotonic floor, `_trackedLocalDay`, `_emitNow`
+  - [x] Keep `_syncMemoryBaselineFromRepository()` in `start()` before seed assignment (baseline still required for live delta)
+  - [x] Log seed usage in `livePipelineLog` details for cold-start diagnostics
+  - [x] **Stop → review brief → wait for Baptiste OK → commit**
 
 - [ ] **Sub-task C — Wire coordinator cold bind seed** (AC: #1, #3, #4)
   - [ ] In `_bindLiveMonitorToToday`, when `skipSqliteRefresh: true` and cubit has painted steps: capture `final seed = _todayCubit?.state.steps` (after 21-2, fast path already ran)
