@@ -67,37 +67,46 @@ class _UnitOptionTile<T> extends StatelessWidget {
   Widget build(BuildContext context) {
     final colors = context.astraColors;
 
-    return Material(
-      color: Colors.transparent,
-      child: InkWell(
-        onTap: onTap,
-        borderRadius: BorderRadius.circular(AstraSpacing.kRadiusSm),
-        child: ConstrainedBox(
-          constraints: const BoxConstraints(minHeight: 48),
-          child: Padding(
-            padding: const EdgeInsets.symmetric(
-              horizontal: AstraSpacing.kSpaceSm,
-              vertical: AstraSpacing.kSpaceSm,
-            ),
-            child: Row(
-              children: [
-                Expanded(
-                  child: Text(
-                    label,
-                    style: AstraTypography.body(context).copyWith(
-                      fontWeight:
-                          selected ? FontWeight.w600 : FontWeight.normal,
-                      color: selected ? accentColor : colors.textPrimary,
+    return Semantics(
+      button: true,
+      label: label,
+      selected: selected,
+      child: Material(
+        color: Colors.transparent,
+        child: InkWell(
+          onTap: onTap,
+          borderRadius: BorderRadius.circular(AstraSpacing.kRadiusSm),
+          child: ConstrainedBox(
+            constraints: const BoxConstraints(minHeight: 48),
+            child: Padding(
+              padding: const EdgeInsets.symmetric(
+                horizontal: AstraSpacing.kSpaceSm,
+                vertical: AstraSpacing.kSpaceSm,
+              ),
+              child: Row(
+                children: [
+                  Expanded(
+                    child: ExcludeSemantics(
+                      child: Text(
+                        label,
+                        style: AstraTypography.body(context).copyWith(
+                          fontWeight:
+                              selected ? FontWeight.w600 : FontWeight.normal,
+                          color: selected ? accentColor : colors.textPrimary,
+                        ),
+                      ),
                     ),
                   ),
-                ),
-                if (selected)
-                  Icon(
-                    PhosphorIconsRegular.check,
-                    color: accentColor,
-                    size: 20,
-                  ),
-              ],
+                  if (selected)
+                    ExcludeSemantics(
+                      child: Icon(
+                        PhosphorIconsRegular.check,
+                        color: accentColor,
+                        size: 20,
+                      ),
+                    ),
+                ],
+              ),
             ),
           ),
         ),
