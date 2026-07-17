@@ -859,6 +859,36 @@
   "@todayStatsMiLabel": {
     "description": "Mile unit label in Today activity stats row"
   },
+  "todayActivityStatsSemanticsLoading": "Activity stats: loading",
+  "@todayActivityStatsSemanticsLoading": {
+    "description": "Semantics label for Today activity stats row while loading"
+  },
+  "todayActivityStatsSemanticsNoPermission": "Activity stats: no permission",
+  "@todayActivityStatsSemanticsNoPermission": {
+    "description": "Semantics label for Today activity stats row when permission is denied"
+  },
+  "todayActivityStatsSemanticsSummary": "{kcal} kilocalories, {distance} {distanceUnit}, {duration} walking",
+  "@todayActivityStatsSemanticsSummary": {
+    "description": "Semantics summary for Today activity stats row with committed metrics",
+    "placeholders": {
+      "kcal": {
+        "type": "String",
+        "example": "187"
+      },
+      "distance": {
+        "type": "String",
+        "example": "4.2"
+      },
+      "distanceUnit": {
+        "type": "String",
+        "example": "Km"
+      },
+      "duration": {
+        "type": "String",
+        "example": "00:37:20"
+      }
+    }
+  },
   "onboardingContinueBtn": "Continue",
   "@onboardingContinueBtn": {
     "description": "Onboarding primary button for weight and height steps"

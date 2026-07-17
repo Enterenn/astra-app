@@ -612,6 +612,23 @@ class AppLocalizationsEn extends AppLocalizations {
   String get todayStatsMiLabel => 'Mi';
 
   @override
+  String get todayActivityStatsSemanticsLoading => 'Activity stats: loading';
+
+  @override
+  String get todayActivityStatsSemanticsNoPermission =>
+      'Activity stats: no permission';
+
+  @override
+  String todayActivityStatsSemanticsSummary(
+    String kcal,
+    String distance,
+    String distanceUnit,
+    String duration,
+  ) {
+    return '$kcal kilocalories, $distance $distanceUnit, $duration walking';
+  }
+
+  @override
   String get onboardingContinueBtn => 'Continue';
 
   @override

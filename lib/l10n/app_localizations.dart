@@ -1123,6 +1123,29 @@ abstract class AppLocalizations {
   /// **'Mi'**
   String get todayStatsMiLabel;
 
+  /// Semantics label for Today activity stats row while loading
+  ///
+  /// In en, this message translates to:
+  /// **'Activity stats: loading'**
+  String get todayActivityStatsSemanticsLoading;
+
+  /// Semantics label for Today activity stats row when permission is denied
+  ///
+  /// In en, this message translates to:
+  /// **'Activity stats: no permission'**
+  String get todayActivityStatsSemanticsNoPermission;
+
+  /// Semantics summary for Today activity stats row with committed metrics
+  ///
+  /// In en, this message translates to:
+  /// **'{kcal} kilocalories, {distance} {distanceUnit}, {duration} walking'**
+  String todayActivityStatsSemanticsSummary(
+    String kcal,
+    String distance,
+    String distanceUnit,
+    String duration,
+  );
+
   /// Onboarding primary button for weight and height steps
   ///
   /// In en, this message translates to:

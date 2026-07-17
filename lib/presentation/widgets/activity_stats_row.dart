@@ -51,38 +51,63 @@ class ActivityStatsRow extends StatelessWidget {
     final (kcal, distanceValue, distanceLabel, duration) =
         _formattedValues(l10n, distanceUnit);
 
-    return IntrinsicHeight(
-      child: Row(
-        crossAxisAlignment: CrossAxisAlignment.stretch,
-        children: [
-          Expanded(
-            child: _StatColumn(
-              icon: PhosphorIconsRegular.fire,
-              value: kcal,
-              label: l10n.todayStatsKcalLabel,
-              colors: colors,
+    return Semantics(
+      liveRegion: true,
+      label: _semanticsLabel(l10n, distanceUnit),
+      excludeSemantics: true,
+      child: IntrinsicHeight(
+        child: Row(
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          children: [
+            Expanded(
+              child: _StatColumn(
+                icon: PhosphorIconsRegular.fire,
+                value: kcal,
+                label: l10n.todayStatsKcalLabel,
+                colors: colors,
+              ),
             ),
-          ),
-          _StatDivider(color: colors.accentPrimary),
-          Expanded(
-            child: _StatColumn(
-              icon: PhosphorIconsRegular.mapPin,
-              value: distanceValue,
-              label: distanceLabel,
-              colors: colors,
+            _StatDivider(color: colors.accentPrimary),
+            Expanded(
+              child: _StatColumn(
+                icon: PhosphorIconsRegular.mapPin,
+                value: distanceValue,
+                label: distanceLabel,
+                colors: colors,
+              ),
             ),
-          ),
-          _StatDivider(color: colors.accentPrimary),
-          Expanded(
-            child: _StatColumn(
-              icon: PhosphorIconsRegular.clock,
-              value: duration,
-              colors: colors,
-              tabular: true,
+            _StatDivider(color: colors.accentPrimary),
+            Expanded(
+              child: _StatColumn(
+                icon: PhosphorIconsRegular.clock,
+                value: duration,
+                colors: colors,
+                tabular: true,
+              ),
             ),
-          ),
-        ],
+          ],
+        ),
       ),
+    );
+  }
+
+  String _semanticsLabel(
+    AppLocalizations l10n,
+    DistanceDisplayUnit distanceUnit,
+  ) {
+    if (status == TodayStatus.loading) {
+      return l10n.todayActivityStatsSemanticsLoading;
+    }
+    if (status == TodayStatus.noPermission) {
+      return l10n.todayActivityStatsSemanticsNoPermission;
+    }
+    final (kcal, distanceValue, distanceLabel, duration) =
+        _formattedValues(l10n, distanceUnit);
+    return l10n.todayActivityStatsSemanticsSummary(
+      kcal,
+      distanceValue,
+      distanceLabel,
+      duration,
     );
   }
 

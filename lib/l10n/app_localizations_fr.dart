@@ -621,6 +621,24 @@ class AppLocalizationsFr extends AppLocalizations {
   String get todayStatsMiLabel => 'Mi';
 
   @override
+  String get todayActivityStatsSemanticsLoading =>
+      'Statistiques d\'activité : chargement';
+
+  @override
+  String get todayActivityStatsSemanticsNoPermission =>
+      'Statistiques d\'activité : permission refusée';
+
+  @override
+  String todayActivityStatsSemanticsSummary(
+    String kcal,
+    String distance,
+    String distanceUnit,
+    String duration,
+  ) {
+    return '$kcal kilocalories, $distance $distanceUnit, $duration de marche';
+  }
+
+  @override
   String get onboardingContinueBtn => 'Continuer';
 
   @override
