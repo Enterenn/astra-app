@@ -69,12 +69,12 @@ So that the coloured indicator is not color-only information.
   - [x] Add `todayWeekDayGoalNotMet` (EN/FR); reuse `chartGoalStatusMet` for met fragment
   - [x] Helper in `_DayPill` (or small private function): if `day.isFuture` → `todayWeekDaySemantics`; else → withStatus(met ? chartGoalStatusMet : todayWeekDayGoalNotMet)
   - [x] `flutter gen-l10n`
-  - [ ] **Stop → review brief → wait for Baptiste OK → commit**
+  - [x] **Stop → review brief → wait for Baptiste OK → commit**
 
-- [ ] **Sub-task B — `_DayPill` Semantics + ExcludeSemantics** (AC: #1–#5)
-  - [ ] Set `Semantics.label` from helper; keep `selected` / `button`
-  - [ ] Wrap Column (or InkWell child content) in `ExcludeSemantics`
-  - [ ] Do **not** change `dotColor` rules, selection fill, or future `onTap: null`
+- [x] **Sub-task B — `_DayPill` Semantics + ExcludeSemantics** (AC: #1–#5)
+  - [x] Set `Semantics.label` from helper; keep `selected` / `button`
+  - [x] Wrap Column (or InkWell child content) in `ExcludeSemantics`
+  - [x] Do **not** change `dotColor` rules, selection fill, or future `onTap: null`
   - [ ] **Stop → review brief → wait for Baptiste OK → commit**
 
 - [ ] **Sub-task C — Widget tests + regression** (AC: #7)
@@ -273,6 +273,7 @@ Composer (Cursor agent)
 ### Completion Notes List
 
 - Sub-task A: Added sibling ARB keys + `_dayPillSemanticsLabel` (future = identity-only; past/today = status from `goalMet`, reusing `chartGoalStatusMet`).
+- Sub-task B: Wrapped pill visual content in `ExcludeSemantics`; kept `selected` / `button` / dot rules unchanged.
 
 ### File List
 
@@ -289,3 +290,4 @@ Composer (Cursor agent)
 
 - 2026-07-17: Story context created — ready-for-dev (create-story workflow)
 - 2026-07-17: Sub-task A — ARB status keys + day-pill semantics label helper
+- 2026-07-17: Sub-task B — ExcludeSemantics on day-pill visuals

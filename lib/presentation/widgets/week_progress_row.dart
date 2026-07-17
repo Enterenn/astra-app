@@ -101,51 +101,53 @@ class _DayPill extends StatelessWidget {
         child: InkWell(
           borderRadius: BorderRadius.circular(AstraSpacing.kRadiusFull),
           onTap: onTap,
-          child: Container(
-            padding: const EdgeInsets.symmetric(vertical: AstraSpacing.kSpaceSm),
-            decoration: BoxDecoration(
-              color: backgroundColor,
-              borderRadius: BorderRadius.circular(AstraSpacing.kRadiusFull),
-            ),
-            child: Column(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                SizedBox(
-                  height: 8,
-                  child: Center(
-                    child: dotColor != null
-                        ? Container(
-                            width: 6,
-                            height: 6,
-                            decoration: BoxDecoration(
-                              color: dotColor,
-                              shape: BoxShape.circle,
-                            ),
-                          )
-                        : const SizedBox(width: 6, height: 6),
+          child: ExcludeSemantics(
+            child: Container(
+              padding: const EdgeInsets.symmetric(vertical: AstraSpacing.kSpaceSm),
+              decoration: BoxDecoration(
+                color: backgroundColor,
+                borderRadius: BorderRadius.circular(AstraSpacing.kRadiusFull),
+              ),
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  SizedBox(
+                    height: 8,
+                    child: Center(
+                      child: dotColor != null
+                          ? Container(
+                              width: 6,
+                              height: 6,
+                              decoration: BoxDecoration(
+                                color: dotColor,
+                                shape: BoxShape.circle,
+                              ),
+                            )
+                          : const SizedBox(width: 6, height: 6),
+                    ),
                   ),
-                ),
-                const SizedBox(height: 2),
-                Text(
-                  weekdayLabel,
-                  style: AstraTypography.captionFor(colors).copyWith(
-                    color: mutedColor,
-                    fontSize: 10,
-                    fontWeight: FontWeight.w600,
-                    height: 1,
+                  const SizedBox(height: 2),
+                  Text(
+                    weekdayLabel,
+                    style: AstraTypography.captionFor(colors).copyWith(
+                      color: mutedColor,
+                      fontSize: 10,
+                      fontWeight: FontWeight.w600,
+                      height: 1,
+                    ),
                   ),
-                ),
-                const SizedBox(height: 6),
-                Text(
-                  '${day.dayNumber}',
-                  style: AstraTypography.labelFor(colors).copyWith(
-                    color: dayNumberColor,
-                    fontSize: 16,
-                    fontWeight: FontWeight.w900,
-                    height: 1,
+                  const SizedBox(height: 6),
+                  Text(
+                    '${day.dayNumber}',
+                    style: AstraTypography.labelFor(colors).copyWith(
+                      color: dayNumberColor,
+                      fontSize: 16,
+                      fontWeight: FontWeight.w900,
+                      height: 1,
+                    ),
                   ),
-                ),
-              ],
+                ],
+              ),
             ),
           ),
         ),
