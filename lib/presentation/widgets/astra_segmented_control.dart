@@ -213,7 +213,8 @@ class _SegmentTarget<T> extends StatelessWidget {
                 borderRadius: BorderRadius.circular(AstraSpacing.kRadiusFull),
                 splashColor: Colors.transparent,
                 highlightColor: Colors.transparent,
-                hoverColor: Colors.transparent,
+                focusColor: colors.borderDefault.withValues(alpha: 0.35),
+                hoverColor: colors.borderDefault.withValues(alpha: 0.12),
                 child: ConstrainedBox(
                   constraints: const BoxConstraints(
                     minHeight: AstraSpacing.kMinTouchTarget,
