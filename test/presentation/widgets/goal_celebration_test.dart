@@ -77,12 +77,7 @@ void main() {
 
       expect(find.bySemanticsLabel('Daily goal reached'), findsOneWidget);
       final semanticsWidget = tester.widget<Semantics>(
-        find.descendant(
-          of: find.byType(GoalCelebration),
-          matching: find.byWidgetPredicate(
-            (widget) => widget is Semantics && widget.properties.liveRegion == true,
-          ),
-        ),
+        find.bySemanticsLabel('Daily goal reached'),
       );
       expect(semanticsWidget.properties.liveRegion, isTrue);
 

@@ -145,7 +145,9 @@ class _GoalCelebrationState extends State<GoalCelebration>
               alignment: Alignment.center,
               children: [
                 if (controller == null)
-                  GoalRing(state: widget.state)
+                  ExcludeSemantics(
+                    child: GoalRing(state: widget.state),
+                  )
                 else if (reduceMotion)
                   _buildReducedMotionRing(colors, diameter)
                 else
