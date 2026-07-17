@@ -5,6 +5,7 @@ import 'package:astra_app/core/time/calendar_week.dart';
 
 import 'package:astra_app/data/repositories/user_health_metrics_repository.dart';
 import 'package:astra_app/data/repositories/user_settings_repository.dart';
+import 'package:astra_app/l10n/app_localizations.dart';
 import 'package:astra_app/presentation/cubits/today_cubit.dart';
 import 'package:astra_app/presentation/cubits/today_state.dart';
 import 'package:astra_app/presentation/cubits/units_cubit.dart';
@@ -16,6 +17,7 @@ import 'package:astra_app/presentation/widgets/status_banner.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'dart:ui' show Tristate;
 
 import '../../helpers/l10n_test_helper.dart';
 import 'package:sqflite/sqflite.dart';
@@ -934,6 +936,85 @@ void main() {
       await tester.pump();
 
       expect(find.text('Daily step goal'), findsWidgets);
+    });
+
+    group('Set goal semantics', () {
+      final l10n = lookupAppLocalizations(const Locale('en'));
+
+      testWidgets('display-ready state announces action label as enabled button', (
+        tester,
+      ) async {
+        final handle = tester.ensureSemantics();
+
+        await pumpTodayScreen(
+          tester,
+          initial: TodayState.fromData(
+            steps: 1200,
+            goal: 8000,
+            isStale: false,
+            weekDays: sampleWeekDays(),
+            lastDisplayedStepsLoaded: true,
+          ),
+        );
+
+        expect(
+          find.bySemanticsLabel(l10n.todaySetGoalSemantics),
+          findsOneWidget,
+        );
+        final node = tester.getSemantics(
+          find.bySemanticsLabel(l10n.todaySetGoalSemantics),
+        );
+        expect(node.flagsCollection.isButton, isTrue);
+        expect(node.flagsCollection.isEnabled, Tristate.isTrue);
+
+        handle.dispose();
+      });
+
+      testWidgets('loading state announces Set goal button as disabled', (
+        tester,
+      ) async {
+        final handle = tester.ensureSemantics();
+
+        await pumpTodayScreen(
+          tester,
+          initial: const TodayState.loading(),
+        );
+
+        final node = tester.getSemantics(
+          find.bySemanticsLabel(l10n.todaySetGoalSemantics),
+        );
+        expect(node.flagsCollection.isButton, isTrue);
+        expect(node.flagsCollection.isEnabled, Tristate.isFalse);
+
+        handle.dispose();
+      });
+
+      testWidgets(
+        'lastDisplayedStepsLoaded false announces Set goal button as disabled',
+        (tester) async {
+          final handle = tester.ensureSemantics();
+
+          final cubit = await pumpTodayScreen(
+            tester,
+            initial: TodayState.fromData(
+              steps: 100,
+              goal: 8000,
+              isStale: false,
+              lastDisplayedStepsLoaded: true,
+            ),
+          );
+          cubit.emit(cubit.state.copyWith(lastDisplayedStepsLoaded: false));
+          await tester.pump();
+
+          final node = tester.getSemantics(
+            find.bySemanticsLabel(l10n.todaySetGoalSemantics),
+          );
+          expect(node.flagsCollection.isButton, isTrue);
+          expect(node.flagsCollection.isEnabled, Tristate.isFalse);
+
+          handle.dispose();
+        },
+      );
     });
 
     testWidgets('live step tick does not rebuild set goal selector', (
