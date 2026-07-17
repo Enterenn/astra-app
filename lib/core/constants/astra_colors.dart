@@ -11,7 +11,6 @@ class AstraColors extends ThemeExtension<AstraColors> {
     required this.bgElevated,
     required this.bgSubtle,
     required this.borderDefault,
-    required this.borderPrimary,
     required this.textPrimary,
     required this.textSecondary,
     required this.textMuted,
@@ -34,7 +33,6 @@ class AstraColors extends ThemeExtension<AstraColors> {
   final Color bgElevated;
   final Color bgSubtle;
   final Color borderDefault;
-  final Color borderPrimary;
 
   // Text
   final Color textPrimary;
@@ -104,7 +102,6 @@ class AstraColors extends ThemeExtension<AstraColors> {
       bgElevated: bgElevated,
       bgSubtle: bgSubtle,
       borderDefault: _neutralGray,
-      borderPrimary: primary,
       textPrimary: textPrimary,
       textSecondary: _neutralGray,
       textMuted: textMuted,
@@ -129,7 +126,6 @@ class AstraColors extends ThemeExtension<AstraColors> {
     Color? bgElevated,
     Color? bgSubtle,
     Color? borderDefault,
-    Color? borderPrimary,
     Color? textPrimary,
     Color? textSecondary,
     Color? textMuted,
@@ -151,7 +147,6 @@ class AstraColors extends ThemeExtension<AstraColors> {
       bgElevated: bgElevated ?? this.bgElevated,
       bgSubtle: bgSubtle ?? this.bgSubtle,
       borderDefault: borderDefault ?? this.borderDefault,
-      borderPrimary: borderPrimary ?? this.borderPrimary,
       textPrimary: textPrimary ?? this.textPrimary,
       textSecondary: textSecondary ?? this.textSecondary,
       textMuted: textMuted ?? this.textMuted,
@@ -181,7 +176,6 @@ class AstraColors extends ThemeExtension<AstraColors> {
       bgElevated: _lerpColor(bgElevated, other.bgElevated, t)!,
       bgSubtle: _lerpColor(bgSubtle, other.bgSubtle, t)!,
       borderDefault: _lerpColor(borderDefault, other.borderDefault, t)!,
-      borderPrimary: _lerpColor(borderPrimary, other.borderPrimary, t)!,
       textPrimary: _lerpColor(textPrimary, other.textPrimary, t)!,
       textSecondary: _lerpColor(textSecondary, other.textSecondary, t)!,
       textMuted: _lerpColor(textMuted, other.textMuted, t)!,
