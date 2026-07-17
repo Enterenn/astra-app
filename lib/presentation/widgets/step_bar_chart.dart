@@ -198,6 +198,7 @@ class _ReadyChartState extends State<_ReadyChart> {
 
     return Semantics(
       label: semanticsLabel,
+      liveRegion: _touchedIndex != null,
       child: ExcludeSemantics(
         child: Padding(
           padding: const EdgeInsets.fromLTRB(
