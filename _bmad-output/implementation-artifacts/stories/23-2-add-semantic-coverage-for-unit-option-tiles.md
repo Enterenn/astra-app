@@ -1,6 +1,6 @@
 # Story 23.2: Add Semantic Coverage for Unit Option Tiles
 
-Status: review
+Status: done
 
 <!-- Post-audit Epic 23 — tracker: sprint-status-post-audit.yaml -->
 <!-- Source: epics-post-audit.md Story 23-2 · diagnostic-accessibilité-statique.md Bloquant · AUD-26 -->
@@ -221,3 +221,4 @@ claude-sonnet-5-thinking-high
 ### Change Log
 
 - 2026-07-17: Story 23-2 — Semantics coverage for unit option tiles (AUD-26); sprint status → review.
+- 2026-07-17: Code review passed; story → done.
