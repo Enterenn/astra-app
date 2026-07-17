@@ -1,6 +1,6 @@
 # generated: 2026-07-16
-# last_updated: 2026-07-18 (Story 24-2 done)
-# NEXT: create-story 24-3-unify-loading-patterns-for-week-and-trends-surfaces
+# last_updated: 2026-07-18 (Story 24-3 done)
+# NEXT: code-review 24-3 → dev-story 24-4
 # Ref: planning-artifacts/epics-post-audit.md · planning-artifacts/audits/
 # project: astra-app
 # project_key: NOKEY
@@ -63,7 +63,7 @@
 # NAVIGATION: _bmad-output/README.md · planning-artifacts/epics-post-audit.md
 
 generated: 2026-07-16
-last_updated: 2026-07-18 (Story 24-2 done)
+last_updated: 2026-07-18 (Story 24-3 done)
 project: astra-app
 project_key: NOKEY
 tracking_system: file-system
@@ -104,7 +104,7 @@ development_status:
   epic-24: in-progress
   24-1-extract-shared-sheet-drag-handle-component: done
   24-2-remove-or-wire-dead-typography-and-color-tokens: done
-  24-3-unify-loading-patterns-for-week-and-trends-surfaces: backlog
+  24-3-unify-loading-patterns-for-week-and-trends-surfaces: done
   24-4-centralize-repeated-chart-layout-and-typography-values: backlog
   24-5-clean-orphan-preference-default-constants: backlog
   24-6-disable-period-toggle-during-history-loading: backlog

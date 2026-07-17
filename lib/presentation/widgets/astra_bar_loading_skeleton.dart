@@ -41,11 +41,11 @@ class _AstraBarLoadingSkeletonState extends State<AstraBarLoadingSkeleton>
           duration: const Duration(milliseconds: 800),
         );
         unawaited(c.repeat(reverse: true));
-        _pulseController = c;
+        setState(() => _pulseController = c);
       }
-    } else {
-      _pulseController?.dispose();
-      _pulseController = null;
+    } else if (_pulseController != null) {
+      _pulseController!.dispose();
+      setState(() => _pulseController = null);
     }
   }
 
