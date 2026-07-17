@@ -637,6 +637,7 @@ class _GoalRingState extends State<GoalRing> with TickerProviderStateMixin {
             increasedValue: _semanticsMaxValue,
             decreasedValue: _semanticsDecreasedValue,
             container: true,
+            liveRegion: true,
             child: ExcludeSemantics(
               child: SizedBox(
                 width: diameter,
