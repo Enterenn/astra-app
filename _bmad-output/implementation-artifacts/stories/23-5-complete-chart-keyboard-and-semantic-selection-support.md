@@ -1,6 +1,6 @@
 # Story 23.5: Complete Chart Keyboard and Semantic Selection Support
 
-Status: review
+Status: done
 
 <!-- Post-audit Epic 23 — tracker: sprint-status-post-audit.yaml -->
 <!-- Source: epics-post-audit.md Story 23-5 · diagnostic-accessibilité-statique.md charts Majeur · AUD-29 · NFR-AUD-05 -->
@@ -360,6 +360,20 @@ Composer
 - `test/presentation/widgets/trends_monthly_bar_chart_test.dart`
 - `test/helpers/bar_chart_touch_test_helper.dart`
 
+### Review Findings
+
+- [x] [Review][Patch] Sync `_focusedIndex` on tap and on focus gain (clamp to bar range) — tap leaves focus ring on old bar; re-focus uses stale `??=`; Enter/Space then toggles wrong bar [`astra_bar_chart_core.dart`]
+- [x] [Review][Patch] Draw focus affordance for zero/negative bars — painter `continue`s before focus ring, so empty bars have invisible keyboard focus [`astra_bar_chart_painter.dart`]
+- [x] [Review][Patch] Clamp/clear `_touchedIndex` when `points` shrink — selection semantics can `RangeError` on rebuild [`trends_monthly_bar_chart.dart`, `step_bar_chart.dart`]
+- [x] [Review][Patch] Skip focus traversal when `values` empty — empty chart remains focusable via `FocusableActionDetector` [`astra_bar_chart_core.dart`]
+- [x] [Review][Patch] Avoid plot layout shift on focus — 2px border only while focused shrinks hit geometry; use always-on transparent/overlay border [`astra_bar_chart_core.dart`]
+- [x] [Review][Defer] Space activate untested — same `ActivateIntent` as Enter; no dedicated test — deferred, pre-existing coverage gap in new tests
+- [x] [Review][Defer] Daily keyboard path skips semantics/`liveRegion` assert — touch path covers `liveRegion`; keyboard path only checks selection/tooltip — deferred, pre-existing coverage gap in new tests
+- [x] [Review][Defer] Duplicated focus stroke width (core border vs painter) — deferred, pre-existing
+- [x] [Review][Defer] `focusChartAndSelectBar` assumes single Tab lands on chart — deferred, pre-existing
+
 ### Change Log
 
 - 2026-07-17: Story 23-5 — chart keyboard navigation, selection semantics liveRegion, monthly ARB label, widget tests
+- 2026-07-17: Code review — 5 patch, 4 defer, 6 dismissed
+- 2026-07-17: Code review patches applied — focus sync, zero-bar ring, touchedIndex clamp, empty skipTraversal, stable border

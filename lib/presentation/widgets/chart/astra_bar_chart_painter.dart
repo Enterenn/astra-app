@@ -50,12 +50,33 @@ class AstraBarChartPainter extends CustomPainter {
 
     for (var index = 0; index < values.length; index++) {
       final value = values[index].clamp(0, maxY);
+      final left = barCenters[index] - halfBar;
+      final showFocusRing =
+          focusedIndex == index && focusRingColor != null;
+
       if (value <= 0) {
+        if (showFocusRing) {
+          _focusRingPaint.color = focusRingColor!;
+          final baseline = math.max(2.0, topCornerRadius);
+          final rect = Rect.fromLTWH(
+            left,
+            size.height - baseline,
+            barWidth,
+            baseline,
+          );
+          canvas.drawRRect(
+            RRect.fromRectAndCorners(
+              rect,
+              topLeft: Radius.circular(topCornerRadius),
+              topRight: Radius.circular(topCornerRadius),
+            ),
+            _focusRingPaint,
+          );
+        }
         continue;
       }
 
       final barHeight = size.height * (value / maxY);
-      final left = barCenters[index] - halfBar;
       final top = size.height - barHeight;
       final rect = Rect.fromLTWH(left, top, barWidth, barHeight);
 
@@ -69,7 +90,7 @@ class AstraBarChartPainter extends CustomPainter {
         _barFillPaint,
       );
 
-      if (focusedIndex == index && focusRingColor != null) {
+      if (showFocusRing) {
         _focusRingPaint.color = focusRingColor!;
         canvas.drawRRect(
           RRect.fromRectAndCorners(

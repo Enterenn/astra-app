@@ -102,6 +102,13 @@ Removed four low-value test files; see `_bmad-output/implementation-artifacts/sp
 
 - **`databaseSession` getter couple `BackgroundCollector` à `AstraDatabaseSession`** — Le getter expose directement la session interne de `StepIngestionRepository`. Trade-off architectural documenté dans story 21-4 Dev Notes. À revoir lors d'un éventuel refactor DI (epic 25).
 
+## Deferred from: code review of 23-5-complete-chart-keyboard-and-semantic-selection-support (2026-07-17)
+
+- **Space activate untested** — Enter and Space share `ActivateIntent`; core tests cover Enter only.
+- **Daily keyboard path skips semantics/`liveRegion` assert** — Touch path asserts `liveRegion`; keyboard integration checks selection/tooltip only.
+- **Duplicated focus stroke width** — `_kPlotFocusBorderWidth` (core) vs painter `strokeWidth = 2`.
+- **`focusChartAndSelectBar` assumes single Tab** — Helper/`sendTab` may miss chart if another focusable precedes it in the pumped tree.
+
 ## Deferred from: code review of 22-3-add-retry-path-for-profile-and-settings-load-errors (2026-07-17)
 
 - **`Semantics(button: true)` may produce redundant button node** — If `AstraButton` already declares button semantics internally, the wrapping `Semantics(button: true, label: ...)` risks double-announcing "button" to screen readers. Deferred to Epic 23 a11y polish.

@@ -66,6 +66,7 @@ class _AstraBarChartCoreState extends State<AstraBarChartCore> {
     super.initState();
     _focusNode = FocusNode(debugLabel: 'AstraBarChartCore');
     _focusNode.addListener(_handleFocusChange);
+    _syncFocusNodeEnabled();
   }
 
   @override
@@ -84,12 +85,29 @@ class _AstraBarChartCoreState extends State<AstraBarChartCore> {
     } else if (barCount == 0) {
       _focusedIndex = null;
     }
+    _syncFocusNodeEnabled();
+  }
+
+  void _syncFocusNodeEnabled() {
+    final enabled = widget.values.isNotEmpty;
+    _focusNode.canRequestFocus = enabled;
+    _focusNode.skipTraversal = !enabled;
+  }
+
+  int? _clampedBarIndex(int? index) {
+    final barCount = widget.values.length;
+    if (index == null || barCount == 0) {
+      return null;
+    }
+    return index.clamp(0, barCount - 1);
   }
 
   void _handleFocusChange() {
     if (_focusNode.hasFocus && widget.values.isNotEmpty) {
       setState(() {
-        _focusedIndex ??= widget.selectedIndex ?? 0;
+        _focusedIndex = _clampedBarIndex(
+          widget.selectedIndex ?? _focusedIndex ?? 0,
+        );
       });
       return;
     }
@@ -108,12 +126,8 @@ class _AstraBarChartCoreState extends State<AstraBarChartCore> {
   }
 
   void _focusBarAt(int index) {
-    final barCount = widget.values.length;
-    if (barCount == 0) {
-      return;
-    }
     setState(() {
-      _focusedIndex = index.clamp(0, barCount - 1);
+      _focusedIndex = _clampedBarIndex(index);
     });
   }
 
@@ -194,6 +208,9 @@ class _AstraBarChartCoreState extends State<AstraBarChartCore> {
       return;
     }
 
+    setState(() {
+      _focusedIndex = index;
+    });
     widget.onSelectedIndexChanged(
       widget.selectedIndex == index ? null : index,
     );
@@ -254,14 +271,14 @@ class _AstraBarChartCoreState extends State<AstraBarChartCore> {
                           }
                         },
                         child: DecoratedBox(
-                          decoration: _focusNode.hasFocus
-                              ? BoxDecoration(
-                                  border: Border.all(
-                                    color: focusRingColor,
-                                    width: _kPlotFocusBorderWidth,
-                                  ),
-                                )
-                              : const BoxDecoration(),
+                          decoration: BoxDecoration(
+                            border: Border.all(
+                              color: _focusNode.hasFocus
+                                  ? focusRingColor
+                                  : Colors.transparent,
+                              width: _kPlotFocusBorderWidth,
+                            ),
+                          ),
                           child: Stack(
                             clipBehavior: Clip.none,
                             children: [

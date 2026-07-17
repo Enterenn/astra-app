@@ -157,6 +157,16 @@ class _ReadyChartState extends State<_ReadyChart> {
   int? _touchedIndex;
 
   @override
+  void didUpdateWidget(covariant _ReadyChart oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    final pointCount = widget.points.length;
+    if (_touchedIndex != null &&
+        (pointCount == 0 || _touchedIndex! >= pointCount)) {
+      _touchedIndex = null;
+    }
+  }
+
+  @override
   Widget build(BuildContext context) {
     final l10n = AppLocalizations.of(context);
     final colors = widget.colors;
