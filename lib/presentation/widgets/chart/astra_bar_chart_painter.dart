@@ -12,6 +12,8 @@ class AstraBarChartPainter extends CustomPainter {
     required this.barWidth,
     required this.barColor,
     this.selectedIndex,
+    this.focusedIndex,
+    this.focusRingColor,
     this.topCornerRadius = 4,
   });
 
@@ -20,9 +22,14 @@ class AstraBarChartPainter extends CustomPainter {
   final double barWidth;
   final Color Function(int index, bool isSelected) barColor;
   final int? selectedIndex;
+  final int? focusedIndex;
+  final Color? focusRingColor;
   final double topCornerRadius;
 
   final _barFillPaint = Paint()..style = PaintingStyle.fill;
+  final _focusRingPaint = Paint()
+    ..style = PaintingStyle.stroke
+    ..strokeWidth = 2;
 
   @override
   void paint(Canvas canvas, Size size) {
@@ -61,6 +68,18 @@ class AstraBarChartPainter extends CustomPainter {
         ),
         _barFillPaint,
       );
+
+      if (focusedIndex == index && focusRingColor != null) {
+        _focusRingPaint.color = focusRingColor!;
+        canvas.drawRRect(
+          RRect.fromRectAndCorners(
+            rect,
+            topLeft: Radius.circular(topCornerRadius),
+            topRight: Radius.circular(topCornerRadius),
+          ),
+          _focusRingPaint,
+        );
+      }
     }
   }
 
@@ -70,6 +89,8 @@ class AstraBarChartPainter extends CustomPainter {
         oldDelegate.maxY != maxY ||
         oldDelegate.barWidth != barWidth ||
         oldDelegate.selectedIndex != selectedIndex ||
+        oldDelegate.focusedIndex != focusedIndex ||
+        oldDelegate.focusRingColor != focusRingColor ||
         oldDelegate.topCornerRadius != topCornerRadius;
   }
 }

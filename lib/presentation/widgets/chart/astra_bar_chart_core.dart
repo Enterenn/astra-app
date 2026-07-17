@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 
 import '../../../core/constants/astra_colors.dart';
 import '../../../core/constants/astra_typography.dart';
@@ -55,6 +56,131 @@ class AstraBarChartCore extends StatefulWidget {
 }
 
 class _AstraBarChartCoreState extends State<AstraBarChartCore> {
+  static const _kPlotFocusBorderWidth = 2.0;
+
+  late final FocusNode _focusNode;
+  int? _focusedIndex;
+
+  @override
+  void initState() {
+    super.initState();
+    _focusNode = FocusNode(debugLabel: 'AstraBarChartCore');
+    _focusNode.addListener(_handleFocusChange);
+  }
+
+  @override
+  void dispose() {
+    _focusNode.removeListener(_handleFocusChange);
+    _focusNode.dispose();
+    super.dispose();
+  }
+
+  @override
+  void didUpdateWidget(covariant AstraBarChartCore oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    final barCount = widget.values.length;
+    if (_focusedIndex != null && barCount > 0 && _focusedIndex! >= barCount) {
+      _focusedIndex = barCount - 1;
+    } else if (barCount == 0) {
+      _focusedIndex = null;
+    }
+  }
+
+  void _handleFocusChange() {
+    if (_focusNode.hasFocus && widget.values.isNotEmpty) {
+      setState(() {
+        _focusedIndex ??= widget.selectedIndex ?? 0;
+      });
+      return;
+    }
+    setState(() {});
+  }
+
+  void _moveFocusedIndex(int delta) {
+    final barCount = widget.values.length;
+    if (barCount == 0) {
+      return;
+    }
+    final current = _focusedIndex ?? widget.selectedIndex ?? 0;
+    setState(() {
+      _focusedIndex = (current + delta).clamp(0, barCount - 1);
+    });
+  }
+
+  void _focusBarAt(int index) {
+    final barCount = widget.values.length;
+    if (barCount == 0) {
+      return;
+    }
+    setState(() {
+      _focusedIndex = index.clamp(0, barCount - 1);
+    });
+  }
+
+  void _activateFocusedBar() {
+    final index = _focusedIndex;
+    if (index == null || index < 0 || index >= widget.values.length) {
+      return;
+    }
+    widget.onSelectedIndexChanged(
+      widget.selectedIndex == index ? null : index,
+    );
+  }
+
+  void _clearSelection() {
+    if (widget.selectedIndex != null) {
+      widget.onSelectedIndexChanged(null);
+    }
+  }
+
+  Map<ShortcutActivator, Intent> get _shortcuts {
+    if (widget.values.isEmpty) {
+      return const {};
+    }
+    return {
+      const SingleActivator(LogicalKeyboardKey.arrowLeft): const _MoveFocusIntent(-1),
+      const SingleActivator(LogicalKeyboardKey.arrowRight): const _MoveFocusIntent(1),
+      const SingleActivator(LogicalKeyboardKey.home): const _MoveFocusToStartIntent(),
+      const SingleActivator(LogicalKeyboardKey.end): const _MoveFocusToEndIntent(),
+      const SingleActivator(LogicalKeyboardKey.enter): ActivateIntent(),
+      const SingleActivator(LogicalKeyboardKey.space): ActivateIntent(),
+      const SingleActivator(LogicalKeyboardKey.escape): const _ClearSelectionIntent(),
+    };
+  }
+
+  Map<Type, Action<Intent>> get _actions => {
+        _MoveFocusIntent: CallbackAction<_MoveFocusIntent>(
+          onInvoke: (intent) {
+            _moveFocusedIndex(intent.delta);
+            return null;
+          },
+        ),
+        _MoveFocusToStartIntent: CallbackAction<_MoveFocusToStartIntent>(
+          onInvoke: (_) {
+            _focusBarAt(0);
+            return null;
+          },
+        ),
+        _MoveFocusToEndIntent: CallbackAction<_MoveFocusToEndIntent>(
+          onInvoke: (_) {
+            _focusBarAt(widget.values.length - 1);
+            return null;
+          },
+        ),
+        ActivateIntent: CallbackAction<ActivateIntent>(
+          onInvoke: (_) {
+            _activateFocusedBar();
+            return null;
+          },
+        ),
+        _ClearSelectionIntent: CallbackAction<_ClearSelectionIntent>(
+          onInvoke: (_) {
+            _clearSelection();
+            return null;
+          },
+        ),
+      };
+
   void _handleTapUp(TapUpDetails details, BoxConstraints plotConstraints) {
     final index = barIndexAtPlotX(
       localX: details.localPosition.dx,
@@ -104,66 +230,90 @@ class _AstraBarChartCoreState extends State<AstraBarChartCore> {
                   builder: (context, plotConstraints) {
                     final plotWidth = plotConstraints.maxWidth;
                     final plotHeight = plotConstraints.maxHeight;
+                    final focusRingColor =
+                        colors.borderDefault.withValues(alpha: 0.8);
 
-                    return GestureDetector(
-                      behavior: HitTestBehavior.translucent,
-                      onTapUp: (details) =>
-                          _handleTapUp(details, plotConstraints),
-                      onTapDown: (details) {
-                        final index = barIndexAtPlotX(
-                          localX: details.localPosition.dx,
-                          plotWidth: plotWidth,
-                          barCount: barCount,
-                          barWidth: widget.barWidth,
-                        );
-                        if (index == null) {
-                          _handleTapOutside();
-                        }
-                      },
-                      child: Stack(
-                        clipBehavior: Clip.none,
-                        children: [
-                          CustomPaint(
-                            size: Size(plotWidth, plotHeight),
-                            painter: AstraBarChartPainter(
-                              values: widget.values,
-                              maxY: widget.maxY,
-                              barWidth: widget.barWidth,
-                              barColor: widget.barColor,
-                              selectedIndex: widget.selectedIndex,
-                            ),
+                    return FocusableActionDetector(
+                      focusNode: _focusNode,
+                      autofocus: false,
+                      shortcuts: _shortcuts,
+                      actions: _actions,
+                      child: GestureDetector(
+                        behavior: HitTestBehavior.translucent,
+                        onTapUp: (details) =>
+                            _handleTapUp(details, plotConstraints),
+                        onTapDown: (details) {
+                          final index = barIndexAtPlotX(
+                            localX: details.localPosition.dx,
+                            plotWidth: plotWidth,
+                            barCount: barCount,
+                            barWidth: widget.barWidth,
+                          );
+                          if (index == null) {
+                            _handleTapOutside();
+                          }
+                        },
+                        child: DecoratedBox(
+                          decoration: _focusNode.hasFocus
+                              ? BoxDecoration(
+                                  border: Border.all(
+                                    color: focusRingColor,
+                                    width: _kPlotFocusBorderWidth,
+                                  ),
+                                )
+                              : const BoxDecoration(),
+                          child: Stack(
+                            clipBehavior: Clip.none,
+                            children: [
+                              CustomPaint(
+                                size: Size(plotWidth, plotHeight),
+                                painter: AstraBarChartPainter(
+                                  values: widget.values,
+                                  maxY: widget.maxY,
+                                  barWidth: widget.barWidth,
+                                  barColor: widget.barColor,
+                                  selectedIndex: widget.selectedIndex,
+                                  focusedIndex: _focusNode.hasFocus
+                                      ? _focusedIndex
+                                      : null,
+                                  focusRingColor: focusRingColor,
+                                ),
+                              ),
+                              if (widget.singleGoalValue != null &&
+                                  widget.singleGoalValue! > 0)
+                                CustomPaint(
+                                  size: Size(plotWidth, plotHeight),
+                                  painter: AstraSingleGoalLinePainter(
+                                    goalY: plotHeight *
+                                        (1 -
+                                            widget.singleGoalValue! /
+                                                widget.maxY),
+                                    color: colors.dataGoalLine,
+                                  ),
+                                ),
+                              if (widget.selectedIndex != null &&
+                                  widget.tooltipTextBuilder != null)
+                                _BarTooltip(
+                                  text: widget.tooltipTextBuilder!(
+                                    widget.selectedIndex!,
+                                  ),
+                                  barCenterX: barCenterPlotX(
+                                    index: widget.selectedIndex!,
+                                    plotWidth: plotWidth,
+                                    barCount: barCount,
+                                    barWidth: widget.barWidth,
+                                  ),
+                                  barTopY: barTopPlotY(
+                                    value: widget.values[widget.selectedIndex!],
+                                    maxY: widget.maxY,
+                                    plotHeight: plotHeight,
+                                  ),
+                                  plotWidth: plotWidth,
+                                  colors: colors,
+                                ),
+                            ],
                           ),
-                          if (widget.singleGoalValue != null &&
-                              widget.singleGoalValue! > 0)
-                            CustomPaint(
-                              size: Size(plotWidth, plotHeight),
-                              painter: AstraSingleGoalLinePainter(
-                                goalY: plotHeight *
-                                    (1 - widget.singleGoalValue! / widget.maxY),
-                                color: colors.dataGoalLine,
-                              ),
-                            ),
-                          if (widget.selectedIndex != null &&
-                              widget.tooltipTextBuilder != null)
-                            _BarTooltip(
-                              text: widget.tooltipTextBuilder!(
-                                widget.selectedIndex!,
-                              ),
-                              barCenterX: barCenterPlotX(
-                                index: widget.selectedIndex!,
-                                plotWidth: plotWidth,
-                                barCount: barCount,
-                                barWidth: widget.barWidth,
-                              ),
-                              barTopY: barTopPlotY(
-                                value: widget.values[widget.selectedIndex!],
-                                maxY: widget.maxY,
-                                plotHeight: plotHeight,
-                              ),
-                              plotWidth: plotWidth,
-                              colors: colors,
-                            ),
-                        ],
+                        ),
                       ),
                     );
                   },
@@ -206,6 +356,24 @@ class _AstraBarChartCoreState extends State<AstraBarChartCore> {
       ],
     );
   }
+}
+
+class _MoveFocusIntent extends Intent {
+  const _MoveFocusIntent(this.delta);
+
+  final int delta;
+}
+
+class _MoveFocusToStartIntent extends Intent {
+  const _MoveFocusToStartIntent();
+}
+
+class _MoveFocusToEndIntent extends Intent {
+  const _MoveFocusToEndIntent();
+}
+
+class _ClearSelectionIntent extends Intent {
+  const _ClearSelectionIntent();
 }
 
 class _YAxisLabels extends StatelessWidget {
