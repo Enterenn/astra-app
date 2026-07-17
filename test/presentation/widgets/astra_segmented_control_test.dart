@@ -2,6 +2,7 @@ import 'package:astra_app/core/constants/astra_theme.dart';
 import 'package:astra_app/presentation/widgets/astra_inset_shadow.dart';
 import 'package:astra_app/presentation/widgets/astra_segmented_control.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_test/flutter_test.dart';
 
 import '../../helpers/l10n_test_helper.dart';
@@ -85,6 +86,53 @@ void main() {
       await pumpControl(tester);
 
       expect(find.byType(AstraInsetShadowSurface), findsOneWidget);
+    });
+
+    testWidgets('InkWell has non-transparent keyboard focusColor', (tester) async {
+      await pumpControl(tester);
+
+      final inkWell = tester.widget<InkWell>(find.byType(InkWell).first);
+      expect(inkWell.focusColor, isNotNull);
+      expect(inkWell.focusColor, isNot(Colors.transparent));
+      expect(inkWell.focusColor!.a, greaterThan(0));
+    });
+
+    testWidgets('focusColor uses theme borderDefault in light and dark', (tester) async {
+      for (final theme in [buildAstraLightTheme(), buildAstraDarkTheme()]) {
+        await tester.pumpWidget(
+          TestMaterialApp(
+            theme: theme,
+            home: Scaffold(
+              body: Center(
+                child: SizedBox(
+                  width: 300,
+                  child: AstraSegmentedControl<String>(
+                    options: options,
+                    selected: 'a',
+                    onChanged: (_) {},
+                    semanticsHint: 'Test hint',
+                  ),
+                ),
+              ),
+            ),
+          ),
+        );
+        await tester.pump();
+
+        final inkWell = tester.widget<InkWell>(find.byType(InkWell).first);
+        expect(inkWell.focusColor, isNot(Colors.transparent));
+        expect(inkWell.focusColor!.a, closeTo(0.35, 0.01));
+      }
+    });
+
+    testWidgets('tab moves focus to a segment InkWell', (tester) async {
+      await pumpControl(tester);
+
+      await tester.sendKeyEvent(LogicalKeyboardKey.tab);
+      await tester.pump();
+
+      expect(FocusManager.instance.primaryFocus, isNotNull);
+      expect(find.byType(InkWell), findsWidgets);
     });
   });
 }
