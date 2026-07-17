@@ -293,33 +293,35 @@ class _SettingsScrollBody extends StatelessWidget {
           const SizedBox(height: AstraSpacing.kSpaceMd),
           SectionCard(
             headline: l10n.settingsNotifications,
-            child: Row(
-              children: [
-                Expanded(
-                  child: Text(
-                    l10n.settingsGoalNotifications,
-                    style: AstraTypography.body(context),
+            child: MergeSemantics(
+              child: Row(
+                children: [
+                  Expanded(
+                    child: Text(
+                      l10n.settingsGoalNotifications,
+                      style: AstraTypography.body(context),
+                    ),
                   ),
-                ),
-                Switch(
-                  value: profileState.goalNotificationsEnabled,
-                  activeTrackColor: colors.accentPrimary.withValues(alpha: 0.5),
-                  activeThumbColor: colors.accentPrimary,
-                  onChanged: (enabled) async {
-                    final saved =
-                        await profileCubit.setGoalNotificationsEnabled(
-                          enabled,
+                  Switch(
+                    value: profileState.goalNotificationsEnabled,
+                    activeTrackColor: colors.accentPrimary.withValues(alpha: 0.5),
+                    activeThumbColor: colors.accentPrimary,
+                    onChanged: (enabled) async {
+                      final saved =
+                          await profileCubit.setGoalNotificationsEnabled(
+                            enabled,
+                          );
+                      if (!saved && context.mounted) {
+                        ScaffoldMessenger.of(context).showSnackBar(
+                          SnackBar(
+                            content: Text(l10n.settingsNotificationUpdateError),
+                          ),
                         );
-                    if (!saved && context.mounted) {
-                      ScaffoldMessenger.of(context).showSnackBar(
-                        SnackBar(
-                          content: Text(l10n.settingsNotificationUpdateError),
-                        ),
-                      );
-                    }
-                  },
-                ),
-              ],
+                      }
+                    },
+                  ),
+                ],
+              ),
             ),
           ),
           const SizedBox(height: AstraSpacing.kSpaceMd),
