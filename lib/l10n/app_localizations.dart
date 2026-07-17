@@ -1135,6 +1135,12 @@ abstract class AppLocalizations {
   /// **'Activity stats: no permission'**
   String get todayActivityStatsSemanticsNoPermission;
 
+  /// Semantics label for Today activity stats row on a zero-activity day
+  ///
+  /// In en, this message translates to:
+  /// **'Activity stats: no activity yet'**
+  String get todayActivityStatsSemanticsEmpty;
+
   /// Semantics summary for Today activity stats row with committed metrics
   ///
   /// In en, this message translates to:

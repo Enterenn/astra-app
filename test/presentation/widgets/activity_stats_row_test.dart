@@ -131,6 +131,14 @@ void main() {
   });
 
   group('semantics', () {
+    Finder liveRegionIn(WidgetTester tester) => find.descendant(
+          of: find.byType(ActivityStatsRow),
+          matching: find.byWidgetPredicate(
+            (widget) =>
+                widget is Semantics && widget.properties.liveRegion == true,
+          ),
+        );
+
     testWidgets('loading state exposes live region label', (tester) async {
       final handle = tester.ensureSemantics();
 
@@ -144,16 +152,52 @@ void main() {
         find.bySemanticsLabel(l10n.todayActivityStatsSemanticsLoading),
         findsOneWidget,
       );
-      final semanticsWidget = tester.widget<Semantics>(
-        find.descendant(
-          of: find.byType(ActivityStatsRow),
-          matching: find.byWidgetPredicate(
-            (widget) =>
-                widget is Semantics && widget.properties.liveRegion == true,
-          ),
-        ),
+      expect(
+        tester.widget<Semantics>(liveRegionIn(tester)).properties.liveRegion,
+        isTrue,
       );
-      expect(semanticsWidget.properties.liveRegion, isTrue);
+
+      handle.dispose();
+    });
+
+    testWidgets('noPermission state exposes live region label', (tester) async {
+      final handle = tester.ensureSemantics();
+
+      await pumpRow(
+        tester,
+        theme: buildAstraLightTheme(),
+        status: TodayStatus.noPermission,
+      );
+
+      expect(
+        find.bySemanticsLabel(l10n.todayActivityStatsSemanticsNoPermission),
+        findsOneWidget,
+      );
+      expect(
+        tester.widget<Semantics>(liveRegionIn(tester)).properties.liveRegion,
+        isTrue,
+      );
+
+      handle.dispose();
+    });
+
+    testWidgets('empty state exposes live region label', (tester) async {
+      final handle = tester.ensureSemantics();
+
+      await pumpRow(
+        tester,
+        theme: buildAstraLightTheme(),
+        status: TodayStatus.empty,
+      );
+
+      expect(
+        find.bySemanticsLabel(l10n.todayActivityStatsSemanticsEmpty),
+        findsOneWidget,
+      );
+      expect(
+        tester.widget<Semantics>(liveRegionIn(tester)).properties.liveRegion,
+        isTrue,
+      );
 
       handle.dispose();
     });
@@ -184,6 +228,10 @@ void main() {
           ),
         ),
         findsOneWidget,
+      );
+      expect(
+        tester.widget<Semantics>(liveRegionIn(tester)).properties.liveRegion,
+        isTrue,
       );
 
       handle.dispose();

@@ -629,6 +629,10 @@ class AppLocalizationsFr extends AppLocalizations {
       'Statistiques d\'activité : permission refusée';
 
   @override
+  String get todayActivityStatsSemanticsEmpty =>
+      'Statistiques d\'activité : aucune activité pour l\'instant';
+
+  @override
   String todayActivityStatsSemanticsSummary(
     String kcal,
     String distance,

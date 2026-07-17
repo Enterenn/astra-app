@@ -1,6 +1,6 @@
 # Story 23.3: Introduce Live Region for Goal Ring, Activity Stats, and Health Status
 
-Status: review
+Status: done
 
 <!-- Post-audit Epic 23 — tracker: sprint-status-post-audit.yaml -->
 <!-- Source: epics-post-audit.md Story 23-3 · diagnostic-accessibilité-statique.md LiveRegion Majeur · AUD-27 · AUD-31 · UX-AUD-02 · UX-AUD-03 -->

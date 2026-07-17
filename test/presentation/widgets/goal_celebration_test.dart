@@ -4,6 +4,7 @@ import 'package:astra_app/presentation/widgets/goal_celebration.dart';
 import 'package:astra_app/presentation/widgets/goal_celebration_particles.dart';
 import 'package:astra_app/presentation/widgets/goal_ring.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter/semantics.dart';
 import 'package:flutter_test/flutter_test.dart';
 
 import '../../helpers/l10n_test_helper.dart';
@@ -65,6 +66,15 @@ void main() {
       expect(completed, isTrue);
     });
 
+    int countLiveRegions(SemanticsNode node) {
+      var count = node.getSemanticsData().flagsCollection.isLiveRegion ? 1 : 0;
+      node.visitChildren((child) {
+        count += countLiveRegions(child);
+        return true;
+      });
+      return count;
+    }
+
     testWidgets('semantics live region announces goal once', (tester) async {
       final handle = tester.ensureSemantics();
       var completed = false;
@@ -76,10 +86,10 @@ void main() {
       );
 
       expect(find.bySemanticsLabel('Daily goal reached'), findsOneWidget);
-      final semanticsWidget = tester.widget<Semantics>(
-        find.bySemanticsLabel('Daily goal reached'),
-      );
-      expect(semanticsWidget.properties.liveRegion, isTrue);
+      expect(find.bySemanticsLabel(RegExp(r'Steps today')), findsNothing);
+      final root = tester.binding.pipelineOwner.semanticsOwner!.rootSemanticsNode;
+      expect(root, isNotNull);
+      expect(countLiveRegions(root!), 1);
 
       await tester.pump(const Duration(milliseconds: 500));
       await tester.pump(const Duration(milliseconds: 1));

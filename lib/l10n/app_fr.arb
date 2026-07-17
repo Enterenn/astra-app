@@ -178,6 +178,7 @@
   "todayStatsMiLabel": "Mi",
   "todayActivityStatsSemanticsLoading": "Statistiques d'activité : chargement",
   "todayActivityStatsSemanticsNoPermission": "Statistiques d'activité : permission refusée",
+  "todayActivityStatsSemanticsEmpty": "Statistiques d'activité : aucune activité pour l'instant",
   "todayActivityStatsSemanticsSummary": "{kcal} kilocalories, {distance} {distanceUnit}, {duration} de marche",
   "onboardingContinueBtn": "Continuer",
   "onboardingSkipBtn": "Passer",

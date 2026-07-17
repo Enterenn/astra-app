@@ -101,6 +101,9 @@ class ActivityStatsRow extends StatelessWidget {
     if (status == TodayStatus.noPermission) {
       return l10n.todayActivityStatsSemanticsNoPermission;
     }
+    if (status == TodayStatus.empty) {
+      return l10n.todayActivityStatsSemanticsEmpty;
+    }
     final (kcal, distanceValue, distanceLabel, duration) =
         _formattedValues(l10n, distanceUnit);
     return l10n.todayActivityStatsSemanticsSummary(

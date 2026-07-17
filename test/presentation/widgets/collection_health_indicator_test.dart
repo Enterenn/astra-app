@@ -112,5 +112,84 @@ void main() {
 
       handle.dispose();
     });
+
+    testWidgets('stale state exposes live region semantics', (tester) async {
+      final handle = tester.ensureSemantics();
+
+      await tester.pumpWidget(
+        TestMaterialApp(
+          theme: buildAstraLightTheme(),
+          home: Scaffold(
+            body: CollectionHealthIndicator(
+              display: CollectionHealthDisplay.stale,
+              lastIngestionUtc: fixedNow.subtract(const Duration(hours: 3)),
+              nowUtc: fixedNow,
+            ),
+          ),
+        ),
+      );
+
+      final expectedLabel = l10n.todayCollectionHealthStale('3 hours ago');
+      expect(find.bySemanticsLabel(expectedLabel), findsOneWidget);
+      expect(
+        tester
+            .widget<Semantics>(
+              find.descendant(
+                of: find.byType(CollectionHealthIndicator),
+                matching: find.byWidgetPredicate(
+                  (widget) =>
+                      widget is Semantics &&
+                      widget.properties.liveRegion == true,
+                ),
+              ),
+            )
+            .properties
+            .liveRegion,
+        isTrue,
+      );
+
+      handle.dispose();
+    });
+
+    testWidgets('permission denied state exposes live region semantics', (
+      tester,
+    ) async {
+      final handle = tester.ensureSemantics();
+
+      await tester.pumpWidget(
+        TestMaterialApp(
+          theme: buildAstraLightTheme(),
+          home: Scaffold(
+            body: CollectionHealthIndicator(
+              display: CollectionHealthDisplay.permissionDenied,
+              nowUtc: fixedNow,
+            ),
+          ),
+        ),
+      );
+
+      expect(
+        find.bySemanticsLabel(l10n.todayCollectionHealthPermissionDenied),
+        findsOneWidget,
+      );
+      expect(
+        tester
+            .widget<Semantics>(
+              find.descendant(
+                of: find.byType(CollectionHealthIndicator),
+                matching: find.byWidgetPredicate(
+                  (widget) =>
+                      widget is Semantics &&
+                      widget.properties.liveRegion == true,
+                ),
+              ),
+            )
+            .properties
+            .liveRegion,
+        isTrue,
+      );
+
+      handle.dispose();
+    });
   });
 }

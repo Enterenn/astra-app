@@ -123,5 +123,24 @@ void main() {
 
       handle.dispose();
     });
+
+    testWidgets('permissionDenied keeps settings button outside live region', (
+      tester,
+    ) async {
+      final handle = tester.ensureSemantics();
+
+      await pumpCard(
+        tester,
+        status: BackgroundCollectionStatus.permissionDenied,
+      );
+
+      expect(
+        find.bySemanticsLabel(l10n.myDataBackgroundPermissionDenied),
+        findsOneWidget,
+      );
+      expect(find.bySemanticsLabel(l10n.myDataOpenSettings), findsOneWidget);
+
+      handle.dispose();
+    });
   });
 }

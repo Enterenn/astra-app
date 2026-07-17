@@ -867,6 +867,10 @@
   "@todayActivityStatsSemanticsNoPermission": {
     "description": "Semantics label for Today activity stats row when permission is denied"
   },
+  "todayActivityStatsSemanticsEmpty": "Activity stats: no activity yet",
+  "@todayActivityStatsSemanticsEmpty": {
+    "description": "Semantics label for Today activity stats row on a zero-activity day"
+  },
   "todayActivityStatsSemanticsSummary": "{kcal} kilocalories, {distance} {distanceUnit}, {duration} walking",
   "@todayActivityStatsSemanticsSummary": {
     "description": "Semantics summary for Today activity stats row with committed metrics",
