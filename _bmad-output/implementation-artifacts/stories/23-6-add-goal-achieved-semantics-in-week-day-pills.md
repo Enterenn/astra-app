@@ -1,6 +1,6 @@
 # Story 23.6: Add Goal-Achieved Semantics in Week Day Pills
 
-Status: in-progress
+Status: review
 
 <!-- Post-audit Epic 23 — tracker: sprint-status-post-audit.yaml -->
 <!-- Source: epics-post-audit.md Story 23-6 · diagnostic-accessibilité-statique.md week_progress Majeur · AUD-30 · UX-AUD-05 · NFR-AUD-05 -->
@@ -75,13 +75,13 @@ So that the coloured indicator is not color-only information.
   - [x] Set `Semantics.label` from helper; keep `selected` / `button`
   - [x] Wrap Column (or InkWell child content) in `ExcludeSemantics`
   - [x] Do **not** change `dotColor` rules, selection fill, or future `onTap: null`
-  - [ ] **Stop → review brief → wait for Baptiste OK → commit**
+  - [x] **Stop → review brief → wait for Baptiste OK → commit**
 
-- [ ] **Sub-task C — Widget tests + regression** (AC: #7)
-  - [ ] Extend `test/presentation/widgets/week_progress_row_test.dart`
-  - [ ] Update selected-semantics finder if `ExcludeSemantics` breaks `getSemantics(find.text(...))`
-  - [ ] `dart analyze` + `flutter test test/presentation/widgets/week_progress_row_test.dart` + `flutter test --exclude-tags slow`
-  - [ ] **Stop → review brief → wait for Baptiste OK → commit**
+- [x] **Sub-task C — Widget tests + regression** (AC: #7)
+  - [x] Extend `test/presentation/widgets/week_progress_row_test.dart`
+  - [x] Update selected-semantics finder if `ExcludeSemantics` breaks `getSemantics(find.text(...))`
+  - [x] `dart analyze` + `flutter test test/presentation/widgets/week_progress_row_test.dart` + `flutter test --exclude-tags slow`
+  - [x] **Stop → review brief → wait for Baptiste OK → commit**
 
 ## Dev Notes
 
@@ -274,6 +274,7 @@ Composer (Cursor agent)
 
 - Sub-task A: Added sibling ARB keys + `_dayPillSemanticsLabel` (future = identity-only; past/today = status from `goalMet`, reusing `chartGoalStatusMet`).
 - Sub-task B: Wrapped pill visual content in `ExcludeSemantics`; kept `selected` / `button` / dot rules unchanged.
+- Sub-task C: Extended `week_progress_row_test.dart` (met / not-met / future labels + selected via `bySemanticsLabel`); analyze + full suite excl. slow green.
 
 ### File List
 
@@ -283,6 +284,7 @@ Composer (Cursor agent)
 - `lib/l10n/app_localizations_en.dart`
 - `lib/l10n/app_localizations_fr.dart`
 - `lib/presentation/widgets/week_progress_row.dart`
+- `test/presentation/widgets/week_progress_row_test.dart`
 - `_bmad-output/implementation-artifacts/sprint-status-post-audit.yaml`
 - `_bmad-output/implementation-artifacts/stories/23-6-add-goal-achieved-semantics-in-week-day-pills.md`
 
@@ -291,3 +293,4 @@ Composer (Cursor agent)
 - 2026-07-17: Story context created — ready-for-dev (create-story workflow)
 - 2026-07-17: Sub-task A — ARB status keys + day-pill semantics label helper
 - 2026-07-17: Sub-task B — ExcludeSemantics on day-pill visuals
+- 2026-07-17: Sub-task C — widget tests for goal-status semantics + regression
