@@ -3,6 +3,7 @@ import 'package:astra_app/presentation/widgets/chart/astra_bar_chart_painter.dar
 import 'package:astra_app/presentation/widgets/chart/astra_single_goal_line_painter.dart';
 import 'package:astra_app/presentation/widgets/chart/goal_step_line_painter.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_test/flutter_test.dart';
 
 bool hasGoalStepLinePainter(WidgetTester tester) {
@@ -53,6 +54,23 @@ Future<void> tapPlotAtLocalX(
       plotBox.top + plotTop + 20,
     ),
   );
+  await tester.pump();
+}
+
+/// Tabs until the chart plot is focused, then optionally selects [barIndex] via keyboard.
+Future<void> focusChartAndSelectBar(
+  WidgetTester tester, {
+  int barIndex = 0,
+}) async {
+  await tester.sendKeyEvent(LogicalKeyboardKey.tab);
+  await tester.pump();
+
+  for (var i = 0; i < barIndex; i++) {
+    await tester.sendKeyEvent(LogicalKeyboardKey.arrowRight);
+    await tester.pump();
+  }
+
+  await tester.sendKeyEvent(LogicalKeyboardKey.enter);
   await tester.pump();
 }
 

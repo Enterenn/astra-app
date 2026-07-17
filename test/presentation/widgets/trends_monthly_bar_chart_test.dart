@@ -6,6 +6,7 @@ import 'package:astra_app/presentation/widgets/chart/astra_bar_chart_core.dart';
 import 'package:astra_app/presentation/widgets/chart/chart_axis_ticks.dart';
 import 'package:astra_app/presentation/widgets/trends_monthly_bar_chart.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter/semantics.dart';
 import 'package:flutter_test/flutter_test.dart';
 
 import '../../helpers/bar_chart_touch_test_helper.dart';
@@ -175,6 +176,48 @@ void main() {
         find.text('June 2026\n3532 steps/day\n52980 total · 15 days'),
         findsOneWidget,
       );
+    });
+
+    testWidgets('selected month updates semantics summary', (tester) async {
+      final points = [
+        ChartMonthAggregate(
+          monthStart: DateTime.utc(2026, 6, 1),
+          averageDailySteps: 3532,
+          totalSteps: 52_980,
+          dayCount: 15,
+        ),
+      ];
+
+      await pumpChart(
+        tester,
+        points: points,
+        status: HistoryStatus.ready,
+      );
+
+      final core = tester.widget<AstraBarChartCore>(
+        find.byType(AstraBarChartCore),
+      );
+      await tapBarAtIndex(
+        tester,
+        barIndex: 0,
+        barCount: 1,
+        barWidth: core.barWidth,
+        plotWidth: 400 - 36 - 16,
+      );
+
+      final semantics = tester.getSemantics(
+        find.descendant(
+          of: find.byType(TrendsMonthlyBarChart),
+          matching: find.byWidgetPredicate(
+            (widget) =>
+                widget is Semantics &&
+                (widget.properties.label?.contains('June 2026') ?? false),
+          ),
+        ),
+      );
+      expect(semantics.label, contains('3532 steps/day'));
+      expect(semantics.label, contains('52980 total · 15 days'));
+      expect(semantics.hasFlag(SemanticsFlag.isLiveRegion), isTrue);
     });
 
     test('formatPeriodRange returns oldest–newest month year caption', () {

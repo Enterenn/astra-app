@@ -8,6 +8,8 @@ import 'package:astra_app/presentation/widgets/chart/bar_chart_layout.dart';
 import 'package:astra_app/presentation/widgets/chart/chart_axis_ticks.dart';
 import 'package:astra_app/presentation/widgets/step_bar_chart.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter/semantics.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_test/flutter_test.dart';
 
 import '../../helpers/bar_chart_touch_test_helper.dart';
@@ -522,6 +524,74 @@ void main() {
       );
       expect(semantics.label, contains('9 June'));
       expect(semantics.label, contains('547 over goal'));
+    });
+
+    testWidgets('selected bar enables liveRegion semantics', (tester) async {
+      final points = [
+        ChartDayAggregate(
+          localDay: DateTime.utc(2026, 6, 9),
+          totalSteps: 8547,
+        ),
+      ];
+
+      await pumpChart(
+        tester,
+        status: HistoryStatus.ready,
+        points: points,
+        dailyGoal: 8000,
+        goalsByDay: const {'2026-06-09': 8000},
+      );
+
+      final core = tester.widget<AstraBarChartCore>(
+        find.byType(AstraBarChartCore),
+      );
+      await tapBarAtIndex(
+        tester,
+        barIndex: 0,
+        barCount: 1,
+        barWidth: core.barWidth,
+        plotWidth: 320 - 36 - 16,
+      );
+
+      final semantics = tester.getSemantics(
+        find.descendant(
+          of: find.byType(StepBarChart),
+          matching: find.byWidgetPredicate(
+            (widget) =>
+                widget is Semantics &&
+                (widget.properties.label?.contains('9 June, 8547 of 8000 steps') ??
+                    false),
+          ),
+        ),
+      );
+      expect(semantics.hasFlag(SemanticsFlag.isLiveRegion), isTrue);
+    });
+
+    testWidgets('keyboard enter selects bar and updates semantics', (
+      tester,
+    ) async {
+      final points = [
+        ChartDayAggregate(
+          localDay: DateTime.utc(2026, 6, 9),
+          totalSteps: 8547,
+        ),
+      ];
+
+      await pumpChart(
+        tester,
+        status: HistoryStatus.ready,
+        points: points,
+        dailyGoal: 8000,
+        goalsByDay: const {'2026-06-09': 8000},
+      );
+
+      await focusChartAndSelectBar(tester);
+
+      expect(
+        tester.widget<AstraBarChartCore>(find.byType(AstraBarChartCore)).selectedIndex,
+        0,
+      );
+      expect(find.text('9 June\n8547/8000 steps'), findsOneWidget);
     });
 
     testWidgets('tooltip includes year when visible window spans years', (
