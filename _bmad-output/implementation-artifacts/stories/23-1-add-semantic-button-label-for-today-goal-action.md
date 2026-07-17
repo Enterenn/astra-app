@@ -1,6 +1,6 @@
 # Story 23.1: Add Semantic Button Label for Today Goal Action
 
-Status: review
+Status: done
 
 <!-- Post-audit Epic 23 — tracker: sprint-status-post-audit.yaml -->
 <!-- Source: epics-post-audit.md Story 23-1 · diagnostic-accessibilité-statique.md Bloquant · AUD-25 · UX-AUD-02 -->
@@ -218,7 +218,8 @@ Composer
 - Added `todaySetGoalSemantics` ARB key (EN + FR) and regenerated l10n.
 - Wired dedicated semantics label on Set goal button; visual copy unchanged.
 - Wrapped visual `Text` in `ExcludeSemantics` so parent action label is announced.
-- Added 3 semantics widget tests (enabled, loading disabled, lastDisplayedStepsLoaded disabled).
+- Added semantics widget tests (enabled, loading disabled, lastDisplayedStepsLoaded disabled).
+- Code review: visual-label exclusion assertion, disabled `findsOneWidget`, FR locale smoke.
 - All AC satisfied; `flutter test --exclude-tags slow` green.
 
 ### File List
@@ -234,3 +235,4 @@ Composer
 ### Change Log
 
 - 2026-07-17: Dedicated Set goal semantics label (AUD-25) — ARB key, widget wiring, tests.
+- 2026-07-17: Code review closed — hardened semantics tests; story marked done.

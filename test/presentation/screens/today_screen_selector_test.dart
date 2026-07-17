@@ -838,12 +838,14 @@ void main() {
     Future<_SeededTodayCubit> pumpTodayScreen(
       WidgetTester tester, {
       required TodayState initial,
+      Locale locale = const Locale('en'),
     }) async {
       final cubit = buildCubit(initial);
       addTearDown(cubit.close);
 
       await tester.pumpWidget(
         TestMaterialApp(
+          locale: locale,
           theme: buildAstraLightTheme(),
           home: MediaQuery(
             data: const MediaQueryData(disableAnimations: true),
@@ -966,6 +968,7 @@ void main() {
         );
         expect(node.flagsCollection.isButton, isTrue);
         expect(node.flagsCollection.isEnabled, Tristate.isTrue);
+        expect(find.bySemanticsLabel(l10n.todaySetGoalLabel), findsNothing);
 
         handle.dispose();
       });
@@ -980,6 +983,10 @@ void main() {
           initial: const TodayState.loading(),
         );
 
+        expect(
+          find.bySemanticsLabel(l10n.todaySetGoalSemantics),
+          findsOneWidget,
+        );
         final node = tester.getSemantics(
           find.bySemanticsLabel(l10n.todaySetGoalSemantics),
         );
@@ -1006,6 +1013,10 @@ void main() {
           cubit.emit(cubit.state.copyWith(lastDisplayedStepsLoaded: false));
           await tester.pump();
 
+          expect(
+            find.bySemanticsLabel(l10n.todaySetGoalSemantics),
+            findsOneWidget,
+          );
           final node = tester.getSemantics(
             find.bySemanticsLabel(l10n.todaySetGoalSemantics),
           );
@@ -1015,6 +1026,34 @@ void main() {
           handle.dispose();
         },
       );
+
+      testWidgets('French locale announces dedicated semantics label', (
+        tester,
+      ) async {
+        final l10nFr = lookupAppLocalizations(const Locale('fr'));
+        final handle = tester.ensureSemantics();
+
+        await pumpTodayScreen(
+          tester,
+          locale: const Locale('fr'),
+          initial: TodayState.fromData(
+            steps: 1200,
+            goal: 8000,
+            isStale: false,
+            weekDays: sampleWeekDays(),
+            lastDisplayedStepsLoaded: true,
+          ),
+        );
+
+        expect(
+          find.bySemanticsLabel(l10nFr.todaySetGoalSemantics),
+          findsOneWidget,
+        );
+        expect(find.bySemanticsLabel(l10nFr.todaySetGoalLabel), findsNothing);
+        expect(find.text(l10nFr.todaySetGoalLabel), findsOneWidget);
+
+        handle.dispose();
+      });
     });
 
     testWidgets('live step tick does not rebuild set goal selector', (
