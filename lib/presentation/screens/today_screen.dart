@@ -25,6 +25,81 @@ import '../widgets/status_banner.dart';
 import '../widgets/week_progress_row.dart';
 import '../widgets/week_trophy_badge.dart';
 
+class _WeekLoadingSkeleton extends StatefulWidget {
+  const _WeekLoadingSkeleton();
+
+  @override
+  State<_WeekLoadingSkeleton> createState() => _WeekLoadingSkeletonState();
+}
+
+class _WeekLoadingSkeletonState extends State<_WeekLoadingSkeleton>
+    with SingleTickerProviderStateMixin {
+  AnimationController? _pulseController;
+
+  @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    final reduceMotion = MediaQuery.disableAnimationsOf(context);
+    if (!reduceMotion) {
+      if (_pulseController == null) {
+        final c = AnimationController(
+          vsync: this,
+          duration: const Duration(milliseconds: 800),
+        );
+        unawaited(c.repeat(reverse: true));
+        _pulseController = c;
+      }
+    } else {
+      _pulseController?.dispose();
+      _pulseController = null;
+    }
+  }
+
+  @override
+  void dispose() {
+    _pulseController?.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final colors = context.astraColors;
+    final controller = _pulseController;
+
+    Widget buildPills(double alpha) {
+      return SizedBox(
+        height: 72,
+        child: Row(
+          children: [
+            for (var i = 0; i < 7; i++) ...[
+              if (i > 0) const SizedBox(width: AstraSpacing.kSpaceXs),
+              Expanded(
+                child: DecoratedBox(
+                  decoration: BoxDecoration(
+                    color: colors.textMuted.withValues(alpha: alpha),
+                    borderRadius: BorderRadius.circular(AstraSpacing.kRadiusFull),
+                  ),
+                ),
+              ),
+            ],
+          ],
+        ),
+      );
+    }
+
+    if (controller == null) {
+      return buildPills(0.18);
+    }
+    return AnimatedBuilder(
+      animation: controller,
+      builder: (_, _) {
+        final alpha = 0.18 * (0.35 + 0.5 * controller.value);
+        return buildPills(alpha);
+      },
+    );
+  }
+}
+
 class TodayScreen extends StatelessWidget {
   const TodayScreen({super.key});
 
@@ -404,10 +479,7 @@ class _WeekSection extends StatelessWidget {
                   goalsMetCount: countWeekGoalsMet(vm.weekDays),
                 ),
           child: vm.weekDays.isEmpty
-              ? const SizedBox(
-                  height: 72,
-                  child: Center(child: CircularProgressIndicator()),
-                )
+              ? const _WeekLoadingSkeleton()
               : WeekProgressRow(
                   days: vm.weekDays,
                   selectedLocalDay: vm.selectedLocalDay ??
