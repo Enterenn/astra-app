@@ -10,6 +10,7 @@ import '../../core/constants/preference_keys.dart';
 import '../formatters/display_unit_formatter.dart';
 import 'astra_button.dart';
 import 'profile_sheet_field_decoration.dart';
+import 'sheet_drag_handle.dart';
 
 /// Opens a bottom sheet to edit height.
 ///
@@ -193,16 +194,7 @@ class _HeightEditorSheetBodyState extends State<_HeightEditorSheetBody> {
             mainAxisSize: MainAxisSize.min,
             crossAxisAlignment: CrossAxisAlignment.stretch,
             children: [
-              Center(
-                child: Container(
-                  width: 32,
-                  height: 4,
-                  decoration: BoxDecoration(
-                    color: colors.borderDefault,
-                    borderRadius: BorderRadius.circular(2),
-                  ),
-                ),
-              ),
+              const SheetDragHandle(),
               const SizedBox(height: AstraSpacing.kSpaceMd),
               Text(l10n.profileHeight, style: AstraTypography.title(context)),
               const SizedBox(height: AstraSpacing.kSpaceMd),

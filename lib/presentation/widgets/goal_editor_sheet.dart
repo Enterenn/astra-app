@@ -7,6 +7,7 @@ import '../../core/constants/astra_spacing.dart';
 import '../../core/constants/astra_typography.dart';
 import '../../core/validation/step_goal_validator.dart';
 import 'astra_button.dart';
+import 'sheet_drag_handle.dart';
 
 /// Opens a bottom sheet to edit the daily step goal.
 ///
@@ -79,16 +80,7 @@ class _GoalEditorSheetBodyState extends State<_GoalEditorSheetBody> {
             mainAxisSize: MainAxisSize.min,
             crossAxisAlignment: CrossAxisAlignment.stretch,
             children: [
-              Center(
-                child: Container(
-                  width: 32,
-                  height: 4,
-                  decoration: BoxDecoration(
-                    color: colors.borderDefault,
-                    borderRadius: BorderRadius.circular(2),
-                  ),
-                ),
-              ),
+              const SheetDragHandle(),
               const SizedBox(height: AstraSpacing.kSpaceMd),
               Text(l10n.todayGoalEditorTitle, style: AstraTypography.title(context)),
               const SizedBox(height: AstraSpacing.kSpaceMd),
