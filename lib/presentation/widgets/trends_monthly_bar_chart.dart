@@ -45,28 +45,34 @@ class TrendsMonthlyBarChart extends StatelessWidget {
     final l10n = AppLocalizations.of(context);
     final colors = context.astraColors;
 
-    return Semantics(
-      label: l10n.trendsMonthlyBarChartSemantics,
-      child: ConstrainedBox(
-        constraints: const BoxConstraints(minHeight: 200),
-        child: DecoratedBox(
-          decoration: BoxDecoration(
-            color: colors.bgElevated,
-            borderRadius: BorderRadius.circular(AstraSpacing.kRadiusMd),
-          ),
-          child: ClipRRect(
-            borderRadius: BorderRadius.circular(AstraSpacing.kRadiusMd),
-            child: switch (status) {
-              HistoryStatus.loading => _LoadingSkeleton(colors: colors),
-              HistoryStatus.empty => _EmptyState(colors: colors, l10n: l10n),
-              HistoryStatus.ready => _ReadyChart(
-                points: points,
-                colors: colors,
-              ),
-            },
-          ),
+    final chartShell = ConstrainedBox(
+      constraints: const BoxConstraints(minHeight: 200),
+      child: DecoratedBox(
+        decoration: BoxDecoration(
+          color: colors.bgElevated,
+          borderRadius: BorderRadius.circular(AstraSpacing.kRadiusMd),
+        ),
+        child: ClipRRect(
+          borderRadius: BorderRadius.circular(AstraSpacing.kRadiusMd),
+          child: switch (status) {
+            HistoryStatus.loading => _LoadingSkeleton(colors: colors),
+            HistoryStatus.empty => _EmptyState(colors: colors, l10n: l10n),
+            HistoryStatus.ready => _ReadyChart(
+              points: points,
+              colors: colors,
+            ),
+          },
         ),
       ),
+    );
+
+    if (status == HistoryStatus.ready) {
+      return chartShell;
+    }
+
+    return Semantics(
+      label: l10n.trendsMonthlyBarChartSemantics,
+      child: chartShell,
     );
   }
 }
@@ -164,57 +170,80 @@ class _ReadyChartState extends State<_ReadyChart> {
     final chartMaxY = safeYMax * 1.05;
     final yTicks = computeChartYAxisTicks(maxY: chartMaxY);
 
-    return ExcludeSemantics(
-      child: Padding(
-        padding: const EdgeInsets.fromLTRB(
-          AstraSpacing.kSpaceSm,
-          AstraSpacing.kSpaceMd,
-          AstraSpacing.kSpaceMd,
-          AstraSpacing.kSpaceSm,
-        ),
-        child: LayoutBuilder(
-          builder: (context, constraints) {
-            final plotWidth = constraints.maxWidth - _kLeftAxisReserved;
-            final barWidth = resolveAstraBarWidth(
-              chartWidth: plotWidth,
-              pointCount: points.length,
-            );
-            final values = [
-              for (final point in points)
-                point.averageDailySteps.toDouble(),
-            ];
+    final semanticsLabel = _touchedIndex == null
+        ? l10n.trendsMonthlyBarChartSemantics
+        : _monthlySelectionSemanticsLabel(
+            l10n: l10n,
+            point: points[_touchedIndex!],
+          );
 
-            return AstraBarChartCore(
-              values: values,
-              maxY: chartMaxY,
-              barWidth: barWidth,
-              yTicks: yTicks,
-              colors: colors,
-              leftAxisReserved: _kLeftAxisReserved,
-              bottomAxisReserved: _kBottomAxisReserved,
-              selectedIndex: _touchedIndex,
-              onSelectedIndexChanged: (index) {
-                setState(() => _touchedIndex = index);
-              },
-              barColor: (index, isSelected) => isSelected
-                  ? colors.accentPrimary.withValues(
-                      alpha: _kSelectedBarAlpha,
-                    )
-                  : colors.accentPrimary.withValues(
-                      alpha: _kBelowGoalBarAlpha,
+    return Semantics(
+      label: semanticsLabel,
+      liveRegion: _touchedIndex != null,
+      child: ExcludeSemantics(
+        child: Padding(
+          padding: const EdgeInsets.fromLTRB(
+            AstraSpacing.kSpaceSm,
+            AstraSpacing.kSpaceMd,
+            AstraSpacing.kSpaceMd,
+            AstraSpacing.kSpaceSm,
+          ),
+          child: LayoutBuilder(
+            builder: (context, constraints) {
+              final plotWidth = constraints.maxWidth - _kLeftAxisReserved;
+              final barWidth = resolveAstraBarWidth(
+                chartWidth: plotWidth,
+                pointCount: points.length,
+              );
+              final values = [
+                for (final point in points)
+                  point.averageDailySteps.toDouble(),
+              ];
+
+              return AstraBarChartCore(
+                values: values,
+                maxY: chartMaxY,
+                barWidth: barWidth,
+                yTicks: yTicks,
+                colors: colors,
+                leftAxisReserved: _kLeftAxisReserved,
+                bottomAxisReserved: _kBottomAxisReserved,
+                selectedIndex: _touchedIndex,
+                onSelectedIndexChanged: (index) {
+                  setState(() => _touchedIndex = index);
+                },
+                barColor: (index, isSelected) => isSelected
+                    ? colors.accentPrimary.withValues(
+                        alpha: _kSelectedBarAlpha,
+                      )
+                    : colors.accentPrimary.withValues(
+                        alpha: _kBelowGoalBarAlpha,
+                      ),
+                bottomLabelBuilder: (index) =>
+                    TrendsMonthlyBarChart.formatMonthLabel(
+                      points[index].monthStart,
                     ),
-              bottomLabelBuilder: (index) =>
-                  TrendsMonthlyBarChart.formatMonthLabel(
-                    points[index].monthStart,
-                  ),
-              tooltipTextBuilder: (index) => _monthlyTooltipText(
-                l10n: l10n,
-                point: points[index],
-              ),
-            );
-          },
+                tooltipTextBuilder: (index) => _monthlyTooltipText(
+                  l10n: l10n,
+                  point: points[index],
+                ),
+              );
+            },
+          ),
         ),
       ),
+    );
+  }
+
+  String _monthlySelectionSemanticsLabel({
+    required AppLocalizations l10n,
+    required ChartMonthAggregate point,
+  }) {
+    return l10n.chartMonthlySelectionSemantics(
+      l10n.formatMonthYearFull(point.monthStart),
+      point.averageDailySteps,
+      point.totalSteps,
+      point.dayCount,
     );
   }
 

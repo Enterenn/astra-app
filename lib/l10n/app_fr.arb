@@ -232,6 +232,7 @@
   "chartGoalStatusBelowGoal": "{count} en dessous de l'objectif",
   "chartGoalStatusMet": "objectif atteint",
   "chartSelectionSemantics": "{date}, {steps} sur {goal} pas, {status}",
+  "chartMonthlySelectionSemantics": "{month}, {avgSteps} pas/jour, {total} au total · {days} jours",
   "trendsMonthlyTooltipStepsPerDay": "{steps} pas/jour",
   "trendsMonthlyTooltipTotal": "{total} au total · {days} jours",
   "commonWeekdayMon": "lun.",

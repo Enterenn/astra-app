@@ -843,6 +843,16 @@ class AppLocalizationsFr extends AppLocalizations {
   }
 
   @override
+  String chartMonthlySelectionSemantics(
+    String month,
+    int avgSteps,
+    int total,
+    int days,
+  ) {
+    return '$month, $avgSteps pas/jour, $total au total · $days jours';
+  }
+
+  @override
   String trendsMonthlyTooltipStepsPerDay(int steps) {
     return '$steps pas/jour';
   }

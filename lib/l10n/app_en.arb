@@ -1186,6 +1186,24 @@
       }
     }
   },
+  "chartMonthlySelectionSemantics": "{month}, {avgSteps} steps/day, {total} total · {days} days",
+  "@chartMonthlySelectionSemantics": {
+    "description": "Monthly bar chart accessibility label when a month bar is selected",
+    "placeholders": {
+      "month": {
+        "type": "String"
+      },
+      "avgSteps": {
+        "type": "int"
+      },
+      "total": {
+        "type": "int"
+      },
+      "days": {
+        "type": "int"
+      }
+    }
+  },
   "trendsMonthlyTooltipStepsPerDay": "{steps} steps/day",
   "@trendsMonthlyTooltipStepsPerDay": {
     "description": "Monthly bar chart tooltip average steps per day",

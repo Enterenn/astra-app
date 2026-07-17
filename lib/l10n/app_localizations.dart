@@ -1469,6 +1469,17 @@ abstract class AppLocalizations {
     String status,
   );
 
+  /// Monthly bar chart accessibility label when a month bar is selected
+  ///
+  /// In en, this message translates to:
+  /// **'{month}, {avgSteps} steps/day, {total} total · {days} days'**
+  String chartMonthlySelectionSemantics(
+    String month,
+    int avgSteps,
+    int total,
+    int days,
+  );
+
   /// Monthly bar chart tooltip average steps per day
   ///
   /// In en, this message translates to:
