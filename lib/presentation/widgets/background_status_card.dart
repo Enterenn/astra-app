@@ -52,13 +52,15 @@ class BackgroundStatusCard extends StatelessWidget {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
-        Row(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Padding(
-              padding: const EdgeInsets.only(top: 4),
-              child: Semantics(
-                label: l10n.myDataStatusIndicator,
+        Semantics(
+          liveRegion: true,
+          label: primaryCopy,
+          excludeSemantics: true,
+          child: Row(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Padding(
+                padding: const EdgeInsets.only(top: 4),
                 child: Container(
                   width: 8,
                   height: 8,
@@ -68,15 +70,15 @@ class BackgroundStatusCard extends StatelessWidget {
                   ),
                 ),
               ),
-            ),
-            const SizedBox(width: AstraSpacing.kSpaceSm),
-            Expanded(
-              child: Text(
-                primaryCopy,
-                style: AstraTypography.bodyFor(colors),
+              const SizedBox(width: AstraSpacing.kSpaceSm),
+              Expanded(
+                child: Text(
+                  primaryCopy,
+                  style: AstraTypography.bodyFor(colors),
+                ),
               ),
-            ),
-          ],
+            ],
+          ),
         ),
         if (status == BackgroundCollectionStatus.permissionDenied) ...[
           const SizedBox(height: AstraSpacing.kSpaceSm),
