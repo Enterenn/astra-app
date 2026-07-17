@@ -120,3 +120,7 @@ Removed four low-value test files; see `_bmad-output/implementation-artifacts/sp
 - **`loadError == null` nullable passthrough** — `profileLoadErrorMessage` accepts `ProfileLoadError?` and was already receiving nullable values before this story; no regression. Deferred as pre-existing.
 
 - **No isolated `ProfileLoadErrorPanel` widget test** — Panel exercised only through full-screen tests. Screen-level coverage sufficient for story scope. Deferred to Epic 26.
+
+## Deferred from: code review of 23-6-add-goal-achieved-semantics-in-week-day-pills (2026-07-17)
+
+- **No assertion that `ExcludeSemantics` removes child text/dot from a11y tree** — AC requires the wrap; widget tests don't assert child nodes are excluded. Same coverage gap pattern as other Epic 23 ExcludeSemantics stories.

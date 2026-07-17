@@ -1,6 +1,6 @@
 # Story 23.6: Add Goal-Achieved Semantics in Week Day Pills
 
-Status: review
+Status: done
 
 <!-- Post-audit Epic 23 — tracker: sprint-status-post-audit.yaml -->
 <!-- Source: epics-post-audit.md Story 23-6 · diagnostic-accessibilité-statique.md week_progress Majeur · AUD-30 · UX-AUD-05 · NFR-AUD-05 -->
@@ -82,6 +82,11 @@ So that the coloured indicator is not color-only information.
   - [x] Update selected-semantics finder if `ExcludeSemantics` breaks `getSemantics(find.text(...))`
   - [x] `dart analyze` + `flutter test test/presentation/widgets/week_progress_row_test.dart` + `flutter test --exclude-tags slow`
   - [x] **Stop → review brief → wait for Baptiste OK → commit**
+
+### Review Findings
+
+- [x] [Review][Patch] Missing regression for AC #2 critical edge — today/selected + `goalMet: true` (dot suppressed) must still announce met status [`test/presentation/widgets/week_progress_row_test.dart`]
+- [x] [Review][Defer] No assertion that `ExcludeSemantics` removes child text/dot from a11y tree [`test/presentation/widgets/week_progress_row_test.dart`] — deferred, pre-existing coverage gap pattern
 
 ## Dev Notes
 
@@ -294,3 +299,4 @@ Composer (Cursor agent)
 - 2026-07-17: Sub-task A — ARB status keys + day-pill semantics label helper
 - 2026-07-17: Sub-task B — ExcludeSemantics on day-pill visuals
 - 2026-07-17: Sub-task C — widget tests for goal-status semantics + regression
+- 2026-07-17: Code review — patch AC #2 today/selected goal-met semantics regression test; story done

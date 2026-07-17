@@ -289,6 +289,56 @@ void main() {
     handle.dispose();
   });
 
+  testWidgets(
+    'today and selected goal-met pills announce status without accent dot',
+    (tester) async {
+      final handle = tester.ensureSemantics();
+      final today = DateTime.utc(2026, 6, 3);
+      final selectedPast = DateTime.utc(2026, 6, 2);
+      final todayStatus = day(
+        localDay: today,
+        label: 'WED',
+        dayNumber: 3,
+        isToday: true,
+        goalMet: true,
+      );
+      final selectedStatus = day(
+        localDay: selectedPast,
+        label: 'TUE',
+        dayNumber: 2,
+        goalMet: true,
+      );
+      await pumpRow(tester, [selectedStatus, todayStatus], selectedPast);
+
+      expect(
+        find.bySemanticsLabel(expectedLabel(todayStatus)),
+        findsOneWidget,
+      );
+      expect(
+        find.bySemanticsLabel(expectedLabel(selectedStatus)),
+        findsOneWidget,
+      );
+      expect(
+        expectedLabel(todayStatus),
+        contains(l10n.chartGoalStatusMet),
+      );
+      expect(
+        expectedLabel(selectedStatus),
+        contains(l10n.chartGoalStatusMet),
+      );
+      expect(
+        find.byWidgetPredicate(
+          (widget) =>
+              widget is Container &&
+              widget.decoration is BoxDecoration &&
+              (widget.decoration! as BoxDecoration).shape == BoxShape.circle,
+        ),
+        findsNothing,
+      );
+      handle.dispose();
+    },
+  );
+
   testWidgets('past goal-not-met pill label includes not-met status', (
     tester,
   ) async {

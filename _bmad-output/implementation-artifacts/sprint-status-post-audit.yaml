@@ -1,6 +1,6 @@
 # generated: 2026-07-16
-# last_updated: 2026-07-17 (Story 23-6 review)
-# NEXT: code-review 23-6 — then create-story 23-7
+# last_updated: 2026-07-17 (Story 23-6 done)
+# NEXT: create-story 23-7-merge-semantics-for-settings-notifications-switch
 # Ref: planning-artifacts/epics-post-audit.md · planning-artifacts/audits/
 # project: astra-app
 # project_key: NOKEY
@@ -63,7 +63,7 @@
 # NAVIGATION: _bmad-output/README.md · planning-artifacts/epics-post-audit.md
 
 generated: 2026-07-16
-last_updated: 2026-07-17 (Story 23-6 review)
+last_updated: 2026-07-17 (Story 23-6 done)
 project: astra-app
 project_key: NOKEY
 tracking_system: file-system
@@ -97,7 +97,7 @@ development_status:
   23-3-introduce-live-region-for-goal-ring-and-activity-stats: done
   23-4-restore-visible-keyboard-focus-on-segmented-controls: done
   23-5-complete-chart-keyboard-and-semantic-selection-support: done
-  23-6-add-goal-achieved-semantics-in-week-day-pills: review
+  23-6-add-goal-achieved-semantics-in-week-day-pills: done
   23-7-merge-semantics-for-settings-notifications-switch: backlog
   epic-23-retrospective: optional
 
