@@ -531,6 +531,9 @@ class AppLocalizationsEn extends AppLocalizations {
   String get todaySetGoalLabel => 'Set goal';
 
   @override
+  String get todaySetGoalSemantics => 'Set daily step goal';
+
+  @override
   String get todayGoalSaveError => 'Daily goal could not be saved. Try again.';
 
   @override

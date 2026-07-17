@@ -154,6 +154,7 @@
   "todayScreenTitle": "Pas",
   "todayWeekSectionHeadline": "Cette semaine",
   "todaySetGoalLabel": "Définir l'objectif",
+  "todaySetGoalSemantics": "Définir l'objectif de pas quotidien",
   "todayGoalSaveError": "L'objectif quotidien n'a pas pu être enregistré. Réessayez.",
   "bannerStaleFullIos": "Aucun nouveau pas depuis 4 h+. Les pas se mettent à jour à l'ouverture de l'app sur cet appareil.",
   "bannerStaleFullAndroid": "Aucun nouveau pas depuis 12 h+. La collecte en arrière-plan peut être retardée sur cet appareil.",

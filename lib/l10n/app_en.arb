@@ -734,6 +734,10 @@
   "@todaySetGoalLabel": {
     "description": "Button label to open the daily step goal editor"
   },
+  "todaySetGoalSemantics": "Set daily step goal",
+  "@todaySetGoalSemantics": {
+    "description": "Accessibility label for Today Set goal button (opens daily step goal editor)"
+  },
   "todayGoalSaveError": "Daily goal could not be saved. Try again.",
   "@todayGoalSaveError": {
     "description": "SnackBar when saving the daily step goal fails"

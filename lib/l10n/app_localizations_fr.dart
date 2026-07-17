@@ -539,6 +539,9 @@ class AppLocalizationsFr extends AppLocalizations {
   String get todaySetGoalLabel => 'Définir l\'objectif';
 
   @override
+  String get todaySetGoalSemantics => 'Définir l\'objectif de pas quotidien';
+
+  @override
   String get todayGoalSaveError =>
       'L\'objectif quotidien n\'a pas pu être enregistré. Réessayez.';
 

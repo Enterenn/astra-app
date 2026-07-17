@@ -991,6 +991,12 @@ abstract class AppLocalizations {
   /// **'Set goal'**
   String get todaySetGoalLabel;
 
+  /// Accessibility label for Today Set goal button (opens daily step goal editor)
+  ///
+  /// In en, this message translates to:
+  /// **'Set daily step goal'**
+  String get todaySetGoalSemantics;
+
   /// SnackBar when saving the daily step goal fails
   ///
   /// In en, this message translates to:
