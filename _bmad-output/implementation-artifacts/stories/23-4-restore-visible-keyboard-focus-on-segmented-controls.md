@@ -1,6 +1,6 @@
 # Story 23.4: Restore Visible Keyboard Focus on Segmented Controls
 
-Status: review
+Status: done
 
 <!-- Post-audit Epic 23 — tracker: sprint-status-post-audit.yaml -->
 <!-- Source: epics-post-audit.md Story 23-4 · diagnostic-accessibilité-statique.md Focus Majeur · AUD-28 · NFR-AUD-07 -->

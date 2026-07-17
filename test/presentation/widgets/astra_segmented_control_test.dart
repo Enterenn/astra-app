@@ -131,8 +131,48 @@ void main() {
       await tester.sendKeyEvent(LogicalKeyboardKey.tab);
       await tester.pump();
 
-      expect(FocusManager.instance.primaryFocus, isNotNull);
-      expect(find.byType(InkWell), findsWidgets);
+      final focusContext = FocusManager.instance.primaryFocus?.context;
+      expect(focusContext, isNotNull);
+      expect(focusContext!.findAncestorWidgetOfExactType<InkWell>(), isNotNull);
+    });
+
+    testWidgets('tab can focus selected segment when fireOnReselect is true',
+        (tester) async {
+      await pumpControl(tester, selected: 'a');
+
+      await tester.sendKeyEvent(LogicalKeyboardKey.tab);
+      await tester.pump();
+
+      final focusedInkWell =
+          FocusManager.instance.primaryFocus?.context?.findAncestorWidgetOfExactType<InkWell>();
+      expect(focusedInkWell, isNotNull);
+      expect(focusedInkWell!.focusColor, isNot(Colors.transparent));
+    });
+
+    testWidgets('compact track segments have non-transparent focusColor',
+        (tester) async {
+      await tester.pumpWidget(
+        TestMaterialApp(
+          theme: buildAstraLightTheme(),
+          home: Scaffold(
+            body: Center(
+              child: AstraSegmentedControl<String>(
+                options: options,
+                selected: 'a',
+                onChanged: (_) {},
+                semanticsHint: 'Test hint',
+                segmentHorizontalPadding: 12,
+              ),
+            ),
+          ),
+        ),
+      );
+      await tester.pump();
+
+      for (final inkWell in tester.widgetList<InkWell>(find.byType(InkWell))) {
+        expect(inkWell.focusColor, isNotNull);
+        expect(inkWell.focusColor, isNot(Colors.transparent));
+      }
     });
   });
 }
