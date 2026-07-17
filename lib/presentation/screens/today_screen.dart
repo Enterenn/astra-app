@@ -561,7 +561,7 @@ class _GoalRingCard extends StatelessWidget {
                 child: Semantics(
                   button: true,
                   enabled: vm.enabled,
-                  label: l10n.todaySetGoalLabel,
+                  label: l10n.todaySetGoalSemantics,
                   child: AstraPressable(
                     enabled: vm.enabled,
                     child: Material(
@@ -579,9 +579,11 @@ class _GoalRingCard extends StatelessWidget {
                             horizontal: AstraSpacing.kSpaceLg,
                             vertical: AstraSpacing.kSpaceSm,
                           ),
-                          child: Text(
-                            l10n.todaySetGoalLabel,
-                            style: labelStyle,
+                          child: ExcludeSemantics(
+                            child: Text(
+                              l10n.todaySetGoalLabel,
+                              style: labelStyle,
+                            ),
                           ),
                         ),
                       ),
