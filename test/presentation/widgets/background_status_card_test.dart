@@ -1,4 +1,5 @@
 import 'package:astra_app/core/constants/astra_theme.dart';
+import 'package:astra_app/l10n/app_localizations.dart';
 import 'package:astra_app/presentation/cubits/my_data_state.dart';
 import 'package:astra_app/presentation/widgets/background_status_card.dart';
 import 'package:flutter/material.dart';
@@ -7,6 +8,8 @@ import 'package:flutter_test/flutter_test.dart';
 import '../../helpers/l10n_test_helper.dart';
 
 void main() {
+  final l10n = lookupAppLocalizations(const Locale('en'));
+
   group('BackgroundStatusCard', () {
     final nowUtc = DateTime.utc(2026, 6, 3, 12);
     final lastIngestionUtc = DateTime.utc(2026, 6, 3, 11, 30);
@@ -75,6 +78,50 @@ void main() {
       await tester.pump();
 
       expect(settingsOpened, isTrue);
+    });
+
+    testWidgets('healthy status exposes live region semantics label', (
+      tester,
+    ) async {
+      final handle = tester.ensureSemantics();
+
+      await pumpCard(tester, status: BackgroundCollectionStatus.healthy);
+
+      final expectedLabel = l10n.myDataBackgroundHealthy('30 minutes ago');
+      expect(find.bySemanticsLabel(expectedLabel), findsOneWidget);
+
+      final semanticsWidget = tester.widget<Semantics>(
+        find.descendant(
+          of: find.byType(BackgroundStatusCard),
+          matching: find.byWidgetPredicate(
+            (widget) =>
+                widget is Semantics && widget.properties.liveRegion == true,
+          ),
+        ),
+      );
+      expect(semanticsWidget.properties.liveRegion, isTrue);
+      expect(semanticsWidget.properties.label, expectedLabel);
+
+      handle.dispose();
+    });
+
+    testWidgets('status transition updates live region semantics label', (
+      tester,
+    ) async {
+      final handle = tester.ensureSemantics();
+
+      await pumpCard(tester, status: BackgroundCollectionStatus.stale);
+
+      final staleLabel = l10n.myDataBackgroundStale('30 minutes ago');
+      expect(find.bySemanticsLabel(staleLabel), findsOneWidget);
+
+      await pumpCard(tester, status: BackgroundCollectionStatus.healthy);
+
+      final healthyLabel = l10n.myDataBackgroundHealthy('30 minutes ago');
+      expect(find.bySemanticsLabel(staleLabel), findsNothing);
+      expect(find.bySemanticsLabel(healthyLabel), findsOneWidget);
+
+      handle.dispose();
     });
   });
 }

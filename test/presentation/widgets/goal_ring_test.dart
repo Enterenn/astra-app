@@ -520,6 +520,17 @@ void main() {
         findsOneWidget,
       );
 
+      final semanticsWidget = tester.widget<Semantics>(
+        find.descendant(
+          of: find.byType(GoalRing),
+          matching: find.byWidgetPredicate(
+            (widget) =>
+                widget is Semantics && widget.properties.liveRegion == true,
+          ),
+        ),
+      );
+      expect(semanticsWidget.properties.liveRegion, isTrue);
+
       handle.dispose();
     });
 

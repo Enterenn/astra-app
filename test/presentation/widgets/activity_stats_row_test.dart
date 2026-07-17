@@ -1,5 +1,6 @@
 import 'package:astra_app/core/constants/display_unit_preferences.dart';
 import 'package:astra_app/core/constants/astra_theme.dart';
+import 'package:astra_app/l10n/app_localizations.dart';
 import 'package:astra_app/presentation/cubits/today_state.dart';
 import 'package:astra_app/presentation/widgets/activity_stats_row.dart';
 import 'package:flutter/material.dart';
@@ -9,6 +10,7 @@ import '../../helpers/l10n_test_helper.dart';
 import 'package:astra_app/core/icons/phosphor_icons.dart';
 
 void main() {
+  final l10n = lookupAppLocalizations(const Locale('en'));
   Future<void> pumpRow(
     WidgetTester tester, {
     required ThemeData theme,
@@ -126,5 +128,65 @@ void main() {
     expect(find.text('6.2'), findsOneWidget);
     expect(find.text('Mi'), findsOneWidget);
     expect(find.text('Km'), findsNothing);
+  });
+
+  group('semantics', () {
+    testWidgets('loading state exposes live region label', (tester) async {
+      final handle = tester.ensureSemantics();
+
+      await pumpRow(
+        tester,
+        theme: buildAstraLightTheme(),
+        status: TodayStatus.loading,
+      );
+
+      expect(
+        find.bySemanticsLabel(l10n.todayActivityStatsSemanticsLoading),
+        findsOneWidget,
+      );
+      final semanticsWidget = tester.widget<Semantics>(
+        find.descendant(
+          of: find.byType(ActivityStatsRow),
+          matching: find.byWidgetPredicate(
+            (widget) =>
+                widget is Semantics && widget.properties.liveRegion == true,
+          ),
+        ),
+      );
+      expect(semanticsWidget.properties.liveRegion, isTrue);
+
+      handle.dispose();
+    });
+
+    testWidgets('progress state exposes summary live region label', (
+      tester,
+    ) async {
+      final handle = tester.ensureSemantics();
+
+      await pumpRow(
+        tester,
+        theme: buildAstraLightTheme(),
+        status: TodayStatus.progress,
+        metrics: const ActivityMetricsSnapshot(
+          distanceKm: 4.24,
+          walkingDuration: Duration(minutes: 37, seconds: 20),
+          kcal: 187,
+        ),
+      );
+
+      expect(
+        find.bySemanticsLabel(
+          l10n.todayActivityStatsSemanticsSummary(
+            '187',
+            '4.2',
+            'Km',
+            '00:37:20',
+          ),
+        ),
+        findsOneWidget,
+      );
+
+      handle.dispose();
+    });
   });
 }
