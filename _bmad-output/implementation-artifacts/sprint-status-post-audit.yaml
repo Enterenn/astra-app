@@ -1,6 +1,6 @@
 # generated: 2026-07-16
-# last_updated: 2026-07-17 (Story 24-1 in-progress)
-# NEXT: dev-story 24-1-extract-shared-sheet-drag-handle-component
+# last_updated: 2026-07-17 (Story 24-1 done — Epic 24 in-progress)
+# NEXT: create-story 24-2-remove-or-wire-dead-typography-and-color-tokens
 # Ref: planning-artifacts/epics-post-audit.md · planning-artifacts/audits/
 # project: astra-app
 # project_key: NOKEY
@@ -63,7 +63,7 @@
 # NAVIGATION: _bmad-output/README.md · planning-artifacts/epics-post-audit.md
 
 generated: 2026-07-16
-last_updated: 2026-07-17 (Story 24-1 ready-for-dev — Epic 24 in-progress)
+last_updated: 2026-07-17 (Story 24-1 done — Epic 24 in-progress)
 project: astra-app
 project_key: NOKEY
 tracking_system: file-system
@@ -102,7 +102,7 @@ development_status:
   epic-23-retrospective: optional
 
   epic-24: in-progress
-  24-1-extract-shared-sheet-drag-handle-component: review
+  24-1-extract-shared-sheet-drag-handle-component: done
   24-2-remove-or-wire-dead-typography-and-color-tokens: backlog
   24-3-unify-loading-patterns-for-week-and-trends-surfaces: backlog
   24-4-centralize-repeated-chart-layout-and-typography-values: backlog

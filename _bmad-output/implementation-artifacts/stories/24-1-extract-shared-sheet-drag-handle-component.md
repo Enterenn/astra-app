@@ -1,6 +1,6 @@
 # Story 24.1: Extract Shared SheetDragHandle Component
 
-Status: review
+Status: done
 
 <!-- Post-audit Epic 24 — tracker: sprint-status-post-audit.yaml -->
 <!-- Source: epics-post-audit.md Story 24-1 · diagnostic-coherence-design-system.md Reco #1 · AUD-34 · UX-AUD-08 -->
@@ -274,3 +274,4 @@ No blockers encountered.
 
 - 2026-07-17: Story context created — ready-for-dev (create-story workflow)
 - 2026-07-17: Implemented all 3 sub-tasks — SheetDragHandle widget created, 4 sheets migrated, widget test added, 914 tests passing
+- 2026-07-17: Code review passed; story → done.
