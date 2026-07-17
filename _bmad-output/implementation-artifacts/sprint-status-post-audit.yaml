@@ -1,6 +1,6 @@
 # generated: 2026-07-16
-# last_updated: 2026-07-17 (Story 23-5 done — Epic 23 in-progress)
-# NEXT: create-story 23-6-add-goal-achieved-semantics-in-week-day-pills
+# last_updated: 2026-07-17 (Story 23-6 in-progress)
+# NEXT: finish 23-6 — then create-story 23-7
 # Ref: planning-artifacts/epics-post-audit.md · planning-artifacts/audits/
 # project: astra-app
 # project_key: NOKEY
@@ -63,7 +63,7 @@
 # NAVIGATION: _bmad-output/README.md · planning-artifacts/epics-post-audit.md
 
 generated: 2026-07-16
-last_updated: 2026-07-17 (Story 23-5 done — Epic 23 in-progress)
+last_updated: 2026-07-17 (Story 23-6 in-progress)
 project: astra-app
 project_key: NOKEY
 tracking_system: file-system
@@ -97,7 +97,7 @@ development_status:
   23-3-introduce-live-region-for-goal-ring-and-activity-stats: done
   23-4-restore-visible-keyboard-focus-on-segmented-controls: done
   23-5-complete-chart-keyboard-and-semantic-selection-support: done
-  23-6-add-goal-achieved-semantics-in-week-day-pills: backlog
+  23-6-add-goal-achieved-semantics-in-week-day-pills: in-progress
   23-7-merge-semantics-for-settings-notifications-switch: backlog
   epic-23-retrospective: optional
 

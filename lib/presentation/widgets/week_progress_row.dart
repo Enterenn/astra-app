@@ -45,6 +45,20 @@ bool _isSameLocalDay(DateTime a, DateTime b) {
   return a.year == b.year && a.month == b.month && a.day == b.day;
 }
 
+String _dayPillSemanticsLabel(AppLocalizations l10n, WeekDayStatus day) {
+  final weekdayLabel = l10n.weekdayPillLabel(day.localDay);
+  if (day.isFuture) {
+    return l10n.todayWeekDaySemantics(weekdayLabel, day.dayNumber);
+  }
+  final status =
+      day.goalMet ? l10n.chartGoalStatusMet : l10n.todayWeekDayGoalNotMet;
+  return l10n.todayWeekDaySemanticsWithStatus(
+    weekdayLabel,
+    day.dayNumber,
+    status,
+  );
+}
+
 class _DayPill extends StatelessWidget {
   const _DayPill({
     required this.day,
@@ -79,7 +93,7 @@ class _DayPill extends StatelessWidget {
     final weekdayLabel = l10n.weekdayPillLabel(day.localDay);
 
     return Semantics(
-      label: l10n.todayWeekDaySemantics(weekdayLabel, day.dayNumber),
+      label: _dayPillSemanticsLabel(l10n, day),
       selected: selected,
       button: onTap != null,
       child: Material(

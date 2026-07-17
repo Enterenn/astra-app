@@ -173,6 +173,8 @@
   "todayGoalValidationError": "Entrez une valeur entre 1 000 et 100 000.",
   "todayWeekGoalsMetSemantics": "Objectifs atteints {count} sur {total} jours cette semaine",
   "todayWeekDaySemantics": "{weekdayLabel} {dayNumber}",
+  "todayWeekDaySemanticsWithStatus": "{weekdayLabel} {dayNumber}, {status}",
+  "todayWeekDayGoalNotMet": "objectif non atteint",
   "todayStatsKcalLabel": "Kcal",
   "todayStatsKmLabel": "Km",
   "todayStatsMiLabel": "Mi",

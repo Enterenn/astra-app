@@ -847,6 +847,25 @@
       }
     }
   },
+  "todayWeekDaySemanticsWithStatus": "{weekdayLabel} {dayNumber}, {status}",
+  "@todayWeekDaySemanticsWithStatus": {
+    "description": "Week day pill accessibility label with goal-achieved status",
+    "placeholders": {
+      "weekdayLabel": {
+        "type": "String"
+      },
+      "dayNumber": {
+        "type": "int"
+      },
+      "status": {
+        "type": "String"
+      }
+    }
+  },
+  "todayWeekDayGoalNotMet": "goal not met",
+  "@todayWeekDayGoalNotMet": {
+    "description": "Week day pill accessibility status when daily goal was not achieved"
+  },
   "todayStatsKcalLabel": "Kcal",
   "@todayStatsKcalLabel": {
     "description": "Kilocalorie unit label in Today activity stats row"

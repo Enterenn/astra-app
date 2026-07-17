@@ -603,6 +603,18 @@ class AppLocalizationsEn extends AppLocalizations {
   }
 
   @override
+  String todayWeekDaySemanticsWithStatus(
+    String weekdayLabel,
+    int dayNumber,
+    String status,
+  ) {
+    return '$weekdayLabel $dayNumber, $status';
+  }
+
+  @override
+  String get todayWeekDayGoalNotMet => 'goal not met';
+
+  @override
   String get todayStatsKcalLabel => 'Kcal';
 
   @override

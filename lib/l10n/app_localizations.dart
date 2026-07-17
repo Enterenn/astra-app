@@ -1105,6 +1105,22 @@ abstract class AppLocalizations {
   /// **'{weekdayLabel} {dayNumber}'**
   String todayWeekDaySemantics(String weekdayLabel, int dayNumber);
 
+  /// Week day pill accessibility label with goal-achieved status
+  ///
+  /// In en, this message translates to:
+  /// **'{weekdayLabel} {dayNumber}, {status}'**
+  String todayWeekDaySemanticsWithStatus(
+    String weekdayLabel,
+    int dayNumber,
+    String status,
+  );
+
+  /// Week day pill accessibility status when daily goal was not achieved
+  ///
+  /// In en, this message translates to:
+  /// **'goal not met'**
+  String get todayWeekDayGoalNotMet;
+
   /// Kilocalorie unit label in Today activity stats row
   ///
   /// In en, this message translates to:
