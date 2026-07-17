@@ -1,6 +1,6 @@
 # generated: 2026-07-16
-# last_updated: 2026-07-17 (Story 23-2 done — Epic 23 in-progress)
-# NEXT: create-story 23-3-introduce-live-region-for-goal-ring-and-activity-stats
+# last_updated: 2026-07-17 (Story 23-3 review — Epic 23 in-progress)
+# NEXT: dev-story 23-3-introduce-live-region-for-goal-ring-and-activity-stats
 # Ref: planning-artifacts/epics-post-audit.md · planning-artifacts/audits/
 # project: astra-app
 # project_key: NOKEY
@@ -63,7 +63,7 @@
 # NAVIGATION: _bmad-output/README.md · planning-artifacts/epics-post-audit.md
 
 generated: 2026-07-16
-last_updated: 2026-07-17 (Story 23-2 done — Epic 23 in-progress)
+last_updated: 2026-07-17 (Story 23-3 review — Epic 23 in-progress)
 project: astra-app
 project_key: NOKEY
 tracking_system: file-system
@@ -94,7 +94,7 @@ development_status:
   epic-23: in-progress
   23-1-add-semantic-button-label-for-today-goal-action: done
   23-2-add-semantic-coverage-for-unit-option-tiles: done
-  23-3-introduce-live-region-for-goal-ring-and-activity-stats: backlog
+  23-3-introduce-live-region-for-goal-ring-and-activity-stats: review
   23-4-restore-visible-keyboard-focus-on-segmented-controls: backlog
   23-5-complete-chart-keyboard-and-semantic-selection-support: backlog
   23-6-add-goal-achieved-semantics-in-week-day-pills: backlog
