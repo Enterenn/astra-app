@@ -1,6 +1,6 @@
 # Story 24.2: Remove or Wire Dead Typography and Color Tokens
 
-Status: review
+Status: done
 
 <!-- Post-audit Epic 24 — tracker: sprint-status-post-audit.yaml -->
 <!-- Source: epics-post-audit.md Story 24-2 · diagnostic-code-mort.md §1+§3 Haute · AUD-35 · NFR-AUD-08 -->
