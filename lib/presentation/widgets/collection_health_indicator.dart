@@ -52,6 +52,7 @@ class CollectionHealthIndicator extends StatelessWidget {
 
     return Semantics(
       label: label,
+      liveRegion: true,
       excludeSemantics: true,
       child: Row(
         crossAxisAlignment: CrossAxisAlignment.start,
