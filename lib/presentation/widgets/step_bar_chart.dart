@@ -9,6 +9,7 @@ import '../../core/time/local_day_formatter.dart';
 import '../../data/models/chart_day_aggregate.dart';
 import '../cubits/history_state.dart';
 import '../l10n/l10n_date_labels.dart';
+import 'astra_bar_loading_skeleton.dart';
 import 'chart/astra_bar_chart_core.dart';
 import 'chart/chart_axis_ticks.dart';
 import 'chart/goal_step_line_painter.dart';
@@ -43,7 +44,10 @@ class StepBarChart extends StatelessWidget {
         child: ClipRRect(
           borderRadius: BorderRadius.circular(AstraSpacing.kRadiusMd),
           child: switch (status) {
-            HistoryStatus.loading => _LoadingSkeleton(colors: colors),
+            HistoryStatus.loading => AstraBarLoadingSkeleton(
+                barCount: 7,
+                barHeightAt: (i) => 48 + (i % 3) * 24,
+              ),
             HistoryStatus.empty => _EmptyState(colors: colors, l10n: l10n),
             HistoryStatus.ready => _ReadyChart(
               points: points,
@@ -85,41 +89,6 @@ class _EmptyState extends StatelessWidget {
           ).copyWith(color: colors.neutralGray),
           textAlign: TextAlign.center,
         ),
-      ),
-    );
-  }
-}
-
-class _LoadingSkeleton extends StatelessWidget {
-  const _LoadingSkeleton({required this.colors});
-
-  final AstraColors colors;
-
-  @override
-  Widget build(BuildContext context) {
-    return Padding(
-      padding: const EdgeInsets.all(AstraSpacing.kSpaceMd),
-      child: Row(
-        crossAxisAlignment: CrossAxisAlignment.end,
-        children: [
-          for (var i = 0; i < 7; i++)
-            Expanded(
-              child: Padding(
-                padding: const EdgeInsets.symmetric(
-                  horizontal: AstraSpacing.kSpaceXs,
-                ),
-                child: Container(
-                  height: 48 + (i % 3) * 24,
-                  decoration: BoxDecoration(
-                    color: colors.textMuted.withValues(alpha: 0.18),
-                    borderRadius: const BorderRadius.vertical(
-                      top: Radius.circular(4),
-                    ),
-                  ),
-                ),
-              ),
-            ),
-        ],
       ),
     );
   }

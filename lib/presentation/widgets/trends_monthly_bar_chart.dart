@@ -4,6 +4,7 @@ import 'package:flutter/material.dart';
 import '../../core/constants/astra_colors.dart';
 import '../../core/constants/astra_spacing.dart';
 import '../../core/constants/astra_typography.dart';
+import 'astra_bar_loading_skeleton.dart';
 import '../../data/models/chart_month_aggregate.dart';
 import '../cubits/history_state.dart';
 import '../l10n/l10n_date_labels.dart';
@@ -55,7 +56,10 @@ class TrendsMonthlyBarChart extends StatelessWidget {
         child: ClipRRect(
           borderRadius: BorderRadius.circular(AstraSpacing.kRadiusMd),
           child: switch (status) {
-            HistoryStatus.loading => _LoadingSkeleton(colors: colors),
+            HistoryStatus.loading => AstraBarLoadingSkeleton(
+                barCount: 12,
+                barHeightAt: (i) => 40 + (i % 4) * 16,
+              ),
             HistoryStatus.empty => _EmptyState(colors: colors, l10n: l10n),
             HistoryStatus.ready => _ReadyChart(
               points: points,
@@ -95,41 +99,6 @@ class _EmptyState extends StatelessWidget {
           ),
           textAlign: TextAlign.center,
         ),
-      ),
-    );
-  }
-}
-
-class _LoadingSkeleton extends StatelessWidget {
-  const _LoadingSkeleton({required this.colors});
-
-  final AstraColors colors;
-
-  @override
-  Widget build(BuildContext context) {
-    return Padding(
-      padding: const EdgeInsets.all(AstraSpacing.kSpaceMd),
-      child: Row(
-        crossAxisAlignment: CrossAxisAlignment.end,
-        children: [
-          for (var i = 0; i < 12; i++)
-            Expanded(
-              child: Padding(
-                padding: const EdgeInsets.symmetric(
-                  horizontal: AstraSpacing.kSpaceXs,
-                ),
-                child: Container(
-                  height: 40 + (i % 4) * 16,
-                  decoration: BoxDecoration(
-                    color: colors.textMuted.withValues(alpha: 0.18),
-                    borderRadius: const BorderRadius.vertical(
-                      top: Radius.circular(4),
-                    ),
-                  ),
-                ),
-              ),
-            ),
-        ],
       ),
     );
   }

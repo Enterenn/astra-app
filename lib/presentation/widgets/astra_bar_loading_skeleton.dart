@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 
 import '../../core/constants/astra_colors.dart';
@@ -33,10 +35,14 @@ class _AstraBarLoadingSkeletonState extends State<AstraBarLoadingSkeleton>
     super.didChangeDependencies();
     final reduceMotion = MediaQuery.disableAnimationsOf(context);
     if (!reduceMotion) {
-      _pulseController ??= AnimationController(
-        vsync: this,
-        duration: const Duration(milliseconds: 800),
-      )..repeat(reverse: true);
+      if (_pulseController == null) {
+        final c = AnimationController(
+          vsync: this,
+          duration: const Duration(milliseconds: 800),
+        );
+        unawaited(c.repeat(reverse: true));
+        _pulseController = c;
+      }
     } else {
       _pulseController?.dispose();
       _pulseController = null;
@@ -58,7 +64,7 @@ class _AstraBarLoadingSkeletonState extends State<AstraBarLoadingSkeleton>
     }
     return AnimatedBuilder(
       animation: controller,
-      builder: (_, __) {
+      builder: (_, _) {
         final opacityScale = 0.35 + 0.5 * controller.value;
         return _buildBars(colors, opacityScale);
       },
