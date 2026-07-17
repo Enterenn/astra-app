@@ -107,23 +107,10 @@ abstract final class AstraTypography {
     color: colors.textPrimary,
   );
 
-  static TextStyle display(BuildContext context) =>
-      displayFor(context.astraColors);
-
   static TextStyle title(BuildContext context) => titleFor(context.astraColors);
 
   static TextStyle headline(BuildContext context) =>
       headlineFor(context.astraColors);
 
   static TextStyle body(BuildContext context) => bodyFor(context.astraColors);
-
-  static TextStyle screenTitle(BuildContext context) =>
-      screenTitleFor(context.astraColors);
-
-  static TextStyle label(BuildContext context) => labelFor(context.astraColors);
-
-  static TextStyle caption(BuildContext context) =>
-      captionFor(context.astraColors);
-
-  static TextStyle data(BuildContext context) => dataFor(context.astraColors);
 }
