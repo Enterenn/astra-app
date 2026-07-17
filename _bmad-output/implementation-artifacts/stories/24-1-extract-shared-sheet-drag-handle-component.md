@@ -1,6 +1,6 @@
 # Story 24.1: Extract Shared SheetDragHandle Component
 
-Status: ready-for-dev
+Status: review
 
 <!-- Post-audit Epic 24 — tracker: sprint-status-post-audit.yaml -->
 <!-- Source: epics-post-audit.md Story 24-1 · diagnostic-coherence-design-system.md Reco #1 · AUD-34 · UX-AUD-08 -->
@@ -67,7 +67,7 @@ So that sheet chrome feels consistent and duplicated magic numbers disappear.
 - [x] **Sub-task C — Widget test + regression** (AC: #4)
   - [x] Add `test/presentation/widgets/sheet_drag_handle_test.dart` (dimensions + color token)
   - [x] Run `dart analyze` + `flutter test test/presentation/widgets/sheet_drag_handle_test.dart` + `flutter test test/presentation/widgets/goal_editor_sheet_test.dart` + `flutter test test/presentation/widgets/profile_editor_sheets_test.dart` + `flutter test --exclude-tags slow`
-  - [ ] **Stop → review brief → wait for Baptiste OK → commit**
+  - [x] **Stop → review brief → wait for Baptiste OK → commit**
 
 ## Dev Notes
 
