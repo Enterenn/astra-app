@@ -74,7 +74,6 @@ class HistoryCubit extends Cubit<HistoryState> {
     }
 
     if (state.status == HistoryStatus.loading) {
-      emit(state.copyWith(period: period));
       return;
     }
 
