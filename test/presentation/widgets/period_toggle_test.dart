@@ -14,6 +14,7 @@ void main() {
       WidgetTester tester, {
       HistoryPeriod selected = HistoryPeriod.days7,
       ValueChanged<HistoryPeriod>? onChanged,
+      bool enabled = true,
     }) async {
       await tester.pumpWidget(
         TestMaterialApp(
@@ -22,6 +23,7 @@ void main() {
             body: PeriodToggle(
               selected: selected,
               onChanged: onChanged ?? (_) {},
+              enabled: enabled,
             ),
           ),
         ),
@@ -53,6 +55,29 @@ void main() {
       await tester.pump();
 
       expect(changed, HistoryPeriod.months12);
+    });
+
+    testWidgets('disabled: tap does not fire onChanged', (tester) async {
+      var tapCount = 0;
+      await pumpToggle(
+        tester,
+        enabled: false,
+        onChanged: (_) => tapCount++,
+      );
+
+      await tester.tap(find.text('30 days'));
+      await tester.pump();
+
+      expect(tapCount, 0);
+    });
+
+    testWidgets('disabled: segments expose isEnabled=false in semantics', (tester) async {
+      await pumpToggle(tester, enabled: false);
+
+      for (final label in ['7 days', '30 days', '12 months']) {
+        final node = tester.getSemantics(find.text(label));
+        expect(node.flagsCollection.isEnabled, Tristate.isFalse);
+      }
     });
 
     testWidgets('semantics labels are present on each segment', (tester) async {

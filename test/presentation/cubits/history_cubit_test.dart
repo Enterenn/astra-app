@@ -912,6 +912,18 @@ void main() {
         cubit.close();
       },
     );
+
+    test('selectPeriod is no-op while status is loading', () {
+      final cubit = buildCubit();
+      expect(cubit.state.status, HistoryStatus.loading);
+      expect(cubit.state.period, HistoryPeriod.days7);
+
+      cubit.selectPeriod(HistoryPeriod.days30);
+
+      expect(cubit.state.period, HistoryPeriod.days7);
+      expect(cubit.state.status, HistoryStatus.loading);
+      cubit.close();
+    });
   });
 }
 
