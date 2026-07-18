@@ -8,11 +8,13 @@ class PeriodToggle extends StatelessWidget {
   const PeriodToggle({
     required this.selected,
     required this.onChanged,
+    this.enabled = true,
     super.key,
   });
 
   final HistoryPeriod selected;
   final ValueChanged<HistoryPeriod> onChanged;
+  final bool enabled;
 
   @override
   Widget build(BuildContext context) {
@@ -35,6 +37,7 @@ class PeriodToggle extends StatelessWidget {
       ],
       selected: selected,
       onChanged: onChanged,
+      enabled: enabled,
       semanticsHint: l10n.trendsChartRangeSemantics,
     );
   }

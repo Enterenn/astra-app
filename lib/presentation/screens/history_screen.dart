@@ -56,6 +56,7 @@ class HistoryScreen extends StatelessWidget {
                       PeriodToggle(
                         selected: state.period,
                         onChanged: context.read<HistoryCubit>().selectPeriod,
+                        enabled: state.status != HistoryStatus.loading,
                       ),
                       if (state.period == HistoryPeriod.months12 &&
                           state.status == HistoryStatus.ready &&
