@@ -143,6 +143,7 @@ void main() {
         theme: buildAstraLightTheme(),
         home: Builder(
           builder: (context) {
+            final sheetL10n = AppLocalizations.of(context);
             return Scaffold(
               body: ElevatedButton(
                 onPressed: () async {
@@ -150,7 +151,8 @@ void main() {
                     context: context,
                     title: 'Distance',
                     options: DistanceDisplayUnit.values,
-                    labelFor: (unit) => unit.displayLabel,
+                    labelFor: (unit) =>
+                        localizedDistanceUnitPreferenceLabel(sheetL10n, unit),
                     selected: DistanceDisplayUnit.metric,
                   );
                 },
@@ -165,9 +167,9 @@ void main() {
     await tester.tap(find.text('Open'));
     await tester.pumpAndSettle();
 
-    expect(find.text('Imperial'), findsOneWidget);
+    expect(find.text(l10n.unitDistanceImperial), findsOneWidget);
     expect(find.byIcon(PhosphorIconsRegular.check), findsOneWidget);
-    await tester.tap(find.text('Imperial'));
+    await tester.tap(find.text(l10n.unitDistanceImperial));
     await tester.pumpAndSettle();
 
     expect(result, DistanceDisplayUnit.imperial);

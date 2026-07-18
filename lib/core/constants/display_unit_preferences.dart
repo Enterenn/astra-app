@@ -9,11 +9,6 @@ enum DistanceDisplayUnit {
   metric,
   imperial;
 
-  String get displayLabel => switch (this) {
-    DistanceDisplayUnit.metric => 'Metric',
-    DistanceDisplayUnit.imperial => 'Imperial',
-  };
-
   String get storageValue => switch (this) {
     DistanceDisplayUnit.metric => 'metric',
     DistanceDisplayUnit.imperial => 'imperial',
@@ -24,11 +19,6 @@ enum WeightDisplayUnit {
   kg,
   lb;
 
-  String get displayLabel => switch (this) {
-    WeightDisplayUnit.kg => 'Kg',
-    WeightDisplayUnit.lb => 'lb',
-  };
-
   String get storageValue => switch (this) {
     WeightDisplayUnit.kg => 'kg',
     WeightDisplayUnit.lb => 'lb',
@@ -38,11 +28,6 @@ enum WeightDisplayUnit {
 enum HeightDisplayUnit {
   cm,
   ftIn;
-
-  String get displayLabel => switch (this) {
-    HeightDisplayUnit.cm => 'cm',
-    HeightDisplayUnit.ftIn => 'ft+in',
-  };
 
   String get storageValue => switch (this) {
     HeightDisplayUnit.cm => 'cm',
