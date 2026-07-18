@@ -1,6 +1,6 @@
 # Story 24.5: Clean Orphan Preference Default Constants
 
-Status: review
+Status: done
 
 <!-- Post-audit Epic 24 — tracker: sprint-status-post-audit.yaml -->
 <!-- Source: epics-post-audit.md Story 24-5 · diagnostic-code-mort.md §6 · AUD-38 · audits README nuance -->

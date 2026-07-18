@@ -1,6 +1,6 @@
 # generated: 2026-07-16
-# last_updated: 2026-07-18 (Story 24-5 ready-for-dev)
-# NEXT: dev-story 24-5
+# last_updated: 2026-07-18 (Story 24-5 done)
+# NEXT: dev-story 24-6
 # Ref: planning-artifacts/epics-post-audit.md · planning-artifacts/audits/
 # project: astra-app
 # project_key: NOKEY
@@ -63,7 +63,7 @@
 # NAVIGATION: _bmad-output/README.md · planning-artifacts/epics-post-audit.md
 
 generated: 2026-07-16
-last_updated: 2026-07-18 (Story 24-5 ready-for-dev)
+last_updated: 2026-07-18 (Story 24-5 done)
 project: astra-app
 project_key: NOKEY
 tracking_system: file-system
@@ -106,7 +106,7 @@ development_status:
   24-2-remove-or-wire-dead-typography-and-color-tokens: done
   24-3-unify-loading-patterns-for-week-and-trends-surfaces: done
   24-4-centralize-repeated-chart-layout-and-typography-values: done
-  24-5-clean-orphan-preference-default-constants: review
+  24-5-clean-orphan-preference-default-constants: done
   24-6-disable-period-toggle-during-history-loading: backlog
   epic-24-retrospective: optional
 

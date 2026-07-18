@@ -1,5 +1,6 @@
 import 'package:astra_app/core/constants/astra_accent_palette.dart';
 import 'package:astra_app/core/constants/astra_accent_preset.dart';
+import 'package:astra_app/core/constants/preference_keys.dart';
 import 'package:flutter_test/flutter_test.dart';
 
 void main() {
@@ -20,6 +21,25 @@ void main() {
       expect(parseAccentPreset('blue'), AstraAccentPreset.blue);
       expect(parseAccentPreset('magenta'), AstraAccentPreset.magenta);
       expect(parseAccentPreset('pink'), AstraAccentPreset.pink);
+    });
+  });
+
+  group('accentPresetToStorage', () {
+    test('orange round-trip via kDefaultAccentPresetStorage', () {
+      expect(
+        accentPresetToStorage(AstraAccentPreset.orange),
+        kDefaultAccentPresetStorage,
+      );
+      expect(
+        parseAccentPreset(accentPresetToStorage(AstraAccentPreset.orange)),
+        AstraAccentPreset.orange,
+      );
+    });
+
+    test('all presets round-trip through storage', () {
+      for (final preset in AstraAccentPreset.values) {
+        expect(parseAccentPreset(accentPresetToStorage(preset)), preset);
+      }
     });
   });
 

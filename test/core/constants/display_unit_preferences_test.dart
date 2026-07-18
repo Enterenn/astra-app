@@ -21,6 +21,11 @@ void main() {
       expect(parseDistanceDisplayUnit('imperial'), DistanceDisplayUnit.imperial);
     });
 
+    test('whitespace-padded values are trimmed', () {
+      expect(parseDistanceDisplayUnit('  metric  '), DistanceDisplayUnit.metric);
+      expect(parseDistanceDisplayUnit('  imperial  '), DistanceDisplayUnit.imperial);
+    });
+
     test('kDefaultDistanceDisplayUnit matches metric storageValue', () {
       expect(DistanceDisplayUnit.metric.storageValue, kDefaultDistanceDisplayUnit);
     });
@@ -44,6 +49,11 @@ void main() {
       expect(parseWeightDisplayUnit('lb'), WeightDisplayUnit.lb);
     });
 
+    test('whitespace-padded values are trimmed', () {
+      expect(parseWeightDisplayUnit('  kg  '), WeightDisplayUnit.kg);
+      expect(parseWeightDisplayUnit('  lb  '), WeightDisplayUnit.lb);
+    });
+
     test('kDefaultWeightDisplayUnit matches kg storageValue', () {
       expect(WeightDisplayUnit.kg.storageValue, kDefaultWeightDisplayUnit);
     });
@@ -65,6 +75,11 @@ void main() {
 
     test('ft_in string resolves to ftIn', () {
       expect(parseHeightDisplayUnit('ft_in'), HeightDisplayUnit.ftIn);
+    });
+
+    test('whitespace-padded values are trimmed', () {
+      expect(parseHeightDisplayUnit('  cm  '), HeightDisplayUnit.cm);
+      expect(parseHeightDisplayUnit('  ft_in  '), HeightDisplayUnit.ftIn);
     });
 
     test('kDefaultHeightDisplayUnit matches cm storageValue', () {
