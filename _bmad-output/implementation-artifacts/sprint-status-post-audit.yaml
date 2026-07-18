@@ -1,6 +1,6 @@
 # generated: 2026-07-16
-# last_updated: 2026-07-18 (Story 24-3 done)
-# NEXT: code-review 24-3 → dev-story 24-4
+# last_updated: 2026-07-18 (Story 24-4 done)
+# NEXT: dev-story 24-5
 # Ref: planning-artifacts/epics-post-audit.md · planning-artifacts/audits/
 # project: astra-app
 # project_key: NOKEY
@@ -63,7 +63,7 @@
 # NAVIGATION: _bmad-output/README.md · planning-artifacts/epics-post-audit.md
 
 generated: 2026-07-16
-last_updated: 2026-07-18 (Story 24-3 done)
+last_updated: 2026-07-18 (Story 24-4 done)
 project: astra-app
 project_key: NOKEY
 tracking_system: file-system
@@ -105,7 +105,7 @@ development_status:
   24-1-extract-shared-sheet-drag-handle-component: done
   24-2-remove-or-wire-dead-typography-and-color-tokens: done
   24-3-unify-loading-patterns-for-week-and-trends-surfaces: done
-  24-4-centralize-repeated-chart-layout-and-typography-values: backlog
+  24-4-centralize-repeated-chart-layout-and-typography-values: done
   24-5-clean-orphan-preference-default-constants: backlog
   24-6-disable-period-toggle-during-history-loading: backlog
   epic-24-retrospective: optional
