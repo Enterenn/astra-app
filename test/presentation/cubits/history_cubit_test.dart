@@ -913,7 +913,7 @@ void main() {
       },
     );
 
-    test('selectPeriod is no-op while status is loading', () {
+    test('selectPeriod is no-op while status is loading', () async {
       final cubit = buildCubit();
       expect(cubit.state.status, HistoryStatus.loading);
       expect(cubit.state.period, HistoryPeriod.days7);
@@ -922,7 +922,7 @@ void main() {
 
       expect(cubit.state.period, HistoryPeriod.days7);
       expect(cubit.state.status, HistoryStatus.loading);
-      cubit.close();
+      await cubit.close();
     });
   });
 }

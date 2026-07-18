@@ -1,6 +1,6 @@
 # Story 24.6: Disable PeriodToggle During History Loading
 
-Status: review
+Status: done
 
 <!-- Post-audit Epic 24 — tracker: sprint-status-post-audit.yaml -->
 <!-- Source: epics-post-audit.md Story 24-6 · diagnostic-etat-chargement.md §3.6 · AUD-40 · UX-AUD-04 -->
@@ -255,6 +255,10 @@ Commit style: `fix(design-system): …`, `test(design-system): …`, `chore(revi
 - Epic source: `_bmad-output/planning-artifacts/epics-post-audit.md` Story 24-6
 - UX NFR: UX-AUD-04 in epics-post-audit.md NFR table
 - Current app version: `0.11.0+25` (`pubspec.yaml`) — bump at **Epic 24 close** only (patch+1, build+1)
+
+### Review Findings
+
+- [x] [Review][Patch] `discarded_futures` lint — `cubit.close()` not awaited in sync test [test/presentation/cubits/history_cubit_test.dart:925]
 
 ## Dev Agent Record
 

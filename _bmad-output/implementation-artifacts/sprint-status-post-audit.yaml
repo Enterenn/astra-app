@@ -1,6 +1,6 @@
 # generated: 2026-07-16
-# last_updated: 2026-07-18 (Story 24-6 review)
-# NEXT: code-review 24-6 → epic-24 close (patch+1, build+1)
+# last_updated: 2026-07-18 (Epic 24 closed — 0.11.1+26)
+# NEXT: epic-25 (P3) or epic-26 (P1) — see priority order
 # Ref: planning-artifacts/epics-post-audit.md · planning-artifacts/audits/
 # project: astra-app
 # project_key: NOKEY
@@ -63,7 +63,7 @@
 # NAVIGATION: _bmad-output/README.md · planning-artifacts/epics-post-audit.md
 
 generated: 2026-07-16
-last_updated: 2026-07-18 (Story 24-6 in-progress)
+last_updated: 2026-07-18 (Story 24-6 done)
 project: astra-app
 project_key: NOKEY
 tracking_system: file-system
@@ -101,13 +101,13 @@ development_status:
   23-7-merge-semantics-for-settings-notifications-switch: done
   epic-23-retrospective: optional
 
-  epic-24: in-progress
+  epic-24: done
   24-1-extract-shared-sheet-drag-handle-component: done
   24-2-remove-or-wire-dead-typography-and-color-tokens: done
   24-3-unify-loading-patterns-for-week-and-trends-surfaces: done
   24-4-centralize-repeated-chart-layout-and-typography-values: done
   24-5-clean-orphan-preference-default-constants: done
-  24-6-disable-period-toggle-during-history-loading: review
+  24-6-disable-period-toggle-during-history-loading: done
   epic-24-retrospective: optional
 
   epic-25: backlog
