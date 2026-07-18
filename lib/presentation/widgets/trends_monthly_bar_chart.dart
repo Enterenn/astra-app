@@ -120,8 +120,6 @@ class _ReadyChart extends StatefulWidget {
 class _ReadyChartState extends State<_ReadyChart> {
   static const _kBelowGoalBarAlpha = 0.66;
   static const _kSelectedBarAlpha = 0.8;
-  static const _kLeftAxisReserved = 36.0;
-  static const _kBottomAxisReserved = 24.0;
 
   int? _touchedIndex;
 
@@ -169,7 +167,7 @@ class _ReadyChartState extends State<_ReadyChart> {
           ),
           child: LayoutBuilder(
             builder: (context, constraints) {
-              final plotWidth = constraints.maxWidth - _kLeftAxisReserved;
+              final plotWidth = constraints.maxWidth - kAstraBarChartLeftAxisReserved;
               final barWidth = resolveAstraBarWidth(
                 chartWidth: plotWidth,
                 pointCount: points.length,
@@ -185,8 +183,8 @@ class _ReadyChartState extends State<_ReadyChart> {
                 barWidth: barWidth,
                 yTicks: yTicks,
                 colors: colors,
-                leftAxisReserved: _kLeftAxisReserved,
-                bottomAxisReserved: _kBottomAxisReserved,
+                leftAxisReserved: kAstraBarChartLeftAxisReserved,
+                bottomAxisReserved: kAstraBarChartBottomAxisReserved,
                 selectedIndex: _touchedIndex,
                 onSelectedIndexChanged: (index) {
                   setState(() => _touchedIndex = index);

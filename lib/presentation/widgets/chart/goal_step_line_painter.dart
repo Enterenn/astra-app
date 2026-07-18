@@ -3,6 +3,7 @@ import 'dart:ui' as ui;
 
 import 'package:flutter/material.dart';
 
+import 'astra_bar_chart_core.dart';
 import 'bar_chart_layout.dart';
 
 /// Dashed stepped polyline for per-day historical goals on bar charts.
@@ -13,8 +14,8 @@ class GoalStepLinePainter extends CustomPainter {
     required this.barCount,
     required this.barWidth,
     required this.color,
-    this.leftReserved = 36,
-    this.bottomReserved = 24,
+    this.leftReserved = kAstraBarChartLeftAxisReserved,
+    this.bottomReserved = kAstraBarChartBottomAxisReserved,
     this.strokeWidth = 1.5,
     this.dashPattern = const [6, 4],
   });
