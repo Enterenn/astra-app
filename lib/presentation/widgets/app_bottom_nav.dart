@@ -116,13 +116,7 @@ class _NavItem extends StatelessWidget {
     final colors = context.astraColors;
     final inactiveColor = colors.accentSecondary;
     final activeColor = colors.accentPrimary;
-    final labelStyle = TextStyle(
-      fontFamily: AstraTypography.figtree,
-      fontSize: 10,
-      fontWeight: FontWeight.w700,
-      letterSpacing: 0.4,
-      height: 1.2,
-    );
+    final labelStyle = AstraTypography.navLabelFor(colors);
 
     final content = Column(
       mainAxisAlignment: MainAxisAlignment.center,

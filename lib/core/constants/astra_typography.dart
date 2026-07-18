@@ -113,4 +113,23 @@ abstract final class AstraTypography {
       headlineFor(context.astraColors);
 
   static TextStyle body(BuildContext context) => bodyFor(context.astraColors);
+
+  /// Bottom-nav item label (Figtree 10px/w700/letterSpacing 0.4). Color applied at call site via copyWith.
+  static TextStyle navLabelFor(AstraColors colors) => TextStyle(
+    fontFamily: figtree,
+    fontSize: 10,
+    fontWeight: FontWeight.w700,
+    letterSpacing: 0.4,
+    height: 1.2,
+    color: colors.textPrimary,
+  );
+
+  /// Week pill day number (Figtree 16px/w900). Color applied at call site via copyWith.
+  static TextStyle weekDayNumberFor(AstraColors colors) => TextStyle(
+    fontFamily: figtree,
+    fontSize: 16,
+    fontWeight: FontWeight.w900,
+    height: 1.0,
+    color: colors.textPrimary,
+  );
 }

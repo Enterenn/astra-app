@@ -139,10 +139,8 @@ class _DayPill extends StatelessWidget {
                   const SizedBox(height: 6),
                   Text(
                     '${day.dayNumber}',
-                    style: AstraTypography.labelFor(colors).copyWith(
+                    style: AstraTypography.weekDayNumberFor(colors).copyWith(
                       color: dayNumberColor,
-                      fontSize: 16,
-                      fontWeight: FontWeight.w900,
                       height: 1,
                     ),
                   ),
