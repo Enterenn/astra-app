@@ -3,6 +3,8 @@
 // Canonical body values (`height_cm`, `weight_kg`) and internal distance math
 // stay metric — these enums control display labels and editor input modes.
 
+import 'package:astra_app/core/constants/preference_keys.dart';
+
 enum DistanceDisplayUnit {
   metric,
   imperial;
@@ -51,7 +53,7 @@ enum HeightDisplayUnit {
 DistanceDisplayUnit parseDistanceDisplayUnit(String? raw) {
   return switch (raw?.trim()) {
     'imperial' => DistanceDisplayUnit.imperial,
-    'metric' => DistanceDisplayUnit.metric,
+    kDefaultDistanceDisplayUnit => DistanceDisplayUnit.metric,
     _ => DistanceDisplayUnit.metric,
   };
 }
@@ -59,7 +61,7 @@ DistanceDisplayUnit parseDistanceDisplayUnit(String? raw) {
 WeightDisplayUnit parseWeightDisplayUnit(String? raw) {
   return switch (raw?.trim()) {
     'lb' => WeightDisplayUnit.lb,
-    'kg' => WeightDisplayUnit.kg,
+    kDefaultWeightDisplayUnit => WeightDisplayUnit.kg,
     _ => WeightDisplayUnit.kg,
   };
 }
@@ -67,7 +69,7 @@ WeightDisplayUnit parseWeightDisplayUnit(String? raw) {
 HeightDisplayUnit parseHeightDisplayUnit(String? raw) {
   return switch (raw?.trim()) {
     'ft_in' => HeightDisplayUnit.ftIn,
-    'cm' => HeightDisplayUnit.cm,
+    kDefaultHeightDisplayUnit => HeightDisplayUnit.cm,
     _ => HeightDisplayUnit.cm,
   };
 }

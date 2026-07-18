@@ -1,3 +1,5 @@
+import 'package:astra_app/core/constants/preference_keys.dart';
+
 /// Persisted accent preset IDs (English names, SQLite `accent_preset` values).
 enum AstraAccentPreset {
   orange,
@@ -15,7 +17,7 @@ const kDefaultAccentPreset = AstraAccentPreset.orange;
 AstraAccentPreset parseAccentPreset(String? raw) {
   final normalized = raw?.trim();
   return switch (normalized) {
-    'orange' => AstraAccentPreset.orange,
+    kDefaultAccentPresetStorage => AstraAccentPreset.orange,
     'red' => AstraAccentPreset.red,
     'green' => AstraAccentPreset.green,
     'blue' => AstraAccentPreset.blue,
@@ -28,7 +30,7 @@ AstraAccentPreset parseAccentPreset(String? raw) {
 }
 
 String accentPresetToStorage(AstraAccentPreset preset) => switch (preset) {
-  AstraAccentPreset.orange => 'orange',
+  AstraAccentPreset.orange => kDefaultAccentPresetStorage,
   AstraAccentPreset.red => 'red',
   AstraAccentPreset.green => 'green',
   AstraAccentPreset.blue => 'blue',
