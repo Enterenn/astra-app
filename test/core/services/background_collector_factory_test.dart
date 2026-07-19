@@ -1,10 +1,14 @@
 import 'package:astra_app/core/database/app_database.dart';
 import 'package:astra_app/core/services/background_collector_factory.dart';
 import 'package:astra_app/core/services/notification_service.dart';
+import 'package:astra_app/core/time/local_day_formatter.dart';
 import 'package:astra_app/data/datasources/data_ingestion_source.dart';
+import 'package:astra_app/data/models/normalized_step_bucket.dart';
 import 'package:astra_app/data/models/step_reading.dart';
 import 'package:astra_app/data/repositories/step/step_aggregation_repository.dart';
+import 'package:astra_app/data/repositories/step/step_ingestion_repository.dart';
 import 'package:astra_app/data/repositories/user_health_metrics_repository.dart';
+import 'package:astra_app/data/repositories/user_settings_repository.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:permission_handler/permission_handler.dart';
 import 'package:sqflite/sqflite.dart';
@@ -108,6 +112,121 @@ void main() {
         await collector.collectOnce();
 
         expect(await aggregationRepository.getLastIngestionUtc(), isNull);
+      },
+    );
+
+    test(
+      'createIsolateBackgroundCollector enables goal notification when background init succeeds',
+      () async {
+        var showCount = 0;
+        final notificationService = NotificationService(
+          permissionChecker: () async => PermissionStatus.granted,
+          goalNotificationPresenter: ({required id, required title, body}) async {
+            showCount += 1;
+          },
+        );
+
+        final userSettings = UserSettingsRepository(db);
+        final userHealthMetrics = UserHealthMetricsRepository(db, clock: clock);
+        await userHealthMetrics.setDailyStepGoal(5000);
+        await userSettings.setGoalNotificationsEnabled(true);
+        final ingestionRepository = StepIngestionRepository(db);
+        await ingestionRepository.upsertIngestionBucket(
+          NormalizedStepBucket(
+            startTimeUtc: DateTime.utc(2026, 6, 2, 6),
+            endTimeUtc: DateTime.utc(2026, 6, 2, 6, 5),
+            value: 4900,
+            provider: kInternalPhoneProvider,
+            deviceId: kSmartphoneDeviceId,
+            zoneOffset: '+02:00',
+          ),
+        );
+
+        final collector = await createIsolateBackgroundCollector(
+          db: db,
+          sources: [
+            _FakeStepSource([
+              StepReading(
+                cumulativeSteps: 10,
+                observedAtUtc: DateTime.utc(2026, 6, 2, 10),
+              ),
+              StepReading(
+                cumulativeSteps: 200,
+                observedAtUtc: DateTime.utc(2026, 6, 2, 10, 1),
+              ),
+            ]),
+          ],
+          clock: clock,
+          notificationService: notificationService,
+          notificationPermissionGranted: () async => true,
+        );
+
+        await collector.collectOnce(enableGoalNotification: true);
+
+        expect(showCount, 1);
+        expect(
+          await userSettings.getGoalNotificationShownDate(),
+          formatLocalDayIso(clock.snapshot()),
+        );
+        expect(
+          await aggregationRepository.getLastIngestionUtc(),
+          DateTime.utc(2026, 6, 2, 10, 5),
+        );
+      },
+    );
+
+    test(
+      'createIsolateBackgroundCollector skips notification when background init times out but still collects',
+      () async {
+        final notificationService = NotificationService(
+          platformInitializer: (_) =>
+              Future<void>.delayed(const Duration(seconds: 5)),
+          backgroundInitTimeout: const Duration(milliseconds: 10),
+          permissionChecker: () async => PermissionStatus.granted,
+        );
+
+        final userSettings = UserSettingsRepository(db);
+        final userHealthMetrics = UserHealthMetricsRepository(db, clock: clock);
+        await userHealthMetrics.setDailyStepGoal(5000);
+        await userSettings.setGoalNotificationsEnabled(true);
+        final ingestionRepository = StepIngestionRepository(db);
+        await ingestionRepository.upsertIngestionBucket(
+          NormalizedStepBucket(
+            startTimeUtc: DateTime.utc(2026, 6, 2, 6),
+            endTimeUtc: DateTime.utc(2026, 6, 2, 6, 5),
+            value: 4900,
+            provider: kInternalPhoneProvider,
+            deviceId: kSmartphoneDeviceId,
+            zoneOffset: '+02:00',
+          ),
+        );
+
+        final collector = await createIsolateBackgroundCollector(
+          db: db,
+          sources: [
+            _FakeStepSource([
+              StepReading(
+                cumulativeSteps: 10,
+                observedAtUtc: DateTime.utc(2026, 6, 2, 10),
+              ),
+              StepReading(
+                cumulativeSteps: 200,
+                observedAtUtc: DateTime.utc(2026, 6, 2, 10, 1),
+              ),
+            ]),
+          ],
+          clock: clock,
+          notificationService: notificationService,
+          notificationPermissionGranted: () async => true,
+        );
+
+        await collector.collectOnce(enableGoalNotification: true);
+
+        expect(await userSettings.getGoalNotificationShownDate(), isNull);
+        expect(
+          await aggregationRepository.getLastIngestionUtc(),
+          DateTime.utc(2026, 6, 2, 10, 5),
+        );
       },
     );
   });

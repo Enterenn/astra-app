@@ -81,11 +81,11 @@ So that WorkManager/FGS isolate bootstrap regressions are caught early.
   - [x] Test: `createIsolateBackgroundCollector omits phone source when includePhonePedometerSource is false` — `sources: null`, flag false, assert no buckets
   - [x] **Stop → review brief → wait for Baptiste OK → commit**
 
-- [ ] **Sub-task D — Notification bootstrap branches** (AC: #4, #5)
-  - [ ] Test: `createIsolateBackgroundCollector enables goal notification when background init succeeds` — seed near-goal bucket + fake source crossing goal + presenter spy
-  - [ ] Test: `createIsolateBackgroundCollector skips notification when background init times out but still collects` — delayed `platformInitializer` + short timeout; bucket written, show count 0
-  - [ ] Mirror WM test setup for goal prefs (`setDailyStepGoal`, `setGoalNotificationsEnabled`) via UI DB before factory call on same in-memory connection
-  - [ ] **Stop → review brief → wait for Baptiste OK → commit**
+- [x] **Sub-task D — Notification bootstrap branches** (AC: #4, #5)
+  - [x] Test: `createIsolateBackgroundCollector enables goal notification when background init succeeds` — seed near-goal bucket + fake source crossing goal + presenter spy
+  - [x] Test: `createIsolateBackgroundCollector skips notification when background init times out but still collects` — delayed `platformInitializer` + short timeout; bucket written, show count 0
+  - [x] Mirror WM test setup for goal prefs (`setDailyStepGoal`, `setGoalNotificationsEnabled`) via UI DB before factory call on same in-memory connection
+  - [x] **Stop → review brief → wait for Baptiste OK → commit**
 
 - [ ] **Sub-task E — Regression verification** (AC: #6, #7)
   - [ ] Run `flutter test test/core/services/background_collector_factory_test.dart --exclude-tags slow`
@@ -364,6 +364,7 @@ Composer
 - Sub-task A: 56 LOC factory read; zero named test hits; indirect WM/FGS + manual collector construction documented
 - Sub-task B: happy-path test — injected source, bucket write, session goal prefs round-trip (7500)
 - Sub-task C: `includePhonePedometerSource: false` → BLE-only, no buckets
+- Sub-task D: goal notification success (presenter spy + shown date); timeout path (platform init fails, bucket still written)
 
 ### File List
 
@@ -376,3 +377,4 @@ Composer
 - 2026-07-19: Sub-task A gap analysis — AUD-54 zero named hits confirmed.
 - 2026-07-19: Sub-task B — happy-path createIsolateBackgroundCollector bootstrap test.
 - 2026-07-19: Sub-task C — includePhonePedometerSource false branch test.
+- 2026-07-19: Sub-task D — notification init success and timeout branch tests.
