@@ -1,7 +1,7 @@
 # Audits post-refacto — index
 
 **Généré :** 2026-06-22  
-**Dernière resync :** 2026-07-19 (Epics 21–26 `done`)  
+**Dernière resync :** 2026-07-19 (Epics 21–26 `done` · Epics 27–28 backlog)  
 **Base code :** `0.11.3+28` (`pubspec.yaml`)  
 **Périmètre :** diagnostics techniques post-Epics 14–20 (branche `refacto` close)
 
@@ -27,11 +27,11 @@ Ce dossier complète [`refactoring-audit-master-v0.6.1.md`](../refactoring-audit
 | # | Fichier | Domaine | Statut global | Priorité | Epic cible |
 |---|---------|---------|---------------|----------|------------|
 | 01 | [diagnostic-acces-concurrents.md](./diagnostic-acces-concurrents.md) | SQLite multi-isolate, chronologie SQL cold start | `fixed` | P0 | E21 — done |
-| 02 | [diagnostic-cold-start.md](./diagnostic-cold-start.md) | Goulot boot, fast path, indexes, lazy Trends | `fixed` | P0 | E21 — done |
+| 02 | [diagnostic-cold-start.md](./diagnostic-cold-start.md) | Goulot boot, fast path, indexes, lazy Trends | `partial` | P0 | E21 done · E27 backlog (D1–D3, C1) |
 | 03 | [diagnostic-cycle-de-vie-ressoruce.md](./diagnostic-cycle-de-vie-ressoruce.md) | dispose, timers, subscriptions | `fixed` | P1 | E22 — done |
-| 04 | [diagnostic-gestion-etat-erreur.md](./diagnostic-gestion-etat-erreur.md) | États erreur cubits, catch silencieux, fragmentation permission | `partial` | P1 | E22 — done |
+| 04 | [diagnostic-gestion-etat-erreur.md](./diagnostic-gestion-etat-erreur.md) | États erreur cubits, catch silencieux, fragmentation permission | `partial` | P1 | E22 done · E28 backlog (AUD-24, stale tap) |
 | 05 | [diagnostic-accessibilité-statique.md](./diagnostic-accessibilité-statique.md) | WCAG statique (widgets + screens) | `fixed` | P1 | E23 — done |
-| 06 | [diagnostic-etat-chargement.md](./diagnostic-etat-chargement.md) | Skeletons, spinners, états fantômes, IndexedStack | `fixed` | P2 | E24 — done |
+| 06 | [diagnostic-etat-chargement.md](./diagnostic-etat-chargement.md) | Skeletons, spinners, états fantômes, IndexedStack | `partial` | P2 | E24 done · E28 backlog (AUD-43) |
 | 07 | [diagnostic-coherence-design-system.md](./diagnostic-coherence-design-system.md) | Tokens, typo, poignées sheet, valeurs répétées | `fixed` | P2 | E24 — done |
 | 08 | [diagnostic-code-mort.md](./diagnostic-code-mort.md) | Symboles orphelins vérifiés | `fixed` | P2 | E24 — done |
 | 09 | [diagnostic-convention-structure.md](./diagnostic-convention-structure.md) | Monolithes, couplages DI/cubits, lints | `fixed` | P3 | E25 — done |
@@ -66,9 +66,17 @@ Ce dossier complète [`refactoring-audit-master-v0.6.1.md`](../refactoring-audit
 | Split read/write repos (`UserSettingsRepository`, etc.) | 11 | Graphe documenté (25-5) ; split repos **non** planifié |
 | Migration SQLite réactive complète | 01 | Contention réduite (lock, dedup) ; migration architecture **différée** |
 
-### Ouvert (`open`) — post-audit program complete
+### Ouvert (`open`) — Epics 27–28 backlog
 
-Aucun diagnostic ouvert dans le périmètre Epics 21–26. Constats résiduels hors sprint : modèle `AppFailure` unifié (04), split read/write repos (11).
+| Point | Diagnostic | Story cible |
+|-------|------------|-------------|
+| Prefs séquentielles, WM avant `runApp`, notif bloquante | 02 §Phase D | E27 — 27-1 → 27-3 |
+| `HistoryCubit` eager au boot | 02 §Phase C1 · 06 §4 | E27 — 27-4 |
+| Bannière stale My Data sans tap | 04 §4 | E28 — 28-1 |
+| Permission refusée fragmentée (Today) | 04 §4 | E28 — 28-2 |
+| Settings bloqué par chargement profil | 06 §3 · 04 | E28 — 28-3 |
+
+Constats résiduels **hors** E27/E28 : modèle `AppFailure` unifié (04), History refresh erreur explicite (AUD-22), onboarding permission (AUD-23), split read/write repos (11), SQL agrégé Trends (AUD-10).
 
 ---
 
@@ -86,7 +94,7 @@ Actions initiales — **toutes adressées** dans les Epics 21–24 :
 | Extraire `SheetDragHandle` | 07 | 24-1 |
 | Nettoyage typo morte + tokens orphelins | 08 | 24-2, 24-5 |
 
-**Chantiers restants :** modèle `AppFailure` unifié (04, différé), split read/write repos (11, différé).
+**Chantiers restants :** Epics 27–28 (voir tableau sprint ci-dessous). Hors scope : modèle `AppFailure` unifié (04), split read/write repos (11).
 
 ---
 
@@ -100,8 +108,10 @@ Actions initiales — **toutes adressées** dans les Epics 21–24 :
 | **E24** | Design System & états de chargement | 06, 07, 08 | **done** |
 | **E25** | Architecture & dette structurelle | 09, 11 | **done** (`0.11.2+27`) |
 | **E26** | Tests d’orchestration & résilience | 10 | **done** (`0.11.3+28`) |
+| **E27** | Boot polish & lazy Trends | 02 (D, C1) | **backlog** |
+| **E28** | UX cohérence (erreurs & permissions) | 04, 06 | **backlog** |
 
-Tracker : [`sprint-status-post-audit.yaml`](../../implementation-artifacts/sprint-status-post-audit.yaml)
+Tracker : [`sprint-status-post-audit.yaml`](../../implementation-artifacts/sprint-status-post-audit.yaml) — **NEXT:** E27 → E28
 
 ---
 
@@ -112,8 +122,8 @@ Tracker : [`sprint-status-post-audit.yaml`](../../implementation-artifacts/sprin
 | [`refactoring-audit-master-v0.6.1.md`](../refactoring-audit-master-v0.6.1.md) | Audit refacto Epics 14–20 (historique, done) |
 | [`epics-refacto.md`](../epics-refacto.md) | Stories refacto livrées |
 | [`sprint-status-refacto.yaml`](../../implementation-artifacts/sprint-status-refacto.yaml) | Tracker Epics 14–20 |
-| [`sprint-status-post-audit.yaml`](../../implementation-artifacts/sprint-status-post-audit.yaml) | Tracker Epics 21–26 (actif) |
-| [`epics-post-audit.md`](../epics-post-audit.md) | Stories 21–26 + AUDs différés |
+| [`sprint-status-post-audit.yaml`](../../implementation-artifacts/sprint-status-post-audit.yaml) | Tracker Epics 21–28 (actif) |
+| [`epics-post-audit.md`](../epics-post-audit.md) | Stories 21–28 + AUDs différés |
 | [`architecture.md`](../architecture.md) | Décisions techniques (Today Display Truth Model, etc.) |
 | [`ux-design-specification.md`](../ux-design-specification.md) | Tokens, accessibilité cible |
 

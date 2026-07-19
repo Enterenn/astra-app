@@ -1,12 +1,13 @@
 ---
-stepsCompleted: [1, 2, 3, 4]
-status: complete
+stepsCompleted: [1, 2, 3, 4, 5]
+status: in-progress
 completedAt: 2026-07-16
-validatedAt: 2026-07-16
+validatedAt: 2026-07-19
 validationNotes: |
-  Delivery AUDs covered by stories; deferred AUDs documented.
-  No template placeholders remain. Sprint status aligned (37 stories).
-  File overlap E21/E22/E26→E25 accepted (implement → harden → test → split).
+  Epics 21–26 delivered (37 stories). Re-audit 0.11.3+28 adds Epics 27–28 (7 stories).
+  Sprint status aligned (44 stories total). AUD-11, AUD-13–15 → E27; AUD-24, AUD-43,
+  My Data stale tap parity → E28. Still deferred: AUD-09–10, AUD-12, AUD-21–23, AUD-33,
+  AUD-41–42, AUD-49, unified AppFailure.
 
 storiesCompletedAt: 2026-07-16
 storyCounts:
@@ -16,13 +17,18 @@ storyCounts:
   epic-24: 6
   epic-25: 5
   epic-26: 6
-  total: 37
+  epic-27: 4
+  epic-28: 3
+  total: 44
 scopeDecision: |
   Core = sprint-status stories + AUD-05 (21-8), AUD-31 folded into 23-3,
-  AUD-32 (23-7), AUD-40 (24-6). Deferred: AUD-09–15, AUD-21–24, AUD-33, AUD-41–43, AUD-49.
+  AUD-32 (23-7), AUD-40 (24-6). E27 = AUD-11, AUD-13–15. E28 = AUD-24, AUD-43,
+  My Data stale banner tap (diagnostic 04 §4). Deferred: AUD-09–10, AUD-12, AUD-21–23,
+  AUD-33, AUD-41–42, AUD-49, AppFailure.
 extractedAt: 2026-07-16
-scope: Post-audit Epics 21–26 — technical hardening after Epics 14–20
-baseVersion: 0.10.1+21
+extendedAt: 2026-07-19
+scope: Post-audit Epics 21–28 — technical hardening after Epics 14–20
+baseVersion: 0.11.3+28
 project_name: astra-app
 inputDocuments:
   - planning-artifacts/audits/README.md
@@ -43,15 +49,15 @@ inputDocuments:
   - docs/project-context.md
 ---
 
-# astra-app — Post-Audit Epic Breakdown (Epics 21–26)
+# astra-app — Post-Audit Epic Breakdown (Epics 21–28)
 
 ## Overview
 
-This document decomposes the **post-refacto technical audits** (`planning-artifacts/audits/`) into implementable epics and stories for Epics **21–26**.
+This document decomposes the **post-refacto technical audits** (`planning-artifacts/audits/`) into implementable epics and stories for Epics **21–28**.
 
-**Scope:** Brownfield hardening after Epics 14–20 (cold start, robustness, a11y, design/loading consistency, structural debt, orchestration tests). Does **not** replace `epics.md` (Epics 1–13) or `epics-refacto.md` (Epics 14–20).
+**Scope:** Brownfield hardening after Epics 14–20 (cold start, robustness, a11y, design/loading consistency, structural debt, orchestration tests, boot polish, targeted UX coherence). Does **not** replace `epics.md` (Epics 1–13) or `epics-refacto.md` (Epics 14–20).
 
-**Execution order:** P0 Epic 21 → P1 Epics 22 + 23 + 26 → P2 Epic 24 → P3 Epic 25.
+**Execution order:** P0 Epic 21 → P1 Epics 22 + 23 + 26 → P2 Epic 24 → P3 Epic 25 → P0 polish Epic 27 → P1 UX Epic 28.
 
 **Tracker:** `implementation-artifacts/sprint-status-post-audit.yaml`
 
@@ -78,6 +84,8 @@ Bump `pubspec.yaml` + `README.md` at each **epic close** per `.cursor/rules/app-
 | Epic 24 (design / loading consistency) | patch+1 (or minor if UX expands) | +1 |
 | Epic 25 (architecture debt) | patch+1 (or minor if broad UX-visible) | +1 |
 | Epic 26 (tests only) | patch+1 | +1 |
+| Epic 27 (boot polish, perf visible) | patch+1 | +1 |
+| Epic 28 (UX coherence — errors & permissions) | minor+1, patch=0 | +1 |
 
 ## Requirements Inventory
 
@@ -277,13 +285,21 @@ AUD-05: Epic 21 — Non-blocking pedometer on cold backfill
 AUD-06: Epic 21 — Batch week goal resolution
 AUD-07: Epic 21 — end_time index for last-ingestion query
 AUD-08: Epic 21 — Guard Trends refresh by active tab
-AUD-09…15: Deferred (P2 cold-start polish — not in delivery stories)
+AUD-09…10: Deferred (optional index, SQL chart aggregation)
+AUD-11: Epic 27 — Lazy HistoryCubit on first Trends tab
+AUD-12: Deferred (defer kcal insights cache)
+AUD-13: Epic 27 — Parallelize initial preference reads
+AUD-14: Epic 27 — WorkManager after runApp
+AUD-15: Epic 27 — Non-blocking notification init
 AUD-16: Epic 22 — Harden LiveStepMonitor.dispose
 AUD-17: Epic 22 — Disable goal CTA during Today loading
 AUD-18: Epic 22 — Profile/Settings load error retry
 AUD-19: Epic 22 — Theme preference error feedback
 AUD-20: Epic 22 — discarded_futures lint + fix sites
-AUD-21…24: Deferred (broader error/permission UX)
+AUD-21: Deferred (HealthForegroundServiceCoordinator.dispose for tests)
+AUD-22: Deferred (History refresh explicit error state)
+AUD-23: Deferred (onboarding permission-denied message)
+AUD-24: Epic 28 — Unify Today permission-denied messaging + CTA
 AUD-25: Epic 23 — Today goal Semantics button
 AUD-26: Epic 23 — Unit option tile Semantics
 AUD-27: Epic 23 — liveRegion GoalRing + ActivityStats
@@ -300,7 +316,8 @@ AUD-37: Epic 24 — Centralize chart layout constants
 AUD-38: Epic 24 — Orphan preference default constants
 AUD-39: Epic 24 — navLabel / weekDayNumber typography tokens (with 24.4)
 AUD-40: Epic 24 — PeriodToggle ghost during History loading
-AUD-41…43: Deferred (shadow token, spacing sweep, Settings gate)
+AUD-41…42: Deferred (shadow token, spacing sweep)
+AUD-43: Epic 28 — Decouple Settings prefs from Profile loading gate
 AUD-44: Epic 25 — Split TodayCubit
 AUD-45: Epic 25 — Split AppLifecycleCoordinator
 AUD-46: Epic 25 — Remove presentation from core DI
@@ -313,8 +330,9 @@ AUD-52: Epic 26 — Goal notification eval/rollback tests
 AUD-53: Epic 26 — refreshAfterDayRollover tests
 AUD-54: Epic 26 — Isolate collector factory bootstrap tests
 AUD-55: Epic 26 — LiveStepMonitor stream fault-injection tests
+My-Data-stale-tap: Epic 28 — Tap-to-refresh on My Data stale banner (diagnostic 04 §4)
 
-NFR-AUD-01…03: Epic 21
+NFR-AUD-01…03: Epic 21 (+ E27 D1–D3 boot path)
 NFR-AUD-04: Deferred with AUD-10
 NFR-AUD-05, 07: Epic 23
 NFR-AUD-06: Epic 26
@@ -331,12 +349,12 @@ UX-AUD-06, 07: Deferred (reduce-motion / text-scale polish — not audit blocker
 Users see local Today step data immediately on launch; SQLite access is safer and cheaper on the hot path.
 **FRs covered:** AUD-01…08 (+ AUD-05 delivery story)
 **NFRs:** NFR-AUD-01, NFR-AUD-02, NFR-AUD-03
-**Deferred within inventory:** AUD-09…15
+**Deferred within inventory:** AUD-09…10, AUD-12 (AUD-11, AUD-13…15 → Epic 27)
 
 ### Epic 22: Runtime Robustness & UI Error Handling
 Users get stable live-pipeline teardown and recoverable preference/profile errors instead of silent or stuck UI.
 **FRs covered:** AUD-16…20
-**Deferred:** AUD-21…24
+**Deferred:** AUD-21…23 (AUD-24 → Epic 28)
 
 ### Epic 23: Accessibility WCAG
 Users of assistive tech can activate goal/units controls, hear live updates, focus segmented controls, and use charts/week pills.
@@ -350,7 +368,7 @@ Loading and sheet/chrome visuals are consistent; dead tokens are cleaned; Trends
 **FRs covered:** AUD-34…40
 **UX:** UX-AUD-01, UX-AUD-04, UX-AUD-05, UX-AUD-08
 **NFRs:** NFR-AUD-08
-**Deferred:** AUD-41…43
+**Deferred:** AUD-41…42 (AUD-43 → Epic 28)
 
 ### Epic 25: Architecture & Structural Debt
 Maintainers can evolve Today/lifecycle/DI/My Data without presentation leaks or god-classes (after hardening epics).
@@ -362,6 +380,20 @@ Maintainers can evolve Today/lifecycle/DI/My Data without presentation leaks or 
 Critical cold-start, resume, notification, day-rollover, and live-monitor failure paths are covered by named unit/fault-injection tests.
 **FRs covered:** AUD-50…55
 **NFRs:** NFR-AUD-06
+
+### Epic 27: Boot Polish & Lazy Trends
+Cold start sheds serial pre-`runApp()` work; Trends cubit is created only when the user opens the tab.
+**FRs covered:** AUD-11, AUD-13…15
+**NFRs:** NFR-AUD-01 (boot path), cold-start Phase D targets
+**Deferred:** AUD-09…10, AUD-12
+**Prerequisite:** Epics 21 and 25 (fast path + scaffold/cubit splits stable)
+
+### Epic 28: UX Coherence (Errors & Permissions)
+Stale-data and permission-denied patterns are consistent; Settings prefs are not blocked by Profile load.
+**FRs covered:** AUD-24, AUD-43, My Data stale tap parity (diagnostic 04 §4)
+**Deferred:** AUD-22, AUD-23, unified `AppFailure`
+**Prerequisite:** Epic 27 recommended first (shared `app_scaffold` / screen touch points)
+
 ## Epic 21: Cold Start & SQLite
 
 Users see local Today step data immediately on launch; SQLite access is safer and cheaper on the hot path.
@@ -1138,3 +1170,217 @@ So that `onError` / peek timeout paths cannot regress unnoticed.
 
 **Target files:** `live_step_monitor` tests  
 **Diagnostic:** `diagnostic-couverture-structurelle.md` LiveStepMonitor error paths
+
+---
+
+## Epic 27: Boot Polish & Lazy Trends
+
+Cold start sheds serial pre-`runApp()` work; `HistoryCubit` is created only when the user opens Trends.
+
+**Priority:** P0 polish · **Version bump:** patch+1, build+1 at epic close · **Diagnostics:** 02 (Phase C1, Phase D)  
+**Prerequisite:** Epics 21 (fast path) and 25 (scaffold/cubit splits) done.
+
+### Story 27-1: Parallelize Initial Preference Reads with Future.wait
+
+As a **user**,
+I want app startup to read my saved preferences in parallel,
+So that DI creation does not wait on seven sequential SQLite round-trips.
+
+**Acceptance Criteria:**
+
+**Given** `AppDependencies.create` (and test factory paths that mirror the same reads)
+**When** initial theme, accent, units, onboarding, and locale prefs are loaded
+**Then** the seven reads run via `Future.wait` (or equivalent single parallel batch) instead of seven serial `await`s (AUD-13)
+**And** parsed values match prior single-read semantics (same defaults on missing rows)
+
+**Given** one pref read fails unexpectedly
+**When** the batch completes
+**Then** failure behaviour matches or improves on current behaviour (no silent corruption of unrelated prefs)
+
+**Given** Epic 21 fast path is in place
+**When** this story ships
+**Then** Today cold-start paint path is unchanged — this optimizes DI only
+
+**Target files:** `lib/core/di/app_dependencies.dart`  
+**Diagnostic:** `diagnostic-cold-start.md` §Phase D1
+
+---
+
+### Story 27-2: Defer WorkManager Registration Until After runApp
+
+As a **user**,
+I want background task registration not to block the first frame,
+So that cold start reaches the GoalRing faster.
+
+**Acceptance Criteria:**
+
+**Given** app boot in `main.dart`
+**When** `runApp` is invoked
+**Then** `registerStepCollectionWorkmanager` and `registerDatabaseMaintenanceWorkmanager` are **not** awaited on the critical path before `runApp` (AUD-14)
+**And** registration is scheduled post-`runApp` (e.g. post-frame callback or `unawaited` after first frame) with the same `databasePath` argument
+
+**Given** registration completes after first frame
+**When** the user interacts with Today immediately
+**Then** foreground live pipeline and fast path still work (WorkManager is reconciliation fallback, not first-frame dependency)
+
+**Given** registration fails
+**When** error is logged
+**Then** app remains usable on UI isolate (no crash on boot)
+
+**Target files:** `lib/main.dart`  
+**Diagnostic:** `diagnostic-cold-start.md` §Phase D2
+
+---
+
+### Story 27-3: Non-Blocking Notification Init Before First Frame
+
+As a **user**,
+I want notification channel setup not to serially block app launch for up to 3 seconds,
+So that cold start is not gated on platform notification init.
+
+**Acceptance Criteria:**
+
+**Given** `NotificationService.initialize()` in `main.dart`
+**When** boot runs
+**Then** notification init is not a hard serial gate before `AppDependencies.create` / `runApp` (AUD-15)
+**And** init runs in parallel with DI, or is deferred until after first frame, preserving the existing 3s timeout guard where applicable
+
+**Given** notification init times out or fails
+**When** the app continues boot
+**Then** behaviour matches current resilience (debug log, app still launches)
+**And** goal-notification migration in `main.dart` still receives a `NotificationService` instance (may be partially initialized)
+
+**Given** notifications later become ready
+**When** goal-reached or preference flows need the service
+**Then** existing call sites tolerate late init or no-op safely (no new crash paths)
+
+**Target files:** `lib/main.dart`, `lib/core/services/notification_service.dart` (if init contract adjusted)  
+**Diagnostic:** `diagnostic-cold-start.md` §Phase D3
+
+---
+
+### Story 27-4: Lazy Instantiate HistoryCubit on First Trends Tab
+
+As a **user**,
+I want Trends data work to start only when I open the Trends tab,
+So that cold start does not pay for History cubit setup and IndexedStack mount cost.
+
+**Acceptance Criteria:**
+
+**Given** app launch with default Today tab selected
+**When** `AppScaffold` initializes
+**Then** `HistoryCubit` is **not** constructed eagerly in `initState` (AUD-11)
+**And** cubit is created on first navigation to Trends (`_selectedIndex == 1`) via existing `createHistoryCubit` / `onHistoryCubitReady` hooks
+
+**Given** user opens Trends for the first time
+**When** cubit is created
+**Then** `onHistoryCubitReady` fires and first `refresh()` behaviour matches current first-visit contract
+**And** Epic 21 guard (`_onIngestionComplete` only refreshes History when Trends selected) still holds
+
+**Given** user switches away and back to Trends
+**When** tab is reselected
+**Then** scroll position / period selection persist (session behaviour unchanged)
+**And** cubit instance is retained (not recreated each visit)
+
+**Given** widget tests or integration tests construct `AppScaffold`
+**When** this story ships
+**Then** tests updated for lazy init (no assumption that History cubit exists before Trends selection)
+
+**Target files:** `lib/presentation/screens/app_scaffold.dart`, related tests  
+**Diagnostic:** `diagnostic-cold-start.md` §Phase C1 · `diagnostic-etat-chargement.md` §4 (History zombie loading note)
+
+---
+
+## Epic 28: UX Coherence (Errors & Permissions)
+
+Stale-data recovery and permission-denied messaging are consistent; Settings appearance prefs are not gated on Profile load.
+
+**Priority:** P1 UX · **Version bump:** minor+1, patch=0, build+1 at epic close · **Diagnostics:** 04, 06  
+**Scope note:** Targeted UX only — **no** unified `AppFailure` model (AUD-22, AUD-23 remain deferred).
+
+### Story 28-1: Add Tap-to-Refresh on My Data Stale Banner
+
+As a **user**,
+I want to tap the stale-data banner on My Data to trigger a refresh,
+So that stale recovery matches Today’s compact stale banner behaviour.
+
+**Acceptance Criteria:**
+
+**Given** `MyDataCubit` state has `isStale == true`
+**When** the `StatusBanner` with `StatusBannerVariant.staleFull` renders
+**Then** the banner is tappable and calls `MyDataCubit.refresh(silent: false)` (or equivalent non-silent refresh) on tap
+**And** semantics expose it as an actionable control (button or tappable banner label)
+
+**Given** user taps the stale banner
+**When** refresh runs
+**Then** section loading indicators appear per existing My Data loading pattern
+**And** banner hides or updates when refresh completes and stale clears
+
+**Given** Today stale banner (`_StaleBannerSlot`)
+**When** this story ships
+**Then** Today behaviour is unchanged — parity only on My Data
+
+**Target files:** `lib/presentation/screens/my_data_screen.dart`, `MyDataCubit` if refresh contract needs adjustment  
+**Diagnostic:** `diagnostic-gestion-etat-erreur.md` §4 (stale — My Data sans `onTap`)
+
+---
+
+### Story 28-2: Unify Today Permission-Denied Messaging and CTA
+
+As a **user**,
+I want one clear permission-denied message and settings action on Today,
+So that I am not confused by four different visual treatments for the same condition.
+
+**Acceptance Criteria:**
+
+**Given** activity permission is denied (`TodayStatus.noPermission`)
+**When** Today screen renders
+**Then** **one primary** user-facing permission pattern is shown with a single CTA to open app settings (AUD-24)
+**And** redundant inline captions / duplicate CTAs for the same condition are removed or demoted to non-interactive supporting text
+
+**Given** permission is denied
+**When** GoalRing and ActivityStatsRow render
+**Then** they may keep neutral placeholders (`--`, zeros) but must not introduce a second competing CTA
+**And** `CollectionHealthIndicator` caption aligns with the primary message (no contradictory copy)
+
+**Given** permission is granted later
+**When** Today refreshes
+**Then** primary CTA and health indicator update without layout regressions
+
+**Given** My Data permission UI
+**When** this story ships
+**Then** My Data `BackgroundStatusCard` is unchanged (Today-only unification scope)
+
+**Target files:** `lib/presentation/screens/today_screen.dart`, collection health / goal ring widgets as needed  
+**Diagnostic:** `diagnostic-gestion-etat-erreur.md` §4 (permission refusée — fragmentation Today)
+
+---
+
+### Story 28-3: Decouple Settings Theme, Locale, and Units from Profile Loading Gate
+
+As a **user**,
+I want to change theme, locale, and units even while Profile is still loading,
+So that independent preferences are not blocked by profile fetch.
+
+**Acceptance Criteria:**
+
+**Given** `ProfileCubit` is in `ProfileStatus.loading`
+**When** Settings screen renders
+**Then** locale, units, theme mode, accent, and notification preference sections are visible and interactive (AUD-43)
+**And** only profile-dependent sections (if any) remain behind the profile loading gate
+
+**Given** `ProfileStatus.error`
+**When** Settings is open
+**Then** preference sections remain usable (existing retry for profile error unchanged from Story 22-3)
+**And** preference persist failures still use SnackBar feedback (22-4 pattern)
+
+**Given** user changes locale/units/theme while profile loads
+**When** persist succeeds
+**Then** cubits update immediately without waiting for profile ready
+
+**Given** widget tests for Settings
+**When** this story ships
+**Then** tests cover interactive prefs during `ProfileStatus.loading`
+
+**Target files:** `lib/presentation/screens/settings_screen.dart`, tests  
+**Diagnostic:** `diagnostic-etat-chargement.md` §3 item 10 · `diagnostic-gestion-etat-erreur.md` (Settings vs Profile gate)
