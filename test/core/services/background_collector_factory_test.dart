@@ -92,5 +92,23 @@ void main() {
         expect(await verifyHealthMetrics.getDailyStepGoal(), 7500);
       },
     );
+
+    test(
+      'createIsolateBackgroundCollector omits phone source when includePhonePedometerSource is false',
+      () async {
+        final collector = await createIsolateBackgroundCollector(
+          db: db,
+          sources: null,
+          includePhonePedometerSource: false,
+          clock: clock,
+          notificationService: _testNotificationService(),
+          notificationPermissionGranted: () async => true,
+        );
+
+        await collector.collectOnce();
+
+        expect(await aggregationRepository.getLastIngestionUtc(), isNull);
+      },
+    );
   });
 }

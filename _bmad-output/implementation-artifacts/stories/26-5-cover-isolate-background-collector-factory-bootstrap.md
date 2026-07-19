@@ -77,9 +77,9 @@ So that WorkManager/FGS isolate bootstrap regressions are caught early.
   - [x] Reuse `_FakeStepSource` pattern from `fgs_step_collection_test.dart` / `workmanager_callback_test.dart` (local copy in new file OK)
   - [x] **Stop → review brief → wait for Baptiste OK → commit**
 
-- [ ] **Sub-task C — Default source flag branch** (AC: #3)
-  - [ ] Test: `createIsolateBackgroundCollector omits phone source when includePhonePedometerSource is false` — `sources: null`, flag false, assert no buckets
-  - [ ] **Stop → review brief → wait for Baptiste OK → commit**
+- [x] **Sub-task C — Default source flag branch** (AC: #3)
+  - [x] Test: `createIsolateBackgroundCollector omits phone source when includePhonePedometerSource is false` — `sources: null`, flag false, assert no buckets
+  - [x] **Stop → review brief → wait for Baptiste OK → commit**
 
 - [ ] **Sub-task D — Notification bootstrap branches** (AC: #4, #5)
   - [ ] Test: `createIsolateBackgroundCollector enables goal notification when background init succeeds` — seed near-goal bucket + fake source crossing goal + presenter spy
@@ -363,6 +363,7 @@ Composer
 
 - Sub-task A: 56 LOC factory read; zero named test hits; indirect WM/FGS + manual collector construction documented
 - Sub-task B: happy-path test — injected source, bucket write, session goal prefs round-trip (7500)
+- Sub-task C: `includePhonePedometerSource: false` → BLE-only, no buckets
 
 ### File List
 
@@ -374,3 +375,4 @@ Composer
 - 2026-07-19: Story context created — AUD-54 factory bootstrap test guide (ready-for-dev).
 - 2026-07-19: Sub-task A gap analysis — AUD-54 zero named hits confirmed.
 - 2026-07-19: Sub-task B — happy-path createIsolateBackgroundCollector bootstrap test.
+- 2026-07-19: Sub-task C — includePhonePedometerSource false branch test.
