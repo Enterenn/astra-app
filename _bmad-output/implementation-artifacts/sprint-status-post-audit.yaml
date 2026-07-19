@@ -1,6 +1,6 @@
 # generated: 2026-07-16
-# last_updated: 2026-07-19 (Story 26-5 in-progress)
-# NEXT: dev-story 26-5
+# last_updated: 2026-07-19 (Story 26-5 review)
+# NEXT: code-review 26-5
 # Ref: planning-artifacts/epics-post-audit.md · planning-artifacts/audits/
 # project: astra-app
 # project_key: NOKEY
@@ -63,7 +63,7 @@
 # NAVIGATION: _bmad-output/README.md · planning-artifacts/epics-post-audit.md
 
 generated: 2026-07-16
-last_updated: 2026-07-19 (Story 26-5 in-progress)
+last_updated: 2026-07-19 (Story 26-5 review)
 project: astra-app
 project_key: NOKEY
 tracking_system: file-system
@@ -123,6 +123,6 @@ development_status:
   26-2-cover-on-lifecycle-state-resumed-failure-and-recovery: done
   26-3-cover-goal-notification-evaluation-and-rollback-path: done
   26-4-cover-refresh-after-day-rollover-contract: done
-  26-5-cover-isolate-background-collector-factory-bootstrap: in-progress
+  26-5-cover-isolate-background-collector-factory-bootstrap: review
   26-6-add-fault-injection-tests-for-live-monitor-stream-errors: backlog
   epic-26-retrospective: optional

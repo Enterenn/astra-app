@@ -1,6 +1,6 @@
 # Story 26.5: Cover Isolate Background Collector Factory Bootstrap
 
-Status: in-progress
+Status: review
 
 <!-- Post-audit Epic 26 — tracker: sprint-status-post-audit.yaml -->
 <!-- Source: epics-post-audit.md Story 26-5 · diagnostic-couverture-structurelle.md Top #4 · AUD-54 · NFR-AUD-03/06 -->
@@ -87,12 +87,12 @@ So that WorkManager/FGS isolate bootstrap regressions are caught early.
   - [x] Mirror WM test setup for goal prefs (`setDailyStepGoal`, `setGoalNotificationsEnabled`) via UI DB before factory call on same in-memory connection
   - [x] **Stop → review brief → wait for Baptiste OK → commit**
 
-- [ ] **Sub-task E — Regression verification** (AC: #6, #7)
-  - [ ] Run `flutter test test/core/services/background_collector_factory_test.dart --exclude-tags slow`
-  - [ ] Run `flutter test test/core/services/workmanager_callback_test.dart test/core/services/fgs_step_collection_test.dart --exclude-tags slow`
-  - [ ] Run `flutter test --exclude-tags slow`
-  - [ ] Grep confirms test name or group contains `createIsolateBackgroundCollector`
-  - [ ] **Stop → review brief → wait for Baptiste OK → commit**
+- [x] **Sub-task E — Regression verification** (AC: #6, #7)
+  - [x] Run `flutter test test/core/services/background_collector_factory_test.dart --exclude-tags slow`
+  - [x] Run `flutter test test/core/services/workmanager_callback_test.dart test/core/services/fgs_step_collection_test.dart --exclude-tags slow`
+  - [x] Run `flutter test --exclude-tags slow`
+  - [x] Grep confirms test name or group contains `createIsolateBackgroundCollector`
+  - [x] **Stop → review brief → wait for Baptiste OK → commit**
 
 ## Dev Notes
 
@@ -365,11 +365,13 @@ Composer
 - Sub-task B: happy-path test — injected source, bucket write, session goal prefs round-trip (7500)
 - Sub-task C: `includePhonePedometerSource: false` → BLE-only, no buckets
 - Sub-task D: goal notification success (presenter spy + shown date); timeout path (platform init fails, bucket still written)
+- Sub-task E: 4/4 factory tests green; WM/FGS unchanged green; full fast suite 960 passed (~2 skipped slow)
 
 ### File List
 
 - `test/core/services/background_collector_factory_test.dart` (new)
 - `_bmad-output/implementation-artifacts/stories/26-5-cover-isolate-background-collector-factory-bootstrap.md` (updated)
+- `_bmad-output/implementation-artifacts/sprint-status-post-audit.yaml` (updated)
 
 ## Change Log
 
@@ -378,3 +380,4 @@ Composer
 - 2026-07-19: Sub-task B — happy-path createIsolateBackgroundCollector bootstrap test.
 - 2026-07-19: Sub-task C — includePhonePedometerSource false branch test.
 - 2026-07-19: Sub-task D — notification init success and timeout branch tests.
+- 2026-07-19: Sub-task E — regression verification complete; status → review.
