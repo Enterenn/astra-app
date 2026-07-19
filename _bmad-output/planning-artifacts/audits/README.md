@@ -1,8 +1,8 @@
 # Audits post-refacto — index
 
 **Généré :** 2026-06-22  
-**Dernière resync :** 2026-07-19 (Epics 21–25 `done`, E26 backlog)  
-**Base code :** `0.11.2+27` (`pubspec.yaml`)  
+**Dernière resync :** 2026-07-19 (Epics 21–26 `done`)  
+**Base code :** `0.11.3+28` (`pubspec.yaml`)  
 **Périmètre :** diagnostics techniques post-Epics 14–20 (branche `refacto` close)
 
 Ce dossier complète [`refactoring-audit-master-v0.6.1.md`](../refactoring-audit-master-v0.6.1.md) (plan refacto livré) avec une analyse **plus granulaire** : chemins de fichiers, numéros de lignes, plans d’action numérotés et matrices de couverture.
@@ -35,7 +35,7 @@ Ce dossier complète [`refactoring-audit-master-v0.6.1.md`](../refactoring-audit
 | 07 | [diagnostic-coherence-design-system.md](./diagnostic-coherence-design-system.md) | Tokens, typo, poignées sheet, valeurs répétées | `fixed` | P2 | E24 — done |
 | 08 | [diagnostic-code-mort.md](./diagnostic-code-mort.md) | Symboles orphelins vérifiés | `fixed` | P2 | E24 — done |
 | 09 | [diagnostic-convention-structure.md](./diagnostic-convention-structure.md) | Monolithes, couplages DI/cubits, lints | `fixed` | P3 | E25 — done |
-| 10 | [diagnostic-couverture-structurelle.md](./diagnostic-couverture-structurelle.md) | Méthodes non testées, FFI vs unit, fault injection | `open` | P1 | E26 — backlog |
+| 10 | [diagnostic-couverture-structurelle.md](./diagnostic-couverture-structurelle.md) | Méthodes non testées, FFI vs unit, fault injection | `fixed` | P1 | E26 — done |
 | 11 | [diagnostic-dependance.md](./diagnostic-dependance.md) | Graphe repos/services, risques de split | `partial` | P3 | E25 — done |
 
 ---
@@ -55,6 +55,7 @@ Ce dossier complète [`refactoring-audit-master-v0.6.1.md`](../refactoring-audit
 | `SheetDragHandle`, constantes chart centralisées | 07 | 24-1, 24-4 |
 | Tokens typo/couleurs morts, constantes prefs orphelines | 08 | 24-2, 24-5 |
 | Split `TodayCubit` / lifecycle, DI sans presentation, doc comments | 09 | 25-1 → 25-5 |
+| Couverture orchestration + fault injection (cold start, resume, goal notif, rollover, factory bootstrap, monitor stream errors) | 10 | 26-1 → 26-6 |
 | `AstraPressable._release()` animation orpheline | 03 | `if (!mounted) return` (pré-E21) |
 
 ### Partiellement vrai (`partial`) — hors périmètre sprint ou différé
@@ -65,11 +66,9 @@ Ce dossier complète [`refactoring-audit-master-v0.6.1.md`](../refactoring-audit
 | Split read/write repos (`UserSettingsRepository`, etc.) | 11 | Graphe documenté (25-5) ; split repos **non** planifié |
 | Migration SQLite réactive complète | 01 | Contention réduite (lock, dedup) ; migration architecture **différée** |
 
-### Ouvert (`open`) — Epic 26
+### Ouvert (`open`) — post-audit program complete
 
-| Point | Diagnostic | Prochaine action |
-|-------|------------|------------------|
-| Couverture orchestration + fault injection | 10 | Stories 26-1 → 26-6 (`sprint-status-post-audit.yaml`) |
+Aucun diagnostic ouvert dans le périmètre Epics 21–26. Constats résiduels hors sprint : modèle `AppFailure` unifié (04), split read/write repos (11).
 
 ---
 
@@ -87,7 +86,7 @@ Actions initiales — **toutes adressées** dans les Epics 21–24 :
 | Extraire `SheetDragHandle` | 07 | 24-1 |
 | Nettoyage typo morte + tokens orphelins | 08 | 24-2, 24-5 |
 
-**Chantiers restants :** couverture tests orchestration (10 → E26), modèle `AppFailure` unifié (04, différé).
+**Chantiers restants :** modèle `AppFailure` unifié (04, différé), split read/write repos (11, différé).
 
 ---
 
@@ -100,7 +99,7 @@ Actions initiales — **toutes adressées** dans les Epics 21–24 :
 | **E23** | Accessibilité WCAG | 05 | **done** |
 | **E24** | Design System & états de chargement | 06, 07, 08 | **done** |
 | **E25** | Architecture & dette structurelle | 09, 11 | **done** (`0.11.2+27`) |
-| **E26** | Tests d’orchestration & résilience | 10 | **backlog** |
+| **E26** | Tests d’orchestration & résilience | 10 | **done** (`0.11.3+28`) |
 
 Tracker : [`sprint-status-post-audit.yaml`](../../implementation-artifacts/sprint-status-post-audit.yaml)
 
