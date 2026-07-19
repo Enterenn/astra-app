@@ -59,10 +59,10 @@ So that the resume `catch` path cannot regress silently.
   - [x] Note widget-only indirect exercise via `AppLifecycleState.resumed` in integration tests — out of scope for AUD-51
   - [x] **Stop → review brief → wait for Baptiste OK → commit** (plan-only commit optional)
 
-- [ ] **Sub-task B — Named happy-path `onLifecycleStateResumed` group** (AC: #1, #2)
-  - [ ] Add `group('onLifecycleStateResumed', () { ... })` in `test/core/services/app_lifecycle_coordinator_test.dart`
-  - [ ] Setup helper: bind widget → `onTodayCubitReady` → await cold-start settle → `onLifecycleStatePaused` → assert `setLiveStepAppliesPaused(true)`
-  - [ ] Test: `onLifecycleStateResumed runs resume pipeline and clears live pause flag` — `RecordingHealthFgs` asserts FGS stop + `uiActive:true`; monitor reconcile/bind side effects observable
+- [x] **Sub-task B — Named happy-path `onLifecycleStateResumed` group** (AC: #1, #2)
+  - [x] Add `group('onLifecycleStateResumed', () { ... })` in `test/core/services/app_lifecycle_coordinator_test.dart`
+  - [x] Setup helper: bind widget → `onTodayCubitReady` → await cold-start settle → `onLifecycleStatePaused` → assert `setLiveStepAppliesPaused(true)`
+  - [x] Test: `onLifecycleStateResumed runs resume pipeline and clears live pause flag` — `RecordingHealthFgs` asserts FGS stop + `uiActive:true`; monitor reconcile/bind side effects observable
   - [ ] **Stop → review brief → wait for Baptiste OK → commit**
 
 - [ ] **Sub-task C — Forced `resumeLivePipeline` failure + recovery** (AC: #3)
@@ -304,7 +304,8 @@ No coordinator resume behaviour changes since 25-2 — safe to add tests only.
 
 ### Debug Log References
 
-- Sub-task A (2026-07-19): `rg onLifecycleStateResumed|resumeLivePipeline test/` → 0 hits (AUD-51 confirmed). Indirect resume via `AppLifecycleState.resumed` in `app_live_pipeline_lifecycle_test.dart` (slow), `widget_test.dart`, `app_health_fgs_lifecycle_test.dart`. Existing pause test L398 uses `RecordingHealthFgs` — pattern to reuse. `liveStepAppliesPaused` on `TodayCubit` (not TodayState). Call chain: `onLifecycleStateResumed` → `_onAppForegrounded` → FGS stop/uiActive + `resumeLivePipeline` (catch/finally clears pause flag).
+- Sub-task A (2026-07-19): `rg onLifecycleStateResumed|resumeLivePipeline test/` → 0 hits (AUD-51 confirmed). Indirect resume via `AppLifecycleState.resumed` in slow/widget tests. `liveStepAppliesPaused` on `TodayCubit` (not TodayState).
+- Sub-task B (2026-07-19): `group('onLifecycleStateResumed')` + happy path — cold start → pause → resume; FGS stop/uiActive:true; reconcile on resume; pause flag cleared.
 ### Completion Notes List
 
 ### File List

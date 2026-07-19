@@ -760,6 +760,95 @@ void main() {
       );
     });
 
+    group('onLifecycleStateResumed', () {
+      test(
+        'onLifecycleStateResumed runs resume pipeline and clears live pause flag',
+        () async {
+          final fgsCalls = <String>[];
+          final fgs = RecordingHealthFgs(calls: fgsCalls);
+          var resumeReconcileSeen = false;
+
+          final steps = _ColdStartStepAggregation(clock);
+          final todayCubit = TodayCubit(
+            stepAggregation: steps,
+            userSettings: _ColdStartUserSettings(),
+            userHealthMetrics: _ColdStartUserHealthMetrics(),
+            clock: clock,
+            activityPermissionGranted: () async => true,
+          );
+
+          final baselineRepo = IngestionBaselineRepository(
+            CoordinatorStubDatabase(),
+          );
+          final innerMonitor = LiveStepMonitor(
+            stepAggregation: steps,
+            baselineRepository: baselineRepo,
+            clock: clock,
+            stepEventStreamFactory: () => const Stream<PhoneStepEvent>.empty(),
+          );
+          final captureMonitor = _SeedCapturingMonitor(
+            inner: innerMonitor,
+            onStart: (_) {},
+            onReconcile: (_) => resumeReconcileSeen = true,
+          );
+
+          final seedDeps = buildCoordinatorUnitTestDeps(timeProvider: clock);
+          final deps = buildCoordinatorUnitTestDeps(
+            timeProvider: clock,
+            healthForegroundCoordinator: fgs,
+            liveStepMonitor: captureMonitor,
+            backgroundCollector: _NoOpBackgroundCollector(
+              sources: seedDeps.ingestionSources,
+              normalizer: seedDeps.stepNormalizer,
+              repository: seedDeps.stepIngestion,
+              stepAggregation: seedDeps.stepAggregation,
+              baselineRepository: IngestionBaselineRepository(
+                seedDeps.databaseSession,
+              ),
+            ),
+          );
+
+          final coordinator = deps.appLifecycleCoordinator;
+          coordinator.bindToWidget(
+            isMounted: () => true,
+            showMainShell: () => true,
+            enablePeriodicPersist: false,
+            enableLiveStepPipeline: true,
+            maxPersistStaleness: const Duration(seconds: 1),
+            minPauseForPhoneCatchUp: const Duration(seconds: 10),
+            initialShowMainShell: true,
+          );
+
+          coordinator.onTodayCubitReady(todayCubit);
+          await coordinator.foregroundBackfill;
+          await pumpEventQueue();
+
+          expect(todayCubit.liveStepAppliesPaused, isFalse);
+
+          await coordinator.onLifecycleStatePaused();
+          expect(todayCubit.liveStepAppliesPaused, isTrue);
+          expect(fgsCalls, contains('uiActive:false'));
+          expect(fgsCalls, contains('start'));
+
+          resumeReconcileSeen = false;
+
+          await coordinator.onLifecycleStateResumed();
+
+          expect(fgsCalls, contains('stop'));
+          expect(fgsCalls, contains('uiActive:true'));
+          expect(todayCubit.liveStepAppliesPaused, isFalse);
+          expect(
+            resumeReconcileSeen,
+            isTrue,
+            reason: 'resumeLivePipeline must reconcile monitor on resume',
+          );
+
+          await todayCubit.close();
+          await captureMonitor.dispose();
+        },
+      );
+    });
+
     test(
       'cold-start backfill passes Duration.zero to collectOnce (AUD-05)',
       () async {
