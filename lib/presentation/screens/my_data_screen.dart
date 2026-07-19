@@ -168,6 +168,7 @@ class _MyDataScreenBody extends StatelessWidget {
             StatusBanner(
               variant: StatusBannerVariant.staleFull,
               isIos: state.isIos,
+              onTap: () => unawaited(cubit.refresh(silent: false)),
             ),
           ],
           const SizedBox(height: AstraSpacing.kSpaceMd),
