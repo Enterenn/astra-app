@@ -1,8 +1,9 @@
 import 'package:flutter/material.dart';
 
 import '../../core/constants/astra_accent_preset.dart';
+import '../../core/constants/astra_theme_preference.dart';
 
-enum AstraThemePreference { system, light, dark }
+export '../../core/constants/astra_theme_preference.dart';
 
 class ThemeState {
   const ThemeState({
