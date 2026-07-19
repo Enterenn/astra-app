@@ -1,3 +1,6 @@
+@Tags(['slow'])
+library;
+
 import 'package:astra_app/core/time/local_day_boundary.dart';
 import 'package:astra_app/core/time/time_provider.dart';
 import 'package:flutter_test/flutter_test.dart';

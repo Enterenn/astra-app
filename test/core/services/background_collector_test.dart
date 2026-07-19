@@ -1,3 +1,6 @@
+@Tags(['slow'])
+library;
+
 import 'package:astra_app/core/constants/preference_keys.dart';
 import 'package:astra_app/core/database/astra_database_session.dart';
 import 'package:astra_app/core/services/ingestion_collection_lock.dart';

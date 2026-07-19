@@ -1,3 +1,6 @@
+@Tags(['slow'])
+library;
+
 import 'dart:io';
 
 import 'package:astra_app/core/health/background_health_manifest.dart';

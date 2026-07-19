@@ -1,3 +1,6 @@
+@Tags(['critical'])
+library;
+
 import 'package:astra_app/core/constants/preference_keys.dart';
 import 'package:astra_app/core/time/local_day_formatter.dart';
 import 'package:astra_app/core/database/app_database.dart';

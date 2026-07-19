@@ -1,3 +1,6 @@
+@Tags(['slow'])
+library;
+
 import 'dart:async';
 
 import 'package:astra_app/core/database/app_database.dart';

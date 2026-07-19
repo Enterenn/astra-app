@@ -2,7 +2,7 @@
 title: 'Test suite cleanup'
 type: 'maintenance'
 created: '2026-06-05'
-status: 'phase-b-done'
+status: 'phase-d-done'
 route: 'one-shot'
 ---
 
@@ -49,7 +49,39 @@ Do **not** split these back into separate files unless a group grows substantial
 | `user_preferences_repository_test.dart` assertion merges | 46 → 11 tests (−76 %) |
 | `history_cubit_test.dart` assertion merges | 35 → 24 tests (−31 %) |
 
-**Daily command:** `flutter test --exclude-tags slow`
-**Full suite (CI / epic close):** `flutter test`
+**Daily command (agents):** `flutter test --tags critical` (~213 cases, ~35 s)
+**Pre-merge:** `flutter test --exclude-tags slow` (= critical)
+**Full suite (epic close):** `flutter test` (~581 cases)
 
 Note: tag name chosen as `slow` (not `dev`) to reflect the exclusion reason (runtime cost) rather than the folder location.
+
+## Phase D — Token economy pass (2026-07-19)
+
+| Metric | Before | After |
+|--------|--------|-------|
+| Total cases | 1 030 | **581** |
+| `@Tags(['critical'])` | — | **213** |
+| `@Tags(['slow'])` | 34 | **368** |
+
+### Commands
+
+| Command | Cases | When |
+|---------|-------|------|
+| `flutter test --tags critical` | 213 | agents, daily dev |
+| `flutter test --exclude-tags slow` | 213 | pre-merge (same set) |
+| `flutter test` | 581 | epic close / monthly |
+
+### Kept deliberately (slow, not deleted)
+
+- `settings_screen_test` — story 28 profile-loading gate decoupling
+- `my_data_screen_test` — import/export/purge UI wiring
+- `history_cubit_test`, `live_step_monitor_test`, `background_collector_test` — pipeline depth
+- `dev/*`, `app_live_pipeline_lifecycle_test` — benchmarks / integration
+
+### Removed 68 files (~449 cases)
+
+Widget atomics, redundant screens (`today_screen_selector` 43 cases), duplicate cubits (`today_cubit_contract`, `theme/units`, generic `my_data_cubit*`), formatters/tokens/l10n spot checks, granular repo stubs. Full list in `tools/remove_redundant_tests.py`.
+
+### Do not recreate
+
+Same rule as Phase B: extend `screen_smoke_test`, `app_scaffold_test`, or cubit tests instead of new widget atomics.

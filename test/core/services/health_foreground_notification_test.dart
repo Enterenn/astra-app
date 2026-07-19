@@ -1,3 +1,6 @@
+@Tags(['slow'])
+library;
+
 import 'package:astra_app/core/services/health_foreground_notification.dart';
 import 'package:astra_app/core/services/notification_service.dart';
 import 'package:flutter_test/flutter_test.dart';

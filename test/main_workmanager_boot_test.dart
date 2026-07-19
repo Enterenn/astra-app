@@ -1,3 +1,6 @@
+@Tags(['critical'])
+library;
+
 import 'package:astra_app/main.dart' as boot;
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';

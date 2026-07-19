@@ -1,3 +1,6 @@
+@Tags(['slow'])
+library;
+
 import 'package:astra_app/data/datasources/data_ingestion_source.dart';
 import 'package:astra_app/data/datasources/phone_pedometer_source.dart';
 import 'package:flutter_test/flutter_test.dart';

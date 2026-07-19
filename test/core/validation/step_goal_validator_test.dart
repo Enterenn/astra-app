@@ -1,3 +1,6 @@
+@Tags(['critical'])
+library;
+
 import 'package:astra_app/core/constants/preference_keys.dart';
 import 'package:astra_app/core/validation/step_goal_validator.dart';
 import 'package:flutter_test/flutter_test.dart';

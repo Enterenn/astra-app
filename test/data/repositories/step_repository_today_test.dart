@@ -1,3 +1,6 @@
+@Tags(['critical'])
+library;
+
 import 'package:astra_app/core/database/app_database.dart';
 import 'package:astra_app/core/time/time_provider.dart';
 import 'package:astra_app/data/datasources/data_ingestion_source.dart';

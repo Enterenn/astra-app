@@ -17,3 +17,11 @@ Applies to all development work on this project.
 After each sub-task: implement → stop → compact review (files / verify / commit msg + diffs) → wait for `OK commit` (or equivalent) → commit → next sub-task.
 
 No pedagogical brief. Keep the gate so steps chain with explicit approval.
+
+## Tests (mandatory for agents)
+
+- **Default verify:** `flutter test --tags critical`
+- **Localized change:** `flutter test test/path/to_file_test.dart`
+- **Pre-merge / large refactor:** `flutter test --exclude-tags slow`
+- **Full regression:** `flutter test` only when Baptiste asks
+- Never run bare `flutter test` after routine changes.

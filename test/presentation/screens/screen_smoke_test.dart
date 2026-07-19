@@ -1,3 +1,6 @@
+@Tags(['critical'])
+library;
+
 import 'package:astra_app/l10n/app_localizations.dart';
 import 'package:astra_app/core/constants/astra_spacing.dart';
 import 'package:astra_app/core/constants/astra_theme.dart';

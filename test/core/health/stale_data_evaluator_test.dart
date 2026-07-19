@@ -1,3 +1,6 @@
+@Tags(['critical'])
+library;
+
 import 'package:astra_app/core/health/stale_data_evaluator.dart';
 import 'package:flutter_test/flutter_test.dart';
 

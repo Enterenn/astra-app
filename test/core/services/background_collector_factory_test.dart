@@ -1,3 +1,6 @@
+@Tags(['slow'])
+library;
+
 import 'package:astra_app/core/database/app_database.dart';
 import 'package:astra_app/core/services/background_collector_factory.dart';
 import 'package:astra_app/core/services/notification_service.dart';

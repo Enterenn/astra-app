@@ -1,3 +1,6 @@
+@Tags(['slow'])
+library;
+
 import 'dart:io';
 
 import 'package:astra_app/data/csv/import_validation_exception.dart';

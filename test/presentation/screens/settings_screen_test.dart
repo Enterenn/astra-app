@@ -1,3 +1,6 @@
+@Tags(['slow'])
+library;
+
 import 'package:astra_app/core/constants/astra_accent_preset.dart';
 import 'package:astra_app/core/constants/astra_theme.dart';
 import 'package:astra_app/core/database/app_database.dart';

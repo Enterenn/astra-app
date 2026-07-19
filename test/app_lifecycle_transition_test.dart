@@ -1,3 +1,6 @@
+@Tags(['slow'])
+library;
+
 import 'package:astra_app/app.dart';
 import 'package:flutter_test/flutter_test.dart';
 

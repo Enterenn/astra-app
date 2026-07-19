@@ -1,3 +1,6 @@
+@Tags(['slow'])
+library;
+
 import 'package:astra_app/core/database/app_database.dart';
 import 'package:astra_app/core/lifecycle/sample_compaction_runner.dart';
 import 'package:astra_app/data/models/normalized_step_bucket.dart';

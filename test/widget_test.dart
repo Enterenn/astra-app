@@ -1,3 +1,6 @@
+@Tags(['critical'])
+library;
+
 import 'package:astra_app/app.dart';
 import 'package:astra_app/core/database/app_database.dart';
 import 'package:astra_app/core/di/app_dependencies.dart';

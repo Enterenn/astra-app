@@ -1,3 +1,6 @@
+@Tags(['critical'])
+library;
+
 import 'package:astra_app/core/database/app_database.dart';
 
 import 'package:astra_app/data/repositories/user_health_metrics_repository.dart';

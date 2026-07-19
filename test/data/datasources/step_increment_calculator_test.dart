@@ -1,3 +1,6 @@
+@Tags(['slow'])
+library;
+
 import 'package:astra_app/data/datasources/step_increment_calculator.dart';
 import 'package:flutter_test/flutter_test.dart';
 

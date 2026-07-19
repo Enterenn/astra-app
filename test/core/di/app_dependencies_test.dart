@@ -1,3 +1,6 @@
+@Tags(['critical'])
+library;
+
 import 'package:astra_app/core/constants/astra_accent_preset.dart';
 import 'package:astra_app/core/constants/astra_theme_preference.dart';
 import 'package:astra_app/core/constants/display_unit_preferences.dart';

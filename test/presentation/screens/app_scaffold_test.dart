@@ -1,3 +1,6 @@
+@Tags(['critical'])
+library;
+
 import 'package:astra_app/core/constants/astra_colors.dart';
 import 'package:astra_app/core/constants/astra_spacing.dart';
 import 'package:astra_app/core/constants/astra_theme.dart';

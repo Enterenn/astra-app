@@ -1,3 +1,6 @@
+@Tags(['slow'])
+library;
+
 import 'package:astra_app/core/database/app_database.dart';
 import 'package:astra_app/core/services/fgs_step_collection.dart';
 import 'package:astra_app/core/services/notification_service.dart';

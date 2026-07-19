@@ -1,3 +1,6 @@
+@Tags(['critical'])
+library;
+
 import 'dart:async';
 
 import 'package:astra_app/core/constants/astra_theme.dart';
