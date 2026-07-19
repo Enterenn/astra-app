@@ -39,6 +39,23 @@ void schedulePostRunAppWorkmanagerRegistration(
   });
 }
 
+@visibleForTesting
+Future<void> startNotificationInitForBoot(
+  NotificationService notificationService, {
+  Future<void> Function(NotificationService service)? initialize,
+}) async {
+  final runInit = initialize ??
+      ((service) => service.initialize().timeout(const Duration(seconds: 3)));
+  try {
+    await runInit(notificationService);
+  } on TimeoutException catch (error) {
+    debugPrint('NotificationService init timed out: $error');
+  } catch (error, stackTrace) {
+    debugPrint('NotificationService init failed: $error');
+    debugPrintStack(stackTrace: stackTrace);
+  }
+}
+
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
   await cancelStepCollectionWorkmanager();
