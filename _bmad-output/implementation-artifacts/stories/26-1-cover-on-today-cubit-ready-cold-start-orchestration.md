@@ -1,6 +1,6 @@
 # Story 26.1: Cover onTodayCubitReady Cold-Start Orchestration
 
-Status: in-progress
+Status: review
 
 <!-- Post-audit Epic 26 — tracker: sprint-status-post-audit.yaml -->
 <!-- Source: epics-post-audit.md Story 26-1 · diagnostic-couverture-structurelle.md Top #2 · AUD-50 · NFR-AUD-06 -->
@@ -69,11 +69,11 @@ So that cold-start live-pipeline attachment regressions are caught without relyi
   - [x] Test: `onTodayCubitReady with enableLiveStepPipeline false waits backfill then refreshes Today` — `bindToWidget(enableLiveStepPipeline: false)`, spy/monitor `isRunning` stays false, cubit reaches loaded state via `refresh()`
   - [x] **Stop → review brief → wait for Baptiste OK → commit**
 
-- [ ] **Sub-task D — Regression verification** (AC: #4, #5)
-  - [ ] Run `flutter test test/core/services/app_lifecycle_coordinator_test.dart --exclude-tags slow`
-  - [ ] Run `flutter test --exclude-tags slow` (full fast suite)
-  - [ ] Grep confirms test name or group contains `onTodayCubitReady`
-  - [ ] **Stop → review brief → wait for Baptiste OK → commit**
+- [x] **Sub-task D — Regression verification** (AC: #4, #5)
+  - [x] Run `flutter test test/core/services/app_lifecycle_coordinator_test.dart --exclude-tags slow`
+  - [x] Run `flutter test --exclude-tags slow` (full fast suite)
+  - [x] Grep confirms test name or group contains `onTodayCubitReady`
+  - [x] **Stop → review brief → wait for Baptiste OK → commit**
 
 ## Dev Notes
 
@@ -255,9 +255,14 @@ Composer
 
 - ✅ Sub-task B: live cold-start sequencing under named group (AC #1, #2)
 - ✅ Sub-task C: non-live initialTodayRefresh path (AC #3)
+- ✅ AC #1–#5: 9/9 coordinator tests + full fast suite green; AUD-50 grep satisfied
 
 ### File List
 
 - `test/core/services/app_lifecycle_coordinator_test.dart` (modified)
+- `_bmad-output/implementation-artifacts/sprint-status-post-audit.yaml` (modified)
+- `_bmad-output/implementation-artifacts/stories/26-1-cover-on-today-cubit-ready-cold-start-orchestration.md` (modified)
 
 ## Change Log
+
+- 2026-07-19: Story 26-1 — named `onTodayCubitReady` test group (AUD-50 / NFR-AUD-06); live + non-live cold-start orchestration coverage
