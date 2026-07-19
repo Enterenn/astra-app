@@ -1,6 +1,6 @@
 # Story 28.1: Add Tap-to-Refresh on My Data Stale Banner
 
-Status: review
+Status: done
 
 <!-- Post-audit Epic 28 — tracker: sprint-status-post-audit.yaml -->
 <!-- Source: epics-post-audit.md Story 28-1 · diagnostic-gestion-etat-erreur.md §4 (stale — My Data sans onTap) -->
