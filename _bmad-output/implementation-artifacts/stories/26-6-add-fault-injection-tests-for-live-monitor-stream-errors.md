@@ -1,6 +1,6 @@
 # Story 26.6: Add Fault-Injection Tests for Live Monitor Stream Errors
 
-Status: review
+Status: done
 
 <!-- Post-audit Epic 26 — tracker: sprint-status-post-audit.yaml -->
 <!-- Source: epics-post-audit.md Story 26-6 · diagnostic-couverture-structurelle.md LiveStepMonitor error paths · AUD-55 · NFR-AUD-06 -->
@@ -300,11 +300,11 @@ rg "stream fault injection|start stream onError|peekPhoneStepEvent.*(error|timeo
 
 **Assertions checklist:**
 
-- [ ] `start()` + stream error → `isRunning` true, no listener error, no zone failure
-- [ ] `peekPhoneStepEvent` + stream error → returns `null`, no throw
-- [ ] `peekPhoneStepEvent` + silent stream + short timeout → returns `null`
-- [ ] Existing 23+ live monitor tests still green
-- [ ] Full fast suite green (~960+ tests post 26-5)
+- [x] `start()` + stream error → `isRunning` true, no listener error, no zone failure
+- [x] `peekPhoneStepEvent` + stream error → returns `null`, no throw
+- [x] `peekPhoneStepEvent` + silent stream + short timeout → returns `null`
+- [x] Existing 23+ live monitor tests still green
+- [x] Full fast suite green (~960+ tests post 26-5)
 
 ### Previous story intelligence (26-5)
 
@@ -375,9 +375,10 @@ Composer (Cursor)
 
 - `test/core/services/live_step_monitor_test.dart` — added stream fault injection group (3 tests)
 - `_bmad-output/implementation-artifacts/stories/26-6-add-fault-injection-tests-for-live-monitor-stream-errors.md` — story tracking
-- `_bmad-output/implementation-artifacts/sprint-status-post-audit.yaml` — status in-progress → review
+- `_bmad-output/implementation-artifacts/sprint-status-post-audit.yaml` — status review → done
 
 ## Change Log
 
 - 2026-07-19: Story context created — AUD-55 LiveStepMonitor stream fault-injection guide (ready-for-dev).
 - 2026-07-19: Implemented fault-injection tests (AUD-55) — 3 new tests, full fast suite green (963 passed).
+- 2026-07-19: Code review passed — mark 26-6 done (AUD-55); epic-26 close pending version bump.
