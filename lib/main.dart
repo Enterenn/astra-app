@@ -1,5 +1,6 @@
 import 'dart:async';
 
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:path/path.dart' show join;
 import 'package:sqflite/sqflite.dart';
@@ -9,6 +10,34 @@ import 'core/di/app_dependencies.dart';
 import 'core/preferences/goal_notification_migration.dart';
 import 'core/services/notification_service.dart';
 import 'core/services/workmanager_callback.dart';
+
+@visibleForTesting
+Future<void> registerWorkmanagerTasksForBoot({
+  required String databasePath,
+  Future<void> Function({String? databasePath}) registerStepCollection =
+      registerStepCollectionWorkmanager,
+  Future<void> Function({required String databasePath})
+      registerMaintenance = registerDatabaseMaintenanceWorkmanager,
+}) async {
+  try {
+    await registerStepCollection(databasePath: databasePath);
+    await registerMaintenance(databasePath: databasePath);
+  } catch (error, stackTrace) {
+    debugPrint('WorkManager registration failed: $error');
+    debugPrintStack(stackTrace: stackTrace);
+  }
+}
+
+@visibleForTesting
+void schedulePostRunAppWorkmanagerRegistration(
+  String databasePath, {
+  Future<void> Function({required String databasePath})? registerBoot,
+}) {
+  final register = registerBoot ?? registerWorkmanagerTasksForBoot;
+  WidgetsBinding.instance.addPostFrameCallback((_) {
+    unawaited(register(databasePath: databasePath));
+  });
+}
 
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -29,9 +58,7 @@ Future<void> main() async {
     userSettings: deps.userSettings,
     notificationService: notificationService,
   );
-  // WM registers regardless of FGS — reconciliation fallback (D-04), not realtime cadence.
   final databasePath = join(await getDatabasesPath(), 'astra_app.db');
-  await registerStepCollectionWorkmanager(databasePath: databasePath);
-  await registerDatabaseMaintenanceWorkmanager(databasePath: databasePath);
   runApp(AstraApp(deps: deps));
+  schedulePostRunAppWorkmanagerRegistration(databasePath);
 }
