@@ -16,6 +16,7 @@ import '../database/astra_database_session.dart';
 /// Weekly interval between database optimize/VACUUM runs (FR12).
 const kDatabaseMaintenanceInterval = Duration(days: 7);
 
+/// Outcome of [runMaintenanceOnConnection]: skipped when not due, or compaction ran.
 class LifecycleRunResult {
   const LifecycleRunResult({
     required this.skipped,

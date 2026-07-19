@@ -15,6 +15,9 @@ import '../time/time_provider.dart';
 import 'ingestion_collection_lock.dart';
 import 'notification_service.dart';
 
+/// Orchestrates one background ingest cycle: sources → normalize → SQLite upsert.
+///
+/// Optionally evaluates goal notifications when the user-facing app is active.
 class BackgroundCollector {
   BackgroundCollector({
     required List<DataIngestionSource> sources,

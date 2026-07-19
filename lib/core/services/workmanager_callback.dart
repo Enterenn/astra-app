@@ -32,6 +32,7 @@ abstract class StepCollectionWorkmanagerClient {
   });
 }
 
+/// Production [StepCollectionWorkmanagerClient] backed by the Workmanager plugin.
 class PluginStepCollectionWorkmanagerClient
     implements StepCollectionWorkmanagerClient {
   PluginStepCollectionWorkmanagerClient({Workmanager? workmanager})
