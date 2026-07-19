@@ -1,6 +1,6 @@
 # generated: 2026-07-16
-# last_updated: 2026-07-19 (Story 27-2 review)
-# NEXT: dev 27-2 · then 27-3 · epic-27 (boot polish) → epic-28 (UX cohérence)
+# last_updated: 2026-07-19 (Story 27-2 done)
+# NEXT: dev 27-3 · then 27-4 · epic-27 (boot polish) → epic-28 (UX cohérence)
 # Ref: planning-artifacts/epics-post-audit.md · planning-artifacts/audits/
 # project: astra-app
 # project_key: NOKEY
@@ -69,7 +69,7 @@
 # NAVIGATION: _bmad-output/README.md · planning-artifacts/epics-post-audit.md
 
 generated: 2026-07-16
-last_updated: 2026-07-19 (Story 27-2 review)
+last_updated: 2026-07-19 (Story 27-2 done)
 project: astra-app
 project_key: NOKEY
 tracking_system: file-system
@@ -135,7 +135,7 @@ development_status:
 
   epic-27: in-progress
   27-1-parallelize-initial-preference-reads-with-future-wait: done
-  27-2-defer-workmanager-registration-until-after-runapp: review
+  27-2-defer-workmanager-registration-until-after-runapp: done
   27-3-non-blocking-notification-init-before-first-frame: backlog
   27-4-lazy-instantiate-history-cubit-on-first-trends-tab: backlog
   epic-27-retrospective: optional

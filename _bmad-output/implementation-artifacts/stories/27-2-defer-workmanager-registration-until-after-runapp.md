@@ -1,6 +1,6 @@
 # Story 27.2: Defer WorkManager Registration Until After runApp
 
-Status: review
+Status: done
 
 <!-- Post-audit Epic 27 — tracker: sprint-status-post-audit.yaml -->
 <!-- Source: epics-post-audit.md Story 27-2 · diagnostic-cold-start.md §Phase D2 · AUD-14 -->
@@ -280,9 +280,10 @@ Composer
 
 - `lib/main.dart` — deferred WM registration helpers + boot reorder
 - `test/main_workmanager_boot_test.dart` — scheduling, order, error swallow tests
-- `_bmad-output/implementation-artifacts/sprint-status-post-audit.yaml` — story status in-progress → review
+- `_bmad-output/implementation-artifacts/sprint-status-post-audit.yaml` — status review → done
 
 ## Change Log
 
 - 2026-07-19: Story context created — AUD-14 defer WorkManager registration post-runApp (ready-for-dev).
-- 2026-07-19: Implemented deferred WM registration post-runApp — helpers, boot reorder, tests (review).
+- 2026-07-19: Implemented deferred WM registration post-runApp — helpers, boot reorder, tests.
+- 2026-07-19: Code review passed — mark 27-2 done (AUD-14).
