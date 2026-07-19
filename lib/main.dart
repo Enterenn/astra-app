@@ -60,14 +60,7 @@ Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
   await cancelStepCollectionWorkmanager();
   final notificationService = NotificationService();
-  try {
-    await notificationService.initialize().timeout(const Duration(seconds: 3));
-  } on TimeoutException catch (error) {
-    debugPrint('NotificationService init timed out: $error');
-  } catch (error, stackTrace) {
-    debugPrint('NotificationService init failed: $error');
-    debugPrintStack(stackTrace: stackTrace);
-  }
+  unawaited(startNotificationInitForBoot(notificationService));
   final deps = await AppDependencies.create(
     notificationService: notificationService,
   );
