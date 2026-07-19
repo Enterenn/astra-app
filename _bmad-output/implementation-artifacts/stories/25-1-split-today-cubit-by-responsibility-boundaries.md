@@ -1,6 +1,6 @@
 # Story 25.1: Split TodayCubit by Responsibility Boundaries
 
-Status: in-progress
+Status: review
 
 <!-- Post-audit Epic 25 — tracker: sprint-status-post-audit.yaml -->
 <!-- Source: epics-post-audit.md Story 25-1 · diagnostic-convention-structure.md Synthèse Haute · AUD-44 -->
@@ -57,36 +57,36 @@ So that cold-start/live/celebration changes do not risk a 1260-line god class.
 
 ## Tasks / Subtasks
 
-- [ ] **Sub-task A — Read baseline & design split map** (AC: #1, #3)
-  - [ ] Read **fully** before editing: `lib/presentation/cubits/today_cubit.dart`, `today_state.dart`
-  - [ ] Read callers: `app_lifecycle_coordinator.dart` (all `_todayCubit?.` sites), `today_screen.dart`, `app_scaffold.dart`
-  - [ ] Read tests: `test/presentation/cubits/today_cubit_test.dart`, `today_cubit_contract_test.dart`, `test/app_live_pipeline_lifecycle_test.dart` (grep only — do not un-skip flaky suite)
-  - [ ] Produce split map (method → collaborator) in code comment or story dev notes; confirm shared state owner for `_refreshGeneration`, `_todaySteps`, `_todayGoal`, `_lastAppliedLocalDay`, `_hasUserSelectedLocalDay`
-  - [ ] **Stop → review brief → wait for Baptiste OK → commit**
+- [x] **Sub-task A — Read baseline & design split map** (AC: #1, #3)
+  - [x] Read **fully** before editing: `lib/presentation/cubits/today_cubit.dart`, `today_state.dart`
+  - [x] Read callers: `app_lifecycle_coordinator.dart` (all `_todayCubit?.` sites), `today_screen.dart`, `app_scaffold.dart`
+  - [x] Read tests: `test/presentation/cubits/today_cubit_test.dart`, `today_cubit_contract_test.dart`, `test/app_live_pipeline_lifecycle_test.dart` (grep only — do not un-skip flaky suite)
+  - [x] Produce split map (method → collaborator) in code comment or story dev notes; confirm shared state owner for `_refreshGeneration`, `_todaySteps`, `_todayGoal`, `_lastAppliedLocalDay`, `_hasUserSelectedLocalDay`
+  - [x] **Stop → review brief → wait for Baptiste OK → commit**
 
-- [ ] **Sub-task B — Extract collaborators (mechanical, behaviour-preserving)** (AC: #1, #3)
-  - [ ] Create `lib/presentation/cubits/today/` folder with focused types (suggested names — adjust if clearer):
+- [x] **Sub-task B — Extract collaborators (mechanical, behaviour-preserving)** (AC: #1, #3)
+  - [x] Create `lib/presentation/cubits/today/` folder with focused types (suggested names — adjust if clearer):
     - `today_refresh_service.dart` — refresh paths + generation gate
     - `today_live_pipeline.dart` — monitor attach + syncSteps + lastDisplayed persist
     - `today_celebration_controller.dart` — celebration claim + dismiss
     - `today_week_selection.dart` — week strip load + day picker
     - `today_snapshot_applier.dart` — `_applyTodaySnapshot` + metrics helpers (`_liveMetricsForSteps`, `_toMetricsSnapshot`, `_resolveTodayGoal`)
-  - [ ] Move code **verbatim first** (Story 18-1 pattern) — preserve comments on concurrency (fast-path Option A, `_refreshInFlight` coalescing)
-  - [ ] Keep `@visibleForTesting` on façade where tests depend on it (`liveStepAppliesPaused`)
-  - [ ] **Stop → review brief → wait for Baptiste OK → commit**
+  - [x] Move code **verbatim first** (Story 18-1 pattern) — preserve comments on concurrency (fast-path Option A, `_refreshInFlight` coalescing)
+  - [x] Keep `@visibleForTesting` on façade where tests depend on it (`liveStepAppliesPaused`)
+  - [x] **Stop → review brief → wait for Baptiste OK → commit**
 
-- [ ] **Sub-task C — Slim façade `TodayCubit`** (AC: #2, #3)
-  - [ ] `TodayCubit` delegates to collaborators; holds `Cubit<TodayState>` emit path (collaborators receive `void Function(TodayState)` or callback interface — avoid second Cubit)
-  - [ ] Preserve `close()` cleanup: cancel `_liveStepsSubscription`, null `_attachedMonitor`
-  - [ ] If files moved: keep `lib/presentation/cubits/today_cubit.dart` as **barrel export** so existing imports unchanged
-  - [ ] **Stop → review brief → wait for Baptiste OK → commit**
+- [x] **Sub-task C — Slim façade `TodayCubit`** (AC: #2, #3)
+  - [x] `TodayCubit` delegates to collaborators; holds `Cubit<TodayState>` emit path (collaborators receive `void Function(TodayState)` or callback interface — avoid second Cubit)
+  - [x] Preserve `close()` cleanup: cancel `_liveStepsSubscription`, null `_attachedMonitor`
+  - [x] If files moved: keep `lib/presentation/cubits/today_cubit.dart` as **barrel export** so existing imports unchanged
+  - [x] **Stop → review brief → wait for Baptiste OK → commit**
 
-- [ ] **Sub-task D — Regression verification** (AC: #4, #5)
-  - [ ] Run `dart analyze`
-  - [ ] Run `flutter test test/presentation/cubits/today_cubit_test.dart test/presentation/cubits/today_cubit_contract_test.dart`
-  - [ ] Run `flutter test --exclude-tags slow`
-  - [ ] Spot-check: cold-start path still calls `refreshFastPath` from coordinator; day rollover still calls `refreshAfterDayRollover`; live bind still uses `attachLiveMonitor` + `syncSteps(clampStaleDisplay: true)`
-  - [ ] **Stop → review brief → wait for Baptiste OK → commit**
+- [x] **Sub-task D — Regression verification** (AC: #4, #5)
+  - [x] Run `dart analyze`
+  - [x] Run `flutter test test/presentation/cubits/today_cubit_test.dart test/presentation/cubits/today_cubit_contract_test.dart`
+  - [x] Run `flutter test --exclude-tags slow`
+  - [x] Spot-check: cold-start path still calls `refreshFastPath` from coordinator; day rollover still calls `refreshAfterDayRollover`; live bind still uses `attachLiveMonitor` + `syncSteps(clampStaleDisplay: true)`
+  - [x] **Stop → review brief → wait for Baptiste OK → commit**
 
 ## Dev Notes
 
@@ -226,6 +226,20 @@ claude-sonnet-4-5 (Sonnet 4.6)
 
 ### Completion Notes List
 
-Sub-task A: Split map produced. 5 collaborators identified under `today/` subfolder. `TodaySessionCache` as shared mutable state holder. Cross-collaborator calls via `late` function fields wired in the facade constructor. No circular imports. `today_cubit.dart` stays at its current path as thin facade + barrel export.
+Sub-task A: Split map produced. 5 collaborators identified under `today/` subfolder. `TodaySessionCache` as shared mutable state holder. Cross-collaborator calls via `late` function fields wired in the facade constructor. No circular imports. `today_cubit.dart` stays at its current path as thin facade.
+
+Sub-tasks B+C: All 5 collaborators extracted verbatim. `TodaySessionCache` holds shared mutable state (`todaySteps`, `todayGoal`, `todayMetrics`, `lastAppliedLocalDay`, `hasUserSelectedLocalDay`, `refreshGeneration`, `refreshInFlight`). Facade wires 15 cross-collaborator callbacks. No second Cubit. `today_cubit.dart` unchanged import path. LOC per file: facade ~160, refresh_service ~230, live_pipeline ~200, week_selection ~200, snapshot_applier ~110, celebration_controller ~60, session_cache ~25. All within 500 LOC limit.
+
+Sub-task D: `dart analyze` — 0 issues. `flutter test` (cubit tests): 51/51 pass. `flutter test --exclude-tags slow`: 947/947 pass, 0 regressions.
 
 ### File List
+
+lib/presentation/cubits/today_cubit.dart (updated — slim facade)
+lib/presentation/cubits/today/today_session_cache.dart (new)
+lib/presentation/cubits/today/today_snapshot_applier.dart (new)
+lib/presentation/cubits/today/today_celebration_controller.dart (new)
+lib/presentation/cubits/today/today_week_selection.dart (new)
+lib/presentation/cubits/today/today_live_pipeline.dart (new)
+lib/presentation/cubits/today/today_refresh_service.dart (new)
+_bmad-output/implementation-artifacts/sprint-status-post-audit.yaml (updated)
+_bmad-output/implementation-artifacts/stories/25-1-split-today-cubit-by-responsibility-boundaries.md (updated)

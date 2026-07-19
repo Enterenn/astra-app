@@ -111,7 +111,7 @@ development_status:
   epic-24-retrospective: optional
 
   epic-25: in-progress
-  25-1-split-today-cubit-by-responsibility-boundaries: in-progress
+  25-1-split-today-cubit-by-responsibility-boundaries: review
   25-2-split-app-lifecycle-coordinator-into-focused-services: backlog
   25-3-remove-presentation-dependency-from-core-di-layer: backlog
   25-4-decouple-my-data-cubit-from-ui-dialog-types: backlog
