@@ -533,6 +533,67 @@ void main() {
       });
     });
 
+    group('stream fault injection', () {
+      test('start stream onError is logged and monitor stays running', () async {
+        await monitor.start();
+        final listenerErrors = <Object>[];
+        final sub = monitor.watchTodaySteps(replayLatest: false).listen(
+          (_) {},
+          onError: listenerErrors.add,
+        );
+
+        events.addError(
+          StateError('pedometer fault'),
+          StackTrace.empty,
+        );
+        await pumpEventQueue();
+
+        expect(monitor.isRunning, isTrue);
+        expect(listenerErrors, isEmpty);
+        await sub.cancel();
+      });
+
+      test('peekPhoneStepEvent returns null when peek stream errors', () async {
+        final peekMonitor = LiveStepMonitor(
+          stepAggregation: stepAggregation,
+          baselineRepository: baselineRepository,
+          clock: clock,
+          stepEventStreamFactory: () => Stream<PhoneStepEvent>.error(
+            StateError('peek fault'),
+          ),
+          emitThrottle: Duration.zero,
+        );
+
+        expect(peekMonitor.isRunning, isFalse);
+        final result = await peekMonitor.peekPhoneStepEvent(
+          timeout: const Duration(seconds: 2),
+        );
+        expect(result, isNull);
+        expect(peekMonitor.isRunning, isFalse);
+        await peekMonitor.dispose();
+      });
+
+      test('peekPhoneStepEvent returns null on timeout when stream is silent', () async {
+        final peekMonitor = LiveStepMonitor(
+          stepAggregation: stepAggregation,
+          baselineRepository: baselineRepository,
+          clock: clock,
+          stepEventStreamFactory: () => const Stream<PhoneStepEvent>.empty(),
+          emitThrottle: Duration.zero,
+        );
+
+        final stopwatch = Stopwatch()..start();
+        final result = await peekMonitor.peekPhoneStepEvent(
+          timeout: const Duration(milliseconds: 50),
+        );
+        stopwatch.stop();
+
+        expect(result, isNull);
+        expect(stopwatch.elapsed, lessThan(const Duration(milliseconds: 500)));
+        await peekMonitor.dispose();
+      });
+    });
+
     group('dispose sequencing (AC: #1, #2, #3, #4)', () {
       test('dispose blocks subsequent start — isRunning stays false', () async {
         await monitor.start();
