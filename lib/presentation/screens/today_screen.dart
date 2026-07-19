@@ -142,8 +142,8 @@ class TodayScreen extends StatelessWidget {
                 const SizedBox(height: AstraSpacing.kSpaceMd),
                 const _WeekSection(),
                 const SizedBox(height: AstraSpacing.kSpaceMd),
+                const _PermissionDeniedSlot(),
                 const _GoalRingCard(),
-                const _PermissionCta(),
                 const SizedBox(height: AstraSpacing.kSpaceMd),
                 const _ActivityStatsSection(),
               ],
@@ -497,31 +497,64 @@ class _WeekSection extends StatelessWidget {
   }
 }
 
-class _PermissionCta extends StatelessWidget {
-  const _PermissionCta();
+class _PermissionDeniedSlot extends StatelessWidget {
+  const _PermissionDeniedSlot();
 
-  static const sectionKey = Key('today_permission_cta');
+  static const sectionKey = Key('today_permission_denied_slot');
 
   @override
   Widget build(BuildContext context) {
-    return BlocSelector<TodayCubit, TodayState, bool>(
+    return BlocSelector<TodayCubit, TodayState, TodayStatus>(
       key: sectionKey,
-      selector: (state) => state.status == TodayStatus.noPermission,
-      builder: (context, showCta) {
-        if (!showCta) {
+      selector: (state) => state.status,
+      builder: (context, status) {
+        if (status != TodayStatus.noPermission) {
           return const SizedBox.shrink();
         }
         final colors = context.astraColors;
         final l10n = AppLocalizations.of(context);
+        final message = l10n.myDataBackgroundPermissionDenied;
         return Column(
           crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
+            Semantics(
+              liveRegion: true,
+              label: message,
+              excludeSemantics: true,
+              child: Row(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Padding(
+                    padding: const EdgeInsets.only(top: 4),
+                    child: Container(
+                      width: 8,
+                      height: 8,
+                      decoration: BoxDecoration(
+                        color: colors.textMuted,
+                        shape: BoxShape.circle,
+                      ),
+                    ),
+                  ),
+                  const SizedBox(width: AstraSpacing.kSpaceSm),
+                  Expanded(
+                    child: Text(
+                      message,
+                      style: AstraTypography.bodyFor(colors),
+                    ),
+                  ),
+                ],
+              ),
+            ),
             const SizedBox(height: AstraSpacing.kSpaceSm),
-            TextButton(
-              onPressed: () => unawaited(openAppSettings()),
-              child: Text(
-                l10n.errorNoPermission,
-                style: AstraTypography.captionFor(colors),
+            Align(
+              alignment: Alignment.centerLeft,
+              child: Semantics(
+                button: true,
+                label: l10n.myDataOpenSettings,
+                child: TextButton(
+                  onPressed: () => unawaited(openAppSettings()),
+                  child: Text(l10n.myDataOpenSettings),
+                ),
               ),
             ),
           ],
@@ -566,7 +599,8 @@ class _CollectionHealthSlot extends StatelessWidget {
       selector: _CollectionHealthViewModel.fromState,
       builder: (context, vm) {
         _probeSectionBuild('health');
-        if (vm.display == CollectionHealthDisplay.loading) {
+        if (vm.display == CollectionHealthDisplay.loading ||
+            vm.display == CollectionHealthDisplay.permissionDenied) {
           return const SizedBox.shrink();
         }
         return Column(
@@ -711,6 +745,9 @@ Widget buildTodayHealthSlotForTest() => const _CollectionHealthSlot();
 
 @visibleForTesting
 Widget buildTodayStaleBannerSlotForTest() => const _StaleBannerSlot();
+
+@visibleForTesting
+Widget buildTodayPermissionDeniedSlotForTest() => const _PermissionDeniedSlot();
 
 @visibleForTesting
 Widget buildTodayActivityStatsSectionForTest() => const _ActivityStatsSection();

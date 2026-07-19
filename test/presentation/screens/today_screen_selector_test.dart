@@ -672,6 +672,83 @@ void main() {
       expect(find.text('Sensor access revoked ✕'), findsNothing);
     });
 
+    testWidgets('health slot hidden when permission denied', (tester) async {
+      final l10n = lookupAppLocalizations(const Locale('en'));
+      await pumpHealthSlot(
+        tester,
+        initial: TodayState.fromData(
+          steps: 1200,
+          goal: 8000,
+          isStale: false,
+        ).copyWith(status: TodayStatus.noPermission),
+      );
+
+      expect(find.text(l10n.todayCollectionHealthPermissionDenied), findsNothing);
+    });
+
+    Future<_SeededTodayCubit> pumpPermissionDeniedSlot(
+      WidgetTester tester, {
+      required TodayState initial,
+      Locale locale = const Locale('en'),
+    }) async {
+      final cubit = buildCubit(initial);
+      addTearDown(cubit.close);
+
+      await tester.pumpWidget(
+        TestMaterialApp(
+          locale: locale,
+          theme: buildAstraLightTheme(),
+          home: MediaQuery(
+            data: const MediaQueryData(disableAnimations: true),
+            child: BlocProvider<TodayCubit>.value(
+              value: cubit,
+              child: buildTodayPermissionDeniedSlotForTest(),
+            ),
+          ),
+        ),
+      );
+      await tester.pump();
+      return cubit;
+    }
+
+    testWidgets('permission denied shows single settings CTA with unified copy', (
+      tester,
+    ) async {
+      final l10n = lookupAppLocalizations(const Locale('en'));
+      await pumpPermissionDeniedSlot(
+        tester,
+        initial: TodayState.fromData(
+          steps: 0,
+          goal: 8000,
+          isStale: false,
+        ).copyWith(status: TodayStatus.noPermission),
+      );
+
+      expect(find.byKey(const Key('today_permission_denied_slot')), findsOneWidget);
+      expect(find.text(l10n.myDataBackgroundPermissionDenied), findsOneWidget);
+      expect(find.text(l10n.myDataOpenSettings), findsOneWidget);
+      expect(find.text(l10n.errorNoPermission), findsNothing);
+      expect(find.text(l10n.todayCollectionHealthPermissionDenied), findsNothing);
+      expect(find.text(l10n.myDataOpenSettings), findsNWidgets(1));
+    });
+
+    testWidgets('permission denied slot hidden when permission granted', (
+      tester,
+    ) async {
+      await pumpPermissionDeniedSlot(
+        tester,
+        initial: TodayState.fromData(
+          steps: 1200,
+          goal: 8000,
+          isStale: false,
+        ),
+      );
+
+      expect(find.byKey(const Key('today_permission_denied_slot')), findsOneWidget);
+      expect(find.text('Activity permission off'), findsNothing);
+      expect(find.text('Open settings'), findsNothing);
+    });
+
     testWidgets('live step tick does not rebuild stale banner selector', (
       tester,
     ) async {
@@ -862,6 +939,26 @@ void main() {
       await tester.pump();
       return cubit;
     }
+
+    testWidgets('full screen noPermission shows unified block not health copy', (
+      tester,
+    ) async {
+      final l10n = lookupAppLocalizations(const Locale('en'));
+      await pumpTodayScreen(
+        tester,
+        initial: TodayState.fromData(
+          steps: 0,
+          goal: 8000,
+          isStale: true,
+        ).copyWith(status: TodayStatus.noPermission),
+      );
+
+      expect(find.text(l10n.myDataBackgroundPermissionDenied), findsOneWidget);
+      expect(find.text(l10n.myDataOpenSettings), findsOneWidget);
+      expect(find.text(l10n.todayCollectionHealthPermissionDenied), findsNothing);
+      expect(find.text(l10n.errorNoPermission), findsNothing);
+      expect(find.byType(StatusBanner), findsNothing);
+    });
 
     testWidgets('Set goal tap blocked during loading', (tester) async {
       await pumpTodayScreen(

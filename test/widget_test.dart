@@ -397,7 +397,14 @@ void main() {
 
         expect(
           find.text(
-            lookupAppLocalizations(const Locale('en')).errorNoPermission,
+            lookupAppLocalizations(const Locale('en'))
+                .myDataBackgroundPermissionDenied,
+          ),
+          findsOneWidget,
+        );
+        expect(
+          find.text(
+            lookupAppLocalizations(const Locale('en')).myDataOpenSettings,
           ),
           findsOneWidget,
         );

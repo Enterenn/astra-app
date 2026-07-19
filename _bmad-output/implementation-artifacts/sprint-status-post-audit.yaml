@@ -1,6 +1,6 @@
 # generated: 2026-07-16
-# last_updated: 2026-07-19 (Story 28-1 done)
-# NEXT: create-story / dev-story 28-2-unify-today-permission-denied-messaging-and-cta
+# last_updated: 2026-07-19 (Story 28-2 review)
+# NEXT: code-review 28-2-unify-today-permission-denied-messaging-and-cta
 # Ref: planning-artifacts/epics-post-audit.md · planning-artifacts/audits/
 # project: astra-app
 # project_key: NOKEY
@@ -69,7 +69,7 @@
 # NAVIGATION: _bmad-output/README.md · planning-artifacts/epics-post-audit.md
 
 generated: 2026-07-16
-last_updated: 2026-07-19 (Story 28-1 done)
+last_updated: 2026-07-19 (Story 28-2 review)
 project: astra-app
 project_key: NOKEY
 tracking_system: file-system
@@ -142,6 +142,6 @@ development_status:
 
   epic-28: in-progress
   28-1-add-tap-to-refresh-on-my-data-stale-banner: done
-  28-2-unify-today-permission-denied-messaging-and-cta: backlog
+  28-2-unify-today-permission-denied-messaging-and-cta: review
   28-3-decouple-settings-theme-locale-units-from-profile-loading-gate: backlog
   epic-28-retrospective: optional
