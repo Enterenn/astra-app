@@ -292,7 +292,7 @@ void main() {
       expect(find.text('Appearance'), findsNothing);
     });
 
-    testWidgets('shows loading indicator while profile is loading', (
+    testWidgets('shows preference sections while profile is loading', (
       tester,
     ) async {
       final profileCubit = _SeededProfileCubit(
@@ -322,14 +322,14 @@ void main() {
         localeCubit: localeCubit,
       );
 
-      expect(find.byType(CircularProgressIndicator), findsOneWidget);
-      expect(find.text('Notifications'), findsNothing);
-      expect(find.text('Theme'), findsNothing);
-      expect(find.text('Units'), findsNothing);
-      expect(find.text('Language'), findsNothing);
+      expect(find.byType(CircularProgressIndicator), findsNothing);
+      expect(find.text('Language'), findsOneWidget);
+      expect(find.text('Units'), findsOneWidget);
+      expect(find.text('Notifications'), findsOneWidget);
+      expect(find.text('Theme'), findsOneWidget);
     });
 
-    testWidgets('shows error message when profile fails to load', (
+    testWidgets('shows error panel and preferences when profile fails to load', (
       tester,
     ) async {
       final profileCubit = _SeededProfileCubit(
@@ -364,8 +364,10 @@ void main() {
 
       expect(find.text(l10n.profileLoadErrorGeneric), findsOneWidget);
       expect(find.byKey(ProfileLoadErrorPanel.retryButtonKey), findsOneWidget);
-      expect(find.text(l10n.settingsNotifications), findsNothing);
-      expect(find.text(l10n.settingsUnits), findsNothing);
+      expect(find.text(l10n.settingsNotifications), findsOneWidget);
+      expect(find.text(l10n.settingsUnits), findsOneWidget);
+      expect(find.text(l10n.settingsLanguage), findsOneWidget);
+      expect(find.text(l10n.settingsTheme), findsOneWidget);
     });
 
     testWidgets('retry tap → loading → ready shows settings content', (
@@ -408,9 +410,9 @@ void main() {
       expect(profileCubit.refreshAttempts, 1);
     });
 
-    testWidgets('retry tap → loading → error keeps retry button visible', (
-      tester,
-    ) async {
+    testWidgets(
+      'retry tap → loading → error keeps retry button and preferences visible',
+      (tester) async {
       final profileCubit = _RetryProfileCubit(
         userSettings: userSettings,
         userHealthMetrics: userHealthMetrics,
@@ -443,7 +445,8 @@ void main() {
 
       expect(find.text(l10n.profileLoadErrorGeneric), findsOneWidget);
       expect(find.byKey(ProfileLoadErrorPanel.retryButtonKey), findsOneWidget);
-      expect(find.text(l10n.settingsNotifications), findsNothing);
+      expect(find.text(l10n.settingsNotifications), findsOneWidget);
+      expect(find.text(l10n.settingsUnits), findsOneWidget);
       expect(profileCubit.refreshAttempts, 1);
     });
 
