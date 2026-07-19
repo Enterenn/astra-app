@@ -68,14 +68,14 @@ So that midnight, persist, and live-pipeline changes stay isolated.
   - [x] Produce split map (method → collaborator) in dev notes; confirm shared state owner for `_livePipelineStarted`, cubit refs, `_appInBackground`, `_foregroundBackfill`, lifecycle mutex fields
   - [x] **Stop → review brief → wait for Baptiste OK → commit**
 
-- [ ] **Sub-task B — Extract collaborators (mechanical, behaviour-preserving)** (AC: #1, #3)
-  - [ ] Create `lib/core/services/lifecycle/` folder with focused types (suggested names — adjust if clearer):
+- [x] **Sub-task B — Extract collaborators (mechanical, behaviour-preserving)** (AC: #1, #3)
+  - [x] Create `lib/core/services/lifecycle/` folder with focused types (suggested names — adjust if clearer):
     - `lifecycle_persist_service.dart` — persist cycle + enqueue serialization + staleness/activity timers
     - `lifecycle_day_boundary_service.dart` — midnight timer + local-day rollover
     - `lifecycle_live_pipeline_service.dart` — cold start, bind, resume, reattach, backfill reconcile
-  - [ ] Move code **verbatim first** (Story 18-1 / 25-1 pattern) — preserve `livePipelineLog` calls, mutex comments, Today Display Truth Model comments
-  - [ ] Keep `@visibleForTesting` top-level helpers in `app_lifecycle_coordinator.dart` (or same export path) — **do not break** `test/app_lifecycle_transition_test.dart` import from `package:astra_app/app.dart`
-  - [ ] **Stop → review brief → wait for Baptiste OK → commit**
+  - [x] Move code **verbatim first** (Story 18-1 / 25-1 pattern) — preserve `livePipelineLog` calls, mutex comments, Today Display Truth Model comments
+  - [x] Keep `@visibleForTesting` top-level helpers in `app_lifecycle_coordinator.dart` (or same export path) — **do not break** `test/app_lifecycle_transition_test.dart` import from `package:astra_app/app.dart`
+  - [x] **Stop → review brief → wait for Baptiste OK → commit**
 
 - [ ] **Sub-task C — Slim façade `AppLifecycleCoordinator`** (AC: #2, #3, #5)
   - [ ] Coordinator delegates to collaborators; holds lifecycle mutex (`_enqueueLifecycleTransition`), cubit binders, `bindToWidget`, public test hooks
@@ -305,13 +305,22 @@ Cursor Grok 4.5
 ### Completion Notes List
 
 - Sub-task A: 882 LOC confirmed; call sites enumerated; split map + session ownership recorded above.
+- Sub-task B: Extracted persist / day-boundary / live-pipeline + session + policy helpers under `lifecycle/`; façade wires late callbacks; coordinator tests + transition + persist policy = 23/23 green. Helpers moved to `lifecycle_policy.dart` and re-exported from coordinator (same `app.dart` show path). Dropped `@visibleForTesting` on helpers (cross-library prod use after split).
 
 ### Change Log
 
 - 2026-07-19: Sub-task A — split map designed; story → in-progress
+- 2026-07-19: Sub-task B — mechanical extract into `lib/core/services/lifecycle/`
 
 ### File List
 
 - `_bmad-output/implementation-artifacts/stories/25-2-split-app-lifecycle-coordinator-into-focused-services.md`
 - `_bmad-output/implementation-artifacts/sprint-status-post-audit.yaml`
+- `lib/core/services/app_lifecycle_coordinator.dart`
+- `lib/core/services/lifecycle/lifecycle_session_state.dart`
+- `lib/core/services/lifecycle/lifecycle_policy.dart`
+- `lib/core/services/lifecycle/lifecycle_persist_service.dart`
+- `lib/core/services/lifecycle/lifecycle_day_boundary_service.dart`
+- `lib/core/services/lifecycle/lifecycle_live_pipeline_service.dart`
+
 
