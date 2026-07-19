@@ -286,6 +286,40 @@ void main() {
     });
 
     testWidgets(
+      'HistoryCubit is not created until Trends tab is opened',
+      (WidgetTester tester) async {
+        var createHistoryCallCount = 0;
+        var onHistoryReadyCallCount = 0;
+
+        await _pumpAppScaffold(
+          tester,
+          AppScaffold(
+            deps: deps,
+            createTodayCubit: _testTodayCubit,
+            createHistoryCubit: (dependencies) {
+              createHistoryCallCount++;
+              return _testHistoryCubit(dependencies);
+            },
+            onHistoryCubitReady: (_) => onHistoryReadyCallCount++,
+          ),
+          userSettings: deps.userSettings,
+        );
+        await tester.pump();
+
+        expect(createHistoryCallCount, 0);
+        expect(onHistoryReadyCallCount, 0);
+
+        await tester.tap(find.byIcon(PhosphorIconsRegular.chartBar));
+        await tester.pump();
+
+        expect(createHistoryCallCount, 1);
+        expect(onHistoryReadyCallCount, 1);
+
+        await _disposeScaffold(tester);
+      },
+    );
+
+    testWidgets(
       'IndexedStack tab roots are wrapped in RepaintBoundary',
       (WidgetTester tester) async {
         await _pumpAppScaffold(
@@ -319,10 +353,25 @@ void main() {
         expect(indexedStack.children[1], isA<RepaintBoundary>());
         expect(
           (indexedStack.children[1] as RepaintBoundary).child,
-          isA<BlocProvider<HistoryCubit>>(),
+          isA<SizedBox>(),
         );
+        expect(
+          find.descendant(
+            of: stackFinder,
+            matching: find.byType(HistoryScreen),
+          ),
+          findsNothing,
+        );
+
         await tester.tap(find.byIcon(PhosphorIconsRegular.chartBar));
         await tester.pump();
+
+        final indexedStackAfterTrends =
+            tester.widget<IndexedStack>(stackFinder);
+        expect(
+          indexedStackAfterTrends.children[1],
+          isA<RepaintBoundary>(),
+        );
         expect(
           find.descendant(
             of: stackFinder,
@@ -553,7 +602,7 @@ void main() {
       );
       await tester.pump();
 
-      expect(historyCubit!.refreshCallCount, 0);
+      expect(historyCubit, isNull);
 
       await tester.tap(find.byIcon(PhosphorIconsRegular.chartBar));
       await tester.pump();
@@ -938,7 +987,7 @@ void main() {
       testWidgets(
         'ingestion on Today tab skips history refresh',
         (tester) async {
-          _RefreshCountingHistoryCubit? historyCubit;
+          var createHistoryCallCount = 0;
           _RefreshCountingCubit? todayCubit;
 
           await _pumpAppScaffold(
@@ -955,11 +1004,11 @@ void main() {
                 return todayCubit!;
               },
               createHistoryCubit: (deps) {
-                historyCubit = _RefreshCountingHistoryCubit(
+                createHistoryCallCount++;
+                return _RefreshCountingHistoryCubit(
                   stepAggregation: deps.stepAggregation,
                   userHealthMetrics: deps.userHealthMetrics,
                 );
-                return historyCubit!;
               },
             ),
             userSettings: guardDeps.userSettings,
@@ -971,7 +1020,7 @@ void main() {
           });
           await tester.pump();
 
-          expect(historyCubit!.refreshCallCount, 0);
+          expect(createHistoryCallCount, 0);
           expect(todayCubit!.refreshMetadataCallCount, greaterThanOrEqualTo(1));
 
           await _disposeScaffold(tester);
