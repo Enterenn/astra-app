@@ -1,6 +1,6 @@
 # Story 28.2: Unify Today Permission-Denied Messaging and CTA
 
-Status: review
+Status: done
 
 <!-- Post-audit Epic 28 — tracker: sprint-status-post-audit.yaml -->
 <!-- Source: epics-post-audit.md Story 28-2 · diagnostic-gestion-etat-erreur.md §4 (permission refusée) -->
@@ -269,14 +269,20 @@ Composer
 - `_CollectionHealthSlot` now skips `permissionDenied` display — no duplicate "Sensor access revoked ✕"
 - l10n Option A: reused My Data keys on Today only; no ARB edits
 - Tests: 5 new selector cases + `widget_test.dart` finder update; full `flutter test --exclude-tags slow` green
+- Code review: unified a11y copy (`myDataBackgroundPermissionDenied`), slot selector/spacing, semantics + recovery tests (`da9130a`)
 
 ### File List
 
 - `lib/presentation/screens/today_screen.dart`
+- `lib/presentation/widgets/goal_ring.dart`
+- `lib/presentation/widgets/activity_stats_row.dart`
 - `test/presentation/screens/today_screen_selector_test.dart`
+- `test/presentation/widgets/goal_ring_test.dart`
+- `test/presentation/widgets/activity_stats_row_test.dart`
 - `test/widget_test.dart`
 - `_bmad-output/implementation-artifacts/sprint-status-post-audit.yaml`
 
 ### Change Log
 
 - 2026-07-19: Unified Today permission-denied UI (AUD-24) — single slot, My Data voice, tests updated
+- 2026-07-19: Code review fixes — a11y alignment, recovery/semantics tests (`da9130a`)
