@@ -8,6 +8,7 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 
 import '../../core/constants/astra_colors.dart';
 import '../../core/di/app_dependencies.dart';
+import '../../data/csv/csv_platform_file_picker.dart';
 import '../cubits/history_cubit.dart';
 import '../cubits/my_data_cubit.dart';
 import '../cubits/profile_cubit.dart';
@@ -103,6 +104,8 @@ class _AppScaffoldState extends State<AppScaffold> {
           clock: widget.deps.timeProvider,
           databasePath: widget.deps.databasePath,
           activityPermissionGranted: widget.deps.activityPermissionGranted,
+          pickCsvFile: pickCsvFileForImport,
+          saveCsvFile: saveCsvExportFile,
           postImportRefresh: () async {
             await _todayCubit.refreshMetadata();
             await _historyCubit.refresh(silent: true);

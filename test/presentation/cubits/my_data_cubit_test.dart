@@ -58,6 +58,8 @@ void main() {
         activityPermissionGranted:
             activityPermissionGranted ?? () async => true,
         isIos: isIos,
+        pickCsvFile: () async => null,
+        saveCsvFile: (_) async => false,
       );
     }
 
@@ -182,6 +184,8 @@ void main() {
         clock: clock,
         databasePath: inMemoryDatabasePath,
         isIos: false,
+        pickCsvFile: () async => null,
+        saveCsvFile: (_) async => false,
       );
 
       await cubit.refresh();
@@ -211,6 +215,8 @@ void main() {
         clock: clock,
         databasePath: inMemoryDatabasePath,
         isIos: false,
+        pickCsvFile: () async => null,
+        saveCsvFile: (_) async => false,
       );
 
       await cubit.refresh();

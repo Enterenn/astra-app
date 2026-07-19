@@ -4,7 +4,7 @@ import 'package:astra_app/data/repositories/user_health_metrics_repository.dart'
 import 'package:astra_app/data/repositories/user_settings_repository.dart';
 import 'package:astra_app/presentation/cubits/my_data_cubit.dart';
 import 'package:astra_app/presentation/cubits/my_data_errors.dart';
-import 'package:astra_app/presentation/widgets/confirm_dialog.dart';
+import 'package:astra_app/core/constants/purge_confirm_action.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:sqflite/sqflite.dart';
 import 'dart:io';
@@ -82,6 +82,7 @@ void main() {
         activityPermissionGranted: () async => true,
         postPurgeRefresh: postPurgeRefresh,
         saveCsvFile: saveCsvFile ?? ((_) async => true),
+        pickCsvFile: () async => null,
         tempDirectoryProvider: () async => tempDir.path,
       );
     }
@@ -218,6 +219,7 @@ void main() {
         isIos: false,
         activityPermissionGranted: () async => true,
         saveCsvFile: (_) async => true,
+        pickCsvFile: () async => null,
         tempDirectoryProvider: () async => '',
       );
       addTearDown(cubit.close);

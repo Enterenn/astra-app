@@ -52,6 +52,8 @@ MyDataCubit _testMyDataCubit(AppDependencies deps) {
     clock: deps.timeProvider,
     databasePath: deps.databasePath,
     activityPermissionGranted: () async => true,
+    pickCsvFile: () async => null,
+    saveCsvFile: (_) async => false,
   );
 }
 

@@ -4,14 +4,10 @@ import 'package:flutter/material.dart';
 import '../../core/constants/astra_colors.dart';
 import '../../core/constants/astra_spacing.dart';
 import '../../core/constants/astra_typography.dart';
+import '../../core/constants/purge_confirm_action.dart';
 import 'astra_button.dart';
 
-/// Result of the purge confirmation dialog (FR-21).
-enum PurgeConfirmAction {
-  cancelled,
-  exportFirst,
-  deleteConfirmed,
-}
+export '../../core/constants/purge_confirm_action.dart';
 
 /// Purge confirmation with export-first nudge (UX §3.11, FR-21).
 ///

@@ -52,6 +52,8 @@ void main() {
         databasePath: inMemoryDatabasePath,
         activityPermissionGranted: () async => true,
         isIos: false,
+        pickCsvFile: () async => null,
+        saveCsvFile: (_) async => false,
         postGoalUpdate: postGoalUpdate,
       );
     }

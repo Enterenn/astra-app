@@ -61,6 +61,7 @@ void main() {
         activityPermissionGranted: () async => true,
         tempDirectoryProvider: () async => tempDir.path,
         saveCsvFile: saveCsvFile ?? ((_) async => true),
+        pickCsvFile: () async => null,
         isIos: false,
       );
     }

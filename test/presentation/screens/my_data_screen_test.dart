@@ -36,8 +36,14 @@ class _SeededMyDataCubit extends MyDataCubit {
     required super.userHealthMetrics,
     required super.clock,
     required super.databasePath,
+    PickCsvFileCallback? pickCsvFile,
+    SaveCsvFileCallback? saveCsvFile,
     required MyDataState seededState,
-  }) : _seededState = seededState {
+  }) : _seededState = seededState,
+       super(
+         pickCsvFile: pickCsvFile ?? (() async => null),
+         saveCsvFile: saveCsvFile ?? ((_) async => false),
+       ) {
     emit(seededState);
   }
 

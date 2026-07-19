@@ -3,10 +3,9 @@ import 'dart:io';
 
 import 'package:flutter/foundation.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
-import 'package:path/path.dart' as p;
-import 'package:file_picker/file_picker.dart';
 import 'package:path_provider/path_provider.dart';
 
+import '../../core/constants/purge_confirm_action.dart';
 import '../../core/validation/step_goal_validator.dart';
 import '../../data/csv/import_validation_exception.dart';
 import '../../core/health/stale_data_evaluator.dart';
@@ -16,7 +15,6 @@ import '../../core/time/time_provider.dart';
 import '../../data/csv/timeseries_csv_codec.dart';
 import '../../data/models/database_footprint.dart';
 import '../../data/contracts/contracts.dart';
-import '../widgets/confirm_dialog.dart';
 import 'my_data_errors.dart';
 import 'my_data_state.dart';
 
@@ -44,8 +42,8 @@ class MyDataCubit extends Cubit<MyDataState> {
     required this.databasePath,
     ActivityPermissionChecker? activityPermissionGranted,
     TempDirectoryProvider? tempDirectoryProvider,
-    SaveCsvFileCallback? saveCsvFile,
-    PickCsvFileCallback? pickCsvFile,
+    required SaveCsvFileCallback saveCsvFile,
+    required PickCsvFileCallback pickCsvFile,
     this._confirmImport,
     this._postImportRefresh,
     this._postPurgeRefresh,
@@ -56,8 +54,8 @@ class MyDataCubit extends Cubit<MyDataState> {
            activityPermissionGranted ?? isActivityRecognitionGranted,
        _tempDirectoryProvider =
            tempDirectoryProvider ?? _defaultTempDirectoryProvider,
-       _saveCsvFile = saveCsvFile ?? _defaultSaveCsvFile,
-       _pickCsvFile = pickCsvFile ?? _defaultPickCsvFile,
+       _saveCsvFile = saveCsvFile,
+       _pickCsvFile = pickCsvFile,
        _isIos = isIos ?? Platform.isIOS,
        super(const MyDataState.loading());
 
@@ -87,26 +85,6 @@ class MyDataCubit extends Cubit<MyDataState> {
   static Future<String> _defaultTempDirectoryProvider() async {
     final directory = await getTemporaryDirectory();
     return directory.path;
-  }
-
-  static Future<String?> _defaultPickCsvFile() async {
-    final file = await FilePicker.pickFile(
-      type: FileType.custom,
-      allowedExtensions: ['csv'],
-    );
-    return file?.path;
-  }
-
-  static Future<bool> _defaultSaveCsvFile(String filePath) async {
-    final bytes = await File(filePath).readAsBytes();
-    final savedPath = await FilePicker.saveFile(
-      dialogTitle: 'Save CSV export',
-      fileName: p.basename(filePath),
-      bytes: bytes,
-      type: FileType.custom,
-      allowedExtensions: ['csv'],
-    );
-    return savedPath != null;
   }
 
   Future<void> pickAndImport({
