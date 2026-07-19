@@ -1,6 +1,6 @@
 # Story 26.2: Cover onLifecycleStateResumed Failure and Recovery
 
-Status: in-progress
+Status: review
 
 <!-- Post-audit Epic 26 — tracker: sprint-status-post-audit.yaml -->
 <!-- Source: epics-post-audit.md Story 26-2 · diagnostic-couverture-structurelle.md Top #1 · AUD-51 -->
@@ -63,18 +63,18 @@ So that the resume `catch` path cannot regress silently.
   - [x] Add `group('onLifecycleStateResumed', () { ... })` in `test/core/services/app_lifecycle_coordinator_test.dart`
   - [x] Setup helper: bind widget → `onTodayCubitReady` → await cold-start settle → `onLifecycleStatePaused` → assert `setLiveStepAppliesPaused(true)`
   - [x] Test: `onLifecycleStateResumed runs resume pipeline and clears live pause flag` — `RecordingHealthFgs` asserts FGS stop + `uiActive:true`; monitor reconcile/bind side effects observable
-  - [ ] **Stop → review brief → wait for Baptiste OK → commit**
+  - [x] **Stop → review brief → wait for Baptiste OK → commit**
 
 - [x] **Sub-task C — Forced `resumeLivePipeline` failure + recovery** (AC: #3)
   - [x] Add `_ThrowingLiveStepMonitor` (or extend `_SeedCapturingMonitor`) — throws on `reconcileFromDatabase` **only after** cold-start bind (or on resume-specific call count)
   - [x] Test: `onLifecycleStateResumed swallows resumeLivePipeline errors and clears live pause flag` — `await coordinator.onLifecycleStateResumed()` completes; cubit live-pause cleared; optional: spy/assert `resume pipeline ERROR` log path reached
-  - [ ] **Stop → review brief → wait for Baptiste OK → commit**
+  - [x] **Stop → review brief → wait for Baptiste OK → commit**
 
-- [ ] **Sub-task D — Regression verification** (AC: #4, #5)
-  - [ ] Run `flutter test test/core/services/app_lifecycle_coordinator_test.dart --exclude-tags slow`
-  - [ ] Run `flutter test --exclude-tags slow`
-  - [ ] Grep confirms test name or group contains `onLifecycleStateResumed`
-  - [ ] **Stop → review brief → wait for Baptiste OK → commit**
+- [x] **Sub-task D — Regression verification** (AC: #4, #5)
+  - [x] Run `flutter test test/core/services/app_lifecycle_coordinator_test.dart --exclude-tags slow`
+  - [x] Run `flutter test --exclude-tags slow`
+  - [x] Grep confirms test name or group contains `onLifecycleStateResumed`
+  - [x] **Stop → review brief → wait for Baptiste OK → commit**
 
 ## Dev Notes
 
@@ -300,15 +300,28 @@ No coordinator resume behaviour changes since 25-2 — safe to add tests only.
 
 ### Agent Model Used
 
-{{agent_model_name_version}}
+Composer
 
 ### Debug Log References
 
 - Sub-task A (2026-07-19): `rg onLifecycleStateResumed|resumeLivePipeline test/` → 0 hits (AUD-51 confirmed). Indirect resume via `AppLifecycleState.resumed` in slow/widget tests. `liveStepAppliesPaused` on `TodayCubit` (not TodayState).
 - Sub-task B (2026-07-19): `group('onLifecycleStateResumed')` + happy path — cold start → pause → resume; FGS stop/uiActive:true; reconcile on resume; pause flag cleared.
 - Sub-task C (2026-07-19): `_ThrowingOnResumeMonitor` gated by post-pause flag; forced throw inside `resumeLivePipeline` try (persist drain reconcile); coordinator completes; `finally` clears pause flag.
+- Sub-task D (2026-07-19): coordinator file 11/11; full fast suite 951 passed (~2 skipped).
+
 ### Completion Notes List
+
+- AUD-51 satisfied: named `group('onLifecycleStateResumed')` with explicit `coordinator.onLifecycleStateResumed()` calls (happy + failure paths).
+- Happy path asserts FGS stop/uiActive, monitor reconcile on resume, `liveStepAppliesPaused` cleared.
+- Failure path forces throw inside `resumeLivePipeline` catch; coordinator completes; pause flag still cleared via `finally`.
+- No production code changes; prior pause/onTodayCubitReady tests remain green.
 
 ### File List
 
+- `test/core/services/app_lifecycle_coordinator_test.dart`
+- `_bmad-output/implementation-artifacts/stories/26-2-cover-on-lifecycle-state-resumed-failure-and-recovery.md`
+- `_bmad-output/implementation-artifacts/sprint-status-post-audit.yaml`
+
 ## Change Log
+
+- 2026-07-19: Story 26-2 — named onLifecycleStateResumed unit tests (happy resume + forced resumeLivePipeline failure recovery); AUD-51.
