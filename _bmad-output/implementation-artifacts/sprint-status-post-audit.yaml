@@ -1,6 +1,6 @@
 # generated: 2026-07-16
-# last_updated: 2026-07-19 (Story 25-5 done)
-# NEXT: epic-25 close — version bump (pubspec + README) / optional retrospective
+# last_updated: 2026-07-19 (Epic 25 closed — 0.11.2+27)
+# NEXT: epic-26 — create-story 26-1 / optional retrospective E25
 # Ref: planning-artifacts/epics-post-audit.md · planning-artifacts/audits/
 # project: astra-app
 # project_key: NOKEY
@@ -63,7 +63,7 @@
 # NAVIGATION: _bmad-output/README.md · planning-artifacts/epics-post-audit.md
 
 generated: 2026-07-16
-last_updated: 2026-07-19 (Story 25-5 done)
+last_updated: 2026-07-19 (Epic 25 closed — 0.11.2+27)
 project: astra-app
 project_key: NOKEY
 tracking_system: file-system
@@ -110,7 +110,7 @@ development_status:
   24-6-disable-period-toggle-during-history-loading: done
   epic-24-retrospective: optional
 
-  epic-25: in-progress
+  epic-25: done
   25-1-split-today-cubit-by-responsibility-boundaries: done
   25-2-split-app-lifecycle-coordinator-into-focused-services: done
   25-3-remove-presentation-dependency-from-core-di-layer: done
