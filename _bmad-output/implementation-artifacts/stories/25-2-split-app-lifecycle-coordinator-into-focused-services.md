@@ -1,6 +1,6 @@
 # Story 25.2: Split AppLifecycleCoordinator into Focused Services
 
-Status: in-progress
+Status: review
 
 <!-- Post-audit Epic 25 — tracker: sprint-status-post-audit.yaml -->
 <!-- Source: epics-post-audit.md Story 25-2 · diagnostic-convention-structure.md Synthèse Haute · AUD-45 -->
@@ -77,19 +77,19 @@ So that midnight, persist, and live-pipeline changes stay isolated.
   - [x] Keep `@visibleForTesting` top-level helpers in `app_lifecycle_coordinator.dart` (or same export path) — **do not break** `test/app_lifecycle_transition_test.dart` import from `package:astra_app/app.dart`
   - [x] **Stop → review brief → wait for Baptiste OK → commit**
 
-- [ ] **Sub-task C — Slim façade `AppLifecycleCoordinator`** (AC: #2, #3, #5)
-  - [ ] Coordinator delegates to collaborators; holds lifecycle mutex (`_enqueueLifecycleTransition`), cubit binders, `bindToWidget`, public test hooks
-  - [ ] Pass shared context via small `LifecycleSessionState` class or constructor-injected refs (cubit refs, `_livePipelineStarted`, `_appInBackground`, config flags, `isMounted`/`showMainShell` callbacks)
-  - [ ] Keep `lib/core/services/app_lifecycle_coordinator.dart` at **same path** — no import churn for `AppDependencies` / tests
-  - [ ] Preserve `app.dart` re-export block unchanged
-  - [ ] **Stop → review brief → wait for Baptiste OK → commit**
+- [x] **Sub-task C — Slim façade `AppLifecycleCoordinator`** (AC: #2, #3, #5)
+  - [x] Coordinator delegates to collaborators; holds lifecycle mutex (`_enqueueLifecycleTransition`), cubit binders, `bindToWidget`, public test hooks
+  - [x] Pass shared context via small `LifecycleSessionState` class or constructor-injected refs (cubit refs, `_livePipelineStarted`, `_appInBackground`, config flags, `isMounted`/`showMainShell` callbacks)
+  - [x] Keep `lib/core/services/app_lifecycle_coordinator.dart` at **same path** — no import churn for `AppDependencies` / tests
+  - [x] Preserve `app.dart` re-export block unchanged
+  - [x] **Stop → review brief → wait for Baptiste OK → commit**
 
-- [ ] **Sub-task D — Regression verification** (AC: #4, #6)
-  - [ ] Run `dart analyze`
-  - [ ] Run `flutter test test/core/services/app_lifecycle_coordinator_test.dart test/app_lifecycle_transition_test.dart`
-  - [ ] Run `flutter test --exclude-tags slow`
-  - [ ] Spot-check sequencing: cold start `onTodayCubitReady` → `refreshFastPath` → bind → backfill reconcile; resume → day boundary → persist → sync; midnight → persist → reset → `refreshAfterDayRollover`
-  - [ ] **Stop → review brief → wait for Baptiste OK → commit**
+- [x] **Sub-task D — Regression verification** (AC: #4, #6)
+  - [x] Run `dart analyze`
+  - [x] Run `flutter test test/core/services/app_lifecycle_coordinator_test.dart test/app_lifecycle_transition_test.dart`
+  - [x] Run `flutter test --exclude-tags slow`
+  - [x] Spot-check sequencing: cold start `onTodayCubitReady` → `refreshFastPath` → bind → backfill reconcile; resume → day boundary → persist → sync; midnight → persist → reset → `refreshAfterDayRollover`
+  - [x] **Stop → review brief → wait for Baptiste OK → commit**
 
 ## Dev Notes
 
@@ -306,11 +306,14 @@ Cursor Grok 4.5
 
 - Sub-task A: 882 LOC confirmed; call sites enumerated; split map + session ownership recorded above.
 - Sub-task B: Extracted persist / day-boundary / live-pipeline + session + policy helpers under `lifecycle/`; façade wires late callbacks; coordinator tests + transition + persist policy = 23/23 green. Helpers moved to `lifecycle_policy.dart` and re-exported from coordinator (same `app.dart` show path). Dropped `@visibleForTesting` on helpers (cross-library prod use after split).
+- Sub-task C: Façade 248 LOC (≤250); public API + `app.dart` re-export unchanged; `AppDependencies` unchanged.
+- Sub-task D: `dart analyze` clean; coordinator + transition 11/11; full suite `flutter test --exclude-tags slow` → **947/947** (~2 skipped). AC #3 LOC: max collaborator 323 (<500).
 
 ### Change Log
 
 - 2026-07-19: Sub-task A — split map designed; story → in-progress
 - 2026-07-19: Sub-task B — mechanical extract into `lib/core/services/lifecycle/`
+- 2026-07-19: Sub-task C/D — façade verified, regression suite green; story → review
 
 ### File List
 
