@@ -67,10 +67,10 @@ So that FR goal-notification failures do not leave prefs inconsistent.
   - [x] Test: `maybeNotifyGoalReachedIfGoalMet skips when steps below goal` — direct call, showCount 0, pref null
   - [x] **Stop → review brief → wait for Baptiste OK → commit**
 
-- [ ] **Sub-task C — Rollback on showGoalReached failure** (AC: #4)
-  - [ ] Test: `maybeNotifyGoalReachedIfGoalMet rolls back pref when showGoalReached fails` — presenter throws OR returns via `showGoalReached` false path; assert pref cleared; optional second call notifies again
-  - [ ] Prefer asserting via **direct** `maybeNotifyGoalReachedIfGoalMet()` (not only `collectOnce`)
-  - [ ] **Stop → review brief → wait for Baptiste OK → commit**
+- [x] **Sub-task C — Rollback on showGoalReached failure** (AC: #4)
+  - [x] Test: `maybeNotifyGoalReachedIfGoalMet rolls back pref when showGoalReached fails` — presenter throws OR returns via `showGoalReached` false path; assert pref cleared; optional second call notifies again
+  - [x] Prefer asserting via **direct** `maybeNotifyGoalReachedIfGoalMet()` (not only `collectOnce`)
+  - [x] **Stop → review brief → wait for Baptiste OK → commit**
 
 - [ ] **Sub-task D — Regression verification** (AC: #5, #6)
   - [ ] Run `flutter test test/core/services/background_collector_test.dart --exclude-tags slow`

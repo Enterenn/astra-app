@@ -807,6 +807,60 @@ void main() {
         expect(showCount, 0);
         expect(await userSettings.getGoalNotificationShownDate(), isNull);
       });
+
+      test(
+        'maybeNotifyGoalReachedIfGoalMet rolls back pref when showGoalReached fails',
+        () async {
+          await userSettings.setGoalNotificationsEnabled(true);
+          await userHealthMetrics.setDailyStepGoal(100);
+          await repository.upsertIngestionBucket(_todayBucket(value: 500));
+
+          final failingCollector = _goalNotificationCollector(
+            normalizer: normalizer,
+            repository: repository,
+            stepAggregation: stepAggregation,
+            baselineRepository: baselineRepository,
+            userSettings: userSettings,
+            userHealthMetrics: userHealthMetrics,
+            clock: clock,
+            notificationService: NotificationService(
+              permissionChecker: () async => PermissionStatus.granted,
+              goalNotificationPresenter: ({required id, required title, body}) async {
+                throw StateError('presenter failed');
+              },
+            ),
+          );
+
+          await failingCollector.maybeNotifyGoalReachedIfGoalMet();
+
+          expect(await userSettings.getGoalNotificationShownDate(), isNull);
+
+          var showCount = 0;
+          final recoveryCollector = _goalNotificationCollector(
+            normalizer: normalizer,
+            repository: repository,
+            stepAggregation: stepAggregation,
+            baselineRepository: baselineRepository,
+            userSettings: userSettings,
+            userHealthMetrics: userHealthMetrics,
+            clock: clock,
+            notificationService: NotificationService(
+              permissionChecker: () async => PermissionStatus.granted,
+              goalNotificationPresenter: ({required id, required title, body}) async {
+                showCount += 1;
+              },
+            ),
+          );
+
+          await recoveryCollector.maybeNotifyGoalReachedIfGoalMet();
+
+          expect(showCount, 1);
+          expect(
+            await userSettings.getGoalNotificationShownDate(),
+            formatLocalDayIso(clock.snapshot()),
+          );
+        },
+      );
     });
   });
 }
