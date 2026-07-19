@@ -1,6 +1,6 @@
 # Story 26.3: Cover Goal Notification Evaluation and Rollback Path
 
-Status: in-progress
+Status: review
 
 <!-- Post-audit Epic 26 — tracker: sprint-status-post-audit.yaml -->
 <!-- Source: epics-post-audit.md Story 26-3 · diagnostic-couverture-structurelle.md Top #3 · AUD-52 -->
@@ -72,11 +72,11 @@ So that FR goal-notification failures do not leave prefs inconsistent.
   - [x] Prefer asserting via **direct** `maybeNotifyGoalReachedIfGoalMet()` (not only `collectOnce`)
   - [x] **Stop → review brief → wait for Baptiste OK → commit**
 
-- [ ] **Sub-task D — Regression verification** (AC: #5, #6)
-  - [ ] Run `flutter test test/core/services/background_collector_test.dart --exclude-tags slow`
-  - [ ] Run `flutter test --exclude-tags slow`
-  - [ ] Grep confirms test name or group contains `maybeNotifyGoalReachedIfGoalMet`
-  - [ ] **Stop → review brief → wait for Baptiste OK → commit**
+- [x] **Sub-task D — Regression verification** (AC: #5, #6)
+  - [x] Run `flutter test test/core/services/background_collector_test.dart --exclude-tags slow`
+  - [x] Run `flutter test --exclude-tags slow`
+  - [x] Grep confirms test name or group contains `maybeNotifyGoalReachedIfGoalMet`
+  - [x] **Stop → review brief → wait for Baptiste OK → commit**
 
 ## Dev Notes
 
@@ -282,6 +282,16 @@ Composer
 
 ### Completion Notes List
 
+- Added `group('maybeNotifyGoalReachedIfGoalMet')` with 3 direct-call tests (happy, not-met, rollback + retry)
+- Extracted `_goalNotificationCollector` helper for DRY collector wiring
+- AUD-52 grep passes (9 hits in background_collector_test.dart)
+- 24/24 collector tests green; full fast suite green
+
 ### File List
 
+- `test/core/services/background_collector_test.dart` — named AUD-52 group + helper
+- `_bmad-output/implementation-artifacts/sprint-status-post-audit.yaml` — 26-3 → review
+
 ## Change Log
+
+- 2026-07-19 — Story 26-3: named unit tests for `maybeNotifyGoalReachedIfGoalMet` (AUD-52)
