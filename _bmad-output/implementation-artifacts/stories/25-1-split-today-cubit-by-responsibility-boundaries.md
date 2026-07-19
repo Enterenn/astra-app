@@ -1,6 +1,6 @@
 # Story 25.1: Split TodayCubit by Responsibility Boundaries
 
-Status: review
+Status: done
 
 <!-- Post-audit Epic 25 — tracker: sprint-status-post-audit.yaml -->
 <!-- Source: epics-post-audit.md Story 25-1 · diagnostic-convention-structure.md Synthèse Haute · AUD-44 -->
@@ -231,6 +231,8 @@ Sub-task A: Split map produced. 5 collaborators identified under `today/` subfol
 Sub-tasks B+C: All 5 collaborators extracted verbatim. `TodaySessionCache` holds shared mutable state (`todaySteps`, `todayGoal`, `todayMetrics`, `lastAppliedLocalDay`, `hasUserSelectedLocalDay`, `refreshGeneration`, `refreshInFlight`). Facade wires 15 cross-collaborator callbacks. No second Cubit. `today_cubit.dart` unchanged import path. LOC per file: facade ~160, refresh_service ~230, live_pipeline ~200, week_selection ~200, snapshot_applier ~110, celebration_controller ~60, session_cache ~25. All within 500 LOC limit.
 
 Sub-task D: `dart analyze` — 0 issues. `flutter test` (cubit tests): 51/51 pass. `flutter test --exclude-tags slow`: 947/947 pass, 0 regressions.
+
+Code review: mergeable — no blocking bugs; follow-ups noted (late wiring fragility, collaborator unit tests optional, metrics duplication).
 
 ### File List
 
