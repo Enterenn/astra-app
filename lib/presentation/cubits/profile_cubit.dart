@@ -211,11 +211,19 @@ class ProfileCubit extends Cubit<ProfileState> {
   }
 
   Future<bool> setGoalNotificationsEnabled(bool enabled) async {
-    if (isClosed || state.status != ProfileStatus.ready) {
+    if (isClosed) {
+      return false;
+    }
+    if (state.status != ProfileStatus.ready &&
+        state.status != ProfileStatus.loading &&
+        state.status != ProfileStatus.error) {
       return false;
     }
 
-    if (enabled == state.goalNotificationsEnabled) {
+    final currentEnabled = state.status == ProfileStatus.ready
+        ? state.goalNotificationsEnabled
+        : await userSettings.getGoalNotificationsEnabled();
+    if (enabled == currentEnabled) {
       return false;
     }
 
