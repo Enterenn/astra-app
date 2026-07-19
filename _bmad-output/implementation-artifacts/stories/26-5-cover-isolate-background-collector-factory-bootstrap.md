@@ -69,13 +69,13 @@ So that WorkManager/FGS isolate bootstrap regressions are caught early.
   - [x] Confirm `background_collector_test.dart` manually constructs deps — **not** via factory
   - [x] **Stop → review brief → wait for Baptiste OK → commit** (plan-only commit optional)
 
-- [ ] **Sub-task B — New test file + happy-path bootstrap** (AC: #1, #2)
-  - [ ] Create `test/core/services/background_collector_factory_test.dart`
-  - [ ] `setUpAll(() => setUpSqfliteFfi())`; per-test in-memory DB open/close
-  - [ ] Add `group('createIsolateBackgroundCollector', () { ... })`
-  - [ ] Test: `createIsolateBackgroundCollector wires repos and collects via injected source` — direct factory call + `collectOnce()` + `getLastIngestionUtc()` assertion
-  - [ ] Reuse `_FakeStepSource` pattern from `fgs_step_collection_test.dart` / `workmanager_callback_test.dart` (local copy in new file OK)
-  - [ ] **Stop → review brief → wait for Baptiste OK → commit**
+- [x] **Sub-task B — New test file + happy-path bootstrap** (AC: #1, #2)
+  - [x] Create `test/core/services/background_collector_factory_test.dart`
+  - [x] `setUpAll(() => setUpSqfliteFfi())`; per-test in-memory DB open/close
+  - [x] Add `group('createIsolateBackgroundCollector', () { ... })`
+  - [x] Test: `createIsolateBackgroundCollector wires repos and collects via injected source` — direct factory call + `collectOnce()` + `getLastIngestionUtc()` assertion
+  - [x] Reuse `_FakeStepSource` pattern from `fgs_step_collection_test.dart` / `workmanager_callback_test.dart` (local copy in new file OK)
+  - [x] **Stop → review brief → wait for Baptiste OK → commit**
 
 - [ ] **Sub-task C — Default source flag branch** (AC: #3)
   - [ ] Test: `createIsolateBackgroundCollector omits phone source when includePhonePedometerSource is false` — `sources: null`, flag false, assert no buckets
@@ -362,13 +362,15 @@ Composer
 ### Completion Notes List
 
 - Sub-task A: 56 LOC factory read; zero named test hits; indirect WM/FGS + manual collector construction documented
+- Sub-task B: happy-path test — injected source, bucket write, session goal prefs round-trip (7500)
 
 ### File List
 
+- `test/core/services/background_collector_factory_test.dart` (new)
 - `_bmad-output/implementation-artifacts/stories/26-5-cover-isolate-background-collector-factory-bootstrap.md` (updated)
-- `_bmad-output/implementation-artifacts/sprint-status-post-audit.yaml` (updated)
 
 ## Change Log
 
 - 2026-07-19: Story context created — AUD-54 factory bootstrap test guide (ready-for-dev).
 - 2026-07-19: Sub-task A gap analysis — AUD-54 zero named hits confirmed.
+- 2026-07-19: Sub-task B — happy-path createIsolateBackgroundCollector bootstrap test.
