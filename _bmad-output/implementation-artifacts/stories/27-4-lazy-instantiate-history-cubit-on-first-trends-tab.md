@@ -1,6 +1,6 @@
 # Story 27.4: Lazy Instantiate HistoryCubit on First Trends Tab
 
-Status: review
+Status: done
 
 <!-- Post-audit Epic 27 — tracker: sprint-status-post-audit.yaml -->
 <!-- Source: epics-post-audit.md Story 27-4 · diagnostic-cold-start.md §Phase C1 · AUD-11 -->
@@ -328,3 +328,4 @@ Composer
 ### Change Log
 
 - 2026-07-19: Lazy HistoryCubit + deferred HistoryScreen mount (Story 27-4, Epic 27 boot polish close)
+- 2026-07-19: Code review approved — story done, Epic 27 closed, version 0.11.4+29
