@@ -1,6 +1,6 @@
 # Story 25.4: Decouple MyDataCubit from UI Dialog Types
 
-Status: review
+Status: done
 
 <!-- Post-audit Epic 25 — tracker: sprint-status-post-audit.yaml -->
 <!-- Source: epics-post-audit.md Story 25-4 · diagnostic-convention-structure.md §3.2 · AUD-47 -->
@@ -315,3 +315,4 @@ Composer
 ### Change Log
 
 - 2026-07-19: Story 25-4 implemented — decouple MyDataCubit from UI dialog types and FilePicker defaults (commit 9c2c6b9).
+- 2026-07-19: Code review passed; story → done.
