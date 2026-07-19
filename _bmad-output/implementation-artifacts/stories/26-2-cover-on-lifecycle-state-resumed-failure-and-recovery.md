@@ -1,6 +1,6 @@
 # Story 26.2: Cover onLifecycleStateResumed Failure and Recovery
 
-Status: review
+Status: done
 
 <!-- Post-audit Epic 26 — tracker: sprint-status-post-audit.yaml -->
 <!-- Source: epics-post-audit.md Story 26-2 · diagnostic-couverture-structurelle.md Top #1 · AUD-51 -->
@@ -325,3 +325,4 @@ Composer
 ## Change Log
 
 - 2026-07-19: Story 26-2 — named onLifecycleStateResumed unit tests (happy resume + forced resumeLivePipeline failure recovery); AUD-51.
+- 2026-07-19: Code review passed — story closed done.
