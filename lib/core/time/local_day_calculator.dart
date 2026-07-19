@@ -1,5 +1,6 @@
 import 'timestamp_codec.dart';
 
+/// Derives the local calendar day (UTC midnight) from a UTC sample and stored zone offset.
 class LocalDayCalculator {
   const LocalDayCalculator._();
 

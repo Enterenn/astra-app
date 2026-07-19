@@ -1,3 +1,4 @@
+/// Codec for SQLite text timestamps: second-aligned UTC with `Z`, minute-aligned `±HH:MM` offsets.
 class TimestampCodec {
   const TimestampCodec._();
 

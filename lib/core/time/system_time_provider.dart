@@ -1,5 +1,6 @@
 import 'time_provider.dart';
 
+/// Production [TimeProvider] using the device system clock.
 class SystemTimeProvider implements TimeProvider {
   const SystemTimeProvider();
 

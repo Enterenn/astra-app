@@ -30,6 +30,10 @@ import '../time/time_provider.dart';
 
 typedef ActivityPermissionChecker = Future<bool> Function();
 
+/// Composition root wired at app startup via [create].
+///
+/// Holds shared singletons: SQLite session, step repos, ingestion collectors,
+/// lifecycle coordinator, and user preference repositories.
 class AppDependencies {
   AppDependencies({
     required this.userSettings,

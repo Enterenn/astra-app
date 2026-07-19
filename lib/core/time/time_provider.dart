@@ -1,3 +1,4 @@
+/// Immutable UTC instant and zone offset captured from [TimeProvider.snapshot].
 class TimeSnapshot {
   TimeSnapshot({required DateTime nowUtc, required this.zoneOffset})
     : nowUtc = nowUtc.toUtc();
