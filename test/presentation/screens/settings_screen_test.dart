@@ -329,6 +329,42 @@ void main() {
       expect(find.text('Theme'), findsOneWidget);
     });
 
+    testWidgets('switch reflects notification pref while profile is loading', (
+      tester,
+    ) async {
+      final profileCubit = _SeededProfileCubit(
+        userSettings: userSettings,
+        userHealthMetrics: userHealthMetrics,
+        notificationService: NotificationService(
+          permissionChecker: () async => PermissionStatus.granted,
+        ),
+        seededState: const ProfileState(
+          status: ProfileStatus.loading,
+          goalNotificationsEnabled: true,
+        ),
+      );
+      addTearDown(profileCubit.close);
+
+      final themeCubit = ThemeCubit(userSettings: userSettings);
+      addTearDown(themeCubit.close);
+
+      final unitsCubit = UnitsCubit(userSettings: userSettings);
+      addTearDown(unitsCubit.close);
+
+      final localeCubit = LocaleCubit(userSettings: userSettings);
+      addTearDown(localeCubit.close);
+
+      await _pumpSettingsScreen(
+        tester,
+        profileCubit: profileCubit,
+        themeCubit: themeCubit,
+        unitsCubit: unitsCubit,
+        localeCubit: localeCubit,
+      );
+
+      expect(tester.widget<Switch>(find.byType(Switch)).value, isTrue);
+    });
+
     testWidgets('shows error panel and preferences when profile fails to load', (
       tester,
     ) async {

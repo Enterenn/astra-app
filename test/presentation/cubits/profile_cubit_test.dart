@@ -14,6 +14,15 @@ import 'package:sqflite/sqflite.dart';
 
 import '../../helpers/sqflite_test_helper.dart';
 
+class _ThrowingDisplayNameHealthMetrics extends UserHealthMetricsRepository {
+  _ThrowingDisplayNameHealthMetrics(super.db);
+
+  @override
+  Future<String?> getDisplayName() async {
+    throw StateError('read failed');
+  }
+}
+
 void main() {
   setUpAll(() async {
     await setUpSqfliteFfi();
@@ -164,6 +173,76 @@ void main() {
 
       expect(await cubit.updateWeightKg(29), isFalse);
       expect(await cubit.updateWeightKg(301), isFalse);
+
+      await cubit.close();
+    });
+
+    test('bootstraps goal notification pref before refresh completes', () async {
+      await userSettings.setGoalNotificationsEnabled(true);
+
+      final cubit = buildCubit();
+      await cubit.stream.firstWhere((state) => state.goalNotificationsEnabled);
+
+      expect(cubit.state.status, ProfileStatus.loading);
+      expect(cubit.state.goalNotificationsEnabled, isTrue);
+
+      await cubit.close();
+    });
+
+    test('setGoalNotificationsEnabled persists during loading state', () async {
+      permissionGrantedByOs = true;
+      final cubit = buildCubit();
+
+      final saved = await cubit.setGoalNotificationsEnabled(true);
+
+      expect(saved, isTrue);
+      expect(cubit.state.status, ProfileStatus.loading);
+      expect(cubit.state.goalNotificationsEnabled, isTrue);
+      expect(await userSettings.getGoalNotificationsEnabled(), isTrue);
+
+      await cubit.close();
+    });
+
+    test('refresh preserves goalNotificationsEnabled on loading transition', () async {
+      await userSettings.setGoalNotificationsEnabled(true);
+      final cubit = buildCubit();
+      await cubit.stream.firstWhere((state) => state.goalNotificationsEnabled);
+
+      final refreshFuture = cubit.refresh();
+      expect(cubit.state.goalNotificationsEnabled, isTrue);
+
+      await refreshFuture;
+      expect(cubit.state.goalNotificationsEnabled, isTrue);
+
+      await cubit.close();
+    });
+
+    test('refresh error preserves goalNotificationsEnabled', () async {
+      await userSettings.setGoalNotificationsEnabled(true);
+      final cubit = ProfileCubit(
+        userSettings: userSettings,
+        userHealthMetrics: _ThrowingDisplayNameHealthMetrics(db),
+        notificationService: notificationService,
+      );
+      if (!cubit.state.goalNotificationsEnabled) {
+        await cubit.stream.firstWhere((state) => state.goalNotificationsEnabled);
+      }
+      await cubit.refresh();
+
+      expect(cubit.state.status, ProfileStatus.error);
+      expect(cubit.state.goalNotificationsEnabled, isTrue);
+
+      await cubit.close();
+    });
+
+    test('setGoalNotificationsEnabled syncs stale switch without error when already enabled', () async {
+      await userSettings.setGoalNotificationsEnabled(true);
+      final cubit = buildCubit();
+
+      final saved = await cubit.setGoalNotificationsEnabled(true);
+
+      expect(saved, isTrue);
+      expect(cubit.state.goalNotificationsEnabled, isTrue);
 
       await cubit.close();
     });

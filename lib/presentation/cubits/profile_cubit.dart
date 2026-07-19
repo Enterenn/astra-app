@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:flutter/foundation.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:permission_handler/permission_handler.dart';
@@ -24,7 +26,9 @@ class ProfileCubit extends Cubit<ProfileState> {
   }) : _requestPermission =
            permissionRequester ??
            ((permission) => permission.request()),
-       super(const ProfileState.loading());
+       super(const ProfileState.loading()) {
+    unawaited(_bootstrapNotificationPref());
+  }
 
   final UserSettingsRepositoryContract userSettings;
   final UserHealthMetricsRepositoryContract userHealthMetrics;
@@ -33,6 +37,21 @@ class ProfileCubit extends Cubit<ProfileState> {
   final PostDisplayNameUpdateCallback? _postDisplayNameUpdate;
 
   Future<void>? _refreshInFlight;
+
+  Future<void> _bootstrapNotificationPref() async {
+    try {
+      final enabled = await userSettings.getGoalNotificationsEnabled();
+      if (isClosed || state.status == ProfileStatus.ready) {
+        return;
+      }
+      emit(state.copyWith(goalNotificationsEnabled: enabled));
+    } catch (error, stackTrace) {
+      if (kDebugMode) {
+        debugPrint('ProfileCubit._bootstrapNotificationPref failed: $error');
+        debugPrintStack(stackTrace: stackTrace);
+      }
+    }
+  }
 
   Future<void> refresh() async {
     if (isClosed) {
@@ -53,7 +72,7 @@ class ProfileCubit extends Cubit<ProfileState> {
 
   Future<void> _refreshImpl() async {
     if (state.status != ProfileStatus.ready) {
-      emit(const ProfileState.loading());
+      emit(state.copyWith(status: ProfileStatus.loading));
     }
 
     try {
@@ -82,7 +101,7 @@ class ProfileCubit extends Cubit<ProfileState> {
       }
       if (!isClosed) {
         emit(
-          ProfileState(
+          state.copyWith(
             status: ProfileStatus.error,
             loadError: ProfileLoadError.generic,
           ),
@@ -224,7 +243,10 @@ class ProfileCubit extends Cubit<ProfileState> {
         ? state.goalNotificationsEnabled
         : await userSettings.getGoalNotificationsEnabled();
     if (enabled == currentEnabled) {
-      return false;
+      if (state.goalNotificationsEnabled != enabled) {
+        emit(state.copyWith(goalNotificationsEnabled: enabled));
+      }
+      return true;
     }
 
     if (enabled && !await notificationService.hasNotificationPermission()) {
