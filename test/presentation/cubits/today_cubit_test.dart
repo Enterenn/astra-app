@@ -1189,6 +1189,40 @@ void main() {
       });
     });
 
+    // ── refreshAfterDayRollover (AUD-53) ────────────────────────────────────
+
+    group('refreshAfterDayRollover', () {
+      test(
+        'refreshAfterDayRollover clears foregroundCatchUp and dismisses celebration',
+        () async {
+          await userHealthMetrics.setDailyStepGoal(5000);
+          await stepRepos.ingestion.upsertIngestionBucket(
+            _bucket(
+              startTimeUtc: DateTime.utc(2026, 6, 2, 10),
+              value: 5000,
+              zoneOffset: '+02:00',
+            ),
+          );
+          final cubit = buildCubit();
+          await cubit.refresh();
+          expect(cubit.state.showCelebration, isTrue);
+
+          await cubit.syncSteps(cubit.state.steps + 100, foregroundCatchUp: true);
+          expect(cubit.state.foregroundCatchUp, isTrue);
+          expect(cubit.state.catchUpTargetSteps, isNotNull);
+
+          clock.setNowUtc(DateTime.utc(2026, 6, 3, 10));
+
+          await cubit.refreshAfterDayRollover();
+
+          expect(cubit.state.foregroundCatchUp, isFalse);
+          expect(cubit.state.catchUpTargetSteps, isNull);
+          expect(cubit.state.showCelebration, isFalse);
+          await cubit.close();
+        },
+      );
+    });
+
     // ── updateDailyStepGoal ─────────────────────────────────────────────────
 
     group('updateDailyStepGoal', () {

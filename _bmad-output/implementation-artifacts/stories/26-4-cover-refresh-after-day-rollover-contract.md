@@ -62,12 +62,12 @@ So that midnight UI reset contracts do not rely only on day-boundary monitor tes
   - [x] Note indirect coverage: `live_step_monitor_day_rollover_test.dart`, coordinator day-boundary sequencing — **not** cubit contract
   - [x] **Stop → review brief → wait for Baptiste OK → commit** (plan-only commit optional)
 
-- [ ] **Sub-task B — Named flag-reset group** (AC: #1, #2)
-  - [ ] Add `group('refreshAfterDayRollover', () { ... })` in `test/presentation/cubits/today_cubit_test.dart`
-  - [ ] Setup: seed goal-met steps → `refresh()` → `showCelebration: true`; add `syncSteps(..., foregroundCatchUp: true)` for catch-up flags
-  - [ ] Advance clock to next local day via `clock.setNowUtc(...)` (keep `zoneOffset: +02:00`)
-  - [ ] Test: `refreshAfterDayRollover clears foregroundCatchUp and dismisses celebration` — direct call; assert flags cleared
-  - [ ] **Stop → review brief → wait for Baptiste OK → commit**
+- [x] **Sub-task B — Named flag-reset group** (AC: #1, #2)
+  - [x] Add `group('refreshAfterDayRollover', () { ... })` in `test/presentation/cubits/today_cubit_test.dart`
+  - [x] Setup: seed goal-met steps → `refresh()` → `showCelebration: true`; add `syncSteps(..., foregroundCatchUp: true)` for catch-up flags
+  - [x] Advance clock to next local day via `clock.setNowUtc(...)` (keep `zoneOffset: +02:00`)
+  - [x] Test: `refreshAfterDayRollover clears foregroundCatchUp and dismisses celebration` — direct call; assert flags cleared
+  - [x] **Stop → review brief → wait for Baptiste OK → commit**
 
 - [ ] **Sub-task C — Allow-decrease SQLite refresh on new day** (AC: #3, #4)
   - [ ] Test: `refreshAfterDayRollover allows step decrease and rebuilds week strip for new local day` — yesterday 5000 steps in state, new day empty DB → steps `0` (or seeded new-day bucket); `weekDays`/`selectedLocalDay` updated
