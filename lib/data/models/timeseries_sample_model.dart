@@ -1,6 +1,7 @@
 import '../../core/time/timestamp_codec.dart';
 import 'normalized_step_bucket.dart';
 
+/// Entity mapped to the `timeseries_samples` SQLite table.
 class TimeseriesSampleModel {
   const TimeseriesSampleModel({
     required this.id,

@@ -4,6 +4,7 @@ const kFiveMinuteResolution = '5min';
 const kHourlyResolution = '1hour';
 const kDailyResolution = '1d';
 
+/// Pre-persistence step bucket with resolution, provider, and zone-offset metadata.
 class NormalizedStepBucket {
   NormalizedStepBucket({
     required DateTime startTimeUtc,

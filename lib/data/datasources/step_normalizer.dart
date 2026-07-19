@@ -17,6 +17,7 @@ class StepNormalizationResult {
   final int? terminalBaseline;
 }
 
+/// Converts cumulative step readings into 5-minute [NormalizedStepBucket] increments.
 class StepNormalizer {
   const StepNormalizer({
     required this.clock,

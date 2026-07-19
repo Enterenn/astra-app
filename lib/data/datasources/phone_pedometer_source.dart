@@ -5,6 +5,7 @@ import 'data_ingestion_source.dart';
 
 typedef PhoneStepEventStreamFactory = Stream<PhoneStepEvent> Function();
 
+/// Pedometer counter observation with UTC-normalized timestamp.
 class PhoneStepEvent {
   PhoneStepEvent({required this.steps, required DateTime timeStamp})
     : timeStamp = timeStamp.toUtc();
@@ -20,6 +21,7 @@ class PhoneStepEvent {
   final DateTime timeStamp;
 }
 
+/// Phone [DataIngestionSource] mapping cumulative step counter events to [StepReading].
 class PhonePedometerSource implements DataIngestionSource {
   PhonePedometerSource({PhoneStepEventStreamFactory? stepEventStreamFactory})
     : _stepEventStreamFactory =

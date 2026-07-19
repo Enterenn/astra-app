@@ -12,6 +12,7 @@ import '../models/normalized_step_bucket.dart';
 import '../models/timeseries_sample_model.dart';
 import '../repositories/step/_step_repository_session.dart';
 
+/// User-facing CSV export and import facade (FR-19 / FR-20).
 class CsvService implements CsvServiceContract {
   CsvService(
     Object sessionOrDatabase, {

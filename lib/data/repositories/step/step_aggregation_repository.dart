@@ -16,6 +16,7 @@ import '_step_chart_queries.dart';
 import '_step_repository_session.dart';
 import '_step_sample_bounds.dart';
 
+/// Read-side step queries: today totals, charts, active buckets, downsampling, footprint.
 class StepAggregationRepository implements StepAggregationRepositoryContract {
   StepAggregationRepository(
     Object sessionOrDatabase, {

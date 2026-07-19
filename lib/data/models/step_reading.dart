@@ -1,3 +1,4 @@
+/// Single cumulative step counter observation at a UTC instant.
 class StepReading {
   StepReading({required this.cumulativeSteps, required DateTime observedAtUtc})
     : observedAtUtc = observedAtUtc.toUtc() {

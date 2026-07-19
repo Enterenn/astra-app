@@ -10,6 +10,7 @@ import '../../models/timeseries_sample_model.dart';
 import '../ingestion_baseline_repository.dart';
 import '_step_repository_session.dart';
 
+/// Write-side persistence for ingested step samples and additive bucket upserts.
 class StepIngestionRepository implements StepIngestionRepositoryContract {
   StepIngestionRepository(
     Object sessionOrDatabase, {
