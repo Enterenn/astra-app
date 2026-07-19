@@ -61,15 +61,65 @@ class AppScaffold extends StatefulWidget {
   State<AppScaffold> createState() => _AppScaffoldState();
 }
 
+class _KeepAliveHistoryTab extends StatefulWidget {
+  const _KeepAliveHistoryTab({required this.cubit});
+
+  final HistoryCubit cubit;
+
+  @override
+  State<_KeepAliveHistoryTab> createState() => _KeepAliveHistoryTabState();
+}
+
+class _KeepAliveHistoryTabState extends State<_KeepAliveHistoryTab>
+    with AutomaticKeepAliveClientMixin {
+  @override
+  bool get wantKeepAlive => true;
+
+  @override
+  Widget build(BuildContext context) {
+    super.build(context);
+    return BlocProvider.value(
+      value: widget.cubit,
+      child: const HistoryScreen(),
+    );
+  }
+}
+
 class _AppScaffoldState extends State<AppScaffold> {
   int _selectedIndex = 0;
   late final TodayCubit _todayCubit;
-  late final HistoryCubit _historyCubit;
+  HistoryCubit? _historyCubit;
+  bool _historyTabMounted = false;
   late final MyDataCubit _myDataCubit;
   late final ProfileCubit _profileCubit;
   late final List<Widget> _tabScreens;
   final _menuNavigatorKey = GlobalKey<NavigatorState>();
   MenuHubDestination? _menuStackTopDestination;
+
+  HistoryCubit _ensureHistoryCubit() {
+    if (_historyCubit != null) {
+      return _historyCubit!;
+    }
+    _historyCubit =
+        widget.createHistoryCubit?.call(widget.deps) ??
+        HistoryCubit(
+          stepAggregation: widget.deps.stepAggregation,
+          userHealthMetrics: widget.deps.userHealthMetrics,
+        );
+    widget.onHistoryCubitReady?.call(_historyCubit!);
+    return _historyCubit!;
+  }
+
+  void _mountHistoryTabIfNeeded() {
+    if (_historyTabMounted) {
+      return;
+    }
+    final cubit = _ensureHistoryCubit();
+    _tabScreens[1] = RepaintBoundary(
+      child: _KeepAliveHistoryTab(cubit: cubit),
+    );
+    _historyTabMounted = true;
+  }
 
   @override
   void initState() {
@@ -83,15 +133,9 @@ class _AppScaffoldState extends State<AppScaffold> {
           clock: widget.deps.timeProvider,
           activityPermissionGranted: widget.deps.activityPermissionGranted,
           postGoalUpdate: () async {
-            await _historyCubit.refreshGoal();
+            await _historyCubit?.refreshGoal();
             await _myDataCubit.refresh(silent: true);
           },
-        );
-    _historyCubit =
-        widget.createHistoryCubit?.call(widget.deps) ??
-        HistoryCubit(
-          stepAggregation: widget.deps.stepAggregation,
-          userHealthMetrics: widget.deps.userHealthMetrics,
         );
     _myDataCubit =
         widget.createMyDataCubit?.call(widget.deps) ??
@@ -108,13 +152,13 @@ class _AppScaffoldState extends State<AppScaffold> {
           saveCsvFile: saveCsvExportFile,
           postImportRefresh: () async {
             await _todayCubit.refreshMetadata();
-            await _historyCubit.refresh(silent: true);
+            await _ensureHistoryCubit().refresh(silent: true);
             await _myDataCubit.refresh(silent: true);
           },
           postPurgeRefresh: _runPostPurgeRefresh,
           postGoalUpdate: () async {
             await _todayCubit.refreshMetadata();
-            await _historyCubit.refreshGoal();
+            await _historyCubit?.refreshGoal();
           },
         );
     _profileCubit =
@@ -128,7 +172,6 @@ class _AppScaffoldState extends State<AppScaffold> {
           },
         );
     widget.onTodayCubitReady?.call(_todayCubit);
-    widget.onHistoryCubitReady?.call(_historyCubit);
     widget.onMyDataCubitReady?.call(_myDataCubit);
     widget.onProfileCubitReady?.call(_profileCubit);
     _tabScreens = [
@@ -138,12 +181,7 @@ class _AppScaffoldState extends State<AppScaffold> {
           child: const TodayScreen(),
         ),
       ),
-      RepaintBoundary(
-        child: BlocProvider.value(
-          value: _historyCubit,
-          child: const HistoryScreen(),
-        ),
-      ),
+      const RepaintBoundary(child: SizedBox.shrink()),
       RepaintBoundary(
         child: Navigator(
           key: _menuNavigatorKey,
@@ -197,7 +235,7 @@ class _AppScaffoldState extends State<AppScaffold> {
       if (!mounted) return;
 
       phase = 'historyRefresh';
-      await _historyCubit.refresh(silent: true);
+      await _ensureHistoryCubit().refresh(silent: true);
       if (!mounted) return;
 
       phase = 'myDataRefresh';
@@ -224,7 +262,10 @@ class _AppScaffoldState extends State<AppScaffold> {
     widget.onMyDataCubitDisposed?.call();
     widget.onProfileCubitDisposed?.call();
     unawaited(_todayCubit.close());
-    unawaited(_historyCubit.close());
+    final historyCubit = _historyCubit;
+    if (historyCubit != null) {
+      unawaited(historyCubit.close());
+    }
     unawaited(_myDataCubit.close());
     unawaited(_profileCubit.close());
     super.dispose();
@@ -232,8 +273,8 @@ class _AppScaffoldState extends State<AppScaffold> {
 
   void _onIngestionComplete() {
     unawaited(_todayCubit.refreshMetadata());
-    if (_selectedIndex == 1) {
-      unawaited(_historyCubit.refresh(silent: true));
+    if (_selectedIndex == 1 && _historyCubit != null) {
+      unawaited(_historyCubit!.refresh(silent: true));
     }
     unawaited(_myDataCubit.refresh(silent: true));
   }
@@ -245,15 +286,21 @@ class _AppScaffoldState extends State<AppScaffold> {
     unawaited(HapticFeedback.selectionClick());
     final returningToToday = index == 0 && _selectedIndex != 0;
     final openingTrends = index == 1 && _selectedIndex != 1;
+    if (openingTrends) {
+      _mountHistoryTabIfNeeded();
+    }
     setState(() {
       _selectedIndex = index;
     });
     if (returningToToday) {
       unawaited(_todayCubit.refreshMetadata());
-      unawaited(_historyCubit.refreshGoal());
+      final historyCubit = _historyCubit;
+      if (historyCubit != null) {
+        unawaited(historyCubit.refreshGoal());
+      }
     }
     if (openingTrends) {
-      unawaited(_historyCubit.refresh());
+      unawaited(_historyCubit!.refresh());
     }
   }
 
