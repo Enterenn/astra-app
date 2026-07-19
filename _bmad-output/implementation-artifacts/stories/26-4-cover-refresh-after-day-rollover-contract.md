@@ -1,6 +1,6 @@
 # Story 26.4: Cover refreshAfterDayRollover Contract
 
-Status: in-progress
+Status: review
 
 <!-- Post-audit Epic 26 — tracker: sprint-status-post-audit.yaml -->
 <!-- Source: epics-post-audit.md Story 26-4 · diagnostic-couverture-structurelle.md Top #5 · AUD-53 -->
@@ -75,11 +75,11 @@ So that midnight UI reset contracts do not rely only on day-boundary monitor tes
   - [x] Prefer **direct** `cubit.refreshAfterDayRollover()` entry (not only via coordinator)
   - [x] **Stop → review brief → wait for Baptiste OK → commit**
 
-- [ ] **Sub-task D — Regression verification** (AC: #5, #6)
-  - [ ] Run `flutter test test/presentation/cubits/today_cubit_test.dart --exclude-tags slow`
-  - [ ] Run `flutter test --exclude-tags slow`
-  - [ ] Grep confirms test name or group contains `refreshAfterDayRollover`
-  - [ ] **Stop → review brief → wait for Baptiste OK → commit**
+- [x] **Sub-task D — Regression verification** (AC: #5, #6)
+  - [x] Run `flutter test test/presentation/cubits/today_cubit_test.dart --exclude-tags slow`
+  - [x] Run `flutter test --exclude-tags slow`
+  - [x] Grep confirms test name or group contains `refreshAfterDayRollover`
+  - [x] **Stop → review brief → wait for Baptiste OK → commit**
 
 ## Dev Notes
 
@@ -316,9 +316,21 @@ Composer
 ### Debug Log References
 
 - Sub-task A: `rg refreshAfterDayRollover test/` → 0 hits before implementation; indirect coverage in `live_step_monitor_day_rollover_test.dart` + coordinator day-boundary sequencing only.
+- Sub-task D: `today_cubit_test.dart` 45/45; full suite 956 passed (~2 skipped slow).
 
 ### Completion Notes List
 
+- Added `group('refreshAfterDayRollover')` with 2 named tests calling `cubit.refreshAfterDayRollover()` directly (AUD-53).
+- Test 1: celebration + foregroundCatchUp cleared on rollover after clock advance.
+- Test 2: steps decrease 5000→0 on empty new day; week strip rebuilt; silent (no loading flash).
+- No production changes.
+
 ### File List
 
+- `test/presentation/cubits/today_cubit_test.dart` — added `refreshAfterDayRollover` test group
+- `_bmad-output/implementation-artifacts/stories/26-4-cover-refresh-after-day-rollover-contract.md` — story status/tasks
+- `_bmad-output/implementation-artifacts/sprint-status-post-audit.yaml` — in-progress → review
+
 ## Change Log
+
+- 2026-07-19: AUD-53 — named unit tests for `TodayCubit.refreshAfterDayRollover` (flag reset + allow-decrease + silent week rebuild).
