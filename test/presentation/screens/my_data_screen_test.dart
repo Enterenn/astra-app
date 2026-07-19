@@ -14,6 +14,7 @@ import 'package:astra_app/presentation/widgets/data_export_button.dart';
 import 'package:astra_app/presentation/widgets/data_import_button.dart';
 import 'package:astra_app/presentation/widgets/data_purge_button.dart';
 import 'package:astra_app/presentation/widgets/display_name_editor_row.dart';
+import 'package:astra_app/presentation/widgets/status_banner.dart';
 import 'package:astra_app/presentation/widgets/theme_selector.dart';
 
 import 'package:flutter/material.dart';
@@ -277,6 +278,57 @@ void main() {
       ).dy;
       final backgroundY = tester.getTopLeft(find.text(l10n.menuTrackingStatus)).dy;
       expect(bannerY < backgroundY, isTrue);
+    });
+
+    testWidgets('stale banner tap invokes cubit refresh with silent false', (
+      tester,
+    ) async {
+      final cubit = _TrackingRefreshMyDataCubit(
+        stepAggregation: stepRepos.aggregation,
+        csvService: stepRepos.csv,
+        stepIngestion: stepRepos.ingestion,
+        userSettings: userSettings,
+        userHealthMetrics: userHealthMetrics,
+        clock: clock,
+        databasePath: inMemoryDatabasePath,
+        seededState: _readyState(
+          backgroundStatus: BackgroundCollectionStatus.stale,
+        ),
+      );
+      addTearDown(cubit.close);
+
+      await pumpScreen(tester, cubit: cubit);
+
+      await tester.tap(find.byType(StatusBanner));
+      await tester.pump();
+
+      expect(cubit.refreshCalls, 1);
+      expect(cubit.lastSilent, isFalse);
+    });
+
+    testWidgets('stale banner exposes actionable semantics', (tester) async {
+      final cubit = buildSeededCubit(
+        _readyState(
+          backgroundStatus: BackgroundCollectionStatus.stale,
+        ),
+      );
+      addTearDown(cubit.close);
+
+      await pumpScreen(tester, cubit: cubit);
+
+      final handle = tester.ensureSemantics();
+
+      expect(
+        find.bySemanticsLabel(l10n.bannerStaleFullAndroid),
+        findsOneWidget,
+      );
+
+      final semantics = tester.getSemantics(
+        find.bySemanticsLabel(l10n.bannerStaleFullAndroid),
+      );
+      expect(semantics.flagsCollection.isButton, isTrue);
+
+      handle.dispose();
     });
   });
 
@@ -554,6 +606,28 @@ void main() {
       expect(cubit.state.purgeSuccessPending, isFalse);
     });
   });
+}
+
+class _TrackingRefreshMyDataCubit extends _SeededMyDataCubit {
+  _TrackingRefreshMyDataCubit({
+    required super.stepAggregation,
+    required super.csvService,
+    required super.stepIngestion,
+    required super.userSettings,
+    required super.userHealthMetrics,
+    required super.clock,
+    required super.databasePath,
+    required super.seededState,
+  });
+
+  int refreshCalls = 0;
+  bool? lastSilent;
+
+  @override
+  Future<void> refresh({bool silent = true}) async {
+    refreshCalls++;
+    lastSilent = silent;
+  }
 }
 
 class _RetryImportMyDataCubit extends _SeededMyDataCubit {
