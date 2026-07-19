@@ -19,7 +19,9 @@ class AppCubitCoordinator {
     HistoryCubit Function(AppDependencies deps)? createHistoryCubit,
     MyDataCubit Function(AppDependencies deps)? createMyDataCubit,
     ProfileCubit Function(AppDependencies deps)? createProfileCubit,
-  }) : _createHistoryCubit = createHistoryCubit {
+    ValueChanged<HistoryCubit>? onHistoryFirstCreated,
+  }) : _createHistoryCubit = createHistoryCubit,
+       _onHistoryFirstCreated = onHistoryFirstCreated {
     today = createTodayCubit?.call(deps) ??
         TodayCubit(
           stepAggregation: deps.stepAggregation,
@@ -56,6 +58,7 @@ class AppCubitCoordinator {
 
   final AppDependencies deps;
   final HistoryCubit Function(AppDependencies deps)? _createHistoryCubit;
+  final ValueChanged<HistoryCubit>? _onHistoryFirstCreated;
 
   late final TodayCubit today;
   late final MyDataCubit myData;
@@ -69,11 +72,17 @@ class AppCubitCoordinator {
   /// Lazily creates the History cubit on first access (e.g. first time the
   /// Trends tab is opened). Mirrors the previous AppScaffold behaviour.
   HistoryCubit ensureHistory() {
-    return _history ??= _createHistoryCubit?.call(deps) ??
+    if (_history != null) {
+      return _history!;
+    }
+    final created = _createHistoryCubit?.call(deps) ??
         HistoryCubit(
           stepAggregation: deps.stepAggregation,
           userHealthMetrics: deps.userHealthMetrics,
         );
+    _history = created;
+    _onHistoryFirstCreated?.call(created);
+    return created;
   }
 
   Future<void> _onTodayGoalUpdate() async {

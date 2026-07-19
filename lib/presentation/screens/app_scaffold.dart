@@ -1,14 +1,13 @@
 import 'dart:async';
 
 import 'package:astra_app/l10n/app_localizations.dart';
-import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 
 import '../../core/constants/astra_colors.dart';
 import '../../core/di/app_dependencies.dart';
-import '../../data/csv/csv_platform_file_picker.dart';
+import '../coordinators/app_cubit_coordinator.dart';
 import '../cubits/history_cubit.dart';
 import '../cubits/my_data_cubit.dart';
 import '../cubits/profile_cubit.dart';
@@ -87,34 +86,17 @@ class _KeepAliveHistoryTabState extends State<_KeepAliveHistoryTab>
 
 class _AppScaffoldState extends State<AppScaffold> {
   int _selectedIndex = 0;
-  late final TodayCubit _todayCubit;
-  HistoryCubit? _historyCubit;
+  late final AppCubitCoordinator _coordinator;
   bool _historyTabMounted = false;
-  late final MyDataCubit _myDataCubit;
-  late final ProfileCubit _profileCubit;
   late final List<Widget> _tabScreens;
   final _menuNavigatorKey = GlobalKey<NavigatorState>();
   MenuHubDestination? _menuStackTopDestination;
-
-  HistoryCubit _ensureHistoryCubit() {
-    if (_historyCubit != null) {
-      return _historyCubit!;
-    }
-    _historyCubit =
-        widget.createHistoryCubit?.call(widget.deps) ??
-        HistoryCubit(
-          stepAggregation: widget.deps.stepAggregation,
-          userHealthMetrics: widget.deps.userHealthMetrics,
-        );
-    widget.onHistoryCubitReady?.call(_historyCubit!);
-    return _historyCubit!;
-  }
 
   void _mountHistoryTabIfNeeded() {
     if (_historyTabMounted) {
       return;
     }
-    final cubit = _ensureHistoryCubit();
+    final cubit = _coordinator.ensureHistory();
     _tabScreens[1] = RepaintBoundary(
       child: _KeepAliveHistoryTab(cubit: cubit),
     );
@@ -124,60 +106,21 @@ class _AppScaffoldState extends State<AppScaffold> {
   @override
   void initState() {
     super.initState();
-    _todayCubit =
-        widget.createTodayCubit?.call(widget.deps) ??
-        TodayCubit(
-          stepAggregation: widget.deps.stepAggregation,
-          userSettings: widget.deps.userSettings,
-          userHealthMetrics: widget.deps.userHealthMetrics,
-          clock: widget.deps.timeProvider,
-          activityPermissionGranted: widget.deps.activityPermissionGranted,
-          postGoalUpdate: () async {
-            await _historyCubit?.refreshGoal();
-            await _myDataCubit.refresh(silent: true);
-          },
-        );
-    _myDataCubit =
-        widget.createMyDataCubit?.call(widget.deps) ??
-        MyDataCubit(
-          stepAggregation: widget.deps.stepAggregation,
-          csvService: widget.deps.csvService,
-          stepIngestion: widget.deps.stepIngestion,
-          userSettings: widget.deps.userSettings,
-          userHealthMetrics: widget.deps.userHealthMetrics,
-          clock: widget.deps.timeProvider,
-          databasePath: widget.deps.databasePath,
-          activityPermissionGranted: widget.deps.activityPermissionGranted,
-          pickCsvFile: pickCsvFileForImport,
-          saveCsvFile: saveCsvExportFile,
-          postImportRefresh: () async {
-            await _todayCubit.refreshMetadata();
-            await _ensureHistoryCubit().refresh(silent: true);
-            await _myDataCubit.refresh(silent: true);
-          },
-          postPurgeRefresh: _runPostPurgeRefresh,
-          postGoalUpdate: () async {
-            await _todayCubit.refreshMetadata();
-            await _historyCubit?.refreshGoal();
-          },
-        );
-    _profileCubit =
-        widget.createProfileCubit?.call(widget.deps) ??
-        ProfileCubit(
-          userSettings: widget.deps.userSettings,
-          userHealthMetrics: widget.deps.userHealthMetrics,
-          notificationService: widget.deps.notificationService,
-          postDisplayNameUpdate: () async {
-            await _todayCubit.refreshMetadata();
-          },
-        );
-    widget.onTodayCubitReady?.call(_todayCubit);
-    widget.onMyDataCubitReady?.call(_myDataCubit);
-    widget.onProfileCubitReady?.call(_profileCubit);
+    _coordinator = AppCubitCoordinator(
+      deps: widget.deps,
+      createTodayCubit: widget.createTodayCubit,
+      createHistoryCubit: widget.createHistoryCubit,
+      createMyDataCubit: widget.createMyDataCubit,
+      createProfileCubit: widget.createProfileCubit,
+      onHistoryFirstCreated: widget.onHistoryCubitReady,
+    );
+    widget.onTodayCubitReady?.call(_coordinator.today);
+    widget.onMyDataCubitReady?.call(_coordinator.myData);
+    widget.onProfileCubitReady?.call(_coordinator.profile);
     _tabScreens = [
       RepaintBoundary(
         child: BlocProvider.value(
-          value: _todayCubit,
+          value: _coordinator.today,
           child: const TodayScreen(),
         ),
       ),
@@ -206,54 +149,6 @@ class _AppScaffoldState extends State<AppScaffold> {
     }
   }
 
-  Future<void> _runPostPurgeRefresh() async {
-    var phase = '';
-    try {
-      phase = 'clearLastDisplayedSteps';
-      await widget.deps.userSettings.clearLastDisplayedSteps();
-      // TODO(refactor): If the widget is unmounted mid-flux, we return silently to avoid StateError.
-      // Trade-off: MyDataCubit might assume a full success while some late refreshes were skipped.
-      // Considered acceptable as the database purge itself is already complete at this stage.
-      if (!mounted) return;
-
-      phase = 'reconcileFromDatabase';
-      await widget.deps.liveStepMonitor.reconcileFromDatabase();
-      if (!mounted) return;
-
-      phase = 'todayRefresh';
-      await _todayCubit.refresh(silent: true);
-      if (!mounted) return;
-
-      phase = 'todaySyncSteps';
-      await _todayCubit.syncSteps(
-        widget.deps.liveStepMonitor.currentTodaySteps,
-      );
-      if (!mounted) return;
-
-      phase = 'todayRefreshMetadata';
-      await _todayCubit.refreshMetadata();
-      if (!mounted) return;
-
-      phase = 'historyRefresh';
-      await _ensureHistoryCubit().refresh(silent: true);
-      if (!mounted) return;
-
-      phase = 'myDataRefresh';
-      await _myDataCubit.refresh(silent: true);
-      if (!mounted) return;
-
-      unawaited(widget.deps.dataLifecycleService.runMaintenance(force: true));
-    } catch (error, stackTrace) {
-      if (kDebugMode) {
-        debugPrint(
-          'AppScaffold.postPurgeRefresh failed at $phase: $error',
-        );
-        debugPrintStack(stackTrace: stackTrace);
-      }
-      rethrow;
-    }
-  }
-
   @override
   void dispose() {
     widget.deps.backgroundCollector.registerOnIngestionComplete(null);
@@ -261,22 +156,15 @@ class _AppScaffoldState extends State<AppScaffold> {
     widget.onHistoryCubitDisposed?.call();
     widget.onMyDataCubitDisposed?.call();
     widget.onProfileCubitDisposed?.call();
-    unawaited(_todayCubit.close());
-    final historyCubit = _historyCubit;
-    if (historyCubit != null) {
-      unawaited(historyCubit.close());
-    }
-    unawaited(_myDataCubit.close());
-    unawaited(_profileCubit.close());
+    _coordinator.dispose();
     super.dispose();
   }
 
   void _onIngestionComplete() {
-    unawaited(_todayCubit.refreshMetadata());
-    if (_selectedIndex == 1 && _historyCubit != null) {
-      unawaited(_historyCubit!.refresh(silent: true));
-    }
-    unawaited(_myDataCubit.refresh(silent: true));
+    _coordinator.onIngestionComplete(
+      historyTabActive:
+          _selectedIndex == 1 && _coordinator.historyIfCreated != null,
+    );
   }
 
   void _onDestinationSelected(int index) {
@@ -293,14 +181,10 @@ class _AppScaffoldState extends State<AppScaffold> {
       _selectedIndex = index;
     });
     if (returningToToday) {
-      unawaited(_todayCubit.refreshMetadata());
-      final historyCubit = _historyCubit;
-      if (historyCubit != null) {
-        unawaited(historyCubit.refreshGoal());
-      }
+      _coordinator.onReturnToToday();
     }
     if (openingTrends) {
-      unawaited(_historyCubit!.refresh());
+      unawaited(_coordinator.ensureHistory().refresh());
     }
   }
 
@@ -334,7 +218,7 @@ class _AppScaffoldState extends State<AppScaffold> {
     final Future<void> pushFuture;
     switch (destination) {
       case MenuHubDestination.profile:
-        unawaited(_profileCubit.refresh());
+        unawaited(_coordinator.profile.refresh());
         pushFuture = navigator.push<void>(
           MaterialPageRoute<void>(
             settings: const RouteSettings(name: 'menu/profile'),
@@ -343,7 +227,7 @@ class _AppScaffoldState extends State<AppScaffold> {
               return _wrapMenuPushRoute(
                 destination,
                 BlocProvider.value(
-                  value: _profileCubit,
+                  value: _coordinator.profile,
                   child: SecondaryScreenShell(
                     title: l10n.menuProfile,
                     child: const ProfileScreen(showInlineTitle: false),
@@ -354,7 +238,7 @@ class _AppScaffoldState extends State<AppScaffold> {
           ),
         );
       case MenuHubDestination.data:
-        unawaited(_myDataCubit.refresh());
+        unawaited(_coordinator.myData.refresh());
         pushFuture = navigator.push<void>(
           MaterialPageRoute<void>(
             settings: const RouteSettings(name: 'menu/data'),
@@ -363,7 +247,7 @@ class _AppScaffoldState extends State<AppScaffold> {
               return _wrapMenuPushRoute(
                 destination,
                 BlocProvider.value(
-                  value: _myDataCubit,
+                  value: _coordinator.myData,
                   child: SecondaryScreenShell(
                     title: l10n.menuData,
                     child: const MyDataScreen(showInlineTitle: false),
@@ -374,14 +258,14 @@ class _AppScaffoldState extends State<AppScaffold> {
           ),
         );
       case MenuHubDestination.settings:
-        unawaited(_profileCubit.refresh());
+        unawaited(_coordinator.profile.refresh());
         pushFuture = navigator.push<void>(
           MaterialPageRoute<void>(
             settings: const RouteSettings(name: 'menu/settings'),
             builder: (context) => _wrapMenuPushRoute(
               destination,
               BlocProvider.value(
-                value: _profileCubit,
+                value: _coordinator.profile,
                 child: const SettingsScreen(),
               ),
             ),
