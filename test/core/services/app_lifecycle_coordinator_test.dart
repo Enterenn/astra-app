@@ -632,6 +632,67 @@ void main() {
           await captureMonitor.dispose();
         },
       );
+
+      test(
+        'onTodayCubitReady with enableLiveStepPipeline false waits backfill then refreshes Today',
+        () async {
+          final backfillDone = Completer<void>();
+          final todayCubit = TodayCubit(
+            stepAggregation: _ColdStartStepAggregation(clock),
+            userSettings: _ColdStartUserSettings(),
+            userHealthMetrics: _ColdStartUserHealthMetrics(),
+            clock: clock,
+            activityPermissionGranted: () async => true,
+          );
+
+          final seedDeps = buildCoordinatorUnitTestDeps(timeProvider: clock);
+          final delayingCollector = _DelayingBackgroundCollector(
+            sources: seedDeps.ingestionSources,
+            normalizer: seedDeps.stepNormalizer,
+            repository: seedDeps.stepIngestion,
+            stepAggregation: seedDeps.stepAggregation,
+            baselineRepository: IngestionBaselineRepository(
+              seedDeps.databaseSession,
+            ),
+            collectDelay: const Duration(milliseconds: 100),
+            onCollectStart: () {},
+            onCollectEnd: () {
+              if (!backfillDone.isCompleted) {
+                backfillDone.complete();
+              }
+            },
+          );
+          final deps = buildCoordinatorUnitTestDeps(
+            timeProvider: clock,
+            backgroundCollector: delayingCollector,
+          );
+          final monitor = deps.liveStepMonitor;
+
+          final coordinator = deps.appLifecycleCoordinator;
+          coordinator.bindToWidget(
+            isMounted: () => true,
+            showMainShell: () => true,
+            enablePeriodicPersist: false,
+            enableLiveStepPipeline: false,
+            maxPersistStaleness: const Duration(seconds: 1),
+            minPauseForPhoneCatchUp: const Duration(seconds: 10),
+            initialShowMainShell: true,
+          );
+
+          coordinator.onTodayCubitReady(todayCubit);
+          expect(monitor.isRunning, isFalse);
+
+          await backfillDone.future.timeout(const Duration(seconds: 2));
+          await pumpEventQueue();
+
+          expect(monitor.isRunning, isFalse);
+          expect(todayCubit.state.lastDisplayedStepsLoaded, isTrue);
+          expect(todayCubit.state.status, isNot(TodayStatus.loading));
+          expect(todayCubit.state.steps, 1200);
+
+          await todayCubit.close();
+        },
+      );
     });
 
     test(

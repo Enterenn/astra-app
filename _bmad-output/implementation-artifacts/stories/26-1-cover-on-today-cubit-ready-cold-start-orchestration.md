@@ -65,9 +65,9 @@ So that cold-start live-pipeline attachment regressions are caught without relyi
   - [x] Test: `onTodayCubitReady reconciles after foregroundBackfill completes` — assert post-backfill monitor reconcile / cubit steps sync
   - [x] **Stop → review brief → wait for Baptiste OK → commit**
 
-- [ ] **Sub-task C — Non-live pipeline branch** (AC: #3)
-  - [ ] Test: `onTodayCubitReady with enableLiveStepPipeline false waits backfill then refreshes Today` — `bindToWidget(enableLiveStepPipeline: false)`, spy/monitor `isRunning` stays false, cubit reaches loaded state via `refresh()`
-  - [ ] **Stop → review brief → wait for Baptiste OK → commit**
+- [x] **Sub-task C — Non-live pipeline branch** (AC: #3)
+  - [x] Test: `onTodayCubitReady with enableLiveStepPipeline false waits backfill then refreshes Today` — `bindToWidget(enableLiveStepPipeline: false)`, spy/monitor `isRunning` stays false, cubit reaches loaded state via `refresh()`
+  - [x] **Stop → review brief → wait for Baptiste OK → commit**
 
 - [ ] **Sub-task D — Regression verification** (AC: #4, #5)
   - [ ] Run `flutter test test/core/services/app_lifecycle_coordinator_test.dart --exclude-tags slow`
@@ -249,10 +249,12 @@ Composer
 
 - Sub-task A: AUD-50 gap confirmed — 3 existing calls at L432/L518/L622 without named group; behaviour covered, symbol grep failed audit contract.
 - Sub-task B: Added `group('onTodayCubitReady')` with 3 live-pipeline tests (fast path ordering, bind seed dedup, post-backfill reconcile).
+- Sub-task C: Added non-live branch test — monitor stays stopped, cubit loaded via refresh after backfill.
 
 ### Completion Notes List
 
 - ✅ Sub-task B: live cold-start sequencing under named group (AC #1, #2)
+- ✅ Sub-task C: non-live initialTodayRefresh path (AC #3)
 
 ### File List
 

@@ -1,6 +1,6 @@
 # generated: 2026-07-16
-# last_updated: 2026-07-19 (Story 26-1 in-progress — sub-task B)
-# NEXT: dev-story 26-1 sub-task C
+# last_updated: 2026-07-19 (Story 26-1 in-progress — sub-task C)
+# NEXT: dev-story 26-1 sub-task D
 # Ref: planning-artifacts/epics-post-audit.md · planning-artifacts/audits/
 # project: astra-app
 # project_key: NOKEY
@@ -63,7 +63,7 @@
 # NAVIGATION: _bmad-output/README.md · planning-artifacts/epics-post-audit.md
 
 generated: 2026-07-16
-last_updated: 2026-07-19 (Story 26-1 in-progress — sub-task B)
+last_updated: 2026-07-19 (Story 26-1 in-progress — sub-task C)
 project: astra-app
 project_key: NOKEY
 tracking_system: file-system
