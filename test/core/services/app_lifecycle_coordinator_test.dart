@@ -369,9 +369,10 @@ void main() {
       expect(calls, contains('start'));
     });
 
-    test(
-      'live cold start paints Today before foreground backfill completes',
-      () async {
+    group('onTodayCubitReady', () {
+      test(
+        'onTodayCubitReady runs refreshFastPath before backfill completes',
+        () async {
         final events = <String>[];
         final backfillDone = Completer<void>();
 
@@ -442,12 +443,12 @@ void main() {
         expect(todayCubit.state.status, isNot(TodayStatus.loading));
 
         await todayCubit.close();
-      },
-    );
+        },
+      );
 
-    test(
-      'cold start bind seeds monitor from fast-path steps — no extra getTodaySteps on bind (AUD-03)',
-      () async {
+      test(
+        'onTodayCubitReady binds monitor with fast-path seed without extra getTodaySteps on bind',
+        () async {
         // The coordinator must pass cubit.state.steps as seed on skipSqliteRefresh
         // cold bind. start() always receives the seed (called once). reconcileFromDatabase()
         // may be called multiple times (persist cycle + bind + post-backfill); at least
@@ -542,8 +543,96 @@ void main() {
 
         await todayCubit.close();
         await captureMonitor.dispose();
-      },
-    );
+        },
+      );
+
+      test(
+        'onTodayCubitReady reconciles after foregroundBackfill completes',
+        () async {
+          var backfillEnded = false;
+          var postBackfillReconcileSeen = false;
+          final backfillDone = Completer<void>();
+
+          final counting = _CountingStepAggregation(clock, stubbedSteps: 1200);
+          final todayCubit = TodayCubit(
+            stepAggregation: counting,
+            userSettings: _ColdStartUserSettings(),
+            userHealthMetrics: _ColdStartUserHealthMetrics(),
+            clock: clock,
+            activityPermissionGranted: () async => true,
+          );
+
+          final baselineRepo = IngestionBaselineRepository(
+            CoordinatorStubDatabase(),
+          );
+          final innerMonitor = LiveStepMonitor(
+            stepAggregation: counting,
+            baselineRepository: baselineRepo,
+            clock: clock,
+            stepEventStreamFactory: () => const Stream<PhoneStepEvent>.empty(),
+          );
+          final captureMonitor = _SeedCapturingMonitor(
+            inner: innerMonitor,
+            onStart: (_) {},
+            onReconcile: (_) {
+              if (backfillEnded) {
+                postBackfillReconcileSeen = true;
+              }
+            },
+          );
+
+          final seedDeps = buildCoordinatorUnitTestDeps(timeProvider: clock);
+          final delayingCollector = _DelayingBackgroundCollector(
+            sources: seedDeps.ingestionSources,
+            normalizer: seedDeps.stepNormalizer,
+            repository: seedDeps.stepIngestion,
+            stepAggregation: seedDeps.stepAggregation,
+            baselineRepository: IngestionBaselineRepository(
+              seedDeps.databaseSession,
+            ),
+            collectDelay: const Duration(milliseconds: 150),
+            onCollectStart: () {},
+            onCollectEnd: () {
+              backfillEnded = true;
+              if (!backfillDone.isCompleted) {
+                backfillDone.complete();
+              }
+            },
+          );
+          final deps = buildCoordinatorUnitTestDeps(
+            timeProvider: clock,
+            liveStepMonitor: captureMonitor,
+            backgroundCollector: delayingCollector,
+          );
+
+          final coordinator = deps.appLifecycleCoordinator;
+          coordinator.bindToWidget(
+            isMounted: () => true,
+            showMainShell: () => true,
+            enablePeriodicPersist: false,
+            enableLiveStepPipeline: true,
+            maxPersistStaleness: const Duration(seconds: 1),
+            minPauseForPhoneCatchUp: const Duration(seconds: 10),
+            initialShowMainShell: true,
+          );
+          coordinator.onTodayCubitReady(todayCubit);
+
+          await backfillDone.future.timeout(const Duration(seconds: 2));
+          await coordinator.foregroundBackfill;
+          await pumpEventQueue();
+
+          expect(
+            postBackfillReconcileSeen,
+            isTrue,
+            reason: 'reconcileAfterBackfillCompletes must run after backfill',
+          );
+          expect(todayCubit.state.steps, 1200);
+
+          await todayCubit.close();
+          await captureMonitor.dispose();
+        },
+      );
+    });
 
     test(
       'cold-start backfill passes Duration.zero to collectOnce (AUD-05)',

@@ -58,12 +58,12 @@ So that cold-start live-pipeline attachment regressions are caught without relyi
   - [x] Confirm diagnostic gap is **naming/contract**, not total absence of behaviour tests
   - [x] **Stop → review brief → wait for Baptiste OK → commit** (plan-only commit optional)
 
-- [ ] **Sub-task B — Named `onTodayCubitReady` live-pipeline group** (AC: #1, #2)
-  - [ ] Add `group('onTodayCubitReady', () { ... })` in `test/core/services/app_lifecycle_coordinator_test.dart`
-  - [ ] Test: `onTodayCubitReady runs refreshFastPath before backfill completes` — reuse `_DelayingBackgroundCollector` + event ordering pattern from existing test L372–445
-  - [ ] Test: `onTodayCubitReady binds monitor with fast-path seed without extra getTodaySteps on bind` — reuse `_SeedCapturingMonitor` + `_CountingStepAggregation` pattern from L448–545
-  - [ ] Test: `onTodayCubitReady reconciles after foregroundBackfill completes` — assert post-backfill monitor reconcile / cubit steps sync
-  - [ ] **Stop → review brief → wait for Baptiste OK → commit**
+- [x] **Sub-task B — Named `onTodayCubitReady` live-pipeline group** (AC: #1, #2)
+  - [x] Add `group('onTodayCubitReady', () { ... })` in `test/core/services/app_lifecycle_coordinator_test.dart`
+  - [x] Test: `onTodayCubitReady runs refreshFastPath before backfill completes` — reuse `_DelayingBackgroundCollector` + event ordering pattern from existing test L372–445
+  - [x] Test: `onTodayCubitReady binds monitor with fast-path seed without extra getTodaySteps on bind` — reuse `_SeedCapturingMonitor` + `_CountingStepAggregation` pattern from L448–545
+  - [x] Test: `onTodayCubitReady reconciles after foregroundBackfill completes` — assert post-backfill monitor reconcile / cubit steps sync
+  - [x] **Stop → review brief → wait for Baptiste OK → commit**
 
 - [ ] **Sub-task C — Non-live pipeline branch** (AC: #3)
   - [ ] Test: `onTodayCubitReady with enableLiveStepPipeline false waits backfill then refreshes Today` — `bindToWidget(enableLiveStepPipeline: false)`, spy/monitor `isRunning` stays false, cubit reaches loaded state via `refresh()`
@@ -248,9 +248,14 @@ Composer
 ### Debug Log References
 
 - Sub-task A: AUD-50 gap confirmed — 3 existing calls at L432/L518/L622 without named group; behaviour covered, symbol grep failed audit contract.
+- Sub-task B: Added `group('onTodayCubitReady')` with 3 live-pipeline tests (fast path ordering, bind seed dedup, post-backfill reconcile).
 
 ### Completion Notes List
 
+- ✅ Sub-task B: live cold-start sequencing under named group (AC #1, #2)
+
 ### File List
+
+- `test/core/services/app_lifecycle_coordinator_test.dart` (modified)
 
 ## Change Log
