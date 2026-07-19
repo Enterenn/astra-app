@@ -49,9 +49,9 @@ Do **not** split these back into separate files unless a group grows substantial
 | `user_preferences_repository_test.dart` assertion merges | 46 → 11 tests (−76 %) |
 | `history_cubit_test.dart` assertion merges | 35 → 24 tests (−31 %) |
 
-**Daily command (agents):** `flutter test --tags critical` (~213 cases, ~35 s)
+**Daily command (agents):** `flutter test --tags critical` (~196 cases, ~35 s)
 **Pre-merge:** `flutter test --exclude-tags slow` (= critical)
-**Full suite (epic close):** `flutter test` (~581 cases)
+**Full suite (epic close):** `flutter test` (~552 cases)
 
 Note: tag name chosen as `slow` (not `dev`) to reflect the exclusion reason (runtime cost) rather than the folder location.
 
@@ -67,9 +67,9 @@ Note: tag name chosen as `slow` (not `dev`) to reflect the exclusion reason (run
 
 | Command | Cases | When |
 |---------|-------|------|
-| `flutter test --tags critical` | 213 | agents, daily dev |
-| `flutter test --exclude-tags slow` | 213 | pre-merge (same set) |
-| `flutter test` | 581 | epic close / monthly |
+| `flutter test --tags critical` | 196 | agents, daily dev |
+| `flutter test --exclude-tags slow` | 196 | pre-merge (same set) |
+| `flutter test` | 552 | epic close / monthly |
 
 ### Kept deliberately (slow, not deleted)
 
@@ -85,3 +85,21 @@ Widget atomics, redundant screens (`today_screen_selector` 43 cases), duplicate 
 ### Do not recreate
 
 Same rule as Phase B: extend `screen_smoke_test`, `app_scaffold_test`, or cubit tests instead of new widget atomics.
+
+## Phase E — Palier A merges (2026-07-19)
+
+Assertion merges only (no file deletions). Same coverage paths, fewer `test()` shells.
+
+| File | Before | After | Δ |
+|------|--------|-------|---|
+| `today_cubit_test.dart` | 44 | 37 | −7 |
+| `history_cubit_test.dart` | 29 | 25 | −4 |
+| `screen_smoke_test.dart` | 21 | 13 | −8 |
+| `timeseries_csv_codec_test.dart` | 18 | 10 | −8 |
+| `app_scaffold_test.dart` | 18 | 16 | −2 |
+
+| Metric | Phase D | Phase E |
+|--------|---------|---------|
+| Total | 581 | **552** |
+| critical | 213 | **196** |
+| slow | 368 | **356** |

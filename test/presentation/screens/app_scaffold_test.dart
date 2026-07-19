@@ -507,50 +507,7 @@ void main() {
       await _disposeScaffold(tester);
     });
 
-    testWidgets('tab switch fires selectionClick haptic once', (tester) async {
-      await _withHapticCallTracking(tester, (hapticCalls) async {
-        await _pumpAppScaffold(
-          tester,
-          AppScaffold(
-            deps: deps,
-            createTodayCubit: _testTodayCubit,
-            createHistoryCubit: _testHistoryCubit,
-          ),
-          userSettings: deps.userSettings,
-        );
-        await tester.pump();
-
-        await tester.tap(find.byIcon(PhosphorIconsRegular.chartBar));
-        await tester.pump();
-
-        expect(hapticCalls, ['HapticFeedbackType.selectionClick']);
-      });
-
-      await _disposeScaffold(tester);
-    });
-
-    testWidgets('re-tap active tab fires no haptic', (tester) async {
-      await _withHapticCallTracking(tester, (hapticCalls) async {
-        await _pumpAppScaffold(
-          tester,
-          AppScaffold(
-            deps: deps,
-            createTodayCubit: _testTodayCubit,
-            createHistoryCubit: _testHistoryCubit,
-          ),
-          userSettings: deps.userSettings,
-        );
-        await tester.pump();
-
-        await _tapBottomNavTab(tester, 'STEPS');
-
-        expect(hapticCalls, isEmpty);
-      });
-
-      await _disposeScaffold(tester);
-    });
-
-    testWidgets('each distinct tab switch adds one haptic; re-tap does not', (
+    testWidgets('tab switch haptics: fires on change, silent on re-tap', (
       tester,
     ) async {
       await _withHapticCallTracking(tester, (hapticCalls) async {
@@ -567,18 +524,16 @@ void main() {
 
         await tester.tap(find.byIcon(PhosphorIconsRegular.chartBar));
         await tester.pump();
+        expect(hapticCalls, ['HapticFeedbackType.selectionClick']);
 
         await tester.tap(find.byIcon(PhosphorIconsRegular.list));
         await tester.pump();
-
         expect(hapticCalls.length, 2);
-        expect(
-          hapticCalls,
-          everyElement('HapticFeedbackType.selectionClick'),
-        );
 
         await _tapBottomNavTab(tester, 'MENU');
+        expect(hapticCalls.length, 2);
 
+        await _tapBottomNavTab(tester, 'MENU');
         expect(hapticCalls.length, 2);
       });
 

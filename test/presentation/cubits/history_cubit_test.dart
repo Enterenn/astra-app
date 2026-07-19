@@ -312,9 +312,9 @@ void main() {
       expect(c3.state.trend?.direction, TrendDirection.flat);
       expect(c3.state.trend?.percent, 0);
       c3.close();
-    });
 
-    test('trend shows no prior week copy when prior week is empty', () async {
+      // no prior week: flat with null percent
+      await db.delete('timeseries_samples');
       await stepRepos.ingestion.upsertIngestionBucket(
         _bucket(
           startTimeUtc: DateTime.utc(2026, 6, 2, 10),
@@ -322,12 +322,11 @@ void main() {
           zoneOffset: '+02:00',
         ),
       );
-      final cubit = buildCubit();
-      await cubit.refresh();
-
-      expect(cubit.state.trend?.direction, TrendDirection.flat);
-      expect(cubit.state.trend?.percent, isNull);
-      cubit.close();
+      final c4 = buildCubit();
+      await c4.refresh();
+      expect(c4.state.trend?.direction, TrendDirection.flat);
+      expect(c4.state.trend?.percent, isNull);
+      c4.close();
     });
 
     // ── Concurrency & error resilience ───────────────────────────────────────
@@ -406,15 +405,32 @@ void main() {
 
     // ── refreshGoal ──────────────────────────────────────────────────────────
 
-    test('refreshGoal updates daily goal without chart repository call', () async {
-      await DataInjectService(repository: stepRepos.ingestion).inject90Days(
-        clock: clock,
+    test('refreshGoal updates daily goal and goalsByDay without chart re-query', () async {
+      await db.insert('daily_goal_effective', {
+        'effective_from_local_day': '2026-06-01',
+        'goal': 8000,
+      });
+      await stepRepos.ingestion.upsertIngestionBucket(
+        _bucket(
+          startTimeUtc: DateTime.utc(2026, 6, 1, 10),
+          value: 5000,
+          zoneOffset: '+02:00',
+        ),
+      );
+      await stepRepos.ingestion.upsertIngestionBucket(
+        _bucket(
+          startTimeUtc: DateTime.utc(2026, 6, 2, 10),
+          value: 5000,
+          zoneOffset: '+02:00',
+        ),
       );
       final spy = _ChartAggregateSpyRepository(stepRepos.aggregation);
       final cubit = buildCubit(stepAggregation: spy);
 
       await cubit.refresh();
       expect(spy.chartAggregateCallCount, 1);
+      expect(cubit.state.goalsByDay['2026-06-01'], 8000);
+      expect(cubit.state.goalsByDay['2026-06-02'], 8000);
 
       await userHealthMetrics.setDailyStepGoal(12_000);
       await cubit.refreshGoal();
@@ -422,10 +438,10 @@ void main() {
       expect(spy.chartAggregateCallCount, 1);
       expect(cubit.state.dailyGoal, 12_000);
       expect(cubit.state.status, HistoryStatus.ready);
+      expect(cubit.state.goalsByDay['2026-06-02'], 12_000);
+      expect(cubit.state.goalsByDay['2026-06-01'], 8000);
       cubit.close();
     });
-
-    // ── goalsByDay ───────────────────────────────────────────────────────────
 
     test('refresh resolves goalsByDay for chart window', () async {
       await db.insert('daily_goal_effective', {
@@ -451,42 +467,6 @@ void main() {
       expect(cubit.state.goalsByDay['2026-05-27'], 8000);
       expect(cubit.state.goalsByDay['2026-06-01'], 10_000);
       expect(cubit.state.goalsByDay['2026-06-02'], 10_000);
-      cubit.close();
-    });
-
-    test('refreshGoal updates goalsByDay without re-querying steps', () async {
-      await db.insert('daily_goal_effective', {
-        'effective_from_local_day': '2026-06-01',
-        'goal': 8000,
-      });
-      await stepRepos.ingestion.upsertIngestionBucket(
-        _bucket(
-          startTimeUtc: DateTime.utc(2026, 6, 1, 10),
-          value: 5000,
-          zoneOffset: '+02:00',
-        ),
-      );
-      await stepRepos.ingestion.upsertIngestionBucket(
-        _bucket(
-          startTimeUtc: DateTime.utc(2026, 6, 2, 10),
-          value: 5000,
-          zoneOffset: '+02:00',
-        ),
-      );
-      final spy = _ChartAggregateSpyRepository(stepRepos.aggregation);
-      final cubit = buildCubit(stepAggregation: spy);
-
-      await cubit.refresh();
-      expect(cubit.state.goalsByDay['2026-06-01'], 8000);
-      expect(cubit.state.goalsByDay['2026-06-02'], 8000);
-
-      await userHealthMetrics.setDailyStepGoal(12_000);
-      await cubit.refreshGoal();
-
-      expect(spy.chartAggregateCallCount, 1);
-      expect(cubit.state.dailyGoal, 12_000);
-      expect(cubit.state.goalsByDay['2026-06-02'], 12_000);
-      expect(cubit.state.goalsByDay['2026-06-01'], 8000);
       cubit.close();
     });
 
@@ -555,6 +535,7 @@ void main() {
       final c1 = buildCubit();
       await c1.refresh();
       expect(c1.state.periodAverages?.averageSteps, 1000);
+      expect(c1.state.periodAverages?.averageKcal, greaterThan(0));
       c1.close();
 
       // 1 day × 7000 over 7-day window also averages to 1000 (zero days counted)
@@ -570,21 +551,6 @@ void main() {
       await c2.refresh();
       expect(c2.state.periodAverages?.averageSteps, 1000);
       c2.close();
-    });
-
-    test('periodAverages kcal uses bucket-based DerivedActivityMetrics', () async {
-      await stepRepos.ingestion.upsertIngestionBucket(
-        _bucket(
-          startTimeUtc: DateTime.utc(2026, 6, 2, 10),
-          value: 100,
-          zoneOffset: '+02:00',
-        ),
-      );
-      final cubit = buildCubit();
-      await cubit.refresh();
-
-      expect(cubit.state.periodAverages?.averageKcal, greaterThan(0));
-      cubit.close();
     });
 
     test(
@@ -765,7 +731,7 @@ void main() {
 
     // ── Local insight cards (Story 20-2) ─────────────────────────────────────
 
-    test('insights: fewer than seven days with steps yields empty availability', () async {
+    test('insights: availability thresholds at six vs ten days with steps', () async {
       for (var dayOffset = 0; dayOffset < 6; dayOffset++) {
         await stepRepos.ingestion.upsertIngestionBucket(
           _bucket(
@@ -775,17 +741,15 @@ void main() {
           ),
         );
       }
-      final cubit = buildCubit();
-      await cubit.refresh();
+      final sparse = buildCubit();
+      await sparse.refresh();
+      expect(sparse.state.status, HistoryStatus.ready);
+      expect(sparse.state.insightAvailability?.hasMinimumHistory, isFalse);
+      expect(sparse.state.mostActiveWeekday, isNull);
+      expect(sparse.state.goalStreak, isNull);
+      sparse.close();
 
-      expect(cubit.state.status, HistoryStatus.ready);
-      expect(cubit.state.insightAvailability?.hasMinimumHistory, isFalse);
-      expect(cubit.state.mostActiveWeekday, isNull);
-      expect(cubit.state.goalStreak, isNull);
-      cubit.close();
-    });
-
-    test('insights: seven to thirteen days enables weekday and streak but not weekly', () async {
+      await db.delete('timeseries_samples');
       for (var dayOffset = 0; dayOffset < 10; dayOffset++) {
         await stepRepos.ingestion.upsertIngestionBucket(
           _bucket(
@@ -795,14 +759,13 @@ void main() {
           ),
         );
       }
-      final cubit = buildCubit();
-      await cubit.refresh();
-
-      expect(cubit.state.insightAvailability?.hasMinimumHistory, isTrue);
-      expect(cubit.state.insightAvailability?.hasWeeklyComparison, isFalse);
-      expect(cubit.state.mostActiveWeekday, isNotNull);
-      expect(cubit.state.goalStreak, isNotNull);
-      cubit.close();
+      final enough = buildCubit();
+      await enough.refresh();
+      expect(enough.state.insightAvailability?.hasMinimumHistory, isTrue);
+      expect(enough.state.insightAvailability?.hasWeeklyComparison, isFalse);
+      expect(enough.state.mostActiveWeekday, isNotNull);
+      expect(enough.state.goalStreak, isNotNull);
+      enough.close();
     });
 
     test('mostActiveWeekday: selects highest weekday average with tie-break', () async {

@@ -142,7 +142,7 @@ void main() {
 
     // ── Status transitions ──
 
-    test('refresh emits progress when steps are below goal', () async {
+    test('refresh status: progress, goalMet, and overflow clamp progressRatio', () async {
       await stepRepos.ingestion.upsertIngestionBucket(
         _bucket(
           startTimeUtc: DateTime.utc(2026, 6, 2, 10),
@@ -150,16 +150,14 @@ void main() {
           zoneOffset: '+02:00',
         ),
       );
-      final cubit = buildCubit();
-      await cubit.refresh();
+      final c0 = buildCubit();
+      await c0.refresh();
+      expect(c0.state.status, TodayStatus.progress);
+      expect(c0.state.steps, 3000);
+      expect(c0.state.progressRatio, closeTo(3000 / kDefaultStepGoal, 0.001));
+      c0.close();
 
-      expect(cubit.state.status, TodayStatus.progress);
-      expect(cubit.state.steps, 3000);
-      expect(cubit.state.progressRatio, closeTo(3000 / kDefaultStepGoal, 0.001));
-      cubit.close();
-    });
-
-    test('refresh status goalMet and overflow: both clamp progressRatio to 1', () async {
+      await db.delete('timeseries_samples');
       await userHealthMetrics.setDailyStepGoal(5000);
       await stepRepos.ingestion.upsertIngestionBucket(
         _bucket(
@@ -175,7 +173,14 @@ void main() {
       expect(c1.state.progressRatio, 1);
       c1.close();
 
-      // add more steps past the goal → overflow
+      await db.delete('timeseries_samples');
+      await stepRepos.ingestion.upsertIngestionBucket(
+        _bucket(
+          startTimeUtc: DateTime.utc(2026, 6, 2, 10),
+          value: 5000,
+          zoneOffset: '+02:00',
+        ),
+      );
       await stepRepos.ingestion.upsertIngestionBucket(
         _bucket(
           startTimeUtc: DateTime.utc(2026, 6, 2, 10, 10),
@@ -193,7 +198,7 @@ void main() {
 
     // ── Stale detection ──
 
-    test('stale detection on Android: boundary (12 h, not stale) and just past (stale)', () async {
+    test('stale detection: Android 12 h and iOS 4 h boundaries', () async {
       await stepRepos.ingestion.upsertIngestionBucket(
         _bucket(
           startTimeUtc: DateTime.utc(2026, 6, 2, 0),
@@ -202,10 +207,10 @@ void main() {
           zoneOffset: '+02:00',
         ),
       );
-      final c1 = buildCubit(isIos: false);
-      await c1.refresh();
-      expect(c1.state.isStale, isFalse);
-      c1.close();
+      final androidFresh = buildCubit(isIos: false);
+      await androidFresh.refresh();
+      expect(androidFresh.state.isStale, isFalse);
+      androidFresh.close();
 
       await db.delete('timeseries_samples');
       await stepRepos.ingestion.upsertIngestionBucket(
@@ -216,13 +221,12 @@ void main() {
           zoneOffset: '+02:00',
         ),
       );
-      final c2 = buildCubit(isIos: false);
-      await c2.refresh();
-      expect(c2.state.isStale, isTrue);
-      c2.close();
-    });
+      final androidStale = buildCubit(isIos: false);
+      await androidStale.refresh();
+      expect(androidStale.state.isStale, isTrue);
+      androidStale.close();
 
-    test('stale detection on iOS: boundary (4 h, not stale) and just past (stale)', () async {
+      await db.delete('timeseries_samples');
       await stepRepos.ingestion.upsertIngestionBucket(
         _bucket(
           startTimeUtc: DateTime.utc(2026, 6, 2, 8),
@@ -231,10 +235,10 @@ void main() {
           zoneOffset: '+02:00',
         ),
       );
-      final c1 = buildCubit(isIos: true);
-      await c1.refresh();
-      expect(c1.state.isStale, isFalse);
-      c1.close();
+      final iosFresh = buildCubit(isIos: true);
+      await iosFresh.refresh();
+      expect(iosFresh.state.isStale, isFalse);
+      iosFresh.close();
 
       await db.delete('timeseries_samples');
       await stepRepos.ingestion.upsertIngestionBucket(
@@ -245,10 +249,10 @@ void main() {
           zoneOffset: '+02:00',
         ),
       );
-      final c2 = buildCubit(isIos: true);
-      await c2.refresh();
-      expect(c2.state.isStale, isTrue);
-      c2.close();
+      final iosStale = buildCubit(isIos: true);
+      await iosStale.refresh();
+      expect(iosStale.state.isStale, isTrue);
+      iosStale.close();
     });
 
     // ── Silent refresh ──
@@ -432,7 +436,7 @@ void main() {
 
     // ── Live stream ──
 
-    test('live stream updates steps without refresh', () async {
+    test('live stream updates steps and refresh preserves higher live total', () async {
       final events = StreamController<PhoneStepEvent>.broadcast();
       final monitor = LiveStepMonitor(
         stepAggregation: stepRepos.aggregation,
@@ -450,7 +454,6 @@ void main() {
       events.add(
         PhoneStepEvent(steps: 10, timeStamp: DateTime.utc(2026, 6, 2, 12)),
       );
-      // ~12 min gap so +3490 credits fully under 5 steps/s rate limit (story 6.2).
       events.add(
         PhoneStepEvent(steps: 3500, timeStamp: DateTime.utc(2026, 6, 2, 12, 12)),
       );
@@ -458,6 +461,10 @@ void main() {
 
       expect(cubit.state.steps, 3490);
       expect(cubit.state.status, TodayStatus.progress);
+
+      await cubit.refresh();
+      expect(cubit.state.steps, greaterThanOrEqualTo(3490));
+
       await cubit.close();
       await monitor.dispose();
       await events.close();
@@ -490,39 +497,6 @@ void main() {
 
       expect(cubit.state.showCelebration, isTrue);
       expect(cubit.state.steps, 3000);
-      await cubit.close();
-      await monitor.dispose();
-      await events.close();
-    });
-
-    test('refresh does not lower steps after live stream reported higher', () async {
-      final events = StreamController<PhoneStepEvent>.broadcast();
-      final monitor = LiveStepMonitor(
-        stepAggregation: stepRepos.aggregation,
-        baselineRepository: IngestionBaselineRepository(db),
-        clock: clock,
-        stepEventStreamFactory: () => events.stream,
-        emitThrottle: Duration.zero,
-      );
-      final cubit = buildCubit();
-      await cubit.refresh();
-      cubit.attachLiveMonitor(monitor);
-      await monitor.start();
-      await monitor.reconcileFromDatabase();
-
-      events.add(
-        PhoneStepEvent(steps: 100, timeStamp: DateTime.utc(2026, 6, 2, 12)),
-      );
-      // 3.5 min gap for +1050 delta under rate limit (story 6.2).
-      events.add(
-        PhoneStepEvent(steps: 1150, timeStamp: DateTime.utc(2026, 6, 2, 12, 3, 30)),
-      );
-      await Future<void>.delayed(const Duration(milliseconds: 10));
-      expect(cubit.state.steps, 1050);
-
-      await cubit.refresh();
-      expect(cubit.state.steps, greaterThanOrEqualTo(1050));
-
       await cubit.close();
       await monitor.dispose();
       await events.close();
@@ -594,36 +568,7 @@ void main() {
 
     // ── lastDisplayedSteps ──
 
-    test('refresh ignores stale-high lastDisplayed prefs in favor of SQLite', () async {
-      final localDay = formatLocalDayIso(clock.snapshot());
-      await stepRepos.ingestion.upsertIngestionBucket(
-        NormalizedStepBucket(
-          startTimeUtc: DateTime.utc(2026, 6, 2, 6),
-          endTimeUtc: DateTime.utc(2026, 6, 2, 6, 5),
-          value: 4292,
-          provider: kInternalPhoneProvider,
-          deviceId: kSmartphoneDeviceId,
-          zoneOffset: '+02:00',
-        ),
-      );
-      await userSettings.setLastDisplayedSteps(
-        localDayIso: localDay,
-        steps: 4374,
-      );
-
-      final cubit = buildCubit();
-      await cubit.refresh();
-
-      expect(cubit.state.steps, 4292);
-      expect(cubit.state.lastDisplayedSteps, 4374);
-      expect(cubit.state.lastDisplayedStepsLoaded, isTrue);
-      await cubit.syncSteps(4292, clampStaleDisplay: true);
-      expect(await userSettings.getLastDisplayedSteps(localDay), 4292);
-      expect(cubit.state.lastDisplayedSteps, 4292);
-      cubit.close();
-    });
-
-    test('cold start stays loading until steps and lastDisplayedSteps load', () async {
+    test('lastDisplayedSteps: cold start gate, prefs load, record, stale-high clamp', () async {
       final permissionGate = Completer<bool>();
       final localDay = formatLocalDayIso(clock.snapshot());
       await userSettings.setLastDisplayedSteps(
@@ -638,28 +583,26 @@ void main() {
         ),
       );
 
-      final cubit = buildCubit(
+      final coldStart = buildCubit(
         activityPermissionGranted: () => permissionGate.future,
       );
-      expect(cubit.state.status, TodayStatus.loading);
-      expect(cubit.state.lastDisplayedStepsLoaded, isFalse);
+      expect(coldStart.state.status, TodayStatus.loading);
+      expect(coldStart.state.lastDisplayedStepsLoaded, isFalse);
 
       permissionGate.complete(true);
-      await cubit.refresh();
+      await coldStart.refresh();
 
-      expect(cubit.state.lastDisplayedStepsLoaded, isTrue);
-      expect(cubit.state.lastDisplayedSteps, 1200);
-      expect(cubit.state.steps, 3500);
-      expect(cubit.state.status, TodayStatus.progress);
-      cubit.close();
-    });
+      expect(coldStart.state.lastDisplayedStepsLoaded, isTrue);
+      expect(coldStart.state.lastDisplayedSteps, 1200);
+      expect(coldStart.state.steps, 3500);
+      expect(coldStart.state.status, TodayStatus.progress);
+      coldStart.close();
 
-    test('refresh loads lastDisplayedSteps from prefs', () async {
-      final localDay = formatLocalDayIso(clock.snapshot());
       await userSettings.setLastDisplayedSteps(
         localDayIso: localDay,
         steps: 2500,
       );
+      await db.delete('timeseries_samples');
       await stepRepos.ingestion.upsertIngestionBucket(
         _bucket(
           startTimeUtc: DateTime.utc(2026, 6, 2, 10),
@@ -667,26 +610,43 @@ void main() {
           zoneOffset: '+02:00',
         ),
       );
+      final prefsLoad = buildCubit();
+      await prefsLoad.refresh();
+      expect(prefsLoad.state.lastDisplayedStepsLoaded, isTrue);
+      expect(prefsLoad.state.lastDisplayedSteps, 2500);
+      prefsLoad.close();
 
-      final cubit = buildCubit();
-      await cubit.refresh();
-
-      expect(cubit.state.lastDisplayedStepsLoaded, isTrue);
-      expect(cubit.state.lastDisplayedSteps, 2500);
-      cubit.close();
-    });
-
-    test('recordLastDisplayedSteps persists to prefs and updates state', () async {
-      final cubit = buildCubit();
-      await cubit.refresh();
-      final localDay = formatLocalDayIso(clock.snapshot());
-
-      await cubit.recordLastDisplayedSteps(1234);
+      final record = buildCubit();
+      await record.refresh();
+      await record.recordLastDisplayedSteps(1234);
       await Future<void>.delayed(const Duration(milliseconds: 50));
-
-      expect(cubit.state.lastDisplayedSteps, 1234);
+      expect(record.state.lastDisplayedSteps, 1234);
       expect(await userSettings.getLastDisplayedSteps(localDay), 1234);
-      cubit.close();
+      record.close();
+
+      await db.delete('timeseries_samples');
+      await stepRepos.ingestion.upsertIngestionBucket(
+        NormalizedStepBucket(
+          startTimeUtc: DateTime.utc(2026, 6, 2, 6),
+          endTimeUtc: DateTime.utc(2026, 6, 2, 6, 5),
+          value: 4292,
+          provider: kInternalPhoneProvider,
+          deviceId: kSmartphoneDeviceId,
+          zoneOffset: '+02:00',
+        ),
+      );
+      await userSettings.setLastDisplayedSteps(
+        localDayIso: localDay,
+        steps: 4374,
+      );
+      final staleHigh = buildCubit();
+      await staleHigh.refresh();
+      expect(staleHigh.state.steps, 4292);
+      expect(staleHigh.state.lastDisplayedSteps, 4374);
+      await staleHigh.syncSteps(4292, clampStaleDisplay: true);
+      expect(await userSettings.getLastDisplayedSteps(localDay), 4292);
+      expect(staleHigh.state.lastDisplayedSteps, 4292);
+      staleHigh.close();
     });
 
     // ── Distance / activity metrics ──
@@ -936,32 +896,27 @@ void main() {
     // ── Batch goal call-count (AC #4, #5) ──────────────────────────────────
 
     group('batch goal call-count', () {
-      test('refresh() uses getGoalsForLocalDays once, getGoalForLocalDay once', () async {
+      test('refresh and refreshFastPath each use getGoalsForLocalDays once', () async {
         final spy = _BatchGoalSpyHealthMetricsRepository(db, clock: clock);
-        final cubit = buildCubit(healthMetrics: spy);
+        final refreshCubit = buildCubit(healthMetrics: spy);
 
-        await cubit.refresh();
-
+        await refreshCubit.refresh();
         expect(spy.getGoalsForLocalDaysCallCount, 1);
-        expect(spy.getGoalForLocalDayCallCount, 1); // only _resolveTodayGoal
-        cubit.close();
-      });
+        expect(spy.getGoalForLocalDayCallCount, 1);
+        refreshCubit.close();
 
-      test('refreshFastPath() enrichment uses getGoalsForLocalDays once', () async {
-        final spy = _BatchGoalSpyHealthMetricsRepository(db, clock: clock);
-        final cubit = buildCubit(healthMetrics: spy);
-
-        await cubit.refreshFastPath();
-        // pump until enrichment delivers weekDays
+        final fastSpy = _BatchGoalSpyHealthMetricsRepository(db, clock: clock);
+        final fastCubit = buildCubit(healthMetrics: fastSpy);
+        await fastCubit.refreshFastPath();
         for (var i = 0; i < 100; i++) {
-          if (cubit.state.weekDays.length == 7) break;
+          if (fastCubit.state.weekDays.length == 7) break;
           await pumpEventQueue();
         }
 
-        expect(cubit.state.weekDays, hasLength(7));
-        expect(spy.getGoalsForLocalDaysCallCount, 1);
-        expect(spy.getGoalForLocalDayCallCount, 1); // only _resolveTodayGoal
-        cubit.close();
+        expect(fastCubit.state.weekDays, hasLength(7));
+        expect(fastSpy.getGoalsForLocalDaysCallCount, 1);
+        expect(fastSpy.getGoalForLocalDayCallCount, 1);
+        fastCubit.close();
       });
     });
 

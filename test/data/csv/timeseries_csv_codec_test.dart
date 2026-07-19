@@ -12,33 +12,25 @@ import 'package:flutter_test/flutter_test.dart';
 
 void main() {
   group('TimeseriesCsvCodec serialize', () {
-    test('header row uses exact OW column order', () {
+    test('header row and serializeRow integer / full row output', () {
       expect(
         TimeseriesCsvCodec.headerRow,
         'id,start_time,end_time,type,value,unit,resolution,provider,device_id,zone_offset',
       );
-    });
 
-    test('serializeRow emits integer string for steps value', () {
       final row = TimeseriesCsvCodec.serializeRow(_sample(value: 132));
-
       expect(row.split(','), hasLength(10));
       expect(row.split(',')[4], '132');
       expect(row, isNot(contains('.0')));
-    });
 
-    test('serializeRow preserves DB map strings unchanged', () {
-      final sample = _sample(
+      final fullSample = _sample(
         id: 'a1b2c3d4-e5f6-7890-abcd-ef1234567890',
         startTimeUtc: DateTime.utc(2026, 5, 22, 14, 30),
         endTimeUtc: DateTime.utc(2026, 5, 22, 14, 35),
         zoneOffset: '+02:00',
       );
-
-      final row = TimeseriesCsvCodec.serializeRow(sample);
-
       expect(
-        row,
+        TimeseriesCsvCodec.serializeRow(fullSample),
         'a1b2c3d4-e5f6-7890-abcd-ef1234567890,'
         '2026-05-22T14:30:00Z,'
         '2026-05-22T14:35:00Z,'
@@ -63,9 +55,21 @@ void main() {
   });
 
   group('TimeseriesCsvCodec parse', () {
-    test('parseHeaderRow accepts exact OW header', () {
+    test('parseHeaderRow accepts exact header, CRLF suffix, and UTF-8 BOM', () {
       expect(
         () => TimeseriesCsvCodec.parseHeaderRow(TimeseriesCsvCodec.headerRow),
+        returnsNormally,
+      );
+      expect(
+        () => TimeseriesCsvCodec.parseHeaderRow(
+          '${TimeseriesCsvCodec.headerRow}\r',
+        ),
+        returnsNormally,
+      );
+      expect(
+        () => TimeseriesCsvCodec.parseHeaderRow(
+          '\uFEFF${TimeseriesCsvCodec.headerRow}',
+        ),
         returnsNormally,
       );
     });
@@ -90,18 +94,7 @@ void main() {
       expect(parsed.zoneOffset, sample.zoneOffset);
     });
 
-    test('parseDataRow accepts integer steps value', () {
-      final parsed = TimeseriesCsvCodec.parseDataRow(
-        '00000000-0000-4000-8000-000000000001,'
-        '2026-05-22T14:30:00Z,'
-        '2026-05-22T14:35:00Z,'
-        'steps,42,count,5min,internal_phone,smartphone,+02:00',
-        rowNumber: 1,
-      );
-      expect(parsed.value, 42);
-    });
-
-    test('parseDataRow rejects non-integer steps value', () {
+    test('parseDataRow rejects invalid steps value and non-steps type', () {
       expect(
         () => TimeseriesCsvCodec.parseDataRow(
           '00000000-0000-4000-8000-000000000001,'
@@ -113,6 +106,20 @@ void main() {
         throwsA(
           predicate<ImportValidationException>(
             (e) => e.message.contains('Row 3'),
+          ),
+        ),
+      );
+      expect(
+        () => TimeseriesCsvCodec.parseDataRow(
+          '00000000-0000-4000-8000-000000000001,'
+          '2026-05-22T14:30:00Z,'
+          '2026-05-22T14:35:00Z,'
+          'heart_rate,42,count,5min,internal_phone,smartphone,+02:00',
+          rowNumber: 2,
+        ),
+        throwsA(
+          predicate<ImportValidationException>(
+            (e) => e.message.contains('Row 2'),
           ),
         ),
       );
@@ -130,21 +137,38 @@ void main() {
       expect(fields.single, 'line\rend');
     });
 
-    test('parseHeaderRow handles CRLF-stripped header line', () {
-      expect(
-        () => TimeseriesCsvCodec.parseHeaderRow(
-          '${TimeseriesCsvCodec.headerRow}\r',
-        ),
-        returnsNormally,
+    test('parseDataRow id validation: UUID v4, base36, rejects garbage', () {
+      final uuidParsed = TimeseriesCsvCodec.parseDataRow(
+        'a1b2c3d4-e5f6-7890-abcd-ef1234567890,'
+        '2026-05-22T14:30:00Z,'
+        '2026-05-22T14:35:00Z,'
+        'steps,42,count,5min,internal_phone,smartphone,+02:00',
+        rowNumber: 1,
       );
-    });
+      expect(uuidParsed.id, 'a1b2c3d4-e5f6-7890-abcd-ef1234567890');
 
-    test('parseHeaderRow accepts UTF-8 BOM prefix', () {
+      final base36Parsed = TimeseriesCsvCodec.parseDataRow(
+        'l7x3k2m-1,'
+        '2026-05-22T14:30:00Z,'
+        '2026-05-22T14:35:00Z,'
+        'steps,42,count,5min,internal_phone,smartphone,+02:00',
+        rowNumber: 1,
+      );
+      expect(base36Parsed.id, 'l7x3k2m-1');
+
       expect(
-        () => TimeseriesCsvCodec.parseHeaderRow(
-          '\uFEFF${TimeseriesCsvCodec.headerRow}',
+        () => TimeseriesCsvCodec.parseDataRow(
+          'not-a-valid-id!,'
+          '2026-05-22T14:30:00Z,'
+          '2026-05-22T14:35:00Z,'
+          'steps,42,count,5min,internal_phone,smartphone,+02:00',
+          rowNumber: 5,
         ),
-        returnsNormally,
+        throwsA(
+          predicate<ImportValidationException>(
+            (e) => e.message.contains('Row 5: id must be a valid sample id'),
+          ),
+        ),
       );
     });
 
@@ -160,64 +184,6 @@ void main() {
       expect(parsed.single.deviceId, 'phone\ntest');
 
       await file.delete();
-    });
-
-    test('parseDataRow rejects non-steps type', () {
-      expect(
-        () => TimeseriesCsvCodec.parseDataRow(
-          '00000000-0000-4000-8000-000000000001,'
-          '2026-05-22T14:30:00Z,'
-          '2026-05-22T14:35:00Z,'
-          'heart_rate,42,count,5min,internal_phone,smartphone,+02:00',
-          rowNumber: 2,
-        ),
-        throwsA(
-          predicate<ImportValidationException>(
-            (e) => e.message.contains('Row 2'),
-          ),
-        ),
-      );
-    });
-
-    test('parseDataRow accepts legacy UUID v4 id', () {
-      final parsed = TimeseriesCsvCodec.parseDataRow(
-        'a1b2c3d4-e5f6-7890-abcd-ef1234567890,'
-        '2026-05-22T14:30:00Z,'
-        '2026-05-22T14:35:00Z,'
-        'steps,42,count,5min,internal_phone,smartphone,+02:00',
-        rowNumber: 1,
-      );
-
-      expect(parsed.id, 'a1b2c3d4-e5f6-7890-abcd-ef1234567890');
-    });
-
-    test('parseDataRow accepts base36 timestamp id', () {
-      final parsed = TimeseriesCsvCodec.parseDataRow(
-        'l7x3k2m-1,'
-        '2026-05-22T14:30:00Z,'
-        '2026-05-22T14:35:00Z,'
-        'steps,42,count,5min,internal_phone,smartphone,+02:00',
-        rowNumber: 1,
-      );
-
-      expect(parsed.id, 'l7x3k2m-1');
-    });
-
-    test('parseDataRow rejects garbage id', () {
-      expect(
-        () => TimeseriesCsvCodec.parseDataRow(
-          'not-a-valid-id!,'
-          '2026-05-22T14:30:00Z,'
-          '2026-05-22T14:35:00Z,'
-          'steps,42,count,5min,internal_phone,smartphone,+02:00',
-          rowNumber: 5,
-        ),
-        throwsA(
-          predicate<ImportValidationException>(
-            (e) => e.message.contains('Row 5: id must be a valid sample id'),
-          ),
-        ),
-      );
     });
   });
 }

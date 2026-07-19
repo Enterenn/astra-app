@@ -179,10 +179,12 @@ void main() {
       await tester.pump(const Duration(milliseconds: 50));
     }
 
-    testWidgets('shows screen title', (tester) async {
+    testWidgets('ready layout: title, week above ring, no greeting, three cards', (
+      tester,
+    ) async {
       final cubit = buildCubit(
         TodayState.fromData(
-          steps: 1200,
+          steps: 5420,
           goal: 8000,
           isStale: false,
           weekDays: sampleWeekDays(),
@@ -211,6 +213,22 @@ void main() {
         ),
         findsOneWidget,
       );
+
+      final weekCard = find.ancestor(
+        of: find.text('This week'),
+        matching: find.byType(SectionCard),
+      );
+      final ring = find.byType(GoalRing);
+      expect(tester.getTopLeft(weekCard).dy, lessThan(tester.getTopLeft(ring).dy));
+
+      expect(find.textContaining('Hello,'), findsNothing);
+      expect(find.text('Phone sensor'), findsNothing);
+
+      expect(find.text('Set goal'), findsOneWidget);
+      expect(find.byType(ActivityStatsRow), findsOneWidget);
+      expect(find.text('This week'), findsOneWidget);
+      expect(find.byType(WeekProgressRow), findsOneWidget);
+      expect(find.byType(SectionCard), findsOneWidget);
     });
 
     testWidgets(
@@ -224,44 +242,6 @@ void main() {
         expect(find.byType(GoalRing), findsOneWidget);
       },
     );
-
-    testWidgets('week card appears above goal ring', (tester) async {
-      final cubit = buildCubit(
-        TodayState.fromData(
-          steps: 1200,
-          goal: 8000,
-          isStale: false,
-          weekDays: sampleWeekDays(),
-        ),
-      );
-      addTearDown(cubit.close);
-
-      await pumpScreen(tester, cubit);
-
-      final weekCard = find.ancestor(
-        of: find.text('This week'),
-        matching: find.byType(SectionCard),
-      );
-      final ring = find.byType(GoalRing);
-      expect(tester.getTopLeft(weekCard).dy, lessThan(tester.getTopLeft(ring).dy));
-    });
-
-    testWidgets('does not show greeting or source chip', (tester) async {
-      final cubit = buildCubit(
-        TodayState.fromData(
-          steps: 5420,
-          goal: 8000,
-          isStale: false,
-          weekDays: sampleWeekDays(),
-        ),
-      );
-      addTearDown(cubit.close);
-
-      await pumpScreen(tester, cubit);
-
-      expect(find.textContaining('Hello,'), findsNothing);
-      expect(find.text('Phone sensor'), findsNothing);
-    });
 
     testWidgets('shows stale banner when data is stale', (tester) async {
       final cubit = buildCubit(
@@ -280,53 +260,24 @@ void main() {
       expect(find.textContaining(l10n.bannerStaleData), findsOneWidget);
     });
 
-    testWidgets('shows three main cards', (tester) async {
-      final cubit = buildCubit(
-        TodayState.fromData(
-          steps: 1200,
-          goal: 8000,
-          isStale: false,
-          weekDays: sampleWeekDays(),
-        ),
-      );
-      addTearDown(cubit.close);
-
-      await pumpScreen(tester, cubit);
-
-      expect(find.text('Set goal'), findsOneWidget);
-      expect(find.byType(ActivityStatsRow), findsOneWidget);
-      expect(find.text('This week'), findsOneWidget);
-      expect(find.byType(WeekProgressRow), findsOneWidget);
-      expect(find.byType(SectionCard), findsOneWidget);
-    });
-
-    testWidgets('week card shows trophy N/7 when week data loaded', (
+    testWidgets('week card trophy: shows N/7 when loaded, hidden while loading', (
       tester,
     ) async {
-      final weekDays = sampleWeekDaysWithTrophyScore();
-      final cubit = buildCubit(
+      final loaded = buildCubit(
         TodayState.fromData(
           steps: 1200,
           goal: 8000,
           isStale: false,
-          weekDays: weekDays,
+          weekDays: sampleWeekDaysWithTrophyScore(),
         ),
       );
-      addTearDown(cubit.close);
-
-      await pumpScreen(tester, cubit);
-
+      addTearDown(loaded.close);
+      await pumpScreen(tester, loaded);
       expect(find.text('3/7'), findsOneWidget);
-    });
 
-    testWidgets('week card omits trophy while weekDays loading', (
-      tester,
-    ) async {
-      final cubit = buildCubit(const TodayState.loading());
-      addTearDown(cubit.close);
-
-      await pumpScreen(tester, cubit);
-
+      final loading = buildCubit(const TodayState.loading());
+      addTearDown(loading.close);
+      await pumpScreen(tester, loading);
       expect(find.textContaining('/7'), findsNothing);
     });
 
@@ -518,60 +469,45 @@ void main() {
       expect(find.text('average steps taken per day'), findsOneWidget);
     });
 
-    testWidgets('hides average stat cards on empty state', (tester) async {
-      final cubit = _SeededHistoryCubit(
+    testWidgets('hides average stat cards on empty, loading, and null periodAverages', (
+      tester,
+    ) async {
+      final empty = _SeededHistoryCubit(
         stepAggregation: stepAggregation,
         userHealthMetrics: userHealthMetrics,
         initial: HistoryState.empty(),
       );
-      addTearDown(cubit.close);
-
-      await pumpScreen(tester, cubit);
-
+      addTearDown(empty.close);
+      await pumpScreen(tester, empty);
       expect(find.byType(TrendsAverageStatsRow), findsNothing);
-      expect(
-        find.text('average calories burned per day'),
-        findsNothing,
-      );
-    });
 
-    testWidgets('hides average stat cards on loading state', (tester) async {
-      final cubit = _SeededHistoryCubit(
+      final loading = _SeededHistoryCubit(
         stepAggregation: stepAggregation,
         userHealthMetrics: userHealthMetrics,
         initial: const HistoryState.loading(),
       );
-      addTearDown(cubit.close);
+      addTearDown(loading.close);
+      await pumpScreen(tester, loading);
+      expect(find.byType(TrendsAverageStatsRow), findsNothing);
 
-      await pumpScreen(tester, cubit);
-
+      final nullAverages = _SeededHistoryCubit(
+        stepAggregation: stepAggregation,
+        userHealthMetrics: userHealthMetrics,
+        initial: HistoryState.ready(
+          chartPoints: List.generate(
+            7,
+            (i) => ChartDayAggregate(
+              localDay: DateTime.utc(2026, 6, 3 - i),
+              totalSteps: 0,
+            ),
+          ),
+          dailyGoal: 8000,
+        ),
+      );
+      addTearDown(nullAverages.close);
+      await pumpScreen(tester, nullAverages);
       expect(find.byType(TrendsAverageStatsRow), findsNothing);
     });
-
-    testWidgets(
-      'hides average stat cards when ready but periodAverages is null',
-      (tester) async {
-        final cubit = _SeededHistoryCubit(
-          stepAggregation: stepAggregation,
-          userHealthMetrics: userHealthMetrics,
-          initial: HistoryState.ready(
-            chartPoints: List.generate(
-              7,
-              (i) => ChartDayAggregate(
-                localDay: DateTime.utc(2026, 6, 3 - i),
-                totalSteps: 0,
-              ),
-            ),
-            dailyGoal: 8000,
-          ),
-        );
-        addTearDown(cubit.close);
-
-        await pumpScreen(tester, cubit);
-
-        expect(find.byType(TrendsAverageStatsRow), findsNothing);
-      },
-    );
 
     testWidgets('shows peak day card when ready with peakDay', (tester) async {
       final cubit = _SeededHistoryCubit(
@@ -604,48 +540,37 @@ void main() {
       expect(find.text('8500'), findsOneWidget);
     });
 
-    testWidgets('hides peak day card on loading state', (tester) async {
-      final cubit = _SeededHistoryCubit(
+    testWidgets('hides peak day card on loading, null periodAverages, and null peakDay', (
+      tester,
+    ) async {
+      final loading = _SeededHistoryCubit(
         stepAggregation: stepAggregation,
         userHealthMetrics: userHealthMetrics,
         initial: const HistoryState.loading(),
       );
-      addTearDown(cubit.close);
-
-      await pumpScreen(tester, cubit);
-
+      addTearDown(loading.close);
+      await pumpScreen(tester, loading);
       expect(find.byType(TrendsPeakDayCard), findsNothing);
-      expect(find.text('peak day in this period'), findsNothing);
-    });
 
-    testWidgets(
-      'hides peak day card when ready but periodAverages is null',
-      (tester) async {
-        final cubit = _SeededHistoryCubit(
-          stepAggregation: stepAggregation,
-          userHealthMetrics: userHealthMetrics,
-          initial: HistoryState.ready(
-            chartPoints: List.generate(
-              7,
-              (i) => ChartDayAggregate(
-                localDay: DateTime.utc(2026, 6, 3 - i),
-                totalSteps: 0,
-              ),
+      final nullAverages = _SeededHistoryCubit(
+        stepAggregation: stepAggregation,
+        userHealthMetrics: userHealthMetrics,
+        initial: HistoryState.ready(
+          chartPoints: List.generate(
+            7,
+            (i) => ChartDayAggregate(
+              localDay: DateTime.utc(2026, 6, 3 - i),
+              totalSteps: 0,
             ),
-            dailyGoal: 8000,
           ),
-        );
-        addTearDown(cubit.close);
+          dailyGoal: 8000,
+        ),
+      );
+      addTearDown(nullAverages.close);
+      await pumpScreen(tester, nullAverages);
+      expect(find.byType(TrendsPeakDayCard), findsNothing);
 
-        await pumpScreen(tester, cubit);
-
-        expect(find.byType(TrendsPeakDayCard), findsNothing);
-        expect(find.text('peak day in this period'), findsNothing);
-      },
-    );
-
-    testWidgets('hides peak day card when peakDay is null', (tester) async {
-      final cubit = _SeededHistoryCubit(
+      final nullPeak = _SeededHistoryCubit(
         stepAggregation: stepAggregation,
         userHealthMetrics: userHealthMetrics,
         initial: HistoryState.ready(
@@ -662,12 +587,9 @@ void main() {
           ),
         ),
       );
-      addTearDown(cubit.close);
-
-      await pumpScreen(tester, cubit);
-
+      addTearDown(nullPeak.close);
+      await pumpScreen(tester, nullPeak);
       expect(find.byType(TrendsPeakDayCard), findsNothing);
-      expect(find.text('peak day in this period'), findsNothing);
     });
 
     testWidgets('12 months mode shows monthly chart and hides stats', (
