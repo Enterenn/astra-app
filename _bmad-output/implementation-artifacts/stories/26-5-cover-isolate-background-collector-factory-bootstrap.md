@@ -1,6 +1,6 @@
 # Story 26.5: Cover Isolate Background Collector Factory Bootstrap
 
-Status: review
+Status: done
 
 <!-- Post-audit Epic 26 — tracker: sprint-status-post-audit.yaml -->
 <!-- Source: epics-post-audit.md Story 26-5 · diagnostic-couverture-structurelle.md Top #4 · AUD-54 · NFR-AUD-03/06 -->
@@ -295,12 +295,12 @@ Expect: group name + multiple test bodies calling `createIsolateBackgroundCollec
 
 **Assertions checklist:**
 
-- [ ] Direct factory call is the **explicit** test entry (not WM/FGS wrapper)
-- [ ] Injected fake source → bucket written (repos wired)
-- [ ] `includePhonePedometerSource: false` → no buckets with null sources
-- [ ] Notification success path → goal notification fires on cross
-- [ ] Notification timeout path → collection succeeds, notification skipped
-- [ ] `db.close()` in tearDown (avoid leaks)
+- [x] Direct factory call is the **explicit** test entry (not WM/FGS wrapper)
+- [x] Injected fake source → bucket written (repos wired)
+- [x] `includePhonePedometerSource: false` → no buckets with null sources
+- [x] Notification success path → goal notification fires on cross
+- [x] Notification timeout path → collection succeeds, notification skipped
+- [x] `db.close()` in tearDown (avoid leaks)
 
 ### Previous story intelligence (26-4)
 
@@ -362,10 +362,11 @@ Composer
 ### Completion Notes List
 
 - Sub-task A: 56 LOC factory read; zero named test hits; indirect WM/FGS + manual collector construction documented
-- Sub-task B: happy-path test — injected source, bucket write, session goal prefs round-trip (7500)
+- Sub-task B: happy-path test — injected source, single bucket write via factory-wired ingestion repos
 - Sub-task C: `includePhonePedometerSource: false` → BLE-only, no buckets
 - Sub-task D: goal notification success (presenter spy + shown date); timeout path (platform init fails, bucket still written)
 - Sub-task E: 4/4 factory tests green; WM/FGS unchanged green; full fast suite 960 passed (~2 skipped slow)
+- Code review: removed weak happy-path session assert; session wiring owned by notification tests; tightened upserted count
 
 ### File List
 
@@ -381,3 +382,4 @@ Composer
 - 2026-07-19: Sub-task C — includePhonePedometerSource false branch test.
 - 2026-07-19: Sub-task D — notification init success and timeout branch tests.
 - 2026-07-19: Sub-task E — regression verification complete; status → review.
+- 2026-07-19: Code review fixes — happy-path scope tightened; notification tests assert session prefs.

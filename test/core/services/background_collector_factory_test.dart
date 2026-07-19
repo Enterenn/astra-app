@@ -63,9 +63,6 @@ void main() {
     test(
       'createIsolateBackgroundCollector wires repos and collects via injected source',
       () async {
-        final userHealthMetrics = UserHealthMetricsRepository(db, clock: clock);
-        await userHealthMetrics.setDailyStepGoal(7500);
-
         final collector = await createIsolateBackgroundCollector(
           db: db,
           sources: [
@@ -86,14 +83,12 @@ void main() {
         );
 
         final upserted = await collector.collectOnce();
-        final verifyHealthMetrics = UserHealthMetricsRepository(db, clock: clock);
 
-        expect(upserted, greaterThan(0));
+        expect(upserted, 1);
         expect(
           await aggregationRepository.getLastIngestionUtc(),
           DateTime.utc(2026, 6, 2, 10, 5),
         );
-        expect(await verifyHealthMetrics.getDailyStepGoal(), 7500);
       },
     );
 
@@ -164,6 +159,8 @@ void main() {
         await collector.collectOnce(enableGoalNotification: true);
 
         expect(showCount, 1);
+        expect(await userSettings.getGoalNotificationsEnabled(), isTrue);
+        expect(await userHealthMetrics.getDailyStepGoal(), 5000);
         expect(
           await userSettings.getGoalNotificationShownDate(),
           formatLocalDayIso(clock.snapshot()),
@@ -178,6 +175,7 @@ void main() {
     test(
       'createIsolateBackgroundCollector skips notification when background init times out but still collects',
       () async {
+        // No goalNotificationPresenter: init must time out via platform path.
         final notificationService = NotificationService(
           platformInitializer: (_) =>
               Future<void>.delayed(const Duration(seconds: 5)),
@@ -220,9 +218,11 @@ void main() {
           notificationPermissionGranted: () async => true,
         );
 
-        await collector.collectOnce(enableGoalNotification: true);
+        final upserted = await collector.collectOnce(enableGoalNotification: true);
 
+        expect(upserted, 1);
         expect(await userSettings.getGoalNotificationShownDate(), isNull);
+        expect(await userSettings.getGoalNotificationsEnabled(), isTrue);
         expect(
           await aggregationRepository.getLastIngestionUtc(),
           DateTime.utc(2026, 6, 2, 10, 5),
