@@ -69,11 +69,11 @@ So that midnight UI reset contracts do not rely only on day-boundary monitor tes
   - [x] Test: `refreshAfterDayRollover clears foregroundCatchUp and dismisses celebration` — direct call; assert flags cleared
   - [x] **Stop → review brief → wait for Baptiste OK → commit**
 
-- [ ] **Sub-task C — Allow-decrease SQLite refresh on new day** (AC: #3, #4)
-  - [ ] Test: `refreshAfterDayRollover allows step decrease and rebuilds week strip for new local day` — yesterday 5000 steps in state, new day empty DB → steps `0` (or seeded new-day bucket); `weekDays`/`selectedLocalDay` updated
-  - [ ] Optional: assert `refreshGeneration` incremented on success (Story 21-1 success-only bump policy)
-  - [ ] Prefer **direct** `cubit.refreshAfterDayRollover()` entry (not only via coordinator)
-  - [ ] **Stop → review brief → wait for Baptiste OK → commit**
+- [x] **Sub-task C — Allow-decrease SQLite refresh on new day** (AC: #3, #4)
+  - [x] Test: `refreshAfterDayRollover allows step decrease and rebuilds week strip for new local day` — yesterday 5000 steps in state, new day empty DB → steps `0` (or seeded new-day bucket); `weekDays`/`selectedLocalDay` updated
+  - [x] Optional: assert `refreshGeneration` incremented on success (Story 21-1 success-only bump policy)
+  - [x] Prefer **direct** `cubit.refreshAfterDayRollover()` entry (not only via coordinator)
+  - [x] **Stop → review brief → wait for Baptiste OK → commit**
 
 - [ ] **Sub-task D — Regression verification** (AC: #5, #6)
   - [ ] Run `flutter test test/presentation/cubits/today_cubit_test.dart --exclude-tags slow`

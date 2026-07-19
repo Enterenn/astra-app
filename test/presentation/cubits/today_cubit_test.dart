@@ -1221,6 +1221,41 @@ void main() {
           await cubit.close();
         },
       );
+
+      test(
+        'refreshAfterDayRollover allows step decrease and rebuilds week strip for new local day',
+        () async {
+          await stepRepos.ingestion.upsertIngestionBucket(
+            _bucket(
+              startTimeUtc: DateTime.utc(2026, 6, 2, 10),
+              value: 5000,
+              zoneOffset: '+02:00',
+            ),
+          );
+          final cubit = buildCubit();
+          await cubit.refresh();
+          expect(cubit.state.steps, 5000);
+          expect(cubit.state.status, isNot(TodayStatus.loading));
+
+          var sawLoading = false;
+          final subscription = cubit.stream.listen((state) {
+            if (state.status == TodayStatus.loading) sawLoading = true;
+          });
+
+          clock.setNowUtc(DateTime.utc(2026, 6, 3, 10));
+
+          await cubit.refreshAfterDayRollover();
+
+          expect(sawLoading, isFalse);
+          expect(cubit.state.steps, 0);
+          expect(cubit.state.weekDays, isNotEmpty);
+          final today = cubit.state.weekDays.singleWhere((day) => day.isToday);
+          expect(_sameDate(cubit.state.selectedLocalDay, today.localDay), isTrue);
+          expect(today.dayNumber, 3);
+          await subscription.cancel();
+          await cubit.close();
+        },
+      );
     });
 
     // ── updateDailyStepGoal ─────────────────────────────────────────────────
