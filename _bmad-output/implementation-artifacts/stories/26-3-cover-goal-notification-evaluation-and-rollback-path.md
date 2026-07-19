@@ -1,6 +1,6 @@
 # Story 26.3: Cover Goal Notification Evaluation and Rollback Path
 
-Status: review
+Status: done
 
 <!-- Post-audit Epic 26 — tracker: sprint-status-post-audit.yaml -->
 <!-- Source: epics-post-audit.md Story 26-3 · diagnostic-couverture-structurelle.md Top #3 · AUD-52 -->
@@ -290,8 +290,9 @@ Composer
 ### File List
 
 - `test/core/services/background_collector_test.dart` — named AUD-52 group + helper
-- `_bmad-output/implementation-artifacts/sprint-status-post-audit.yaml` — 26-3 → review
+- `_bmad-output/implementation-artifacts/sprint-status-post-audit.yaml` — 26-3 → done
 
 ## Change Log
 
 - 2026-07-19 — Story 26-3: named unit tests for `maybeNotifyGoalReachedIfGoalMet` (AUD-52)
+- 2026-07-19: Code review passed — rollback test hardened; story closed done.

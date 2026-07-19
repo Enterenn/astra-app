@@ -815,6 +815,7 @@ void main() {
           await userHealthMetrics.setDailyStepGoal(100);
           await repository.upsertIngestionBucket(_todayBucket(value: 500));
 
+          var failingShowCount = 0;
           final failingCollector = _goalNotificationCollector(
             normalizer: normalizer,
             repository: repository,
@@ -826,6 +827,7 @@ void main() {
             notificationService: NotificationService(
               permissionChecker: () async => PermissionStatus.granted,
               goalNotificationPresenter: ({required id, required title, body}) async {
+                failingShowCount += 1;
                 throw StateError('presenter failed');
               },
             ),
@@ -833,6 +835,7 @@ void main() {
 
           await failingCollector.maybeNotifyGoalReachedIfGoalMet();
 
+          expect(failingShowCount, 1);
           expect(await userSettings.getGoalNotificationShownDate(), isNull);
 
           var showCount = 0;
