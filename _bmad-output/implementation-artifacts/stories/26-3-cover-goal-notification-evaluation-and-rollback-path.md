@@ -60,12 +60,12 @@ So that FR goal-notification failures do not leave prefs inconsistent.
   - [x] Note indirect coverage via `collectOnce(enableGoalNotification: true)` — behaviour exists, audit grep fails
   - [x] **Stop → review brief → wait for Baptiste OK → commit** (plan-only commit optional)
 
-- [ ] **Sub-task B — Named happy + not-met `maybeNotifyGoalReachedIfGoalMet` group** (AC: #1, #2, #3)
-  - [ ] Add `group('maybeNotifyGoalReachedIfGoalMet', () { ... })` in `test/core/services/background_collector_test.dart`
-  - [ ] Extract minimal `_goalNotificationCollector(...)` helper (optional) — reuse existing setUp repos + `_todayBucket`
-  - [ ] Test: `maybeNotifyGoalReachedIfGoalMet shows notification when goal met` — direct call, assert presenter + pref
-  - [ ] Test: `maybeNotifyGoalReachedIfGoalMet skips when steps below goal` — direct call, showCount 0, pref null
-  - [ ] **Stop → review brief → wait for Baptiste OK → commit**
+- [x] **Sub-task B — Named happy + not-met `maybeNotifyGoalReachedIfGoalMet` group** (AC: #1, #2, #3)
+  - [x] Add `group('maybeNotifyGoalReachedIfGoalMet', () { ... })` in `test/core/services/background_collector_test.dart`
+  - [x] Extract minimal `_goalNotificationCollector(...)` helper (optional) — reuse existing setUp repos + `_todayBucket`
+  - [x] Test: `maybeNotifyGoalReachedIfGoalMet shows notification when goal met` — direct call, assert presenter + pref
+  - [x] Test: `maybeNotifyGoalReachedIfGoalMet skips when steps below goal` — direct call, showCount 0, pref null
+  - [x] **Stop → review brief → wait for Baptiste OK → commit**
 
 - [ ] **Sub-task C — Rollback on showGoalReached failure** (AC: #4)
   - [ ] Test: `maybeNotifyGoalReachedIfGoalMet rolls back pref when showGoalReached fails` — presenter throws OR returns via `showGoalReached` false path; assert pref cleared; optional second call notifies again

@@ -746,7 +746,98 @@ void main() {
         expect(order, ['notify', 'callback']);
       },
     );
+
+    group('maybeNotifyGoalReachedIfGoalMet', () {
+      test('maybeNotifyGoalReachedIfGoalMet shows notification when goal met',
+          () async {
+        var showCount = 0;
+        final notificationService = NotificationService(
+          permissionChecker: () async => PermissionStatus.granted,
+          goalNotificationPresenter: ({required id, required title, body}) async {
+            showCount += 1;
+          },
+        );
+        await userSettings.setGoalNotificationsEnabled(true);
+        await userHealthMetrics.setDailyStepGoal(100);
+        await repository.upsertIngestionBucket(_todayBucket(value: 500));
+        final collector = _goalNotificationCollector(
+          normalizer: normalizer,
+          repository: repository,
+          stepAggregation: stepAggregation,
+          baselineRepository: baselineRepository,
+          userSettings: userSettings,
+          userHealthMetrics: userHealthMetrics,
+          clock: clock,
+          notificationService: notificationService,
+        );
+
+        await collector.maybeNotifyGoalReachedIfGoalMet();
+
+        expect(showCount, 1);
+        expect(
+          await userSettings.getGoalNotificationShownDate(),
+          formatLocalDayIso(clock.snapshot()),
+        );
+      });
+
+      test('maybeNotifyGoalReachedIfGoalMet skips when steps below goal',
+          () async {
+        var showCount = 0;
+        final notificationService = NotificationService(
+          goalNotificationPresenter: ({required id, required title, body}) async {
+            showCount += 1;
+          },
+        );
+        await userSettings.setGoalNotificationsEnabled(true);
+        await userHealthMetrics.setDailyStepGoal(10_000);
+        await repository.upsertIngestionBucket(_todayBucket(value: 50));
+        final collector = _goalNotificationCollector(
+          normalizer: normalizer,
+          repository: repository,
+          stepAggregation: stepAggregation,
+          baselineRepository: baselineRepository,
+          userSettings: userSettings,
+          userHealthMetrics: userHealthMetrics,
+          clock: clock,
+          notificationService: notificationService,
+        );
+
+        await collector.maybeNotifyGoalReachedIfGoalMet();
+
+        expect(showCount, 0);
+        expect(await userSettings.getGoalNotificationShownDate(), isNull);
+      });
+    });
   });
+}
+
+BackgroundCollector _goalNotificationCollector({
+  required StepNormalizer normalizer,
+  required StepIngestionRepository repository,
+  required StepAggregationRepository stepAggregation,
+  required IngestionBaselineRepository baselineRepository,
+  required UserSettingsRepository userSettings,
+  required UserHealthMetricsRepository userHealthMetrics,
+  required FakeTimeProvider clock,
+  required NotificationService notificationService,
+  Future<bool> Function()? notificationPermissionGranted,
+  bool Function()? isUserFacingAppActive,
+}) {
+  return BackgroundCollector(
+    sources: const [],
+    normalizer: normalizer,
+    repository: repository,
+    stepAggregation: stepAggregation,
+    baselineRepository: baselineRepository,
+    userSettings: userSettings,
+    userHealthMetrics: userHealthMetrics,
+    clock: clock,
+    notificationService: notificationService,
+    notificationPermissionGranted:
+        notificationPermissionGranted ?? () async => true,
+    isUserFacingAppActive: isUserFacingAppActive ?? () => false,
+    sourceTimeout: const Duration(milliseconds: 10),
+  );
 }
 
 NormalizedStepBucket _todayBucket({
