@@ -1,6 +1,6 @@
 # Story 27.1: Parallelize Initial Preference Reads with Future.wait
 
-Status: review
+Status: done
 
 <!-- Post-audit Epic 27 — tracker: sprint-status-post-audit.yaml -->
 <!-- Source: epics-post-audit.md Story 27-1 · diagnostic-cold-start.md §Phase D1 · AUD-13 -->
@@ -279,3 +279,10 @@ Apply same: minimal diff in one production file + targeted test extension.
 
 - `lib/core/di/app_dependencies.dart`
 - `test/core/di/app_dependencies_test.dart`
+- `_bmad-output/implementation-artifacts/sprint-status-post-audit.yaml` — status review → done
+
+## Change Log
+
+- 2026-07-19: Story context created — AUD-13 parallel pref reads (ready-for-dev).
+- 2026-07-19: Implemented `_loadInitialUserPreferences` Future.wait batch + 3 unit tests.
+- 2026-07-19: Code review passed — mark 27-1 done (AUD-13).
