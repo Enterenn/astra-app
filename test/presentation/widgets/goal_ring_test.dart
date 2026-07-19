@@ -2,6 +2,7 @@ import 'dart:ui' show PictureRecorder;
 
 import 'package:astra_app/core/constants/astra_accent_preset.dart';
 import 'package:astra_app/core/constants/astra_colors.dart';
+import 'package:astra_app/l10n/app_localizations.dart';
 import 'package:astra_app/presentation/cubits/today_state.dart';
 import 'package:astra_app/presentation/widgets/animated_step_count.dart';
 import 'package:astra_app/presentation/widgets/goal_ring.dart';
@@ -620,9 +621,10 @@ void main() {
       handle.dispose();
     });
 
-    testWidgets('no-permission semantics describe permission requirement', (
+    testWidgets('no-permission semantics align with unified permission copy', (
       tester,
     ) async {
+      final l10n = lookupAppLocalizations(const Locale('en'));
       final handle = tester.ensureSemantics();
 
       await pumpGoalRing(
@@ -631,7 +633,7 @@ void main() {
       );
 
       expect(
-        find.bySemanticsLabel('Steps today: permission required'),
+        find.bySemanticsLabel(l10n.myDataBackgroundPermissionDenied),
         findsOneWidget,
       );
 

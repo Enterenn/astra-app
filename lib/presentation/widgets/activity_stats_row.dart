@@ -99,7 +99,7 @@ class ActivityStatsRow extends StatelessWidget {
       return l10n.todayActivityStatsSemanticsLoading;
     }
     if (status == TodayStatus.noPermission) {
-      return l10n.todayActivityStatsSemanticsNoPermission;
+      return l10n.myDataBackgroundPermissionDenied;
     }
     if (status == TodayStatus.empty) {
       return l10n.todayActivityStatsSemanticsEmpty;

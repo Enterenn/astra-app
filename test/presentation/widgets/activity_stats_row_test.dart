@@ -170,7 +170,7 @@ void main() {
       );
 
       expect(
-        find.bySemanticsLabel(l10n.todayActivityStatsSemanticsNoPermission),
+        find.bySemanticsLabel(l10n.myDataBackgroundPermissionDenied),
         findsOneWidget,
       );
       expect(

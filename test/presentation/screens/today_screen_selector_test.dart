@@ -735,6 +735,7 @@ void main() {
     testWidgets('permission denied slot hidden when permission granted', (
       tester,
     ) async {
+      final l10n = lookupAppLocalizations(const Locale('en'));
       await pumpPermissionDeniedSlot(
         tester,
         initial: TodayState.fromData(
@@ -745,8 +746,32 @@ void main() {
       );
 
       expect(find.byKey(const Key('today_permission_denied_slot')), findsOneWidget);
-      expect(find.text('Activity permission off'), findsNothing);
-      expect(find.text('Open settings'), findsNothing);
+      expect(find.text(l10n.myDataBackgroundPermissionDenied), findsNothing);
+      expect(find.text(l10n.myDataOpenSettings), findsNothing);
+    });
+
+    testWidgets('permission denied slot semantics match background card pattern', (
+      tester,
+    ) async {
+      final l10n = lookupAppLocalizations(const Locale('en'));
+      final handle = tester.ensureSemantics();
+
+      await pumpPermissionDeniedSlot(
+        tester,
+        initial: TodayState.fromData(
+          steps: 0,
+          goal: 8000,
+          isStale: false,
+        ).copyWith(status: TodayStatus.noPermission),
+      );
+
+      expect(
+        find.bySemanticsLabel(l10n.myDataBackgroundPermissionDenied),
+        findsOneWidget,
+      );
+      expect(find.bySemanticsLabel(l10n.myDataOpenSettings), findsOneWidget);
+
+      handle.dispose();
     });
 
     testWidgets('live step tick does not rebuild stale banner selector', (
@@ -954,10 +979,76 @@ void main() {
       );
 
       expect(find.text(l10n.myDataBackgroundPermissionDenied), findsOneWidget);
-      expect(find.text(l10n.myDataOpenSettings), findsOneWidget);
+      expect(find.text(l10n.myDataOpenSettings), findsNWidgets(1));
       expect(find.text(l10n.todayCollectionHealthPermissionDenied), findsNothing);
       expect(find.text(l10n.errorNoPermission), findsNothing);
       expect(find.byType(StatusBanner), findsNothing);
+    });
+
+    testWidgets('permission grant recovery hides slot and restores health', (
+      tester,
+    ) async {
+      final l10n = lookupAppLocalizations(const Locale('en'));
+      final deniedCubit = buildCubit(
+        TodayState.fromData(
+          steps: 0,
+          goal: 8000,
+          isStale: false,
+        ).copyWith(status: TodayStatus.noPermission),
+      );
+      addTearDown(deniedCubit.close);
+
+      await tester.pumpWidget(
+        TestMaterialApp(
+          theme: buildAstraLightTheme(),
+          home: MediaQuery(
+            data: const MediaQueryData(disableAnimations: true),
+            child: MultiBlocProvider(
+              providers: [
+                BlocProvider<TodayCubit>.value(value: deniedCubit),
+                BlocProvider<UnitsCubit>.value(value: unitsCubit),
+              ],
+              child: const TodayScreen(),
+            ),
+          ),
+        ),
+      );
+      await tester.pump();
+
+      expect(find.text(l10n.myDataBackgroundPermissionDenied), findsOneWidget);
+      expect(find.text(l10n.myDataOpenSettings), findsOneWidget);
+
+      final grantedCubit = buildCubit(
+        TodayState.fromData(
+          steps: 1200,
+          goal: 8000,
+          isStale: false,
+          lastIngestionUtc: DateTime.utc(2026, 6, 3, 10),
+          lastDisplayedStepsLoaded: true,
+        ),
+      );
+      addTearDown(grantedCubit.close);
+
+      await tester.pumpWidget(
+        TestMaterialApp(
+          theme: buildAstraLightTheme(),
+          home: MediaQuery(
+            data: const MediaQueryData(disableAnimations: true),
+            child: MultiBlocProvider(
+              providers: [
+                BlocProvider<TodayCubit>.value(value: grantedCubit),
+                BlocProvider<UnitsCubit>.value(value: unitsCubit),
+              ],
+              child: const TodayScreen(),
+            ),
+          ),
+        ),
+      );
+      await tester.pump();
+
+      expect(find.text(l10n.myDataBackgroundPermissionDenied), findsNothing);
+      expect(find.text(l10n.myDataOpenSettings), findsNothing);
+      expect(find.text(l10n.todayCollectionHealthActive), findsOneWidget);
     });
 
     testWidgets('Set goal tap blocked during loading', (tester) async {

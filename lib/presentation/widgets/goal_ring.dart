@@ -796,7 +796,7 @@ class _GoalRingState extends State<GoalRing> with TickerProviderStateMixin {
     final steps = _targetSteps;
     return switch (widget.state.status) {
       TodayStatus.loading => l10n.todayGoalRingSemanticsLoading,
-      TodayStatus.noPermission => l10n.todayGoalRingSemanticsNoPermission,
+      TodayStatus.noPermission => l10n.myDataBackgroundPermissionDenied,
       TodayStatus.overflow ||
       TodayStatus.goalMet =>
         l10n.todayGoalRingSemanticsGoalReached(steps, widget.state.goal),

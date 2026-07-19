@@ -504,11 +504,11 @@ class _PermissionDeniedSlot extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return BlocSelector<TodayCubit, TodayState, TodayStatus>(
+    return BlocSelector<TodayCubit, TodayState, bool>(
       key: sectionKey,
-      selector: (state) => state.status,
-      builder: (context, status) {
-        if (status != TodayStatus.noPermission) {
+      selector: (state) => state.status == TodayStatus.noPermission,
+      builder: (context, showPermissionDenied) {
+        if (!showPermissionDenied) {
           return const SizedBox.shrink();
         }
         final colors = context.astraColors;
@@ -548,15 +548,12 @@ class _PermissionDeniedSlot extends StatelessWidget {
             const SizedBox(height: AstraSpacing.kSpaceSm),
             Align(
               alignment: Alignment.centerLeft,
-              child: Semantics(
-                button: true,
-                label: l10n.myDataOpenSettings,
-                child: TextButton(
-                  onPressed: () => unawaited(openAppSettings()),
-                  child: Text(l10n.myDataOpenSettings),
-                ),
+              child: TextButton(
+                onPressed: () => unawaited(openAppSettings()),
+                child: Text(l10n.myDataOpenSettings),
               ),
             ),
+            const SizedBox(height: AstraSpacing.kSpaceMd),
           ],
         );
       },
