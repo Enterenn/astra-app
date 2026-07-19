@@ -30,6 +30,16 @@ import '../time/time_provider.dart';
 
 typedef ActivityPermissionChecker = Future<bool> Function();
 
+typedef _InitialUserPreferences = ({
+  AstraThemePreference theme,
+  AstraAccentPreset accent,
+  DistanceDisplayUnit distanceUnit,
+  WeightDisplayUnit weightUnit,
+  HeightDisplayUnit heightUnit,
+  bool onboardingComplete,
+  String? appLocale,
+});
+
 /// Composition root wired at app startup via [create].
 ///
 /// Holds shared singletons: SQLite session, step repos, ingestion collectors,
@@ -102,13 +112,14 @@ class AppDependencies {
       databaseSession,
       clock: timeProvider,
     );
-    final initialTheme = await userSettings.getThemeMode();
-    final initialAccentPreset = await userSettings.getAccentPreset();
-    final initialDistanceUnit = await userSettings.getDistanceDisplayUnit();
-    final initialWeightUnit = await userSettings.getWeightDisplayUnit();
-    final initialHeightUnit = await userSettings.getHeightDisplayUnit();
-    final initialOnboardingComplete = await userSettings.getOnboardingComplete();
-    final initialAppLocale = await userSettings.getAppLocale();
+    final initialPrefs = await _loadInitialUserPreferences(userSettings);
+    final initialTheme = initialPrefs.theme;
+    final initialAccentPreset = initialPrefs.accent;
+    final initialDistanceUnit = initialPrefs.distanceUnit;
+    final initialWeightUnit = initialPrefs.weightUnit;
+    final initialHeightUnit = initialPrefs.heightUnit;
+    final initialOnboardingComplete = initialPrefs.onboardingComplete;
+    final initialAppLocale = initialPrefs.appLocale;
     final stepIngestion = StepIngestionRepository(databaseSession);
     final stepAggregation = StepAggregationRepository(
       databaseSession,
@@ -279,14 +290,17 @@ class AppDependencies {
     final settings = userSettings ?? UserSettingsRepository(databaseSession);
     final health = userHealthMetrics ??
         UserHealthMetricsRepository(databaseSession, clock: clock);
-    final initialTheme = await settings.getThemeMode();
-    final initialAccentPreset = await settings.getAccentPreset();
-    final initialDistanceUnit = await settings.getDistanceDisplayUnit();
-    final initialWeightUnit = await settings.getWeightDisplayUnit();
-    final initialHeightUnit = await settings.getHeightDisplayUnit();
-    final onboardingComplete =
-        initialOnboardingComplete ?? await settings.getOnboardingComplete();
-    final initialAppLocale = await settings.getAppLocale();
+    final initialPrefs = await _loadInitialUserPreferences(
+      settings,
+      onboardingCompleteOverride: initialOnboardingComplete,
+    );
+    final initialTheme = initialPrefs.theme;
+    final initialAccentPreset = initialPrefs.accent;
+    final initialDistanceUnit = initialPrefs.distanceUnit;
+    final initialWeightUnit = initialPrefs.weightUnit;
+    final initialHeightUnit = initialPrefs.heightUnit;
+    final onboardingComplete = initialPrefs.onboardingComplete;
+    final initialAppLocale = initialPrefs.appLocale;
     final ingestion = stepIngestion ?? StepIngestionRepository(databaseSession);
     final aggregation = stepAggregation ??
         StepAggregationRepository(databaseSession, clock: clock);
@@ -377,6 +391,51 @@ class AppDependencies {
       databaseSession: databaseSession,
       databasePath: path,
       appLifecycleCoordinator: appLifecycleCoordinator,
+    );
+  }
+
+  /// Loads theme, accent, units, onboarding, and locale prefs in one parallel batch.
+  /// Order: theme, accent, distance, weight, height, onboarding (unless overridden), locale.
+  static Future<_InitialUserPreferences> _loadInitialUserPreferences(
+    UserSettingsRepository settings, {
+    bool? onboardingCompleteOverride,
+  }) async {
+    if (onboardingCompleteOverride != null) {
+      final results = await Future.wait([
+        settings.getThemeMode(),
+        settings.getAccentPreset(),
+        settings.getDistanceDisplayUnit(),
+        settings.getWeightDisplayUnit(),
+        settings.getHeightDisplayUnit(),
+        settings.getAppLocale(),
+      ]);
+      return (
+        theme: results[0] as AstraThemePreference,
+        accent: results[1] as AstraAccentPreset,
+        distanceUnit: results[2] as DistanceDisplayUnit,
+        weightUnit: results[3] as WeightDisplayUnit,
+        heightUnit: results[4] as HeightDisplayUnit,
+        onboardingComplete: onboardingCompleteOverride,
+        appLocale: results[5] as String?,
+      );
+    }
+    final results = await Future.wait([
+      settings.getThemeMode(),
+      settings.getAccentPreset(),
+      settings.getDistanceDisplayUnit(),
+      settings.getWeightDisplayUnit(),
+      settings.getHeightDisplayUnit(),
+      settings.getOnboardingComplete(),
+      settings.getAppLocale(),
+    ]);
+    return (
+      theme: results[0] as AstraThemePreference,
+      accent: results[1] as AstraAccentPreset,
+      distanceUnit: results[2] as DistanceDisplayUnit,
+      weightUnit: results[3] as WeightDisplayUnit,
+      heightUnit: results[4] as HeightDisplayUnit,
+      onboardingComplete: results[5] as bool,
+      appLocale: results[6] as String?,
     );
   }
 }

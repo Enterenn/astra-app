@@ -1,3 +1,6 @@
+import 'package:astra_app/core/constants/astra_accent_preset.dart';
+import 'package:astra_app/core/constants/astra_theme_preference.dart';
+import 'package:astra_app/core/constants/display_unit_preferences.dart';
 import 'package:astra_app/core/database/app_database.dart';
 import 'package:astra_app/core/di/app_dependencies.dart';
 import 'package:astra_app/core/services/background_collector.dart';
@@ -85,5 +88,69 @@ void main() {
       },
     );
 
+  });
+
+  group('initial preference batch load', () {
+    late Database db;
+    late UserSettingsRepository userSettings;
+
+    setUp(() async {
+      db = await openAstraDatabase(databasePath: inMemoryDatabasePath);
+      userSettings = UserSettingsRepository(db);
+    });
+
+    tearDown(() async {
+      await db.close();
+    });
+
+    test('AppDependencies.test reflects seeded prefs', () async {
+      await userSettings.setThemeMode(AstraThemePreference.dark);
+      await userSettings.setAccentPreset(AstraAccentPreset.pink);
+      await userSettings.setDistanceDisplayUnit(DistanceDisplayUnit.imperial);
+      await userSettings.setWeightDisplayUnit(WeightDisplayUnit.lb);
+      await userSettings.setHeightDisplayUnit(HeightDisplayUnit.ftIn);
+      await userSettings.setOnboardingComplete(true);
+      await userSettings.setAppLocale('fr');
+
+      final deps = await AppDependencies.test(
+        db: db,
+        userSettings: userSettings,
+      );
+
+      expect(deps.initialTheme, AstraThemePreference.dark);
+      expect(deps.initialAccentPreset, AstraAccentPreset.pink);
+      expect(deps.initialDistanceUnit, DistanceDisplayUnit.imperial);
+      expect(deps.initialWeightUnit, WeightDisplayUnit.lb);
+      expect(deps.initialHeightUnit, HeightDisplayUnit.ftIn);
+      expect(deps.initialOnboardingComplete, isTrue);
+      expect(deps.initialAppLocale, 'fr');
+    });
+
+    test('AppDependencies.test uses defaults on empty DB', () async {
+      final deps = await AppDependencies.test(
+        db: db,
+        userSettings: userSettings,
+      );
+
+      expect(deps.initialTheme, AstraThemePreference.system);
+      expect(deps.initialAccentPreset, AstraAccentPreset.orange);
+      expect(deps.initialDistanceUnit, DistanceDisplayUnit.metric);
+      expect(deps.initialWeightUnit, WeightDisplayUnit.kg);
+      expect(deps.initialHeightUnit, HeightDisplayUnit.cm);
+      expect(deps.initialOnboardingComplete, isFalse);
+      expect(deps.initialAppLocale, isNull);
+    });
+
+    test('onboarding override skips DB read', () async {
+      await userSettings.setOnboardingComplete(false);
+
+      final deps = await AppDependencies.test(
+        db: db,
+        userSettings: userSettings,
+        initialOnboardingComplete: true,
+      );
+
+      expect(deps.initialOnboardingComplete, isTrue);
+    });
   });
 }

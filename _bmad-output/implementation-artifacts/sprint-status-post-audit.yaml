@@ -1,6 +1,6 @@
 # generated: 2026-07-16
-# last_updated: 2026-07-19 (Epic 26 closed — 0.11.3+28)
-# NEXT: optional epic-26-retrospective · post-audit program complete
+# last_updated: 2026-07-19 (Story 27-1 ready-for-dev — Epic 27 in-progress)
+# NEXT: epic-27 (boot polish) → epic-28 (UX cohérence) · optional epic-26-retrospective
 # Ref: planning-artifacts/epics-post-audit.md · planning-artifacts/audits/
 # project: astra-app
 # project_key: NOKEY
@@ -31,7 +31,7 @@
 #
 # WORKFLOW NOTES:
 # ===============
-# - Strict priority: Epic 21 (P0) → 22+23+26 (P1) → 24 (P2) → 25 (P3, after 21/22/26)
+# - Strict priority: Epic 21 (P0) → 22+23+26 (P1) → 24 (P2) → 25 (P3) → 27 (P0 polish) → 28 (P1 UX)
 # - Epic transitions to 'in-progress' automatically when first story is created
 # - Developer typically creates next story after previous one is 'done'
 # - Dev moves story to 'review', then runs code-review
@@ -43,6 +43,8 @@
 # - Epic 24 (design/loading consistency): patch+1, build+1 unless user-facing behavior expands
 # - Epic 25 (architecture debt): patch+1, build+1 (or minor if broad UX-visible refactor)
 # - Epic 26 (tests only): patch+1, build+1
+# - Epic 27 (boot polish, perf visible): patch+1, build+1
+# - Epic 28 (UX cohérence): minor+1, patch=0, build+1
 # - Update pubspec.yaml + README.md before marking epic done
 # - Ref: docs/project-context.md · .cursor/rules/app-versioning.mdc
 #
@@ -53,17 +55,21 @@
 #   epic-24: Design System & Loading States
 #   epic-25: Architecture & Structural Debt
 #   epic-26: Orchestration Tests & Resilience
+#   epic-27: Boot Polish & Lazy Trends
+#   epic-28: UX Coherence (Errors & Permissions)
 #
 # PRIORITY ORDER:
 #   1) epic-21 (P0)
 #   2) epic-22 + epic-23 + epic-26 (P1)
 #   3) epic-24 (P2)
 #   4) epic-25 (P3)
+#   5) epic-27 (P0 polish — boot quick wins)
+#   6) epic-28 (P1 UX — ciblée, sans AppFailure)
 #
 # NAVIGATION: _bmad-output/README.md · planning-artifacts/epics-post-audit.md
 
 generated: 2026-07-16
-last_updated: 2026-07-19 (Epic 26 closed — 0.11.3+28)
+last_updated: 2026-07-19 (Story 27-1 ready-for-dev — Epic 27 in-progress)
 project: astra-app
 project_key: NOKEY
 tracking_system: file-system
@@ -126,3 +132,16 @@ development_status:
   26-5-cover-isolate-background-collector-factory-bootstrap: done
   26-6-add-fault-injection-tests-for-live-monitor-stream-errors: done
   epic-26-retrospective: optional
+
+  epic-27: in-progress
+  27-1-parallelize-initial-preference-reads-with-future-wait: review
+  27-2-defer-workmanager-registration-until-after-runapp: backlog
+  27-3-non-blocking-notification-init-before-first-frame: backlog
+  27-4-lazy-instantiate-history-cubit-on-first-trends-tab: backlog
+  epic-27-retrospective: optional
+
+  epic-28: backlog
+  28-1-add-tap-to-refresh-on-my-data-stale-banner: backlog
+  28-2-unify-today-permission-denied-messaging-and-cta: backlog
+  28-3-decouple-settings-theme-locale-units-from-profile-loading-gate: backlog
+  epic-28-retrospective: optional
