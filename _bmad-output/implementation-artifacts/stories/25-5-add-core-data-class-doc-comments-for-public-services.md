@@ -1,6 +1,6 @@
 # Story 25.5: Add Core Data Class Doc Comments for Public Services
 
-Status: review
+Status: done
 
 <!-- Post-audit Epic 25 — tracker: sprint-status-post-audit.yaml -->
 <!-- Source: epics-post-audit.md Story 25-5 · diagnostic-convention-structure.md §2.1 · AUD-48 -->
@@ -354,3 +354,4 @@ Composer
 ### Change Log
 
 - 2026-07-19: Added class-level doc comments for 18 core/data public services (Story 25-5, AUD-48)
+- 2026-07-19: Code review passed; corrected BackgroundCollector and LifecycleRunResult docs; story → done.

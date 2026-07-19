@@ -17,7 +17,7 @@ import 'notification_service.dart';
 
 /// Orchestrates one background ingest cycle: sources → normalize → SQLite upsert.
 ///
-/// Optionally evaluates goal notifications when the user-facing app is active.
+/// Optionally evaluates goal notifications when the app is not in the foreground.
 class BackgroundCollector {
   BackgroundCollector({
     required List<DataIngestionSource> sources,
