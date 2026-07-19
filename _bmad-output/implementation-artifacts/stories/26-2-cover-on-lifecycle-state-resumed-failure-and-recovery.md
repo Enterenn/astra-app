@@ -65,9 +65,9 @@ So that the resume `catch` path cannot regress silently.
   - [x] Test: `onLifecycleStateResumed runs resume pipeline and clears live pause flag` — `RecordingHealthFgs` asserts FGS stop + `uiActive:true`; monitor reconcile/bind side effects observable
   - [ ] **Stop → review brief → wait for Baptiste OK → commit**
 
-- [ ] **Sub-task C — Forced `resumeLivePipeline` failure + recovery** (AC: #3)
-  - [ ] Add `_ThrowingLiveStepMonitor` (or extend `_SeedCapturingMonitor`) — throws on `reconcileFromDatabase` **only after** cold-start bind (or on resume-specific call count)
-  - [ ] Test: `onLifecycleStateResumed swallows resumeLivePipeline errors and clears live pause flag` — `await coordinator.onLifecycleStateResumed()` completes; cubit live-pause cleared; optional: spy/assert `resume pipeline ERROR` log path reached
+- [x] **Sub-task C — Forced `resumeLivePipeline` failure + recovery** (AC: #3)
+  - [x] Add `_ThrowingLiveStepMonitor` (or extend `_SeedCapturingMonitor`) — throws on `reconcileFromDatabase` **only after** cold-start bind (or on resume-specific call count)
+  - [x] Test: `onLifecycleStateResumed swallows resumeLivePipeline errors and clears live pause flag` — `await coordinator.onLifecycleStateResumed()` completes; cubit live-pause cleared; optional: spy/assert `resume pipeline ERROR` log path reached
   - [ ] **Stop → review brief → wait for Baptiste OK → commit**
 
 - [ ] **Sub-task D — Regression verification** (AC: #4, #5)
@@ -306,6 +306,7 @@ No coordinator resume behaviour changes since 25-2 — safe to add tests only.
 
 - Sub-task A (2026-07-19): `rg onLifecycleStateResumed|resumeLivePipeline test/` → 0 hits (AUD-51 confirmed). Indirect resume via `AppLifecycleState.resumed` in slow/widget tests. `liveStepAppliesPaused` on `TodayCubit` (not TodayState).
 - Sub-task B (2026-07-19): `group('onLifecycleStateResumed')` + happy path — cold start → pause → resume; FGS stop/uiActive:true; reconcile on resume; pause flag cleared.
+- Sub-task C (2026-07-19): `_ThrowingOnResumeMonitor` gated by post-pause flag; forced throw inside `resumeLivePipeline` try (persist drain reconcile); coordinator completes; `finally` clears pause flag.
 ### Completion Notes List
 
 ### File List

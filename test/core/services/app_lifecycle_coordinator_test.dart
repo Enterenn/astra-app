@@ -230,6 +230,27 @@ class _SeedCapturingMonitor extends LiveStepMonitor {
   }
 }
 
+/// Throws on [reconcileFromDatabase] when [throwOnReconcile] returns true.
+class _ThrowingOnResumeMonitor extends LiveStepMonitor {
+  _ThrowingOnResumeMonitor({
+    required super.stepAggregation,
+    required super.baselineRepository,
+    required super.clock,
+    required super.stepEventStreamFactory,
+    required this.throwOnReconcile,
+  });
+
+  final bool Function() throwOnReconcile;
+
+  @override
+  Future<void> reconcileFromDatabase({int? seedPersistedSteps}) async {
+    if (throwOnReconcile()) {
+      throw StateError('forced resume pipeline failure');
+    }
+    return super.reconcileFromDatabase(seedPersistedSteps: seedPersistedSteps);
+  }
+}
+
 class _DelayingBackgroundCollector extends BackgroundCollector {
   _DelayingBackgroundCollector({
     required super.sources,
@@ -845,6 +866,83 @@ void main() {
 
           await todayCubit.close();
           await captureMonitor.dispose();
+        },
+      );
+
+      test(
+        'onLifecycleStateResumed swallows resumeLivePipeline errors and clears live pause flag',
+        () async {
+          var throwOnReconcile = false;
+          var resumeReconcileAttempted = false;
+
+          final steps = _ColdStartStepAggregation(clock);
+          final todayCubit = TodayCubit(
+            stepAggregation: steps,
+            userSettings: _ColdStartUserSettings(),
+            userHealthMetrics: _ColdStartUserHealthMetrics(),
+            clock: clock,
+            activityPermissionGranted: () async => true,
+          );
+
+          final baselineRepo = IngestionBaselineRepository(
+            CoordinatorStubDatabase(),
+          );
+          final throwingMonitor = _ThrowingOnResumeMonitor(
+            stepAggregation: steps,
+            baselineRepository: baselineRepo,
+            clock: clock,
+            stepEventStreamFactory: () => const Stream<PhoneStepEvent>.empty(),
+            throwOnReconcile: () {
+              if (throwOnReconcile) {
+                resumeReconcileAttempted = true;
+                return true;
+              }
+              return false;
+            },
+          );
+
+          final seedDeps = buildCoordinatorUnitTestDeps(timeProvider: clock);
+          final deps = buildCoordinatorUnitTestDeps(
+            timeProvider: clock,
+            liveStepMonitor: throwingMonitor,
+            backgroundCollector: _NoOpBackgroundCollector(
+              sources: seedDeps.ingestionSources,
+              normalizer: seedDeps.stepNormalizer,
+              repository: seedDeps.stepIngestion,
+              stepAggregation: seedDeps.stepAggregation,
+              baselineRepository: IngestionBaselineRepository(
+                seedDeps.databaseSession,
+              ),
+            ),
+          );
+
+          final coordinator = deps.appLifecycleCoordinator;
+          coordinator.bindToWidget(
+            isMounted: () => true,
+            showMainShell: () => true,
+            enablePeriodicPersist: false,
+            enableLiveStepPipeline: true,
+            maxPersistStaleness: const Duration(seconds: 1),
+            minPauseForPhoneCatchUp: const Duration(seconds: 10),
+            initialShowMainShell: true,
+          );
+
+          coordinator.onTodayCubitReady(todayCubit);
+          await coordinator.foregroundBackfill;
+          await pumpEventQueue();
+
+          await coordinator.onLifecycleStatePaused();
+          expect(todayCubit.liveStepAppliesPaused, isTrue);
+
+          throwOnReconcile = true;
+
+          await coordinator.onLifecycleStateResumed();
+
+          expect(resumeReconcileAttempted, isTrue);
+          expect(todayCubit.liveStepAppliesPaused, isFalse);
+
+          await todayCubit.close();
+          await throwingMonitor.dispose();
         },
       );
     });
