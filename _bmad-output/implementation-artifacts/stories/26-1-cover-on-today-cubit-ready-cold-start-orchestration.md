@@ -1,6 +1,6 @@
 # Story 26.1: Cover onTodayCubitReady Cold-Start Orchestration
 
-Status: review
+Status: done
 
 <!-- Post-audit Epic 26 — tracker: sprint-status-post-audit.yaml -->
 <!-- Source: epics-post-audit.md Story 26-1 · diagnostic-couverture-structurelle.md Top #2 · AUD-50 · NFR-AUD-06 -->
@@ -256,6 +256,7 @@ Composer
 - ✅ Sub-task B: live cold-start sequencing under named group (AC #1, #2)
 - ✅ Sub-task C: non-live initialTodayRefresh path (AC #3)
 - ✅ AC #1–#5: 9/9 coordinator tests + full fast suite green; AUD-50 grep satisfied
+- ✅ Code review: hardened non-live backfill-before-refresh ordering + post-backfill syncSteps guard
 
 ### File List
 
@@ -266,3 +267,4 @@ Composer
 ## Change Log
 
 - 2026-07-19: Story 26-1 — named `onTodayCubitReady` test group (AUD-50 / NFR-AUD-06); live + non-live cold-start orchestration coverage
+- 2026-07-19: Code review — test hardening for AC #2 syncSteps and AC #3 refresh ordering; story closed

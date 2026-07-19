@@ -69,6 +69,57 @@ class _ColdStartStepAggregation implements StepAggregationRepositoryContract {
 }
 
 /// Wraps a fixed step count and tracks getTodaySteps call count for AUD-03 assertions.
+/// Returns [beforeBackfill] until [backfillComplete], then [afterBackfill].
+class _BackfillGatedStepAggregation implements StepAggregationRepositoryContract {
+  _BackfillGatedStepAggregation(
+    this.clock, {
+    this.beforeBackfill = 1200,
+    this.afterBackfill = 1500,
+  });
+
+  @override
+  final TimeProvider clock;
+
+  final int beforeBackfill;
+  final int afterBackfill;
+  bool backfillComplete = false;
+
+  @override
+  Future<int> getTodaySteps() async =>
+      backfillComplete ? afterBackfill : beforeBackfill;
+
+  @override
+  Future<List<TimeseriesSampleModel>> getTodayActiveBuckets() async => [];
+
+  @override
+  Future<DateTime?> getLastIngestionUtc() async => null;
+
+  @override
+  Future<List<ChartDayAggregate>> getChartDailyAggregates({
+    required int days,
+  }) async =>
+      [];
+
+  @override
+  Future<List<TimeseriesSampleModel>> getActiveBucketsForLocalDay(
+    DateTime localDay,
+  ) async =>
+      [];
+
+  @override
+  Future<List<ChartMonthAggregate>> getChartMonthlyAggregates({
+    required int months,
+  }) async =>
+      [];
+
+  @override
+  Future<int> countStepSamples() async => 0;
+
+  @override
+  Future<DatabaseFootprint> getFootprint({required String databasePath}) async =>
+      const DatabaseFootprint(sampleCount: 0, fileSizeBytes: 0);
+}
+
 class _CountingStepAggregation implements StepAggregationRepositoryContract {
   _CountingStepAggregation(this.clock, {this.stubbedSteps = 1200});
 
@@ -553,9 +604,9 @@ void main() {
           var postBackfillReconcileSeen = false;
           final backfillDone = Completer<void>();
 
-          final counting = _CountingStepAggregation(clock, stubbedSteps: 1200);
+          final steps = _BackfillGatedStepAggregation(clock);
           final todayCubit = TodayCubit(
-            stepAggregation: counting,
+            stepAggregation: steps,
             userSettings: _ColdStartUserSettings(),
             userHealthMetrics: _ColdStartUserHealthMetrics(),
             clock: clock,
@@ -566,7 +617,7 @@ void main() {
             CoordinatorStubDatabase(),
           );
           final innerMonitor = LiveStepMonitor(
-            stepAggregation: counting,
+            stepAggregation: steps,
             baselineRepository: baselineRepo,
             clock: clock,
             stepEventStreamFactory: () => const Stream<PhoneStepEvent>.empty(),
@@ -594,6 +645,7 @@ void main() {
             onCollectStart: () {},
             onCollectEnd: () {
               backfillEnded = true;
+              steps.backfillComplete = true;
               if (!backfillDone.isCompleted) {
                 backfillDone.complete();
               }
@@ -626,7 +678,12 @@ void main() {
             isTrue,
             reason: 'reconcileAfterBackfillCompletes must run after backfill',
           );
-          expect(todayCubit.state.steps, 1200);
+          expect(
+            todayCubit.state.steps,
+            1500,
+            reason:
+                'post-backfill reconcile + syncSteps must apply DB steps after backfill',
+          );
 
           await todayCubit.close();
           await captureMonitor.dispose();
@@ -637,8 +694,9 @@ void main() {
         'onTodayCubitReady with enableLiveStepPipeline false waits backfill then refreshes Today',
         () async {
           final backfillDone = Completer<void>();
+          final counting = _CountingStepAggregation(clock, stubbedSteps: 1200);
           final todayCubit = TodayCubit(
-            stepAggregation: _ColdStartStepAggregation(clock),
+            stepAggregation: counting,
             userSettings: _ColdStartUserSettings(),
             userHealthMetrics: _ColdStartUserHealthMetrics(),
             clock: clock,
@@ -657,6 +715,12 @@ void main() {
             collectDelay: const Duration(milliseconds: 100),
             onCollectStart: () {},
             onCollectEnd: () {
+              expect(
+                counting.getTodayStepsCallCount,
+                0,
+                reason: 'TodayCubit.refresh must wait for foregroundBackfill',
+              );
+              expect(todayCubit.state.lastDisplayedStepsLoaded, isFalse);
               if (!backfillDone.isCompleted) {
                 backfillDone.complete();
               }
@@ -686,6 +750,7 @@ void main() {
           await pumpEventQueue();
 
           expect(monitor.isRunning, isFalse);
+          expect(counting.getTodayStepsCallCount, greaterThanOrEqualTo(1));
           expect(todayCubit.state.lastDisplayedStepsLoaded, isTrue);
           expect(todayCubit.state.status, isNot(TodayStatus.loading));
           expect(todayCubit.state.steps, 1200);
