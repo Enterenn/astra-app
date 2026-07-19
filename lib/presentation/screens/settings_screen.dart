@@ -48,17 +48,37 @@ class _SettingsScreenBody extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final horizontalPadding = AstraSpacing.kScreenHorizontalPadding;
+    final bottomScrollPadding =
+        AstraSpacing.kBottomNavBottomOffset +
+        AstraSpacing.kBottomNavBarHeight +
+        AstraSpacing.kSpaceMd;
+
     return BlocBuilder<ProfileCubit, ProfileState>(
-      builder: (context, state) {
-        if (state.status == ProfileStatus.loading) {
-          return const Center(child: CircularProgressIndicator());
-        }
-
-        if (state.status == ProfileStatus.error) {
-          return ProfileLoadErrorPanel(loadError: state.loadError);
-        }
-
-        return const _SettingsScrollBody();
+      builder: (context, profileState) {
+        return SingleChildScrollView(
+          padding: EdgeInsets.fromLTRB(
+            horizontalPadding,
+            AstraSpacing.kSpaceSm,
+            horizontalPadding,
+            bottomScrollPadding,
+          ),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.stretch,
+            children: [
+              if (profileState.status == ProfileStatus.error) ...[
+                Align(
+                  alignment: Alignment.topCenter,
+                  child: ProfileLoadErrorPanel(
+                    loadError: profileState.loadError,
+                  ),
+                ),
+                const SizedBox(height: AstraSpacing.kSpaceMd),
+              ],
+              const _SettingsPreferenceSections(),
+            ],
+          ),
+        );
       },
     );
   }
@@ -194,8 +214,8 @@ Future<void> _setAccentPreset(
   }
 }
 
-class _SettingsScrollBody extends StatelessWidget {
-  const _SettingsScrollBody();
+class _SettingsPreferenceSections extends StatelessWidget {
+  const _SettingsPreferenceSections();
 
   @override
   Widget build(BuildContext context) {
@@ -203,22 +223,10 @@ class _SettingsScrollBody extends StatelessWidget {
     final colors = context.astraColors;
     final profileState = context.watch<ProfileCubit>().state;
     final profileCubit = context.read<ProfileCubit>();
-    final horizontalPadding = AstraSpacing.kScreenHorizontalPadding;
-    final bottomScrollPadding =
-        AstraSpacing.kBottomNavBottomOffset +
-        AstraSpacing.kBottomNavBarHeight +
-        AstraSpacing.kSpaceMd;
 
-    return SingleChildScrollView(
-      padding: EdgeInsets.fromLTRB(
-        horizontalPadding,
-        AstraSpacing.kSpaceSm,
-        horizontalPadding,
-        bottomScrollPadding,
-      ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.stretch,
-        children: [
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.stretch,
+      children: [
           BlocBuilder<LocaleCubit, LocaleState>(
             builder: (context, localeState) {
               final localeCubit = context.read<LocaleCubit>();
@@ -355,7 +363,6 @@ class _SettingsScrollBody extends StatelessWidget {
             ),
           ),
         ],
-      ),
     );
   }
 }
