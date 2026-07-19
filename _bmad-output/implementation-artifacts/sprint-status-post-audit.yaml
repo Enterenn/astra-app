@@ -1,6 +1,6 @@
 # generated: 2026-07-16
-# last_updated: 2026-07-19 (Story 25-4 done)
-# NEXT: create-story / dev-story 25-5-add-core-data-class-doc-comments-for-public-services
+# last_updated: 2026-07-19 (Story 25-5 review)
+# NEXT: dev-story 25-5-add-core-data-class-doc-comments-for-public-services
 # Ref: planning-artifacts/epics-post-audit.md · planning-artifacts/audits/
 # project: astra-app
 # project_key: NOKEY
@@ -63,7 +63,7 @@
 # NAVIGATION: _bmad-output/README.md · planning-artifacts/epics-post-audit.md
 
 generated: 2026-07-16
-last_updated: 2026-07-19 (Story 25-4 done)
+last_updated: 2026-07-19 (Story 25-5 ready-for-dev)
 project: astra-app
 project_key: NOKEY
 tracking_system: file-system
@@ -115,7 +115,7 @@ development_status:
   25-2-split-app-lifecycle-coordinator-into-focused-services: done
   25-3-remove-presentation-dependency-from-core-di-layer: done
   25-4-decouple-my-data-cubit-from-ui-dialog-types: done
-  25-5-add-core-data-class-doc-comments-for-public-services: backlog
+  25-5-add-core-data-class-doc-comments-for-public-services: review
   epic-25-retrospective: optional
 
   epic-26: backlog
