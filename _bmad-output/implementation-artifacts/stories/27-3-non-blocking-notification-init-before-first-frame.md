@@ -1,6 +1,6 @@
 # Story 27.3: Non-Blocking Notification Init Before First Frame
 
-Status: review
+Status: done
 
 <!-- Post-audit Epic 27 — tracker: sprint-status-post-audit.yaml -->
 <!-- Source: epics-post-audit.md Story 27-3 · diagnostic-cold-start.md §Phase D3 · AUD-15 -->
@@ -294,8 +294,10 @@ Composer
 
 - `lib/main.dart` (modified)
 - `test/main_notification_boot_test.dart` (new)
+- `_bmad-output/implementation-artifacts/sprint-status-post-audit.yaml` — status review → done
 
 ## Change Log
 
 - 2026-07-19: Story context created — AUD-15 non-blocking notification init (ready-for-dev).
-- 2026-07-19: Implementation complete — non-blocking notification init (review).
+- 2026-07-19: Implementation complete — non-blocking notification init.
+- 2026-07-19: Code review passed — mark 27-3 done (AUD-15).
