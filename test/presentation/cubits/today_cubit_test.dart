@@ -1210,14 +1210,26 @@ void main() {
           await cubit.syncSteps(cubit.state.steps + 100, foregroundCatchUp: true);
           expect(cubit.state.foregroundCatchUp, isTrue);
           expect(cubit.state.catchUpTargetSteps, isNotNull);
+          final preRolloverSteps = cubit.state.steps;
 
           clock.setNowUtc(DateTime.utc(2026, 6, 3, 10));
 
+          final rolloverEmissions = <TodayState>[];
+          final subscription = cubit.stream.listen(rolloverEmissions.add);
+
           await cubit.refreshAfterDayRollover();
+
+          expect(rolloverEmissions, isNotEmpty);
+          final firstEmission = rolloverEmissions.first;
+          expect(firstEmission.foregroundCatchUp, isFalse);
+          expect(firstEmission.catchUpTargetSteps, isNull);
+          expect(firstEmission.showCelebration, isFalse);
+          expect(firstEmission.steps, preRolloverSteps);
 
           expect(cubit.state.foregroundCatchUp, isFalse);
           expect(cubit.state.catchUpTargetSteps, isNull);
           expect(cubit.state.showCelebration, isFalse);
+          await subscription.cancel();
           await cubit.close();
         },
       );
@@ -1235,7 +1247,7 @@ void main() {
           final cubit = buildCubit();
           await cubit.refresh();
           expect(cubit.state.steps, 5000);
-          expect(cubit.state.status, isNot(TodayStatus.loading));
+          expect(cubit.state.status, TodayStatus.progress);
 
           var sawLoading = false;
           final subscription = cubit.stream.listen((state) {
@@ -1245,8 +1257,10 @@ void main() {
           clock.setNowUtc(DateTime.utc(2026, 6, 3, 10));
 
           await cubit.refreshAfterDayRollover();
+          await Future<void>.delayed(Duration.zero);
 
           expect(sawLoading, isFalse);
+          expect(cubit.state.status, TodayStatus.empty);
           expect(cubit.state.steps, 0);
           expect(cubit.state.weekDays, isNotEmpty);
           final today = cubit.state.weekDays.singleWhere((day) => day.isToday);

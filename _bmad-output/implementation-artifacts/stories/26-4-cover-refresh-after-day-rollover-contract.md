@@ -1,6 +1,6 @@
 # Story 26.4: Cover refreshAfterDayRollover Contract
 
-Status: review
+Status: done
 
 <!-- Post-audit Epic 26 — tracker: sprint-status-post-audit.yaml -->
 <!-- Source: epics-post-audit.md Story 26-4 · diagnostic-couverture-structurelle.md Top #5 · AUD-53 -->
@@ -323,14 +323,16 @@ Composer
 - Added `group('refreshAfterDayRollover')` with 2 named tests calling `cubit.refreshAfterDayRollover()` directly (AUD-53).
 - Test 1: celebration + foregroundCatchUp cleared on rollover after clock advance.
 - Test 2: steps decrease 5000→0 on empty new day; week strip rebuilt; silent (no loading flash).
+- Code review: stream-order assertion (flags cleared before SQLite refresh); final `TodayStatus.empty` after silent rollover.
 - No production changes.
 
 ### File List
 
 - `test/presentation/cubits/today_cubit_test.dart` — added `refreshAfterDayRollover` test group
 - `_bmad-output/implementation-artifacts/stories/26-4-cover-refresh-after-day-rollover-contract.md` — story status/tasks
-- `_bmad-output/implementation-artifacts/sprint-status-post-audit.yaml` — in-progress → review
+- `_bmad-output/implementation-artifacts/sprint-status-post-audit.yaml` — review → done
 
 ## Change Log
 
 - 2026-07-19: AUD-53 — named unit tests for `TodayCubit.refreshAfterDayRollover` (flag reset + allow-decrease + silent week rebuild).
+- 2026-07-19: Code review passed — stream-order and status assertions tightened; story closed done.
