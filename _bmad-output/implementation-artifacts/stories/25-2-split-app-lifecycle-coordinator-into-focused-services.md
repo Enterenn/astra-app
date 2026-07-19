@@ -1,6 +1,6 @@
 # Story 25.2: Split AppLifecycleCoordinator into Focused Services
 
-Status: review
+Status: done
 
 <!-- Post-audit Epic 25 — tracker: sprint-status-post-audit.yaml -->
 <!-- Source: epics-post-audit.md Story 25-2 · diagnostic-convention-structure.md Synthèse Haute · AUD-45 -->
@@ -309,11 +309,14 @@ Cursor Grok 4.5
 - Sub-task C: Façade 248 LOC (≤250); public API + `app.dart` re-export unchanged; `AppDependencies` unchanged.
 - Sub-task D: `dart analyze` clean; coordinator + transition 11/11; full suite `flutter test --exclude-tags slow` → **947/947** (~2 skipped). AC #3 LOC: max collaborator 323 (<500).
 
+Code review: mergeable — no blocking regressions from split; pre-existing teardown/mutex gaps deferred (Epic 26 / follow-up).
+
 ### Change Log
 
 - 2026-07-19: Sub-task A — split map designed; story → in-progress
 - 2026-07-19: Sub-task B — mechanical extract into `lib/core/services/lifecycle/`
 - 2026-07-19: Sub-task C/D — façade verified, regression suite green; story → review
+- 2026-07-19: Code review passed; story → done
 
 ### File List
 
