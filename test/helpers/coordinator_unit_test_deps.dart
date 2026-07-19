@@ -20,7 +20,7 @@ import 'package:astra_app/data/repositories/step/step_ingestion_repository.dart'
 import 'package:astra_app/data/repositories/user_health_metrics_repository.dart';
 import 'package:astra_app/data/repositories/user_settings_repository.dart';
 import 'package:astra_app/data/services/csv_service.dart';
-import 'package:astra_app/presentation/cubits/theme_state.dart';
+import 'package:astra_app/core/constants/astra_theme_preference.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:permission_handler/permission_handler.dart';
 import 'package:sqflite/sqflite.dart';

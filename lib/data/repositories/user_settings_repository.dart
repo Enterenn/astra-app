@@ -1,11 +1,11 @@
 import 'package:sqflite/sqflite.dart';
 
 import '../../core/constants/astra_accent_preset.dart';
+import '../../core/constants/astra_theme_preference.dart';
 import '../../core/constants/display_unit_preferences.dart';
 import '../../core/constants/preference_keys.dart';
 import '../../core/database/astra_database_session.dart';
 import '../../core/time/timestamp_codec.dart';
-import '../../presentation/cubits/theme_state.dart';
 import '../contracts/user_settings_repository_contract.dart';
 import '_user_preferences_kv_store.dart';
 
@@ -39,17 +39,15 @@ class UserSettingsRepository implements UserSettingsRepositoryContract {
 
   Future<AstraThemePreference> getThemeMode() async {
     final value = await _kv.readValue(kThemeModeKey);
-    return _parseThemeMode(value);
+    return parseThemePreference(value);
   }
 
   @override
   Future<void> setThemeMode(AstraThemePreference preference) async {
-    final encoded = switch (preference) {
-      AstraThemePreference.light => 'light',
-      AstraThemePreference.dark => 'dark',
-      AstraThemePreference.system => 'system',
-    };
-    await _kv.writeValue(kThemeModeKey, encoded);
+    await _kv.writeValue(
+      kThemeModeKey,
+      themePreferenceToStorage(preference),
+    );
   }
 
   Future<AstraAccentPreset> getAccentPreset() async {
@@ -288,10 +286,4 @@ class UserSettingsRepository implements UserSettingsRepositoryContract {
       }),
     );
   }
-
-  AstraThemePreference _parseThemeMode(String? raw) => switch (raw) {
-    'light' => AstraThemePreference.light,
-    'dark' => AstraThemePreference.dark,
-    _ => AstraThemePreference.system,
-  };
 }

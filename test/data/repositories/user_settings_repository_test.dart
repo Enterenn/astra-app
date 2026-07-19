@@ -3,7 +3,7 @@ import 'package:astra_app/core/constants/display_unit_preferences.dart';
 import 'package:astra_app/core/constants/preference_keys.dart';
 import 'package:astra_app/core/database/app_database.dart';
 import 'package:astra_app/data/repositories/user_settings_repository.dart';
-import 'package:astra_app/presentation/cubits/theme_state.dart';
+import 'package:astra_app/core/constants/astra_theme_preference.dart';
 import 'package:sqflite/sqflite.dart';
 import 'package:sqflite_common_ffi/sqflite_ffi.dart';
 import 'package:flutter_test/flutter_test.dart';

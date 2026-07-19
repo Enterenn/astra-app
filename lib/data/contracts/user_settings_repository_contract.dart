@@ -1,6 +1,6 @@
 import '../../core/constants/astra_accent_preset.dart';
+import '../../core/constants/astra_theme_preference.dart';
 import '../../core/constants/display_unit_preferences.dart';
-import '../../presentation/cubits/theme_state.dart';
 
 abstract class UserSettingsRepositoryContract {
   bool get isDatabaseOpen;
