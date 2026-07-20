@@ -28,6 +28,7 @@ dev_dependencies:
   flutter_lints: ^6.0.0
   sqflite_common_ffi: ^2.4.0+3
   sqlite3: ^3.0.0
+  flutter_launcher_icons: ^0.14.4
 
 hooks:
   user_defines:
@@ -55,3 +56,19 @@ flutter:
     - family: PhosphorFill
       fonts:
         - asset: assets/fonts/Phosphor-Fill-subset.ttf
+
+flutter_launcher_icons:
+  android: true
+  ios: true
+
+  # iOS — image pleine 1024×1024, fond opaque, pas de transparence
+  image_path: assets/icon/ios_icon_1024.png
+
+  # Android adaptive (API 26+) — foreground transparent + background image
+  adaptive_icon_foreground: assets/icon/android_foreground_1024.png
+  adaptive_icon_background: assets/icon/android_background_1024.png
+
+  # adaptive_icon_monochrome: assets/icon/android_monochrome_1024.png  # Android 13+ thèmes
+  # image_path_android: assets/icon/android_legacy_1024.png            # legacy API < 26 si besoin
+
+  min_sdk_android: 21
