@@ -1,3 +1,5 @@
+import '../../core/lifecycle/lifecycle_compaction.dart';
+import '../../core/time/local_day_calculator.dart';
 import '../../core/time/time_provider.dart';
 import '../models/normalized_step_bucket.dart';
 import '../models/step_reading.dart';
@@ -52,11 +54,9 @@ class StepNormalizer {
     final zoneOffset = _formatZoneOffset(clock.currentZoneOffset());
 
     int? baseline = initialBaseline;
-    int? lastCumulative;
     DateTime? previousObservedAtUtc;
     for (final reading in readings) {
       final cumulativeSteps = reading.cumulativeSteps;
-      lastCumulative = cumulativeSteps;
 
       if (baseline == null) {
         baseline = cumulativeSteps;
@@ -64,9 +64,10 @@ class StepNormalizer {
         continue;
       }
 
-      final elapsedSincePrevious = previousObservedAtUtc == null
+      final intervalStartUtc = previousObservedAtUtc;
+      final elapsedSincePrevious = intervalStartUtc == null
           ? null
-          : reading.observedAtUtc.difference(previousObservedAtUtc);
+          : reading.observedAtUtc.difference(intervalStartUtc);
       previousObservedAtUtc = reading.observedAtUtc;
 
       final increment = incrementCalculator.calculate(
@@ -85,12 +86,21 @@ class StepNormalizer {
         continue;
       }
 
-      final bucketStartUtc = _floorToFiveMinuteUtc(reading.observedAtUtc);
-      bucketValues.update(
-        bucketStartUtc,
-        (value) => value + increment,
-        ifAbsent: () => increment,
-      );
+      if (intervalStartUtc == null) {
+        _creditBucket(
+          bucketValues,
+          _floorToFiveMinuteUtc(reading.observedAtUtc),
+          increment,
+        );
+      } else {
+        _creditIncrementAcrossLocalDays(
+          bucketValues: bucketValues,
+          increment: increment,
+          intervalStartUtc: intervalStartUtc,
+          intervalEndUtc: reading.observedAtUtc,
+          zoneOffset: zoneOffset,
+        );
+      }
     }
 
     return StepNormalizationResult(
@@ -105,7 +115,132 @@ class StepNormalizer {
             zoneOffset: zoneOffset,
           ),
       ],
-      terminalBaseline: lastCumulative ?? initialBaseline,
+      terminalBaseline: baseline ?? initialBaseline,
+    );
+  }
+
+  void _creditIncrementAcrossLocalDays({
+    required Map<DateTime, int> bucketValues,
+    required int increment,
+    required DateTime intervalStartUtc,
+    required DateTime intervalEndUtc,
+    required String zoneOffset,
+  }) {
+    final totalElapsedMs =
+        intervalEndUtc.difference(intervalStartUtc).inMilliseconds;
+    if (totalElapsedMs <= 0) {
+      _creditBucket(
+        bucketValues,
+        _floorToFiveMinuteUtc(intervalEndUtc),
+        increment,
+      );
+      return;
+    }
+
+    final startLocalDay = LocalDayCalculator.localDay(
+      utc: intervalStartUtc,
+      zoneOffset: zoneOffset,
+    );
+    final endLocalDay = LocalDayCalculator.localDay(
+      utc: intervalEndUtc,
+      zoneOffset: zoneOffset,
+    );
+
+    if (startLocalDay == endLocalDay) {
+      _creditBucket(
+        bucketValues,
+        _floorToFiveMinuteUtc(intervalEndUtc),
+        increment,
+      );
+      return;
+    }
+
+    var segmentStart = intervalStartUtc;
+    var currentLocalDay = startLocalDay;
+    var allocated = 0;
+    var segmentIndex = 0;
+
+    while (true) {
+      final nextLocalDay = currentLocalDay.add(const Duration(days: 1));
+      final nextMidnightUtc = localBucketStartUtc(
+        localBucket: nextLocalDay,
+        zoneOffset: zoneOffset,
+      );
+
+      final isLastSegment = !nextMidnightUtc.isBefore(intervalEndUtc);
+      final segmentEnd = isLastSegment ? intervalEndUtc : nextMidnightUtc;
+      final segmentElapsedMs =
+          segmentEnd.difference(segmentStart).inMilliseconds;
+
+      final portion = isLastSegment
+          ? increment - allocated
+          : ((increment * segmentElapsedMs) / totalElapsedMs).round();
+
+      if (portion > 0) {
+        _creditBucket(
+          bucketValues,
+          _bucketForDaySegment(
+            segmentStartUtc: segmentStart,
+            segmentEndUtc: segmentEnd,
+            zoneOffset: zoneOffset,
+            isFirstSegment: segmentIndex == 0,
+            isLastSegment: isLastSegment,
+          ),
+          portion,
+        );
+      }
+
+      allocated += portion;
+
+      if (isLastSegment) {
+        break;
+      }
+
+      segmentStart = nextMidnightUtc;
+      currentLocalDay = nextLocalDay;
+      segmentIndex += 1;
+    }
+  }
+
+  DateTime _bucketForDaySegment({
+    required DateTime segmentStartUtc,
+    required DateTime segmentEndUtc,
+    required String zoneOffset,
+    required bool isFirstSegment,
+    required bool isLastSegment,
+  }) {
+    if (isLastSegment) {
+      return _floorToFiveMinuteUtc(segmentEndUtc);
+    }
+    if (isFirstSegment) {
+      return _floorToFiveMinuteUtc(segmentStartUtc);
+    }
+
+    final localDay = LocalDayCalculator.localDay(
+      utc: segmentStartUtc,
+      zoneOffset: zoneOffset,
+    );
+    final noonLocal = DateTime.utc(
+      localDay.year,
+      localDay.month,
+      localDay.day,
+      12,
+    );
+    return localBucketStartUtc(
+      localBucket: noonLocal,
+      zoneOffset: zoneOffset,
+    );
+  }
+
+  void _creditBucket(
+    Map<DateTime, int> bucketValues,
+    DateTime bucketStartUtc,
+    int increment,
+  ) {
+    bucketValues.update(
+      bucketStartUtc,
+      (value) => value + increment,
+      ifAbsent: () => increment,
     );
   }
 
