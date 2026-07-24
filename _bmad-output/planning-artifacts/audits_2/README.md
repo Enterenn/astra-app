@@ -49,7 +49,7 @@ Priorités : **P0** critique (corruption données / sur-comptage / sécurité) �
 |----|-------|------------|---------------|-------------------|
 | **P0-01** | Plaintext SQLite (NFR-4 Phase 0) — écart privacy marketing | 01 | `pubspec.yaml`, `app_database.dart` | SQLCipher Phase 1 **ou** disclaimer UX explicite |
 | **P0-02** | Collision PK multi-types (`deterministicFromIngestionBucket` sans `type`/`resolution`) | 01 | `sample_id_generator.dart:30-37`, `migrations.dart:85-93` | **Fixed** — Story 32-1 : suffixe aligné sur `idx_bucket_identity` + branche legacy `steps`/`5min` |
-| **P0-03** | `insertDevSamplesBatch` protégé par `assert` (strippé release) | 01 | `step_ingestion_repository.dart:92-99` | Garde `if (!kDebugMode) throw` |
+| **P0-03** | `insertDevSamplesBatch` protégé par `assert` (strippé release) | 01 | `step_ingestion_repository.dart:92-99` | **Fixed** — Story 32-2 : garde runtime `if (!kDebugMode) throw` |
 | **P0-04** | `permanentlyDenied` jamais modélisé — toggle/bouton muet | 02 | `onboarding_state.dart`, `profile_cubit.dart`, `settings_screen.dart` | **Partial** — 31-1 post-onboarding + 31-2 intro feedback |
 | **P0-05** | Pas de `.request()` activité post-onboarding ; onboarding avance si denied | 02 | `onboarding_flow.dart` | **Partial** — 31-2 retry + no silent advance ; 31-1 post-onboarding Retry |
 | **P0-06** | `_initializePlatform` avale erreurs — `initialize()` ne rethrow jamais | 02 | `notification_service.dart:105-122` | **Fixed** — Story 31-3 : `rethrow` + lazy-init guard |
@@ -112,7 +112,7 @@ Priorités : **P0** critique (corruption données / sur-comptage / sécurité) �
 |---|----------|---------|--------|------|
 | 1 | P0 | Chiffrement au repos absent | `open` | `sqflite` pur, `astra_app.db` clair |
 | 2 | P0 | Collision ID multi-types | `open` | `sample_id_generator.dart:30-37` |
-| 3 | P0 | Garde-fou `assert` dev/prod | `open` | `step_ingestion_repository.dart:92-99` |
+| 3 | P0 | Garde-fou `assert` dev/prod | `fixed` (32-2) | `step_ingestion_repository.dart:92-99` |
 | 4 | P1 | Regex identity case-sensitive | `open` | `sample_id_generator.dart:35` |
 | 5 | P1 | Contention multi-isolate sans `busy_timeout` | `fixed` (30-2) | `app_database.dart` |
 | 6 | P2 | `testHookAfterDeleteSamples` dans contrat public | `open` | `step_ingestion_repository_contract.dart` |
@@ -260,7 +260,7 @@ My Data editor → state local + setDailyStepGoal (pas reload journal au refresh
 |------|-------------|--------|
 | Q1 | 07 | `terminalBaseline: baseline ?? initialBaseline` + test |
 | Q2 | 09 | Fix filtre drain reset matériel + test reboot post-baseline 10k | **done** (29-2) |
-| Q3 | 01 | Garde runtime `insertDevSamplesBatch` |
+| Q3 | 01 | Garde runtime `insertDevSamplesBatch` | **done** (32-2) |
 | Q4 | 01 | ID ingestion : inclure `type` + `resolution` |
 | Q5 | 01 | `.toLowerCase()` identity provider/device |
 | Q6 | 02 | `rethrow` dans `_initializePlatform` |

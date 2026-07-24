@@ -3,7 +3,7 @@
 **Généré :** 2026-07-20  
 **Base code :** `0.12.1+31` (`pubspec.yaml`)  
 **Périmètre :** ouverture DB → session → migrations → `StepIngestionRepository` → génération d'ID  
-**Statut global :** `partial` (P0 #2 fixed — 32-1 · P1 #4 fixed — 32-1 · P1 #5 fixed — 30-2)
+**Statut global :** `partial` (P0 #2 fixed — 32-1 · P0 #3 fixed — 32-2 · P1 #4 fixed — 32-1 · P1 #5 fixed — 30-2)
 
 ---
 
@@ -11,7 +11,7 @@
 
 - **Dernière vérification :** 2026-07-25
 - **Statut :** `partial`
-- **Story / PR :** Story 32-1 (#2, #4)
+- **Story / PR :** Story 32-1 (#2, #4) · Story 32-2 (#3)
 
 ---
 
@@ -21,7 +21,7 @@
 |----------|---|---------|--------|
 | 🔴 P0 | 1 | Chiffrement au repos absent | `open` |
 | 🔴 P0 | 2 | Collision ID multi-types | `fixed` (32-1) |
-| 🔴 P0 | 3 | Garde-fou dev/prod (`assert`) inopérant en release | `open` |
+| 🔴 P0 | 3 | Garde-fou dev/prod (`assert`) inopérant en release | `fixed` (32-2) |
 | 🟡 P1 | 4 | Regex normalisation sensible à la casse | `fixed` (32-1) |
 | 🟡 P1 | 5 | Contention multi-isolate sans `busy_timeout` | `fixed` (30-2) |
 | 🟡 P2 | 6 | Fuite d'abstraction `testHookAfterDeleteSamples` | `open` |
@@ -90,6 +90,8 @@ if (!kDebugMode) {
 ```
 
 Ou isoler derrière une implémentation debug-only / `@visibleForTesting` non exposée au DI prod.
+
+**Statut :** `fixed` — Story 32-2
 
 ---
 
@@ -170,7 +172,7 @@ Ou isoler derrière une implémentation debug-only / `@visibleForTesting` non ex
 
 | Phase | Action | Lié |
 |-------|--------|-----|
-| **Quick fix** | Garde `kDebugMode` runtime sur `insertDevSamplesBatch` | #3 |
+| **Quick fix** | ~~Garde `kDebugMode` runtime sur `insertDevSamplesBatch`~~ — done (32-2) | #3 |
 | **Quick fix** | ~~Inclure `type` + `resolution` dans `deterministicFromIngestionBucket`~~ — done (32-1) | #2 |
 | **Quick fix** | ~~`.toLowerCase()` sur identity provider/device~~ — done (32-1) | #4 |
 | **Moyen** | ~~`PRAGMA busy_timeout` + doc contention isolate~~ — done (30-2) | #5 |
