@@ -10,7 +10,7 @@ class UserPreferencesKvStore {
 
   AstraDatabaseSession get session => _session;
 
-  bool get isDatabaseOpen => _session.database.isOpen;
+  bool get isDatabaseOpen => _session.isOpen;
 
   Future<String?> readValue(String key) {
     return _session.withRetry((db) async {

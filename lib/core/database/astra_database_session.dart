@@ -25,6 +25,11 @@ class AstraDatabaseSession {
     return db;
   }
 
+  bool get isOpen {
+    final db = _db;
+    return db != null && db.isOpen;
+  }
+
   static bool isDatabaseClosedError(Object error) {
     return error is DatabaseException &&
         error.toString().contains('database_closed');
