@@ -119,6 +119,7 @@ class NotificationService {
       _initFuture = null;
       debugPrint('NotificationService init failed: $error');
       debugPrintStack(stackTrace: stackTrace);
+      rethrow;
     }
   }
 
