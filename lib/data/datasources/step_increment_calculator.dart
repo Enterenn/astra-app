@@ -4,6 +4,9 @@
 /// latest reading in callers; phantom steps beyond the rate cap are discarded,
 /// not deferred.
 ///
+/// Persist drain pre-filter: [shouldForwardForPersistence] — no rate cap.
+/// Live UI and bucket credit: [calculate] — includes rate cap when elapsed is set.
+///
 /// [elapsedSincePrevious] uses inter-arrival time between consecutive
 /// `observedAtUtc` values. The `pedometer` package sets `StepCount.timeStamp` to
 /// `DateTime.now()` at Dart receipt — delivery latency, not hardware step time.
@@ -34,6 +37,9 @@ class StepIncrementCalculator {
   /// `max(1, ceil(kMaxStepsPerSecond × elapsedMs / 1000))`.
   /// When [elapsedSincePrevious] is null (first increment after baseline seed),
   /// no rate cap is applied.
+  ///
+  /// For persist drain gating use [shouldForwardForPersistence] instead — it
+  /// uses strict `>` at baseline (anti double-credit) and skips rate limiting.
   int? calculate({
     required int current,
     required int baseline,
@@ -48,13 +54,32 @@ class StepIncrementCalculator {
       return rawDelta < maxDelta ? rawDelta : maxDelta;
     }
 
-    final resetThreshold = baseline ~/ 2;
+    final resetThreshold = _hardwareResetThreshold(baseline);
     if (current <= resetThreshold) {
       return current;
     }
 
     return null;
   }
+
+  /// Whether [current] should leave the monitor drain and enter the persist
+  /// pipeline (normalizer → collector). Does not apply rate limiting — that
+  /// remains in [calculate] for live UI and bucket credit.
+  ///
+  /// Intentional difference vs [calculate]: uses strict `>` at baseline so
+  /// readings exactly at persisted baseline are dropped before normalizer
+  /// (anti double-credit); [calculate] returns `0` at equality which the
+  /// normalizer skips anyway.
+  bool shouldForwardForPersistence({
+    required int current,
+    required int baseline,
+  }) {
+    if (current > baseline) return true;
+    if (current <= _hardwareResetThreshold(baseline)) return true;
+    return false;
+  }
+
+  int _hardwareResetThreshold(int baseline) => baseline ~/ 2;
 
   int _maxDeltaForElapsed(int elapsedMs) {
     if (elapsedMs <= 0) {

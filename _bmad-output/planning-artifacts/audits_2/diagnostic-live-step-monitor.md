@@ -3,15 +3,15 @@
 **Généré :** 2026-07-24  
 **Base code :** `0.12.1+31` (`pubspec.yaml`)  
 **Périmètre :** `LiveStepMonitor` · `MonitorDrainSource` · chemin persist vs UI live · lien `StepIncrementCalculator` / `BackgroundCollector`  
-**Statut global :** `partial` (P0 #1 fixed — story 29-2)
+**Statut global :** `closed` (P0 #1 fixed — 29-2 · P1 #2 fixed — 29-5)
 
 ---
 
 ## Statut
 
 - **Dernière vérification :** 2026-07-24
-- **Statut :** `partial` (P0 #1 fixed)
-- **Story / PR :** Story 29-2 (`29-2-forward-hardware-reset-readings-through-live-drain`)
+- **Statut :** `closed` (P0 #1 fixed · P1 #2 fixed)
+- **Story / PR :** Story 29-2 (#1) · Story 29-5 (#2)
 
 ---
 
@@ -20,7 +20,7 @@
 | Priorité | # | Domaine | Statut |
 |----------|---|---------|--------|
 | 🔴 P0 | 1 | Filtre `sinceCumulative` élimine resets matériels | `fixed` (29-2) |
-| 🟡 P1 | 2 | Duplication logique crédit vs `StepIncrementCalculator` | `open` |
+| 🟡 P1 | 2 | Duplication logique crédit vs `StepIncrementCalculator` | `fixed` (29-5) |
 
 ---
 
@@ -66,17 +66,17 @@
 
 ### 2. Duplication logique métier drain vs calculateur
 
-Deux composants répondent séparément à « cette lecture doit-elle être créditée en persist ? » :
+**Statut :** `fixed` — Story 29-5 (`shouldForwardForPersistence` sur `StepIncrementCalculator`)
+
+Deux composants répondaient séparément à « cette lecture doit-elle être créditée en persist ? » :
 
 | Composant | Règle | Fichier |
 |-----------|-------|---------|
-| Drain gate | `cumulativeSteps > sinceCumulative` | `live_step_monitor.dart:345` |
-| Calculateur | Seuil relatif `baseline/2`, rate cap, bruit | `step_increment_calculator.dart:37-56` |
+| Drain gate | `shouldForwardForPersistence(current, baseline)` | `live_step_monitor.dart` via `incrementCalculator` |
+| Calculateur | Seuil relatif `baseline/2`, rate cap, bruit | `step_increment_calculator.dart` |
 | UI live | Utilise calculateur via `_applyReadingToDelta` | `live_step_monitor.dart:439-455` |
 
-**Risque :** Correction à un seul endroit — pattern déjà vu (permissions `isLimited`/`isProvisional`, audit **02**).
-
-**Piste :** Extraire helper partagé « shouldForwardReadingForPersistence(current, baseline) » ou supprimer le pre-filtre `>` et confier entièrement au pipeline normalizer (avec garde anti double-crédit documentée).
+**Correctif :** Helper partagé `StepIncrementCalculator.shouldForwardForPersistence` — source unique pour le pre-filtre drain ; rate cap reste dans `calculate()` uniquement.
 
 ---
 
@@ -101,7 +101,8 @@ Deux composants répondent séparément à « cette lecture doit-elle être cré
 ```
 BackgroundCollector.collectOnce
   → MonitorDrainSource.watchStepReadings()
-       → drainReadingsForCollectionGated()   ← filtre > baseline
+       → drainReadingsForCollectionGated()
+            → shouldForwardForPersistence (via incrementCalculator)  ← règle unifiée 29-5
        → StepNormalizer.normalize
        → upsertIngestionBucket + setBaseline
 ```

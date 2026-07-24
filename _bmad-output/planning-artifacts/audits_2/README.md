@@ -240,7 +240,7 @@ My Data editor → state local + setDailyStepGoal (pas reload journal au refresh
 | # | Priorité | Finding | Statut | Réf. |
 |---|----------|---------|--------|------|
 | 1 | P0 | Filtre `sinceCumulative` (`>`) élimine resets matériels | `fixed` (29-2) | `live_step_monitor.dart` drain gate |
-| 2 | P1 | Duplication règle crédit drain vs `StepIncrementCalculator` | `open` | Gate `>` vs seuil `baseline/2` |
+| 2 | P1 | Duplication règle crédit drain vs `StepIncrementCalculator` | `fixed` (29-5) | `shouldForwardForPersistence` sur calculateur |
 
 **Chaîne :** `MonitorDrainSource` → `drainReadingsForCollectionGated()` → `BackgroundCollector` → `StepNormalizer`.
 

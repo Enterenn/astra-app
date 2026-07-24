@@ -345,7 +345,10 @@ class LiveStepMonitor {
     final resetThreshold = sinceCumulative ~/ 2;
     for (final reading in drained) {
       final cumulative = reading.cumulativeSteps;
-      if (_shouldForwardDrainedReading(cumulative, sinceCumulative)) {
+      if (incrementCalculator.shouldForwardForPersistence(
+        current: cumulative,
+        baseline: sinceCumulative,
+      )) {
         if (cumulative <= resetThreshold) {
           livePipelineLog(
             'monitor',
@@ -370,12 +373,6 @@ class LiveStepMonitor {
       }
     }
     return forwarded;
-  }
-
-  bool _shouldForwardDrainedReading(int cumulative, int sinceCumulative) {
-    if (cumulative > sinceCumulative) return true;
-    if (cumulative <= sinceCumulative ~/ 2) return true;
-    return false;
   }
 
   Future<void> dispose() async {

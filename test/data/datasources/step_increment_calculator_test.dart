@@ -125,4 +125,45 @@ void main() {
       );
     });
   });
+
+  group('shouldForwardForPersistence', () {
+    const calculator = StepIncrementCalculator();
+
+    final cases = <({int current, int baseline, bool expected})>[
+      (current: 120, baseline: 100, expected: true),
+      (current: 100, baseline: 100, expected: false),
+      (current: 50, baseline: 10_000, expected: true),
+      (current: 150, baseline: 10_000, expected: true),
+      (current: 9900, baseline: 10_000, expected: false),
+      (current: 9, baseline: 10, expected: false),
+      (current: 5000, baseline: 10_000, expected: true),
+      (current: 5001, baseline: 10_000, expected: false),
+    ];
+
+    for (final c in cases) {
+      test('($c.current, $c.baseline) → ${c.expected}', () {
+        expect(
+          calculator.shouldForwardForPersistence(
+            current: c.current,
+            baseline: c.baseline,
+          ),
+          c.expected,
+        );
+      });
+    }
+
+    test('forward-true cases align with calculate or forward-new path', () {
+      for (final c in cases.where((c) => c.expected)) {
+        final delta = calculator.calculate(
+          current: c.current,
+          baseline: c.baseline,
+        );
+        expect(
+          delta != null || c.current > c.baseline,
+          isTrue,
+          reason: '($c.current, $c.baseline)',
+        );
+      }
+    });
+  });
 }
