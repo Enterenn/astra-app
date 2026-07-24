@@ -57,14 +57,16 @@
 
 ### 2. `isDatabaseOpen` trompeur
 
-**Constat :** Getter nommé comme un prédicat booléen, mais délègue à `AstraDatabaseSession.database` qui **lève** si DB null ou fermée — ne retourne jamais `false` dans ces cas.
+**Constat (avant 32-4) :** Getter nommé comme un prédicat booléen, mais déléguait à `AstraDatabaseSession.database` qui **levait** si DB null ou fermée.
+
+**État post-fix (32-4) :**
 
 | Référence | Détail |
 |-----------|--------|
-| `lib/data/repositories/_user_preferences_kv_store.dart:13` | `bool get isDatabaseOpen => _session.database.isOpen` |
-| `lib/core/database/astra_database_session.dart:20-25` | `database` → `StateError('Database is not open')` si null ou `!isOpen` |
-| `lib/data/repositories/user_settings_repository.dart:30` | Exposé via contrat `UserSettingsRepositoryContract` |
-| `lib/presentation/cubits/today/today_live_pipeline.dart:198` | `if (!userSettings.isDatabaseOpen) return` — ne protège pas si DB fermée (exception avant le `return`) |
+| `lib/core/database/astra_database_session.dart:28-31` | `bool get isOpen` — `db != null && db.isOpen`, sans throw |
+| `lib/data/repositories/_user_preferences_kv_store.dart:13` | `bool get isDatabaseOpen => _session.isOpen` |
+| `lib/data/repositories/user_settings_repository.dart:30` | Délègue au KV store |
+| `lib/presentation/cubits/today/today_live_pipeline.dart:198` | Guard opérationnel — retourne sans lever si DB fermée |
 
 **Piste :** ~~Renommer ou implémenter safe~~ — **Fixed (32-4)** : `AstraDatabaseSession.isOpen` + `UserPreferencesKvStore.isDatabaseOpen` retourne `false` sans lever ; guard `today_live_pipeline.dart:198` opérationnel.
 

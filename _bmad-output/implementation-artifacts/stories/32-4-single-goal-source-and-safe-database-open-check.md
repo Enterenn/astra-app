@@ -1,6 +1,6 @@
 # Story 32.4: Single Goal Source and Safe Database Open Check
 
-Status: review
+Status: done
 
 <!-- audits_2 Epic 32 — tracker: sprint-status-audits-2.yaml -->
 <!-- Source: epics-audits-2.md Story 32-4 · diagnostic-preferences-utilisateur.md #1, #2 · AUD2-FR19 · AUD2-FR20 · AUD2-FR32 -->
@@ -319,7 +319,8 @@ Composer (create-story) · Composer (dev-story)
 ### Debug Log References
 
 - Sub-task A committed: `61ac06f`
-- Sub-tasks B–F committed: `aead860` B · `63a6c05` C · `7d9296c` D · `3b7da46` E · pending F
+- Sub-tasks B–F committed: `aead860` B · `63a6c05` C · `7d9296c` D · `3b7da46` E · `8ffffdb` F
+- Closed after code review: chore commit (32-4 done)
 
 ### Completion Notes List
 
@@ -332,6 +333,7 @@ Composer (create-story) · Composer (dev-story)
 
 ### File List
 
+- `lib/presentation/cubits/my_data_cubit.dart`
 - `lib/core/database/astra_database_session.dart`
 - `lib/data/repositories/_user_preferences_kv_store.dart`
 - `lib/data/repositories/user_health_metrics_repository.dart`
@@ -346,3 +348,4 @@ Composer (create-story) · Composer (dev-story)
 - 2026-07-25: Story 32-4 created — single goal source (My Data journal read) + safe `isDatabaseOpen` + single-writer documentation
 - 2026-07-25: Sub-task A committed — My Data refresh journal goal
 - 2026-07-25: Sub-tasks B–F committed — tests, safe open, deprecation, docs
+- 2026-07-25: Closed after code review — story and sprint tracker marked done
