@@ -3,15 +3,15 @@
 **Généré :** 2026-07-21  
 **Base code :** `0.12.1+31` (`pubspec.yaml`)  
 **Périmètre :** `SampleCompactionRunner` · `TransactionCompactionWriter` · `StepAggregationRepository.downsampleStepSamples` · `lifecycle_compaction.dart`  
-**Statut global :** `open`
+**Statut global :** `partial` (P0 #1 fixed, P2 #3 fixed — story 29-4)
 
 ---
 
 ## Statut
 
-- **Dernière vérification :** 2026-07-21
-- **Statut :** `open`
-- **Story / PR :** —
+- **Dernière vérification :** 2026-07-24
+- **Statut :** `partial` (P0 #1 fixed, P2 #3 fixed)
+- **Story / PR :** 29-4-guard-compaction-delete-until-insert-succeeds
 
 ---
 
@@ -19,15 +19,17 @@
 
 | Priorité | # | Domaine | Statut |
 |----------|---|---------|--------|
-| 🔴 P0 | 1 | `ConflictAlgorithm.ignore` + suppression sources inconditionnelle | `open` |
+| 🔴 P0 | 1 | `ConflictAlgorithm.ignore` + suppression sources inconditionnelle | `fixed` (29-4) |
 | 🟡 P1 | 2 | `downsampleStepSamples(txn: …)` — atomicité déléguée | `partial` |
-| 🟡 P2 | 3 | Compteurs `hourlyCreated` / `dailyCreated` surcomptés si ignore | `open` |
+| 🟡 P2 | 3 | Compteurs `hourlyCreated` / `dailyCreated` surcomptés si ignore | `fixed` (29-4) |
 
 ---
 
 ## 🔴 Critique
 
 ### 1. `ConflictAlgorithm.ignore` + suppression inconditionnelle des sources
+
+**Statut :** `fixed` — Story 29-4 (`CompactionInsertOutcome`, delete guard, divergent log)
 
 **Constat :** Chaque passe de compaction insère l'agrégat avec `ConflictAlgorithm.ignore` (conflit PK silencieux), puis **supprime systématiquement** les buckets sources sans vérifier si l'insert a réellement eu lieu.
 
@@ -66,6 +68,8 @@
 
 ### 3. Compteurs `hourlyCreated` / `dailyCreated` surcomptables
 
+**Statut :** `fixed` — Story 29-4 (incrément uniquement sur `CompactionInsertOutcome.inserted`)
+
 Incrément **avant** vérification du succès insert (`sample_compaction_runner.dart:146,196,249`). Si insert ignoré, compteurs et stats `CompactionResult` surestiment la création.
 
 Impact mineur sauf si exposé à l'utilisateur (My Data / debug). `CompactionResult` consommé par `DataLifecycleService` / logs — pas d'UI directe identifiée.
@@ -91,7 +95,7 @@ Impact mineur sauf si exposé à l'utilisateur (My Data / debug). `CompactionRes
 
 | # | Action | Lié |
 |---|--------|-----|
-| T1 | Vérifier résultat insert (`rows affected`) avant delete sources ; logger/abort si ignore | #1 |
+| T1 | Vérifier résultat insert (`rows affected`) avant delete sources ; logger/abort si ignore | #1 — **done** (29-4) |
 | T2 | Auditer futurs appelants `downsampleStepSamples(txn: …)` pour atomicité D-24 | #2 |
 
 ---

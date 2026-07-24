@@ -2,8 +2,16 @@ import 'package:sqflite/sqflite.dart';
 
 import '../../data/models/normalized_step_bucket.dart';
 import '../../data/models/timeseries_sample_model.dart';
+import '../debug/compaction_log.dart';
 import '../ids/sample_id_generator.dart';
 import 'lifecycle_compaction.dart';
+
+/// Result of inserting a compacted aggregate row with [ConflictAlgorithm.ignore].
+enum CompactionInsertOutcome {
+  inserted,
+  alreadyCurrent,
+  conflictDivergent,
+}
 
 /// Result of a full FR11 downsampling pass (tiers 2 + 3).
 class CompactionResult {
@@ -24,7 +32,9 @@ class CompactionResult {
 abstract class CompactionWriter {
   Future<List<TimeseriesSampleModel>> loadStepSamples(String resolution);
 
-  Future<void> insertCompactedSample(TimeseriesSampleModel sample);
+  Future<CompactionInsertOutcome> insertCompactedSample(
+    TimeseriesSampleModel sample,
+  );
 
   Future<void> deleteStepSample(String id);
 }
@@ -48,12 +58,41 @@ class TransactionCompactionWriter implements CompactionWriter {
   }
 
   @override
-  Future<void> insertCompactedSample(TimeseriesSampleModel sample) {
-    return _txn.insert(
+  Future<CompactionInsertOutcome> insertCompactedSample(
+    TimeseriesSampleModel sample,
+  ) async {
+    final rowId = await _txn.insert(
       'timeseries_samples',
       sample.toMap(),
       conflictAlgorithm: ConflictAlgorithm.ignore,
     );
+    if (rowId != 0) {
+      return CompactionInsertOutcome.inserted;
+    }
+
+    final existing = await _txn.query(
+      'timeseries_samples',
+      columns: ['value'],
+      where: 'id = ?',
+      whereArgs: [sample.id],
+      limit: 1,
+    );
+    if (existing.isEmpty) {
+      return CompactionInsertOutcome.inserted;
+    }
+
+    final stored = (existing.single['value']! as num).toInt();
+    if (stored == sample.value) {
+      return CompactionInsertOutcome.alreadyCurrent;
+    }
+
+    compactionLog('compaction', 'insert conflict divergent', details: {
+      'id': sample.id,
+      'stored': stored,
+      'merged': sample.value,
+      'resolution': sample.resolution,
+    });
+    return CompactionInsertOutcome.conflictDivergent;
   }
 
   @override
@@ -142,12 +181,23 @@ class SampleCompactionRunner {
             resolution: kHourlyResolution,
           ),
         );
-        await writer.insertCompactedSample(hourlySample);
-        hourlyCreated++;
-
-        for (final bucket in hourBuckets) {
-          await writer.deleteStepSample(bucket.id);
-          fiveMinDeleted++;
+        final outcome = await writer.insertCompactedSample(hourlySample);
+        switch (outcome) {
+          case CompactionInsertOutcome.inserted:
+            hourlyCreated++;
+            await _deleteSourceBuckets(
+              writer,
+              hourBuckets,
+              onDeleted: () => fiveMinDeleted++,
+            );
+          case CompactionInsertOutcome.alreadyCurrent:
+            await _deleteSourceBuckets(
+              writer,
+              hourBuckets,
+              onDeleted: () => fiveMinDeleted++,
+            );
+          case CompactionInsertOutcome.conflictDivergent:
+            break;
         }
       }
     }
@@ -192,12 +242,23 @@ class SampleCompactionRunner {
             resolution: kDailyResolution,
           ),
         );
-        await writer.insertCompactedSample(dailySample);
-        dailyCreated++;
-
-        for (final bucket in dayBuckets) {
-          await writer.deleteStepSample(bucket.id);
-          hourlyDeleted++;
+        final outcome = await writer.insertCompactedSample(dailySample);
+        switch (outcome) {
+          case CompactionInsertOutcome.inserted:
+            dailyCreated++;
+            await _deleteSourceBuckets(
+              writer,
+              dayBuckets,
+              onDeleted: () => hourlyDeleted++,
+            );
+          case CompactionInsertOutcome.alreadyCurrent:
+            await _deleteSourceBuckets(
+              writer,
+              dayBuckets,
+              onDeleted: () => hourlyDeleted++,
+            );
+          case CompactionInsertOutcome.conflictDivergent:
+            break;
         }
       }
     }
@@ -245,17 +306,39 @@ class SampleCompactionRunner {
             resolution: kDailyResolution,
           ),
         );
-        await writer.insertCompactedSample(dailySample);
-        dailyCreated++;
-
-        for (final bucket in dayBuckets) {
-          await writer.deleteStepSample(bucket.id);
-          fiveMinDeleted++;
+        final outcome = await writer.insertCompactedSample(dailySample);
+        switch (outcome) {
+          case CompactionInsertOutcome.inserted:
+            dailyCreated++;
+            await _deleteSourceBuckets(
+              writer,
+              dayBuckets,
+              onDeleted: () => fiveMinDeleted++,
+            );
+          case CompactionInsertOutcome.alreadyCurrent:
+            await _deleteSourceBuckets(
+              writer,
+              dayBuckets,
+              onDeleted: () => fiveMinDeleted++,
+            );
+          case CompactionInsertOutcome.conflictDivergent:
+            break;
         }
       }
     }
 
     return (dailyCreated: dailyCreated, fiveMinDeleted: fiveMinDeleted);
+  }
+}
+
+Future<void> _deleteSourceBuckets(
+  CompactionWriter writer,
+  List<TimeseriesSampleModel> buckets, {
+  required void Function() onDeleted,
+}) async {
+  for (final bucket in buckets) {
+    await writer.deleteStepSample(bucket.id);
+    onDeleted();
   }
 }
 

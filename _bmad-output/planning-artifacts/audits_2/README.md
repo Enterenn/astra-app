@@ -1,7 +1,7 @@
 # Audits données & pipeline — index (`audits_2`)
 
 **Généré :** 2026-07-21  
-**Dernière resync :** 2026-07-24 (version `0.12.1+31`)  
+**Dernière resync :** 2026-07-24 (version `0.12.1+31`, P0-09 fixed — story 29-4)  
 **Base code :** `0.12.1+31` (`pubspec.yaml`)  
 **Périmètre :** couche SQLite → ingestion pedometer → `LiveStepMonitor` → compaction FR11 → WorkManager → agrégations charts → prefs utilisateur → permissions/notifications  
 **Statut chantier :** `open` — aucun point marqué `fixed` dans ce dossier
@@ -32,7 +32,7 @@ Priorités : **P0** critique (corruption données / sur-comptage / sécurité) �
 | 01 | [diagnostic-couche-donnees.md](./diagnostic-couche-donnees.md) | SQLite, migrations, ingestion write, IDs | `open` | 3 | 4 |
 | 02 | [diagnostic-permissions-notifications.md](./diagnostic-permissions-notifications.md) | Permissions activité/notif, `NotificationService` | `open` | 3 | 4 |
 | 03 | [diagnostic-workmanager-maintenance-db.md](./diagnostic-workmanager-maintenance-db.md) | WM 15 min, maintenance hebdo, VACUUM, boot | `partial` | 1 | 4 |
-| 04 | [diagnostic-downsampling-compaction-fr11.md](./diagnostic-downsampling-compaction-fr11.md) | FR11 compaction, `SampleCompactionRunner` | `open` | 1 | 2 |
+| 04 | [diagnostic-downsampling-compaction-fr11.md](./diagnostic-downsampling-compaction-fr11.md) | FR11 compaction, `SampleCompactionRunner` | `partial` | 0 | 2 |
 | 05 | [diagnostic-fuseaux-jours-locaux.md](./diagnostic-fuseaux-jours-locaux.md) | TZ, DST, clés regroupement, offset stocké | `partial` | 0 | 1 (doc) |
 | 06 | [diagnostic-preferences-utilisateur.md](./diagnostic-preferences-utilisateur.md) | Prefs KV, journal objectif, `isDatabaseOpen` | `partial` | 0 | 2 |
 | 07 | [diagnostic-ingestion-pedometer.md](./diagnostic-ingestion-pedometer.md) | `StepNormalizer`, `StepIncrementCalculator`, baseline | `fixed` | 0 | 0 |
@@ -55,7 +55,7 @@ Priorités : **P0** critique (corruption données / sur-comptage / sécurité) �
 | **P0-06** | `_initializePlatform` avale erreurs — `initialize()` ne rethrow jamais | 02 | `notification_service.dart:105-122` | `rethrow` ou signal explicite |
 | **P0-07** | Double comptage : upsert buckets sans txn avec `setBaseline` | 03 | `background_collector.dart:116-128` | **Fixed** — Story 29-3 : txn atomique par source |
 | **P0-08** | VACUUM maintenance sans lock vs collecte WM 15 min | 03 | `data_lifecycle_service.dart`, `workmanager_callback.dart` | Lock dédié (TTL long) ou clé séparée |
-| **P0-09** | Compaction : `ConflictAlgorithm.ignore` puis delete sources inconditionnel | 04 | `sample_compaction_runner.dart:51-56,145-254` | Vérifier insert OK avant delete |
+| **P0-09** | Compaction : `ConflictAlgorithm.ignore` puis delete sources inconditionnel | 04 | `sample_compaction_runner.dart` | **Fixed** — Story 29-4 : `CompactionInsertOutcome` + guard delete |
 | **P0-10** | `terminalBaseline: lastCumulative` au lieu de `baseline` (bruit capteur) | 07 | `step_normalizer.dart:108` | `baseline ?? initialBaseline` |
 | **P0-11** | Drain `sinceCumulative` : filtre `>` élimine resets matériels avant normalizer | 09 | `live_step_monitor.dart:333-346`, `monitor_drain_source.dart:29` | **Fixed** — Story 29-2 : pass-through `<= baseline/2` + drop log |
 
@@ -69,7 +69,7 @@ Priorités : **P0** critique (corruption données / sur-comptage / sécurité) �
 |-------|------------|-----------|----------|
 | Baseline persistée trop basse après bruit rejeté | **07** | `lastCumulative` ≠ `baseline` interne → cycle suivant crédite trop | Sur-comptage |
 | Upsert additif + baseline non commitée mid-cycle | **03** | `ON CONFLICT DO UPDATE value +=` + exception avant `setBaseline` | **Fixed (29-3)** — txn rollback buckets + baseline |
-| Compaction delete sans insert effectif | **04** | Sources fines supprimées, agrégat obsolète conservé | Perte / agrégat stale |
+| Compaction delete sans insert effectif | **04** | Sources fines supprimées, agrégat obsolète conservé | **Fixed (29-4)** — insert-or-verify before delete |
 | Drain `>` aveugle après reboot matériel | **09** | Lectures `< baseline` jetées avant `StepIncrementCalculator` | **Fixed (29-2)** — pass-through reset threshold |
 | Multi-résolution même jour | **05, 08** | Atténué en lecture par `finestResolutionTotal` — **ne pas sommer toutes résolutions** | — |
 
