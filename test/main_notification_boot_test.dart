@@ -3,8 +3,8 @@ library;
 
 import 'dart:async';
 
+import 'package:astra_app/core/services/boot_sequence.dart';
 import 'package:astra_app/core/services/notification_service.dart';
-import 'package:astra_app/main.dart' as boot;
 import 'package:flutter_test/flutter_test.dart';
 
 void main() {
@@ -13,7 +13,7 @@ void main() {
       var called = false;
       final service = NotificationService();
 
-      await boot.startNotificationInitForBoot(
+      await startNotificationInitForBoot(
         service,
         initialize: (passed) async {
           expect(passed, same(service));
@@ -30,7 +30,7 @@ void main() {
             Future<void>.delayed(const Duration(seconds: 5)),
       );
 
-      await boot.startNotificationInitForBoot(
+      await startNotificationInitForBoot(
         service,
         initialize: (passed) =>
             passed.initialize().timeout(const Duration(milliseconds: 10)),
@@ -38,7 +38,7 @@ void main() {
     });
 
     test('swallows generic errors without rethrow', () async {
-      await boot.startNotificationInitForBoot(
+      await startNotificationInitForBoot(
         NotificationService(),
         initialize: (_) async {
           throw StateError('plugin init failed');
@@ -50,7 +50,7 @@ void main() {
       final initGate = Completer<void>();
       var proceededBeforeInit = false;
 
-      final initFuture = boot.startNotificationInitForBoot(
+      final initFuture = startNotificationInitForBoot(
         NotificationService(),
         initialize: (_) => initGate.future,
       );
