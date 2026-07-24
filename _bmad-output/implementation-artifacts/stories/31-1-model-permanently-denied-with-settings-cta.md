@@ -77,16 +77,16 @@ So that I am not stuck with a silent toggle or button.
   - [x] Today `_PermissionDeniedSlot`: same dual-CTA pattern; after successful grant → `TodayCubit.refresh()`
   - [x] Add ARB keys (en/fr): permanent-denied copy, reversible-denied copy reuse `commonRetry` where appropriate
   - [x] Run `flutter gen-l10n`
-  - [ ] **Stop → review brief → wait for Baptiste OK → commit**
+  - [x] **Stop → review brief → wait for Baptiste OK → commit**
 
-- [ ] **Sub-task D — Tests + diagnostic partial close** (AC: #5)
-  - [ ] `test/presentation/cubits/profile_cubit_test.dart`: `PermissionStatus.permanentlyDenied` → `deniedPermanent`; plain `denied` → `deniedReversible`
-  - [ ] `test/presentation/screens/settings_screen_test.dart`: permanent path shows Open settings action
-  - [ ] `test/presentation/cubits/today_cubit_test.dart` or widget test: reversible shows Retry key; permanent shows Open settings
-  - [ ] `test/presentation/screens/my_data_screen_test.dart` or `background_status_card` widget test: dual CTA
-  - [ ] Update `planning-artifacts/audits_2/diagnostic-permissions-notifications.md` #1 → `partial (31-1 post-onboarding; onboarding UI → 31-2)`; README row if tracked
-  - [ ] Run: `flutter test test/presentation/cubits/profile_cubit_test.dart test/presentation/screens/settings_screen_test.dart` (+ other touched test files)
-  - [ ] Run: `flutter test --tags critical`
+- [x] **Sub-task D — Tests + diagnostic partial close** (AC: #5)
+  - [x] `test/presentation/cubits/profile_cubit_test.dart`: `PermissionStatus.permanentlyDenied` → `deniedPermanent`; plain `denied` → `deniedReversible`
+  - [x] `test/presentation/screens/settings_screen_test.dart`: permanent path shows Open settings action
+  - [x] `test/presentation/cubits/today_cubit_test.dart` or widget test: reversible shows Retry key; permanent shows Open settings
+  - [x] `test/presentation/screens/my_data_screen_test.dart` or `background_status_card` widget test: dual CTA
+  - [x] Update `planning-artifacts/audits_2/diagnostic-permissions-notifications.md` #1 → `partial (31-1 post-onboarding; onboarding UI → 31-2)`; README row if tracked
+  - [x] Run: `flutter test test/presentation/cubits/profile_cubit_test.dart test/presentation/screens/settings_screen_test.dart` (+ other touched test files)
+  - [x] Run: `flutter test --tags critical`
   - [ ] **Stop → review brief → wait for Baptiste OK → commit**
 
 ## Dev Notes

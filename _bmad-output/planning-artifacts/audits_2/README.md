@@ -30,7 +30,7 @@ Priorités : **P0** critique (corruption données / sur-comptage / sécurité) �
 | # | Fichier | Domaine | Statut global | P0 ouverts | P1+ ouverts |
 |---|---------|---------|---------------|------------|-------------|
 | 01 | [diagnostic-couche-donnees.md](./diagnostic-couche-donnees.md) | SQLite, migrations, ingestion write, IDs | `open` | 3 | 4 |
-| 02 | [diagnostic-permissions-notifications.md](./diagnostic-permissions-notifications.md) | Permissions activité/notif, `NotificationService` | `open` | 3 | 4 |
+| 02 | [diagnostic-permissions-notifications.md](./diagnostic-permissions-notifications.md) | Permissions activité/notif, `NotificationService` | `partial` | 1 | 4 |
 | 03 | [diagnostic-workmanager-maintenance-db.md](./diagnostic-workmanager-maintenance-db.md) | WM 15 min, maintenance hebdo, VACUUM, boot | `partial` | 0 | 3 |
 | 04 | [diagnostic-downsampling-compaction-fr11.md](./diagnostic-downsampling-compaction-fr11.md) | FR11 compaction, `SampleCompactionRunner` | `partial` | 0 | 2 |
 | 05 | [diagnostic-fuseaux-jours-locaux.md](./diagnostic-fuseaux-jours-locaux.md) | TZ, DST, clés regroupement, offset stocké | `partial` | 0 | 1 (doc) |

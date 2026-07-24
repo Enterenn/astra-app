@@ -9,9 +9,9 @@
 
 ## Statut
 
-- **Dernière vérification :** 2026-07-21
-- **Statut :** `open`
-- **Story / PR :** —
+- **Dernière vérification :** 2026-07-24
+- **Statut :** `partial` — #1 post-onboarding CTAs (story 31-1); onboarding intro feedback → 31-2
+- **Story / PR :** 31-1
 
 ---
 
@@ -19,8 +19,8 @@
 
 | Priorité | # | Domaine | Statut |
 |----------|---|---------|--------|
-| 🔴 P0 | 1 | `permanentlyDenied` jamais distingué | `open` |
-| 🔴 P0 | 2 | Pas de re-demande activité post-onboarding | `partial` |
+| 🔴 P0 | 1 | `permanentlyDenied` jamais distingué | `partial` (31-1 post-onboarding; onboarding UI → 31-2) |
+| 🔴 P0 | 2 | Pas de re-demande activité post-onboarding | `partial` (31-1 Retry CTA Today/My Data; onboarding → 31-2) |
 | 🔴 P0 | 3 | `_initializePlatform` avale les erreurs | `open` |
 | 🟡 P1 | 4 | Logique `_mapPermissionStatus` dupliquée / incohérente | `open` |
 | 🟡 P1 | 5 | Catch générique → `denied` (masque bugs plateforme) | `open` |
@@ -33,7 +33,9 @@
 
 ### 1. `permanentlyDenied` jamais distingué d'un refus simple
 
-**Constat :** Aucun appel à `status.isPermanentlyDenied` dans `lib/`. Après un refus permanent, `Permission.request()` ne réaffiche plus le dialogue système — seul `openAppSettings()` permet de corriger. L'app ne modélise pas ce cas.
+**Statut :** `partial` (31-1) — modèle `PermissionRequestStatus.permanentlyDenied`, CTAs différenciés Settings / Today / My Data post-onboarding ; feedback onboarding intro → **31-2**.
+
+**Constat (2026-07-21) :** Aucun appel à `status.isPermanentlyDenied` dans `lib/`. Après un refus permanent, `Permission.request()` ne réaffiche plus le dialogue système — seul `openAppSettings()` permet de corriger. L'app ne modélise pas ce cas.
 
 | Référence | Détail |
 |-----------|--------|
@@ -42,7 +44,9 @@
 | `lib/presentation/cubits/profile_cubit.dart:252-265` | `setGoalNotificationsEnabled` : `request()` puis `hasNotificationPermission()` — échec silencieux (`return false`) |
 | `lib/presentation/screens/settings_screen.dart:317-328` | SnackBar générique si `!saved` — pas de CTA Settings |
 
-**Impact concret :** Toggle notifications ou bouton onboarding qui « ne fait rien » sans explication après refus permanent.
+**Résolution 31-1 :** `mapPermissionStatus` + `NotificationToggleResult` ; Settings SnackBar permanent vs retry ; Today/My Data dual CTA (`commonRetry` / `myDataOpenSettings`).
+
+**Impact concret (avant 31-1) :** Toggle notifications ou bouton onboarding qui « ne fait rien » sans explication après refus permanent.
 
 **Nuances existantes :** `openAppSettings()` est câblé pour l'activité refusée sur Today (`today_screen.dart:552`) et My Data (`background_status_card.dart:83-90`) — mais sans distinguer refus simple vs permanent, et **absent** pour les notifications.
 
