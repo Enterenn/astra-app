@@ -1,6 +1,6 @@
 # generated: 2026-07-24
-# last_updated: 2026-07-24 (Story 30-4 review)
-# NEXT: dev-story 30-4-inject-timeprovider-into-collection-timeout-source
+# last_updated: 2026-07-24 (Epic 30 close)
+# NEXT: create-story 31-1 or dev-story epic-31
 # Ref: planning-artifacts/epics-audits-2.md · implementation-readiness-report-2026-07-24.md
 # project: astra-app
 # project_key: NOKEY
@@ -47,13 +47,13 @@
 # NAVIGATION: _bmad-output/README.md · planning-artifacts/audits_2/README.md
 
 generated: 2026-07-24
-last_updated: 2026-07-24 (Story 30-4 review)
+last_updated: 2026-07-24 (Epic 30 close)
 project: astra-app
 project_key: NOKEY
 tracking_system: file-system
 story_location: _bmad-output/implementation-artifacts/stories
 epics_source: planning-artifacts/epics-audits-2.md
-base_version: 0.13.0+32
+base_version: 0.13.1+33
 git_branch: main
 
 development_status:
@@ -65,11 +65,11 @@ development_status:
   29-5-unify-persist-credit-rules-drain-vs-calculator: done
   epic-29-retrospective: optional
 
-  epic-30: in-progress
+  epic-30: done
   30-1-cross-isolate-lock-for-maintenance-and-vacuum: done
   30-2-configure-pragma-busy-timeout-on-database-open: done
   30-3-document-ios-background-collection-gap: done
-  30-4-inject-timeprovider-into-collection-timeout-source: review
+  30-4-inject-timeprovider-into-collection-timeout-source: done
   epic-30-retrospective: optional
 
   epic-31: backlog
