@@ -104,14 +104,11 @@ class StepIngestionRepository implements StepIngestionRepositoryContract {
     List<TimeseriesSampleModel> samples, {
     bool replaceExistingSteps = false,
   }) async {
-    assert(() {
-      if (!kDebugMode) {
-        throw StateError(
-          'insertDevSamplesBatch is only available in debug builds',
-        );
-      }
-      return true;
-    }());
+    if (!kDebugMode) {
+      throw StateError(
+        'insertDevSamplesBatch is only available in debug builds',
+      );
+    }
 
     await _session.run(
       (db) => db.transaction((txn) async {
