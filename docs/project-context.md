@@ -115,6 +115,64 @@ Agent rule: **always run `flutter test --exclude-tags slow`** in the story verif
 
 ---
 
+## Platform background collection (Android vs iOS)
+
+Phase 0 ships an **Android reference** background stack (FGS + WorkManager + mandatory foreground backfill). iOS is **secondary** — no WorkManager parity, no FGS, no `BGAppRefresh` registration in the repo. Steps on device are not lost; SQLite ingestion catches up when the user opens the app.
+
+Cross-links: [`architecture.md` §Platform Architecture](../_bmad-output/planning-artifacts/architecture.md#platform-architecture-android-vs-ios) · [`background-trust-and-movement-validation.md` §3.2](../_bmad-output/planning-artifacts/background-trust-and-movement-validation.md#32-process-killed-swipe-away--oem-kill)
+
+### WorkManager registration (Android only)
+
+Boot calls `registerWorkmanagerTasksForBoot` post-`runApp` (`main.dart`). On iOS, all three WM entry points early-return on `!Platform.isAndroid`:
+
+| Function | Android | iOS Phase 0 |
+|----------|---------|-------------|
+| `cancelStepCollectionWorkmanager` | Cancels in-flight collect work | No-op |
+| `registerStepCollectionWorkmanager` | Periodic ~15 min (`astra_step_collection_periodic`) | No-op |
+| `registerDatabaseMaintenanceWorkmanager` | Weekly (`astra_database_maintenance_periodic`) | No-op |
+
+WorkManager is **orchestration**, not a guaranteed 5-minute cadence — OEM battery optimization may defer tasks. Foreground backfill on app open remains mandatory on both platforms.
+
+### Collection triggers by platform
+
+| Trigger | Android | iOS Phase 0 |
+|---------|---------|-------------|
+| Process alive (foreground) | `LiveStepMonitor` + ~60 s activity-based persist | Same |
+| Process backgrounded (RAM, not killed) | FGS health collection (`HealthForegroundServiceCoordinator`) | Live monitor stops; no FGS |
+| Process killed / swipe away | WM ~15 min (best effort) + reopen backfill | **Reopen/resume backfill only** |
+| Weekly `PRAGMA optimize` / `VACUUM` | WM maintenance task (background isolate) | My Data / foreground isolate offload when due — **not** scheduled WM |
+
+**iOS gap (AUD2-FR18):** no 15-min WorkManager step collection, no Phase 0 `BGAppRefresh` implementation (architecture/PRD mention it as Phase 1+ future — not shipped). Grep confirms zero `BGAppRefresh` / `bg_app_refresh` in `lib/`.
+
+### iOS resume / backfill path
+
+**Cold start** — `AppLifecycleCoordinator.bindToWidget` sets `foregroundBackfill`:
+
+- Live pipeline enabled → `LifecyclePersistService.runPersistCycle(sourceTimeout: Duration.zero)`
+- Otherwise → `BackgroundCollector.collectOnce`
+
+`AppScaffold` awaits `foregroundBackfill` before shell paint. Parallel reconcile via `LifecycleLivePipelineService.reconcileAfterBackfillCompletes()`.
+
+**Resume** — `onLifecycleResumed` → `resumeLivePipeline()`: local day boundary check → drain persist → optional phone peek (`PhonePedometerSource`) → monitor reconcile → silent Today/History/My Data refresh.
+
+**Multi-day app closed:** OS pedometer counter continues advancing. SQLite only ingests when collection runs (user opens app). This is expected — not a data-loss bug.
+
+### Stale UX (honest platform model)
+
+| Signal | Threshold / behaviour |
+|--------|----------------------|
+| `isStaleData` | 4 h iOS / 12 h Android (`stale_data_evaluator.dart`) |
+| My Data background card | `BackgroundCollectionStatus.iosBackfill` when not stale on iOS (`my_data_cubit.dart`) |
+| l10n | `myDataBackgroundIosBackfill`, `bannerStaleFullIos` (`app_en.arb`) |
+
+Android 12 h avoids false stale after overnight sleep. iOS 4 h reflects the backfill-only model without WM parity.
+
+### DB maintenance on iOS
+
+`DataLifecycleService` runs downsampling + `VACUUM` in a `[compute]` isolate (short-lived connection) so VACUUM does not race the UI connection. iOS maintenance is **opportunistic** — triggered from My Data flows or foreground offload when due. **Resume must not VACUUM** while the UI SQLite connection is open (`AppLifecycleCoordinator._onAppForegrounded` comment).
+
+---
+
 ## Story completion checklist (applies to every story)
 
 Before marking a story done:
