@@ -681,6 +681,14 @@ class AppLocalizationsEn extends AppLocalizations {
       'Your personal evolution belongs to you—and only you.';
 
   @override
+  String get onboardingIntroPermissionDenied =>
+      'Step tracking needs activity access on this device. You can continue without it — tracking will stay limited until you allow access.';
+
+  @override
+  String get onboardingIntroPermissionPermanentlyDenied =>
+      'Activity access is blocked in system settings. Open settings to enable step tracking, or continue with limited tracking.';
+
+  @override
   String get onboardingTrustOfflineBadge => '100% offline';
 
   @override

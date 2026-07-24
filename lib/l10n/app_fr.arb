@@ -192,6 +192,8 @@
   "onboardingIntroHeadline": "Votre santé. Votre téléphone. Point final.",
   "onboardingIntroParagraphOne": "Astra suit votre activité, vos habitudes et vos indicateurs de santé grâce uniquement aux capteurs intégrés de votre appareil. Pas de compte, pas de fuite cloud.",
   "onboardingIntroParagraphTwo": "Votre évolution personnelle vous appartient — et vous seul.",
+  "onboardingIntroPermissionDenied": "Le suivi des pas nécessite l'accès à l'activité sur cet appareil. Vous pouvez continuer sans — le suivi restera limité tant que l'accès n'est pas autorisé.",
+  "onboardingIntroPermissionPermanentlyDenied": "L'accès à l'activité est bloqué dans les paramètres système. Ouvrez les paramètres pour activer le suivi, ou continuez avec un suivi limité.",
   "onboardingTrustOfflineBadge": "100 % hors ligne",
   "onboardingTrustNoAccountBadge": "Aucun compte requis",
   "onboardingWeightTitle": "Quel est votre poids ?",

@@ -50,8 +50,8 @@ Priorités : **P0** critique (corruption données / sur-comptage / sécurité) �
 | **P0-01** | Plaintext SQLite (NFR-4 Phase 0) — écart privacy marketing | 01 | `pubspec.yaml`, `app_database.dart` | SQLCipher Phase 1 **ou** disclaimer UX explicite |
 | **P0-02** | Collision PK multi-types (`deterministicFromIngestionBucket` sans `type`/`resolution`) | 01 | `sample_id_generator.dart:30-37`, `migrations.dart:85-93` | Suffixe aligné sur `idx_bucket_identity` |
 | **P0-03** | `insertDevSamplesBatch` protégé par `assert` (strippé release) | 01 | `step_ingestion_repository.dart:92-99` | Garde `if (!kDebugMode) throw` |
-| **P0-04** | `permanentlyDenied` jamais modélisé — toggle/bouton muet | 02 | `onboarding_state.dart`, `profile_cubit.dart`, `settings_screen.dart` | État UI + CTA `openAppSettings()` |
-| **P0-05** | Pas de `.request()` activité post-onboarding ; onboarding avance si denied | 02 | `onboarding_flow.dart:52-55` | Retry + ne pas `nextStep()` si denied |
+| **P0-04** | `permanentlyDenied` jamais modélisé — toggle/bouton muet | 02 | `onboarding_state.dart`, `profile_cubit.dart`, `settings_screen.dart` | **Partial** — 31-1 post-onboarding + 31-2 intro feedback |
+| **P0-05** | Pas de `.request()` activité post-onboarding ; onboarding avance si denied | 02 | `onboarding_flow.dart` | **Partial** — 31-2 retry + no silent advance ; 31-1 post-onboarding Retry |
 | **P0-06** | `_initializePlatform` avale erreurs — `initialize()` ne rethrow jamais | 02 | `notification_service.dart:105-122` | `rethrow` ou signal explicite |
 | **P0-07** | Double comptage : upsert buckets sans txn avec `setBaseline` | 03 | `background_collector.dart:116-128` | **Fixed** — Story 29-3 : txn atomique par source |
 | **P0-08** | VACUUM maintenance sans lock vs collecte WM 15 min | 03 | `data_lifecycle_service.dart`, `workmanager_callback.dart` | **Fixed** — Story 30-1 : `kDatabaseMaintenanceLockKey` + TTL 10 min |
@@ -126,8 +126,8 @@ Priorités : **P0** critique (corruption données / sur-comptage / sécurité) �
 
 | # | Priorité | Finding | Statut | Réf. |
 |---|----------|---------|--------|------|
-| 1 | P0 | `permanentlyDenied` non distingué | `open` | Aucun `isPermanentlyDenied` dans `lib/` |
-| 2 | P0 | Re-demande activité post-onboarding | `partial` | Settings OK ; pas `.request()` ; onboarding `nextStep()` inconditionnel |
+| 1 | P0 | `permanentlyDenied` non distingué | `partial` | 31-1 post-onboarding ; 31-2 intro feedback |
+| 2 | P0 | Re-demande activité post-onboarding | `partial` | 31-2 onboarding retry ; 31-1 Today/My Data Retry |
 | 3 | P0 | `_initializePlatform` avale erreurs | `open` | `notification_service.dart:118-122` |
 | 4 | P1 | `_mapPermissionStatus` dupliqué / `isLimited` sur activity | `open` | 3 fichiers |
 | 5 | P1 | Catch → `denied` masque bugs plateforme | `open` | `onboarding_cubit.dart:108-113` |

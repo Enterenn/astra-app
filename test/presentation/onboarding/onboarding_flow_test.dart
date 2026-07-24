@@ -27,6 +27,16 @@ Finder _introContinue() => find.descendant(
   matching: find.text('Start'),
 );
 
+Finder _introRetry() => find.descendant(
+  of: find.byKey(const ValueKey('onboarding-step-0')),
+  matching: find.text('Retry'),
+);
+
+Finder _introContinueAfterDeny() => find.descendant(
+  of: find.byKey(const ValueKey('onboarding-step-0')),
+  matching: find.text('Continue'),
+);
+
 Finder _weightContinue() => find.descendant(
   of: find.byKey(const ValueKey('onboarding-step-1')),
   matching: find.text('Continue'),
@@ -49,6 +59,13 @@ Finder _heightSkip() => find.descendant(
 
 Future<void> _advancePastIntro(WidgetTester tester) async {
   await tester.tap(_introContinue());
+  await tester.pumpAndSettle();
+}
+
+Future<void> _advancePastIntroAfterDeny(WidgetTester tester) async {
+  await tester.tap(_introContinue());
+  await tester.pumpAndSettle();
+  await tester.tap(_introContinueAfterDeny());
   await tester.pumpAndSettle();
 }
 
@@ -200,7 +217,7 @@ void main() {
       );
     });
 
-    testWidgets('denied activity permission still advances to weight step', (
+    testWidgets('denied activity permission stays on intro with feedback', (
       tester,
     ) async {
       await tester.pumpWidget(
@@ -214,16 +231,27 @@ void main() {
         ),
       );
 
-      await _advancePastIntro(tester);
+      await tester.tap(_introContinue());
+      await tester.pumpAndSettle();
 
       expect(
-        find.text('What is your weight?').hitTestable(),
+        find.text('Your Health. Your Phone. Period.').hitTestable(),
         findsOneWidget,
       );
+      expect(
+        find.text('What is your weight?').hitTestable(),
+        findsNothing,
+      );
+      expect(
+        find.textContaining('Step tracking needs activity access'),
+        findsOneWidget,
+      );
+      expect(_introRetry().hitTestable(), findsOneWidget);
+      expect(_introContinueAfterDeny().hitTestable(), findsOneWidget);
     });
 
     testWidgets(
-      'denied permission on intro completes via UI skip and persists onboarding flag',
+      'denied permission on intro completes via explicit Continue and skip',
       (tester) async {
         var onCompleteCalled = false;
         OnboardingCubit? cubitRef;
@@ -242,8 +270,7 @@ void main() {
           ),
         );
 
-        await tester.tap(_introContinue());
-        await tester.pumpAndSettle();
+        await _advancePastIntroAfterDeny(tester);
 
         expect(
           cubitRef!.state.activityPermissionStatus,
@@ -272,6 +299,120 @@ void main() {
       },
     );
 
+    testWidgets('permanentlyDenied shows Open settings and Continue only', (
+      tester,
+    ) async {
+      await tester.pumpWidget(
+        buildFlow(
+          onComplete: () {},
+          createCubit: (deps) => OnboardingCubit(
+            userSettings: deps.userSettings,
+            userHealthMetrics: deps.userHealthMetrics,
+            permissionRequester: (_) async =>
+                PermissionStatus.permanentlyDenied,
+          ),
+        ),
+      );
+
+      await tester.tap(_introContinue());
+      await tester.pumpAndSettle();
+
+      expect(
+        find.text('Your Health. Your Phone. Period.').hitTestable(),
+        findsOneWidget,
+      );
+      expect(
+        find.text('What is your weight?').hitTestable(),
+        findsNothing,
+      );
+      expect(
+        find.textContaining('Activity access is blocked in system settings')
+            .hitTestable(),
+        findsOneWidget,
+      );
+      expect(find.text('Open settings').hitTestable(), findsOneWidget);
+      expect(_introRetry(), findsNothing);
+      expect(_introContinueAfterDeny().hitTestable(), findsOneWidget);
+
+      await tester.tap(_introContinueAfterDeny());
+      await tester.pumpAndSettle();
+
+      expect(
+        find.text('What is your weight?').hitTestable(),
+        findsOneWidget,
+      );
+    });
+
+    testWidgets('Retry after reversible deny grants and advances to weight', (
+      tester,
+    ) async {
+      var requestCount = 0;
+
+      await tester.pumpWidget(
+        buildFlow(
+          onComplete: () {},
+          createCubit: (deps) => OnboardingCubit(
+            userSettings: deps.userSettings,
+            userHealthMetrics: deps.userHealthMetrics,
+            permissionRequester: (_) async {
+              requestCount++;
+              return requestCount == 1
+                  ? PermissionStatus.denied
+                  : PermissionStatus.granted;
+            },
+          ),
+        ),
+      );
+
+      await tester.tap(_introContinue());
+      await tester.pumpAndSettle();
+
+      expect(requestCount, 1);
+      expect(_introRetry().hitTestable(), findsOneWidget);
+
+      await tester.tap(_introRetry());
+      await tester.pumpAndSettle();
+
+      expect(requestCount, 2);
+      expect(
+        find.text('What is your weight?').hitTestable(),
+        findsOneWidget,
+      );
+    });
+
+    testWidgets('intro does not advance on deny without explicit Continue', (
+      tester,
+    ) async {
+      OnboardingCubit? cubitRef;
+
+      await tester.pumpWidget(
+        buildFlow(
+          onComplete: () {},
+          createCubit: (deps) {
+            cubitRef = OnboardingCubit(
+              userSettings: deps.userSettings,
+              userHealthMetrics: deps.userHealthMetrics,
+              permissionRequester: (_) async => PermissionStatus.denied,
+            );
+            return cubitRef!;
+          },
+        ),
+      );
+
+      await tester.tap(_introContinue());
+      await tester.pumpAndSettle();
+
+      expect(cubitRef!.state.currentStep, 0);
+      expect(
+        find.text('Your Health. Your Phone. Period.').hitTestable(),
+        findsOneWidget,
+      );
+      expect(
+        find.text('What is your weight?').hitTestable(),
+        findsNothing,
+      );
+    });
+
     testWidgets('recovers Continue after permission requester throws', (
       tester,
     ) async {
@@ -288,7 +429,24 @@ void main() {
         ),
       );
 
-      await _advancePastIntro(tester);
+      await tester.tap(_introContinue());
+      await tester.pumpAndSettle();
+
+      expect(
+        find.text('Your Health. Your Phone. Period.').hitTestable(),
+        findsOneWidget,
+      );
+      expect(
+        find.text('What is your weight?').hitTestable(),
+        findsNothing,
+      );
+      expect(
+        find.textContaining('Step tracking needs activity access'),
+        findsOneWidget,
+      );
+
+      await tester.tap(_introContinueAfterDeny());
+      await tester.pumpAndSettle();
 
       expect(
         find.text('What is your weight?').hitTestable(),
@@ -298,13 +456,13 @@ void main() {
       await tester.tap(find.byTooltip('Back'));
       await tester.pump();
 
-      final continueButton = tester.widget<FilledButton>(
+      final retryButton = tester.widget<FilledButton>(
         find.ancestor(
-          of: _introContinue(),
+          of: _introRetry(),
           matching: find.byType(FilledButton),
         ),
       );
-      expect(continueButton.onPressed, isNotNull);
+      expect(retryButton.onPressed, isNotNull);
       expect(find.byType(CircularProgressIndicator), findsNothing);
     });
 

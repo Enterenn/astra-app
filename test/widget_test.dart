@@ -382,6 +382,14 @@ void main() {
 
         await tester.tap(
           find.descendant(
+            of: find.byKey(const ValueKey('onboarding-step-0')),
+            matching: find.text('Continue'),
+          ),
+        );
+        await tester.pumpAndSettle();
+
+        await tester.tap(
+          find.descendant(
             of: find.byKey(const ValueKey('onboarding-step-1')),
             matching: find.text('Skip'),
           ),

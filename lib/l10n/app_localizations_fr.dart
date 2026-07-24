@@ -692,6 +692,14 @@ class AppLocalizationsFr extends AppLocalizations {
       'Votre évolution personnelle vous appartient — et vous seul.';
 
   @override
+  String get onboardingIntroPermissionDenied =>
+      'Le suivi des pas nécessite l\'accès à l\'activité sur cet appareil. Vous pouvez continuer sans — le suivi restera limité tant que l\'accès n\'est pas autorisé.';
+
+  @override
+  String get onboardingIntroPermissionPermanentlyDenied =>
+      'L\'accès à l\'activité est bloqué dans les paramètres système. Ouvrez les paramètres pour activer le suivi, ou continuez avec un suivi limité.';
+
+  @override
   String get onboardingTrustOfflineBadge => '100 % hors ligne';
 
   @override

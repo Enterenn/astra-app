@@ -10,8 +10,8 @@
 ## Statut
 
 - **Dernière vérification :** 2026-07-24
-- **Statut :** `partial` — #1 post-onboarding CTAs (story 31-1); onboarding intro feedback → 31-2
-- **Story / PR :** 31-1
+- **Statut :** `partial` — #1/#2 onboarding intro feedback + retry (story 31-2) ; post-onboarding CTAs (31-1)
+- **Story / PR :** 31-1 · 31-2
 
 ---
 
@@ -19,8 +19,8 @@
 
 | Priorité | # | Domaine | Statut |
 |----------|---|---------|--------|
-| 🔴 P0 | 1 | `permanentlyDenied` jamais distingué | `partial` (31-1 post-onboarding; onboarding UI → 31-2) |
-| 🔴 P0 | 2 | Pas de re-demande activité post-onboarding | `partial` (31-1 Retry CTA Today/My Data; onboarding → 31-2) |
+| 🔴 P0 | 1 | `permanentlyDenied` jamais distingué | `partial` (31-1 post-onboarding + 31-2 onboarding intro feedback) |
+| 🔴 P0 | 2 | Pas de re-demande activité post-onboarding | `partial` (31-1 Retry CTA Today/My Data; 31-2 onboarding retry + no silent advance) |
 | 🔴 P0 | 3 | `_initializePlatform` avale les erreurs | `open` |
 | 🟡 P1 | 4 | Logique `_mapPermissionStatus` dupliquée / incohérente | `open` |
 | 🟡 P1 | 5 | Catch générique → `denied` (masque bugs plateforme) | `open` |
@@ -33,7 +33,7 @@
 
 ### 1. `permanentlyDenied` jamais distingué d'un refus simple
 
-**Statut :** `partial` (31-1) — modèle `PermissionRequestStatus.permanentlyDenied`, CTAs différenciés Settings / Today / My Data post-onboarding ; feedback onboarding intro → **31-2**.
+**Statut :** `partial` (31-1 + 31-2) — modèle `PermissionRequestStatus.permanentlyDenied`, CTAs différenciés Settings / Today / My Data post-onboarding ; feedback onboarding intro avec Open Settings (permanent) — **31-2 shipped**.
 
 **Constat (2026-07-21) :** Aucun appel à `status.isPermanentlyDenied` dans `lib/`. Après un refus permanent, `Permission.request()` ne réaffiche plus le dialogue système — seul `openAppSettings()` permet de corriger. L'app ne modélise pas ce cas.
 
@@ -59,12 +59,12 @@
 | Référence | Détail |
 |-----------|--------|
 | `lib/presentation/cubits/onboarding_cubit.dart:89-100` | `requestActivityPermission()` — seul point `.request()` activité |
-| `lib/presentation/onboarding/onboarding_flow.dart:52-55` | Après request, **`nextStep()` inconditionnel** — pas de retry si denied |
+| `lib/presentation/onboarding/onboarding_flow.dart:52-55` | Branch on `activityPermissionStatus` — `nextStep()` only on `granted` or explicit Continue — **31-2** |
 | `lib/presentation/cubits/today/today_refresh_service.dart:75,119,323` | Passe en `noPermission` si checker false |
 | `lib/core/permissions/activity_permission_resolver.dart:12-15` | `isActivityRecognitionGranted()` — lecture status uniquement |
 | `lib/presentation/screens/today_screen.dart:500-555` | CTA `openAppSettings()` — pas de `.request()` |
 
-**Statut :** `partial` — chemin Settings existe pour état `noPermission` ; pas de `.request()` pour un refus réversible (premier refus sans « Ne plus demander »).
+**Statut :** `partial` — chemin Settings existe pour état `noPermission` ; onboarding retry + Continue explicite (**31-2**) ; post-onboarding `.request()` via Retry CTA Today/My Data (**31-1**).
 
 **Impact :** Pedometer bloqué si refus simple au onboarding (utilisateur avance quand même) sans bouton « Réessayer » ; après permanent, Settings seul recours — non guidé depuis onboarding ni notifications.
 
