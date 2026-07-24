@@ -1,6 +1,6 @@
 # Story 30.1: Cross-Isolate Lock for Maintenance and VACUUM
 
-Status: review
+Status: done
 
 <!-- audits_2 Epic 30 — tracker: sprint-status-audits-2.yaml -->
 <!-- Source: epics-audits-2.md Story 30-1 · diagnostic-workmanager-maintenance-db.md #2 · AUD2-FR11, AUD2-FR26, AUD2-NFR8 -->
@@ -309,7 +309,8 @@ Composer
 - Sub-task A: generalized `IngestionCollectionLock` with parameterized key/TTL + `forMaintenance` factory + `isHeld` helper
 - Sub-task B: WM path in `_runMaintenanceImpl` acquires maintenance lock; skips on collection lock held or acquire failure
 - Sub-task C: `BackgroundCollector.collectOnce` returns 0 when maintenance lock held
-- Sub-task D: 61 tests pass across 4 test files
+- Sub-task D: 63 tests pass across 4 test files
+- Code review: atomic opposing-lock check in `tryAcquire` (TOCTOU fix)
 
 ### Completion Notes List
 
@@ -335,3 +336,4 @@ Composer
 ### Change Log
 
 - 2026-07-24: Story 30-1 — cross-isolate maintenance lock + mutual exclusion with step collection (Epic 30)
+- 2026-07-24: Code review patch — `tryAcquire` checks opposing lock inside transaction

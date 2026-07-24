@@ -74,6 +74,9 @@ void main() {
       final maintenanceLock = IngestionCollectionLock.forMaintenance(session);
 
       expect(await collectionLock.tryAcquire(), isTrue);
+      expect(await maintenanceLock.tryAcquire(), isFalse);
+
+      await collectionLock.release();
       expect(await maintenanceLock.tryAcquire(), isTrue);
 
       final rows = await session.database.query(
@@ -81,10 +84,22 @@ void main() {
         where: 'key IN (?, ?)',
         whereArgs: [kIngestionCollectLockKey, kDatabaseMaintenanceLockKey],
       );
-      expect(rows.length, 2);
+      expect(rows.length, 1);
+      expect(rows.single['key'], kDatabaseMaintenanceLockKey);
 
-      await collectionLock.release();
       await maintenanceLock.release();
+    });
+
+    test('collection tryAcquire fails when maintenance lock held', () async {
+      final maintenanceLock = IngestionCollectionLock.forMaintenance(session);
+      final collectionLock = IngestionCollectionLock(session);
+
+      expect(await maintenanceLock.tryAcquire(), isTrue);
+      expect(await collectionLock.tryAcquire(), isFalse);
+
+      await maintenanceLock.release();
+      expect(await collectionLock.tryAcquire(), isTrue);
+      await collectionLock.release();
     });
 
     test('forMaintenance TTL exceeds collection default', () {

@@ -63,6 +63,16 @@ class IngestionCollectionLock {
     );
   }
 
+  String? get _opposingLockKey {
+    if (_lockKey == kIngestionCollectLockKey) {
+      return kDatabaseMaintenanceLockKey;
+    }
+    if (_lockKey == kDatabaseMaintenanceLockKey) {
+      return kIngestionCollectLockKey;
+    }
+    return null;
+  }
+
   /// Returns false when another collector holds a non-expired lock.
   Future<bool> tryAcquire() async {
     final now =
@@ -71,14 +81,15 @@ class IngestionCollectionLock {
 
     return _session.withRetry(
       (db) => db.transaction<bool>((txn) async {
-        final rows = await txn.query(
-          'user_preferences',
-          columns: ['value'],
-          where: 'key = ?',
-          whereArgs: [_lockKey],
-          limit: 1,
-        );
-        if (rows.isNotEmpty) {
+        for (final key in [_lockKey, ?_opposingLockKey]) {
+          final rows = await txn.query(
+            'user_preferences',
+            columns: ['value'],
+            where: 'key = ?',
+            whereArgs: [key],
+            limit: 1,
+          );
+          if (rows.isEmpty) continue;
           final heldUntil =
               int.tryParse(rows.first['value'] as String? ?? '') ?? 0;
           if (heldUntil > now) {
