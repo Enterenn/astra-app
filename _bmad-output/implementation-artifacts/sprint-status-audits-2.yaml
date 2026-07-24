@@ -1,5 +1,5 @@
 # generated: 2026-07-24
-# last_updated: 2026-07-24 (Story 29-4 review)
+# last_updated: 2026-07-24 (Story 29-4 done)
 # NEXT: dev-story 29-5-unify-persist-credit-rules-drain-vs-calculator
 # Ref: planning-artifacts/epics-audits-2.md · implementation-readiness-report-2026-07-24.md
 # project: astra-app
@@ -47,7 +47,7 @@
 # NAVIGATION: _bmad-output/README.md · planning-artifacts/audits_2/README.md
 
 generated: 2026-07-24
-last_updated: 2026-07-24 (Story 29-4 review)
+last_updated: 2026-07-24 (Story 29-4 done)
 project: astra-app
 project_key: NOKEY
 tracking_system: file-system
@@ -61,7 +61,7 @@ development_status:
   29-1-fix-terminal-baseline-after-rejected-sensor-noise: done
   29-2-forward-hardware-reset-readings-through-live-drain: done
   29-3-atomic-bucket-upsert-and-baseline-commit-per-source: done
-  29-4-guard-compaction-delete-until-insert-succeeds: review
+  29-4-guard-compaction-delete-until-insert-succeeds: done
   29-5-unify-persist-credit-rules-drain-vs-calculator: backlog
   epic-29-retrospective: optional
 

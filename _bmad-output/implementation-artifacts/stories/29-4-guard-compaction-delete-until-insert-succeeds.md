@@ -1,6 +1,6 @@
 # Story 29.4: Guard Compaction Delete Until Insert Succeeds
 
-Status: review
+Status: done
 
 <!-- audits_2 Epic 29 — tracker: sprint-status-audits-2.yaml -->
 <!-- Source: epics-audits-2.md Story 29-4 · diagnostic-downsampling-compaction-fr11.md #1 · AUD2-FR4, AUD2-FR28, AUD2-FR34, AUD2-NFR5, AUD2-NFR6 -->
