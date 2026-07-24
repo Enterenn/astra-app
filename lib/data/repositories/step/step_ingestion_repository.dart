@@ -32,7 +32,10 @@ class StepIngestionRepository implements StepIngestionRepositoryContract {
   /// (per-collect increment), not replaced. Production callers must be limited to
   /// `BackgroundCollector` once Story 2.4 wires that component. Tests may call
   /// this method directly.
-  Future<void> upsertIngestionBucket(NormalizedStepBucket bucket) async {
+  Future<void> upsertIngestionBucket(
+    NormalizedStepBucket bucket, {
+    Transaction? txn,
+  }) async {
     final model = TimeseriesSampleModel.fromNormalizedBucket(
       bucket: bucket,
       id: SampleIdGenerator.deterministicFromIngestionBucket(
@@ -43,9 +46,20 @@ class StepIngestionRepository implements StepIngestionRepositoryContract {
     );
     final row = model.toMap();
 
-    await _session.run(
-      (db) => db.rawInsert(
-        '''
+    if (txn != null) {
+      await _upsertBucketExec(txn, row);
+      return;
+    }
+
+    await _session.run((db) => _upsertBucketExec(db, row));
+  }
+
+  Future<void> _upsertBucketExec(
+    DatabaseExecutor exec,
+    Map<String, Object?> row,
+  ) {
+    return exec.rawInsert(
+      '''
       INSERT INTO timeseries_samples (
         id,
         start_time,
@@ -62,19 +76,18 @@ class StepIngestionRepository implements StepIngestionRepositoryContract {
       ON CONFLICT(provider, device_id, type, start_time, end_time, resolution)
       DO UPDATE SET value = timeseries_samples.value + excluded.value
       ''',
-        [
-          row['id'],
-          row['start_time'],
-          row['end_time'],
-          row['type'],
-          row['value'],
-          row['unit'],
-          row['resolution'],
-          row['provider'],
-          row['device_id'],
-          row['zone_offset'],
-        ],
-      ),
+      [
+        row['id'],
+        row['start_time'],
+        row['end_time'],
+        row['type'],
+        row['value'],
+        row['unit'],
+        row['resolution'],
+        row['provider'],
+        row['device_id'],
+        row['zone_offset'],
+      ],
     );
   }
 

@@ -58,17 +58,27 @@ class IngestionBaselineRepository {
     required String provider,
     required String deviceId,
     required int cumulative,
-  }) {
+    Transaction? txn,
+  }) async {
     if (cumulative < 0) {
       throw ArgumentError.value(cumulative, 'cumulative', 'must be non-negative');
     }
-    return _session.withRetry(
+    final row = {
+      'key': preferenceKey(provider: provider, deviceId: deviceId),
+      'value': cumulative.toString(),
+    };
+    if (txn != null) {
+      await txn.insert(
+        'user_preferences',
+        row,
+        conflictAlgorithm: ConflictAlgorithm.replace,
+      );
+      return;
+    }
+    await _session.withRetry(
       (db) => db.insert(
         'user_preferences',
-        {
-          'key': preferenceKey(provider: provider, deviceId: deviceId),
-          'value': cumulative.toString(),
-        },
+        row,
         conflictAlgorithm: ConflictAlgorithm.replace,
       ),
     );
