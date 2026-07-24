@@ -61,12 +61,12 @@ So that I am not stuck with a silent toggle or button.
   - [x] Update `OnboardingCubit._mapPermissionStatus` to use shared mapper (minimal — onboarding UI feedback is 31-2)
   - [ ] **Stop → review brief → wait for Baptiste OK → commit**
 
-- [ ] **Sub-task B — ProfileCubit + Settings notification UX** (AC: #1, #3)
-  - [ ] Read fully: `profile_cubit.dart` (`setGoalNotificationsEnabled`), `settings_screen.dart` (notification Switch + SnackBar), `notification_service.dart` (`hasNotificationPermission`)
-  - [ ] Introduce result type, e.g. `NotificationToggleResult { success, deniedReversible, deniedPermanent }` — do **not** overload `bool` return
-  - [ ] After `.request()`, read `Permission.notification.status` (or injected checker) and map `isPermanentlyDenied`
-  - [ ] Settings: on `deniedPermanent` → SnackBar with **Open settings** action (`openAppSettings()`); on `deniedReversible` → distinct copy (retry hint)
-  - [ ] Preserve: disabling notifications without permission request; `isClosed` guards; no exception to UI
+- [x] **Sub-task B — ProfileCubit + Settings notification UX** (AC: #1, #3)
+  - [x] Read fully: `profile_cubit.dart` (`setGoalNotificationsEnabled`), `settings_screen.dart` (notification Switch + SnackBar), `notification_service.dart` (`hasNotificationPermission`)
+  - [x] Introduce result type, e.g. `NotificationToggleResult { success, deniedReversible, deniedPermanent }` — do **not** overload `bool` return
+  - [x] After `.request()`, read `Permission.notification.status` (or injected checker) and map `isPermanentlyDenied`
+  - [x] Settings: on `deniedPermanent` → SnackBar with **Open settings** action (`openAppSettings()`); on `deniedReversible` → distinct copy (retry hint)
+  - [x] Preserve: disabling notifications without permission request; `isClosed` guards; no exception to UI
   - [ ] **Stop → review brief → wait for Baptiste OK → commit**
 
 - [ ] **Sub-task C — Today + My Data activity permission CTAs** (AC: #1, #2)
@@ -305,6 +305,7 @@ Active branch `main`; `base_version: 0.13.1+33` per sprint tracker.
 ### Completion Notes List
 
 - Sub-task A: Added `permanentlyDenied` to enum, `mapPermissionStatus()` + `resolveActivityPermissionStatus()` in resolver, OnboardingCubit delegates to shared mapper. Tests pass.
+- Sub-task B: `NotificationToggleResult` on ProfileCubit; Settings SnackBar branches permanent vs reversible; l10n keys added. Tests pass.
 
 ### File List
 
@@ -313,3 +314,13 @@ Active branch `main`; `base_version: 0.13.1+33` per sprint tracker.
 - `lib/presentation/cubits/onboarding_cubit.dart`
 - `test/core/permissions/activity_permission_resolver_test.dart`
 - `test/presentation/cubits/onboarding_cubit_test.dart`
+- `lib/presentation/cubits/profile_cubit.dart`
+- `lib/core/services/notification_service.dart`
+- `lib/presentation/screens/settings_screen.dart`
+- `lib/l10n/app_en.arb`
+- `lib/l10n/app_fr.arb`
+- `lib/l10n/app_localizations.dart`
+- `lib/l10n/app_localizations_en.dart`
+- `lib/l10n/app_localizations_fr.dart`
+- `test/presentation/cubits/profile_cubit_test.dart`
+- `test/presentation/screens/settings_screen_test.dart`

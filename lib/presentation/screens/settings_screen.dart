@@ -3,6 +3,7 @@ import 'dart:async';
 import 'package:astra_app/l10n/app_localizations.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:permission_handler/permission_handler.dart';
 
 import '../../core/constants/astra_accent_preset.dart';
 import '../../core/constants/astra_colors.dart';
@@ -315,16 +316,42 @@ class _SettingsPreferenceSections extends StatelessWidget {
                     activeTrackColor: colors.accentPrimary.withValues(alpha: 0.5),
                     activeThumbColor: colors.accentPrimary,
                     onChanged: (enabled) async {
-                      final saved =
+                      final result =
                           await profileCubit.setGoalNotificationsEnabled(
                             enabled,
                           );
-                      if (!saved && context.mounted) {
-                        ScaffoldMessenger.of(context).showSnackBar(
-                          SnackBar(
-                            content: Text(l10n.settingsNotificationUpdateError),
-                          ),
-                        );
+                      if (!context.mounted) {
+                        return;
+                      }
+                      switch (result) {
+                        case NotificationToggleResult.success:
+                          break;
+                        case NotificationToggleResult.deniedPermanent:
+                          ScaffoldMessenger.of(context).showSnackBar(
+                            SnackBar(
+                              content: Text(
+                                l10n.settingsNotificationPermanentlyDenied,
+                              ),
+                              action: SnackBarAction(
+                                label: l10n.myDataOpenSettings,
+                                onPressed: () {
+                                  unawaited(openAppSettings());
+                                },
+                              ),
+                            ),
+                          );
+                        case NotificationToggleResult.deniedReversible:
+                          ScaffoldMessenger.of(context).showSnackBar(
+                            SnackBar(
+                              content: Text(l10n.settingsNotificationDeniedRetry),
+                            ),
+                          );
+                        case NotificationToggleResult.failed:
+                          ScaffoldMessenger.of(context).showSnackBar(
+                            SnackBar(
+                              content: Text(l10n.settingsNotificationUpdateError),
+                            ),
+                          );
                       }
                     },
                   ),

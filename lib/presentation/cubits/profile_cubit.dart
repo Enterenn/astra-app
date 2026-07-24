@@ -16,6 +16,13 @@ typedef NotificationPermissionRequester = Future<PermissionStatus> Function(
 
 typedef PostDisplayNameUpdateCallback = Future<void> Function();
 
+enum NotificationToggleResult {
+  success,
+  deniedReversible,
+  deniedPermanent,
+  failed,
+}
+
 class ProfileCubit extends Cubit<ProfileState> {
   ProfileCubit({
     required this.userSettings,
@@ -229,14 +236,14 @@ class ProfileCubit extends Cubit<ProfileState> {
     return true;
   }
 
-  Future<bool> setGoalNotificationsEnabled(bool enabled) async {
+  Future<NotificationToggleResult> setGoalNotificationsEnabled(bool enabled) async {
     if (isClosed) {
-      return false;
+      return NotificationToggleResult.failed;
     }
     if (state.status != ProfileStatus.ready &&
         state.status != ProfileStatus.loading &&
         state.status != ProfileStatus.error) {
-      return false;
+      return NotificationToggleResult.failed;
     }
 
     final currentEnabled = state.status == ProfileStatus.ready
@@ -246,7 +253,7 @@ class ProfileCubit extends Cubit<ProfileState> {
       if (state.goalNotificationsEnabled != enabled) {
         emit(state.copyWith(goalNotificationsEnabled: enabled));
       }
-      return true;
+      return NotificationToggleResult.success;
     }
 
     if (enabled && !await notificationService.hasNotificationPermission()) {
@@ -260,13 +267,24 @@ class ProfileCubit extends Cubit<ProfileState> {
           debugPrintStack(stackTrace: stackTrace);
         }
       }
+      if (isClosed) {
+        return NotificationToggleResult.failed;
+      }
       if (!await notificationService.hasNotificationPermission()) {
-        return false;
+        final status =
+            await notificationService.getNotificationPermissionStatus();
+        if (state.goalNotificationsEnabled) {
+          emit(state.copyWith(goalNotificationsEnabled: false));
+        }
+        if (status.isPermanentlyDenied) {
+          return NotificationToggleResult.deniedPermanent;
+        }
+        return NotificationToggleResult.deniedReversible;
       }
     }
 
     if (isClosed) {
-      return false;
+      return NotificationToggleResult.failed;
     }
 
     try {
@@ -276,14 +294,14 @@ class ProfileCubit extends Cubit<ProfileState> {
         debugPrint('ProfileCubit.setGoalNotificationsEnabled failed: $error');
         debugPrintStack(stackTrace: stackTrace);
       }
-      return false;
+      return NotificationToggleResult.failed;
     }
 
     if (isClosed) {
-      return false;
+      return NotificationToggleResult.failed;
     }
 
     emit(state.copyWith(goalNotificationsEnabled: enabled));
-    return true;
+    return NotificationToggleResult.success;
   }
 }

@@ -146,6 +146,14 @@ class AppLocalizationsFr extends AppLocalizations {
       'Impossible de mettre à jour le paramètre de notification';
 
   @override
+  String get settingsNotificationPermanentlyDenied =>
+      'Notifications bloquées dans les paramètres système. Ouvrez les paramètres pour activer.';
+
+  @override
+  String get settingsNotificationDeniedRetry =>
+      'Autorisation de notification requise. Réessayez.';
+
+  @override
   String get settingsThemeUpdateError => 'Impossible de mettre à jour le thème';
 
   @override

@@ -69,6 +69,20 @@ class _SeededProfileCubit extends ProfileCubit {
   }
 }
 
+class _DenyPermanentProfileCubit extends _SeededProfileCubit {
+  _DenyPermanentProfileCubit({
+    required super.userSettings,
+    required super.userHealthMetrics,
+    required super.notificationService,
+  }) : super(
+          seededState: ProfileState.ready(goalNotificationsEnabled: false),
+        );
+
+  @override
+  Future<NotificationToggleResult> setGoalNotificationsEnabled(bool enabled) {
+    return Future.value(NotificationToggleResult.deniedPermanent);
+  }
+}
 class _RetryProfileCubit extends ProfileCubit {
   _RetryProfileCubit({
     required super.userSettings,
@@ -615,6 +629,48 @@ void main() {
           findsOneWidget,
         );
         expect(themeCubit.state.accentPreset, AstraAccentPreset.orange);
+      },
+    );
+
+    testWidgets(
+      'notification toggle shows Open settings when permanently denied',
+      (tester) async {
+        final profileCubit = _DenyPermanentProfileCubit(
+          userSettings: userSettings,
+          userHealthMetrics: userHealthMetrics,
+          notificationService: NotificationService(
+            permissionChecker: () async => PermissionStatus.granted,
+          ),
+        );
+        addTearDown(profileCubit.close);
+
+        final themeCubit = ThemeCubit(userSettings: userSettings);
+        addTearDown(themeCubit.close);
+
+        final unitsCubit = UnitsCubit(userSettings: userSettings);
+        addTearDown(unitsCubit.close);
+
+        final localeCubit = LocaleCubit(userSettings: userSettings);
+        addTearDown(localeCubit.close);
+
+        await _pumpSettingsScreen(
+          tester,
+          profileCubit: profileCubit,
+          themeCubit: themeCubit,
+          unitsCubit: unitsCubit,
+          localeCubit: localeCubit,
+        );
+
+        await tester.tap(find.byType(Switch));
+        await tester.pump();
+        await tester.pump(const Duration(milliseconds: 400));
+
+        expect(
+          find.text(l10n.settingsNotificationPermanentlyDenied),
+          findsOneWidget,
+        );
+        expect(find.text(l10n.myDataOpenSettings), findsOneWidget);
+        expect(tester.widget<Switch>(find.byType(Switch)).value, isFalse);
       },
     );
   });

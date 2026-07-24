@@ -356,6 +356,18 @@ abstract class AppLocalizations {
   /// **'Could not update notification setting'**
   String get settingsNotificationUpdateError;
 
+  /// Snack bar when notification permission is permanently denied
+  ///
+  /// In en, this message translates to:
+  /// **'Notifications blocked in system settings. Open settings to enable.'**
+  String get settingsNotificationPermanentlyDenied;
+
+  /// Snack bar when notification permission is denied but can be retried
+  ///
+  /// In en, this message translates to:
+  /// **'Notification permission required. Try again.'**
+  String get settingsNotificationDeniedRetry;
+
   /// Snack bar when saving theme mode or accent preset fails
   ///
   /// In en, this message translates to:

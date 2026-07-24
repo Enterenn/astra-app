@@ -198,7 +198,7 @@ void main() {
 
       final saved = await cubit.setGoalNotificationsEnabled(true);
 
-      expect(saved, isTrue);
+      expect(saved, NotificationToggleResult.success);
       expect(cubit.state.status, ProfileStatus.loading);
       expect(cubit.state.goalNotificationsEnabled, isTrue);
       expect(await userSettings.getGoalNotificationsEnabled(), isTrue);
@@ -244,7 +244,7 @@ void main() {
 
       final saved = await cubit.setGoalNotificationsEnabled(true);
 
-      expect(saved, isTrue);
+      expect(saved, NotificationToggleResult.success);
       expect(cubit.state.goalNotificationsEnabled, isTrue);
 
       await cubit.close();
@@ -256,7 +256,7 @@ void main() {
 
       final saved = await cubit.setGoalNotificationsEnabled(true);
 
-      expect(saved, isTrue);
+      expect(saved, NotificationToggleResult.success);
       expect(permissionRequestCount, 1);
       expect(await userSettings.getGoalNotificationsEnabled(), isTrue);
       expect(cubit.state.goalNotificationsEnabled, isTrue);
@@ -269,20 +269,20 @@ void main() {
       await cubit.refresh();
 
       // First enable: permission denied → triggers request → granted.
-      expect(await cubit.setGoalNotificationsEnabled(true), isTrue);
+      expect(await cubit.setGoalNotificationsEnabled(true), NotificationToggleResult.success);
       expect(permissionRequestCount, 1);
 
-      expect(await cubit.setGoalNotificationsEnabled(false), isTrue);
+      expect(await cubit.setGoalNotificationsEnabled(false), NotificationToggleResult.success);
       expect(permissionRequestCount, 1);
 
       // Second enable: permission already granted → no new request.
-      expect(await cubit.setGoalNotificationsEnabled(true), isTrue);
+      expect(await cubit.setGoalNotificationsEnabled(true), NotificationToggleResult.success);
       expect(permissionRequestCount, 1);
 
       await cubit.close();
     });
 
-    test('enabling goal notifications returns false when permission permanently denied', () async {
+    test('enabling goal notifications returns deniedReversible when permission denied', () async {
       final cubit = ProfileCubit(
         userSettings: userSettings,
         userHealthMetrics: userHealthMetrics,
@@ -298,7 +298,31 @@ void main() {
 
       final saved = await cubit.setGoalNotificationsEnabled(true);
 
-      expect(saved, isFalse);
+      expect(saved, NotificationToggleResult.deniedReversible);
+      expect(permissionRequestCount, 1);
+      expect(await userSettings.getGoalNotificationsEnabled(), isFalse);
+      expect(cubit.state.goalNotificationsEnabled, isFalse);
+
+      await cubit.close();
+    });
+
+    test('enabling goal notifications returns deniedPermanent when permanently denied', () async {
+      final cubit = ProfileCubit(
+        userSettings: userSettings,
+        userHealthMetrics: userHealthMetrics,
+        notificationService: NotificationService(
+          permissionChecker: () async => PermissionStatus.permanentlyDenied,
+        ),
+        permissionRequester: (permission) async {
+          permissionRequestCount++;
+          return PermissionStatus.permanentlyDenied;
+        },
+      );
+      await cubit.refresh();
+
+      final saved = await cubit.setGoalNotificationsEnabled(true);
+
+      expect(saved, NotificationToggleResult.deniedPermanent);
       expect(permissionRequestCount, 1);
       expect(await userSettings.getGoalNotificationsEnabled(), isFalse);
       expect(cubit.state.goalNotificationsEnabled, isFalse);
@@ -313,7 +337,7 @@ void main() {
 
       final saved = await cubit.setGoalNotificationsEnabled(false);
 
-      expect(saved, isTrue);
+      expect(saved, NotificationToggleResult.success);
       expect(permissionRequestCount, 0);
       expect(await userSettings.getGoalNotificationsEnabled(), isFalse);
 

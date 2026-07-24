@@ -127,6 +127,10 @@ class NotificationService {
     return status.isGranted || status.isLimited || status.isProvisional;
   }
 
+  Future<PermissionStatus> getNotificationPermissionStatus() async {
+    return _permissionChecker();
+  }
+
   /// Returns `true` when the notification was presented; `false` on skip or failure.
   Future<bool> showGoalReached({int? stepsToday}) async {
     if (!await hasNotificationPermission()) {

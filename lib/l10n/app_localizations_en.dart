@@ -144,6 +144,14 @@ class AppLocalizationsEn extends AppLocalizations {
       'Could not update notification setting';
 
   @override
+  String get settingsNotificationPermanentlyDenied =>
+      'Notifications blocked in system settings. Open settings to enable.';
+
+  @override
+  String get settingsNotificationDeniedRetry =>
+      'Notification permission required. Try again.';
+
+  @override
   String get settingsThemeUpdateError => 'Could not update theme preference';
 
   @override

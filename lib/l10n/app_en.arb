@@ -182,6 +182,14 @@
   "@settingsNotificationUpdateError": {
     "description": "Snack bar when saving notification preference fails"
   },
+  "settingsNotificationPermanentlyDenied": "Notifications blocked in system settings. Open settings to enable.",
+  "@settingsNotificationPermanentlyDenied": {
+    "description": "Snack bar when notification permission is permanently denied"
+  },
+  "settingsNotificationDeniedRetry": "Notification permission required. Try again.",
+  "@settingsNotificationDeniedRetry": {
+    "description": "Snack bar when notification permission is denied but can be retried"
+  },
   "settingsThemeUpdateError": "Could not update theme preference",
   "@settingsThemeUpdateError": {
     "description": "Snack bar when saving theme mode or accent preset fails"
