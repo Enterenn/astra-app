@@ -1,8 +1,8 @@
 # Story 29.5: Unify Persist Credit Rules (Drain vs Calculator)
 
-Status: review
+Status: done
 
-<!-- Implementation complete 2026-07-24 — awaiting OK commit gate (A/B/C/D) -->
+<!-- Code review approved 2026-07-24 — Epic 29 closed -->
 
 <!-- audits_2 Epic 29 — tracker: sprint-status-audits-2.yaml -->
 <!-- Source: epics-audits-2.md Story 29-5 · diagnostic-live-step-monitor.md #2 · AUD2-FR21, AUD2-NFR8 -->

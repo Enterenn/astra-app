@@ -13,7 +13,7 @@ ASTRA is a **local-first** wellness ecosystem: a Flutter mobile Hub App that col
 | | |
 |---|---|
 | **Current phase** | Phase 0: OSS beta (exit gate passed 2026-06-08) |
-| **Version** | `0.12.1+31` (see `pubspec.yaml`; displayed on About screen) |
+| **Version** | `0.13.0+32` (see `pubspec.yaml`; displayed on About screen) |
 | **Code status** | **Implemented**: Epics 1–7 complete |
 | **Beta gate** | [docs/BETA_CHECKLIST.md](docs/BETA_CHECKLIST.md) — Phase 0 field pass logged; post-close items tracked in checklist |
 | **Reference platform** | Android (iOS secondary, with reduced background expectations) |
