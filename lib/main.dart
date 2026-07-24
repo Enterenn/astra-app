@@ -8,6 +8,7 @@ import 'package:sqflite/sqflite.dart';
 import 'app.dart';
 import 'core/di/app_dependencies.dart';
 import 'core/preferences/goal_notification_migration.dart';
+import 'core/services/boot_sequence.dart';
 import 'core/services/notification_service.dart';
 import 'core/services/workmanager_callback.dart';
 
@@ -39,28 +40,10 @@ void schedulePostRunAppWorkmanagerRegistration(
   });
 }
 
-@visibleForTesting
-Future<void> startNotificationInitForBoot(
-  NotificationService notificationService, {
-  Future<void> Function(NotificationService service)? initialize,
-}) async {
-  final runInit = initialize ??
-      ((service) => service.initialize().timeout(const Duration(seconds: 3)));
-  try {
-    await runInit(notificationService);
-  } on TimeoutException catch (error) {
-    debugPrint('NotificationService init timed out: $error');
-  } catch (error, stackTrace) {
-    debugPrint('NotificationService init failed: $error');
-    debugPrintStack(stackTrace: stackTrace);
-  }
-}
-
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
-  await cancelStepCollectionWorkmanager();
   final notificationService = NotificationService();
-  unawaited(startNotificationInitForBoot(notificationService));
+  await runBootGateBeforeDependencies(notificationService: notificationService);
   final deps = await AppDependencies.create(
     notificationService: notificationService,
   );
