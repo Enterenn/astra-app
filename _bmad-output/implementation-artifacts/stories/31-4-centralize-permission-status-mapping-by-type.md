@@ -1,6 +1,6 @@
 # Story 31.4: Centralize Permission Status Mapping by Type
 
-Status: in-progress
+Status: review
 
 <!-- audits_2 Epic 31 — tracker: sprint-status-audits-2.yaml -->
 <!-- Source: epics-audits-2.md Story 31-4 · diagnostic-permissions-notifications.md #4, #5 · AUD2-FR15 · AUD2-FR16 · AUD2-UX5 -->
@@ -71,24 +71,24 @@ So that notification `isLimited`/`isProvisional` rules are not wrongly applied t
   - [x] Remove `OnboardingCubit._mapPermissionStatus` wrapper — call `mapActivityPermissionStatus` directly
   - [ ] **Stop → review brief → wait for Baptiste OK → commit**
 
-- [ ] **Sub-task B — Platform exception distinction in onboarding** (AC: #4)
-  - [ ] Add `PermissionRequestStatus.failed` to `onboarding_state.dart`
-  - [ ] `OnboardingCubit._resolvePermission` catch → `failed` (distinct debug log prefix, e.g. `platform error`)
-  - [ ] `onboarding_flow.dart`: `failed` case — same CTAs as `denied` (Retry + Continue)
-  - [ ] `onboarding_intro_page.dart`: include `failed` in feedback selector; distinct copy via new ARB key (en/fr) — e.g. technical retry message, not denial wording
-  - [ ] Run `flutter gen-l10n`
+- [x] **Sub-task B — Platform exception distinction in onboarding** (AC: #4)
+  - [x] Add `PermissionRequestStatus.failed` to `onboarding_state.dart`
+  - [x] `OnboardingCubit._resolvePermission` catch → `failed` (distinct debug log prefix, e.g. `platform error`)
+  - [x] `onboarding_flow.dart`: `failed` case — same CTAs as `denied` (Retry + Continue)
+  - [x] `onboarding_intro_page.dart`: include `failed` in feedback selector; distinct copy via new ARB key (en/fr) — e.g. technical retry message, not denial wording
+  - [x] Run `flutter gen-l10n`
   - [ ] **Stop → review brief → wait for Baptiste OK → commit**
 
-- [ ] **Sub-task C — Tests + diagnostic close** (AC: #5)
-  - [ ] Update `activity_permission_resolver_test.dart`: `limited`/`provisional` → `denied`; add `isActivityRecognitionGranted` unit coverage if needed
-  - [ ] Add `notification_permission_resolver_test.dart` (or extend `notification_service_test.dart`) for notification mapper
-  - [ ] Update `onboarding_cubit_test.dart`: throwing requester → `failed`
-  - [ ] Update `onboarding_flow_test.dart` if widget expectations change for `failed` feedback
-  - [ ] Run: `flutter test test/core/permissions/`
-  - [ ] Run: `flutter test test/presentation/cubits/onboarding_cubit_test.dart`
-  - [ ] Run: `flutter test test/core/services/notification_service_test.dart`
-  - [ ] Run: `flutter test --tags critical`
-  - [ ] Close diagnostic #4 + #5 → `done` with story ref; sync `audits_2/README.md` P1 rows if tracked
+- [x] **Sub-task C — Tests + diagnostic close** (AC: #5)
+  - [x] Update `activity_permission_resolver_test.dart`: `limited`/`provisional` → `denied`; add `isActivityRecognitionGranted` unit coverage if needed
+  - [x] Add `notification_permission_resolver_test.dart` (or extend `notification_service_test.dart`) for notification mapper
+  - [x] Update `onboarding_cubit_test.dart`: throwing requester → `failed`
+  - [x] Update `onboarding_flow_test.dart` if widget expectations change for `failed` feedback
+  - [x] Run: `flutter test test/core/permissions/`
+  - [x] Run: `flutter test test/presentation/cubits/onboarding_cubit_test.dart`
+  - [x] Run: `flutter test test/core/services/notification_service_test.dart`
+  - [x] Run: `flutter test --tags critical`
+  - [x] Close diagnostic #4 + #5 → `done` with story ref; sync `audits_2/README.md` P1 rows if tracked
   - [ ] **Stop → review brief → wait for Baptiste OK → commit**
 
 ## Dev Notes
@@ -317,6 +317,8 @@ Active branch `main`; tracker `sprint-status-audits-2.yaml`; base `0.13.1+33`.
 ### Completion Notes List
 
 - Sub-task A: `mapActivityPermissionStatus`, `isActivityPermissionGranted`, `notification_permission_resolver.dart`; tests green (19 tests).
+- Sub-task B: `PermissionRequestStatus.failed`, platform error log prefix, intro UI + l10n (en/fr).
+- Sub-task C: onboarding tests updated; diagnostic #4/#5 closed; `flutter test --tags critical` green.
 
 ### File List
 
@@ -326,5 +328,18 @@ Active branch `main`; tracker `sprint-status-audits-2.yaml`; base `0.13.1+33`.
 - `lib/presentation/cubits/onboarding_cubit.dart` — modified
 - `test/core/permissions/activity_permission_resolver_test.dart` — modified
 - `test/core/permissions/notification_permission_resolver_test.dart` — new
+- `lib/presentation/cubits/onboarding_state.dart` — modified
+- `lib/presentation/onboarding/onboarding_flow.dart` — modified
+- `lib/presentation/onboarding/onboarding_intro_page.dart` — modified
+- `lib/l10n/app_en.arb`, `app_fr.arb` — modified
+- `lib/l10n/app_localizations*.dart` — generated
+- `test/presentation/cubits/onboarding_cubit_test.dart` — modified
+- `test/presentation/onboarding/onboarding_flow_test.dart` — modified
+- `_bmad-output/planning-artifacts/audits_2/diagnostic-permissions-notifications.md` — modified
+- `_bmad-output/planning-artifacts/audits_2/README.md` — modified
+
+### Change Log
+
+- 2026-07-24: Story 31-4 — type-specific permission mappers + platform error distinction (AUD2-FR15/16/UX5)
 
 ### Change Log

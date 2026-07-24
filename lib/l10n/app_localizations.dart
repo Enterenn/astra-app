@@ -1240,6 +1240,12 @@ abstract class AppLocalizations {
   /// **'Activity access is blocked in system settings. Open settings to enable step tracking, or continue with limited tracking.'**
   String get onboardingIntroPermissionPermanentlyDenied;
 
+  /// Onboarding intro feedback when activity permission check fails due to a platform error
+  ///
+  /// In en, this message translates to:
+  /// **'We couldn\'t check activity access right now. Try again, or continue with limited tracking.'**
+  String get onboardingIntroPermissionFailed;
+
   /// Trust badge on onboarding intro emphasising offline-only data
   ///
   /// In en, this message translates to:

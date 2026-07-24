@@ -166,7 +166,7 @@ void main() {
 
       expect(
         cubit.state.activityPermissionStatus,
-        PermissionRequestStatus.denied,
+        PermissionRequestStatus.failed,
       );
 
       cubit.close();

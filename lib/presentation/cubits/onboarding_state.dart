@@ -8,6 +8,7 @@ enum PermissionRequestStatus {
   granted,
   denied,
   permanentlyDenied,
+  failed,
 }
 
 class OnboardingState {

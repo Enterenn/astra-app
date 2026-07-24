@@ -689,6 +689,10 @@ class AppLocalizationsEn extends AppLocalizations {
       'Activity access is blocked in system settings. Open settings to enable step tracking, or continue with limited tracking.';
 
   @override
+  String get onboardingIntroPermissionFailed =>
+      'We couldn\'t check activity access right now. Try again, or continue with limited tracking.';
+
+  @override
   String get onboardingTrustOfflineBadge => '100% offline';
 
   @override

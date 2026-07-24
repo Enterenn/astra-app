@@ -129,8 +129,8 @@ Priorités : **P0** critique (corruption données / sur-comptage / sécurité) �
 | 1 | P0 | `permanentlyDenied` non distingué | `partial` | 31-1 post-onboarding ; 31-2 intro feedback |
 | 2 | P0 | Re-demande activité post-onboarding | `partial` | 31-2 onboarding retry ; 31-1 Today/My Data Retry |
 | 3 | P0 | `_initializePlatform` avale erreurs | `open` | `notification_service.dart:118-122` |
-| 4 | P1 | `_mapPermissionStatus` dupliqué / `isLimited` sur activity | `open` | 3 fichiers |
-| 5 | P1 | Catch → `denied` masque bugs plateforme | `open` | `onboarding_cubit.dart:108-113` |
+| 4 | P1 | `_mapPermissionStatus` dupliqué / `isLimited` sur activity | `done` | 31-4 |
+| 5 | P1 | Catch → `denied` masque bugs plateforme | `done` | 31-4 |
 | 6 | P2 | Pas de dédup `setGoalNotificationsEnabled` | `open` | vs `_refreshInFlight` |
 | 7 | P2 | Timeout background n'annule pas init | `open` | `notification_service.dart:67-79` |
 

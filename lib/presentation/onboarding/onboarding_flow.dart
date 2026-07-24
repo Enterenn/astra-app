@@ -99,6 +99,7 @@ class _OnboardingFlowView extends StatelessWidget {
 
     switch (permissionStatus) {
       case PermissionRequestStatus.denied:
+      case PermissionRequestStatus.failed:
         introPrimaryLabel = l10n.commonRetry;
         introPrimaryAction = () => unawaited(_onIntroRetry(context));
         introSecondaryLabel = l10n.onboardingContinueBtn;

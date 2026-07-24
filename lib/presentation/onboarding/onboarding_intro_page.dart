@@ -79,7 +79,8 @@ class _IntroPermissionFeedback extends StatelessWidget {
       selector: (state) {
         return switch (state.activityPermissionStatus) {
           PermissionRequestStatus.denied ||
-          PermissionRequestStatus.permanentlyDenied =>
+          PermissionRequestStatus.permanentlyDenied ||
+          PermissionRequestStatus.failed =>
             state.activityPermissionStatus,
           _ => null,
         };
@@ -94,6 +95,8 @@ class _IntroPermissionFeedback extends StatelessWidget {
         final message = switch (denial) {
           PermissionRequestStatus.permanentlyDenied =>
             l10n.onboardingIntroPermissionPermanentlyDenied,
+          PermissionRequestStatus.failed =>
+            l10n.onboardingIntroPermissionFailed,
           PermissionRequestStatus.denied =>
             l10n.onboardingIntroPermissionDenied,
           _ => '',

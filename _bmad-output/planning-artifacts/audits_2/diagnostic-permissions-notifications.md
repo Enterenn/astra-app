@@ -10,8 +10,8 @@
 ## Statut
 
 - **Dernière vérification :** 2026-07-24
-- **Statut :** `partial` — #1/#2 onboarding intro feedback + retry (story 31-2) ; post-onboarding CTAs (31-1)
-- **Story / PR :** 31-1 · 31-2
+- **Statut :** `partial` — #1/#2 onboarding intro feedback + retry (story 31-2) ; post-onboarding CTAs (31-1) ; #4/#5 central mappers + platform error distinction (31-4)
+- **Story / PR :** 31-1 · 31-2 · 31-4
 
 ---
 
@@ -22,8 +22,8 @@
 | 🔴 P0 | 1 | `permanentlyDenied` jamais distingué | `partial` (31-1 post-onboarding + 31-2 onboarding intro feedback) |
 | 🔴 P0 | 2 | Pas de re-demande activité post-onboarding | `partial` (31-1 Retry CTA Today/My Data; 31-2 onboarding retry + no silent advance) |
 | 🔴 P0 | 3 | `_initializePlatform` avale les erreurs | `open` |
-| 🟡 P1 | 4 | Logique `_mapPermissionStatus` dupliquée / incohérente | `open` |
-| 🟡 P1 | 5 | Catch générique → `denied` (masque bugs plateforme) | `open` |
+| 🟡 P1 | 4 | Logique `_mapPermissionStatus` dupliquée / incohérente | `done` (31-4) |
+| 🟡 P1 | 5 | Catch générique → `denied` (masque bugs plateforme) | `done` (31-4) |
 | 🟡 P2 | 6 | Pas de dédup sur `setGoalNotificationsEnabled` | `open` |
 | 🟡 P2 | 7 | Timeout background n'annule pas l'init sous-jacente | `open` |
 
@@ -92,6 +92,8 @@
 
 ### 4. Logique dupliquée et incohérente entre types de permission
 
+**Statut :** `done` — Story 31-4 (`mapActivityPermissionStatus` / `mapNotificationPermissionStatus` ; activity = `isGranted` only)
+
 | Fichier | Lignes | Comportement |
 |---------|--------|--------------|
 | `notification_service.dart` | 127 | `isGranted \|\| isLimited \|\| isProvisional` — **correct** pour notifications |
@@ -105,6 +107,8 @@
 ---
 
 ### 5. Catch générique masquant les erreurs techniques
+
+**Statut :** `done` — Story 31-4 (`PermissionRequestStatus.failed` + distinct log prefix + intro copy)
 
 | Référence | Détail |
 |-----------|--------|
@@ -157,7 +161,7 @@ Risque faible ; incohérence de pattern dans le même cubit.
 | T1 | État `permanentlyDenied` distinct + CTA `openAppSettings()` (activité + notifications) | #1 |
 | T2 | Point de re-demande activité hors onboarding (`.request()` ou Settings guidé) | #2 |
 | T3 | Remonter / tracer l'échec réel de `_initializePlatform` (`rethrow` ou signal explicite) | #3 |
-| T4 | Centraliser `_mapPermissionStatus` par type de permission | #4 |
+| T4 | Centraliser `_mapPermissionStatus` par type de permission | #4 — **done** (31-4) |
 
 ---
 

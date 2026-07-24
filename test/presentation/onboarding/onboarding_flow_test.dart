@@ -442,7 +442,7 @@ void main() {
         findsNothing,
       );
       expect(
-        find.textContaining('Step tracking needs activity access'),
+        find.textContaining("couldn't check activity access"),
         findsOneWidget,
       );
 

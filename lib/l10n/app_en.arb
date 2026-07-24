@@ -960,6 +960,10 @@
   "@onboardingIntroPermissionPermanentlyDenied": {
     "description": "Onboarding intro feedback when activity permission is permanently denied"
   },
+  "onboardingIntroPermissionFailed": "We couldn't check activity access right now. Try again, or continue with limited tracking.",
+  "@onboardingIntroPermissionFailed": {
+    "description": "Onboarding intro feedback when activity permission check fails due to a platform error"
+  },
   "onboardingTrustOfflineBadge": "100% offline",
   "@onboardingTrustOfflineBadge": {
     "description": "Trust badge on onboarding intro emphasising offline-only data"

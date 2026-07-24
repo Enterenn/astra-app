@@ -88,7 +88,8 @@ class OnboardingCubit extends Cubit<OnboardingState> {
 
   Future<void> requestActivityPermission() async {
     final isRetry =
-        state.activityPermissionStatus == PermissionRequestStatus.denied;
+        state.activityPermissionStatus == PermissionRequestStatus.denied ||
+        state.activityPermissionStatus == PermissionRequestStatus.failed;
     emit(
       state.copyWith(
         activityPermissionStatus: PermissionRequestStatus.requesting,
@@ -115,10 +116,10 @@ class OnboardingCubit extends Cubit<OnboardingState> {
       return mapActivityPermissionStatus(status);
     } catch (error, stackTrace) {
       if (kDebugMode) {
-        debugPrint('OnboardingCubit._resolvePermission failed: $error');
+        debugPrint('OnboardingCubit._resolvePermission platform error: $error');
         debugPrintStack(stackTrace: stackTrace);
       }
-      return PermissionRequestStatus.denied;
+      return PermissionRequestStatus.failed;
     }
   }
 }

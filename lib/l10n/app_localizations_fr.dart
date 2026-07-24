@@ -700,6 +700,10 @@ class AppLocalizationsFr extends AppLocalizations {
       'L\'accès à l\'activité est bloqué dans les paramètres système. Ouvrez les paramètres pour activer le suivi, ou continuez avec un suivi limité.';
 
   @override
+  String get onboardingIntroPermissionFailed =>
+      'Impossible de vérifier l\'accès à l\'activité pour le moment. Réessayez, ou continuez avec un suivi limité.';
+
+  @override
   String get onboardingTrustOfflineBadge => '100 % hors ligne';
 
   @override

@@ -1,6 +1,6 @@
 # generated: 2026-07-24
-# last_updated: 2026-07-24 (Story 31-4 in-progress)
-# NEXT: dev-story 31-4-centralize-permission-status-mapping-by-type
+# last_updated: 2026-07-24 (Story 31-4 review)
+# NEXT: code-review 31-4-centralize-permission-status-mapping-by-type
 # Ref: planning-artifacts/epics-audits-2.md · implementation-readiness-report-2026-07-24.md
 # project: astra-app
 # project_key: NOKEY
@@ -47,7 +47,7 @@
 # NAVIGATION: _bmad-output/README.md · planning-artifacts/audits_2/README.md
 
 generated: 2026-07-24
-last_updated: 2026-07-24 (Story 31-4 in-progress)
+last_updated: 2026-07-24 (Story 31-4 review)
 project: astra-app
 project_key: NOKEY
 tracking_system: file-system
@@ -76,7 +76,7 @@ development_status:
   31-1-model-permanently-denied-with-settings-cta: done
   31-2-onboarding-intro-post-denial-feedback: done
   31-3-propagate-notification-platform-init-failures: done
-  31-4-centralize-permission-status-mapping-by-type: in-progress
+  31-4-centralize-permission-status-mapping-by-type: review
   31-5-structural-boot-gate-cancel-wm-before-notification-init: backlog
   31-6-harden-profile-notification-toggle-concurrency: backlog
   epic-31-retrospective: optional
