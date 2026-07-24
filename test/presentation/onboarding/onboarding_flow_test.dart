@@ -548,14 +548,24 @@ void main() {
     });
 
     testWidgets('back navigation moves from weight to intro', (tester) async {
+      var permissionRequestCount = 0;
+
       await tester.pumpWidget(
         buildFlow(
           onComplete: () {},
-          createCubit: grantedCubit,
+          createCubit: (deps) => OnboardingCubit(
+            userSettings: deps.userSettings,
+            userHealthMetrics: deps.userHealthMetrics,
+            permissionRequester: (_) async {
+              permissionRequestCount++;
+              return PermissionStatus.granted;
+            },
+          ),
         ),
       );
 
       await _advancePastIntro(tester);
+      expect(permissionRequestCount, 1);
 
       expect(
         find.text('What is your weight?').hitTestable(),
@@ -572,6 +582,17 @@ void main() {
       expect(
         find.text('What is your weight?').hitTestable(),
         findsNothing,
+      );
+      expect(_introContinue().hitTestable(), findsNothing);
+      expect(_introContinueAfterDeny().hitTestable(), findsOneWidget);
+
+      await tester.tap(_introContinueAfterDeny());
+      await tester.pumpAndSettle();
+
+      expect(permissionRequestCount, 1);
+      expect(
+        find.text('What is your weight?').hitTestable(),
+        findsOneWidget,
       );
     });
 

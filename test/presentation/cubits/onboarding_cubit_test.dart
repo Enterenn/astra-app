@@ -1,6 +1,8 @@
 @Tags(['slow'])
 library;
 
+import 'dart:async';
+
 import 'package:astra_app/core/constants/preference_keys.dart';
 import 'package:astra_app/core/database/app_database.dart';
 import 'package:astra_app/data/repositories/user_health_metrics_repository.dart';
@@ -148,6 +150,40 @@ void main() {
       expect(
         cubit.state.activityPermissionStatus,
         PermissionRequestStatus.permanentlyDenied,
+      );
+
+      cubit.close();
+    });
+
+    test('requestActivityPermission ignores overlapping calls', () async {
+      final permissionCompleter = Completer<PermissionStatus>();
+      var requestCount = 0;
+      final cubit = OnboardingCubit(
+        userSettings: userSettings,
+        userHealthMetrics: userHealthMetrics,
+        permissionRequester: (_) async {
+          requestCount++;
+          return permissionCompleter.future;
+        },
+      );
+
+      final first = cubit.requestActivityPermission();
+      final second = cubit.requestActivityPermission();
+
+      expect(
+        cubit.state.activityPermissionStatus,
+        PermissionRequestStatus.requesting,
+      );
+      expect(requestCount, 1);
+
+      permissionCompleter.complete(PermissionStatus.granted);
+      await first;
+      await second;
+
+      expect(requestCount, 1);
+      expect(
+        cubit.state.activityPermissionStatus,
+        PermissionRequestStatus.granted,
       );
 
       cubit.close();

@@ -120,6 +120,10 @@ class _OnboardingFlowView extends StatelessWidget {
           introPrimaryLabel = l10n.onboardingStartBtn;
           introPrimaryAction = null;
         }
+      case PermissionRequestStatus.granted:
+        introPrimaryLabel = l10n.onboardingContinueBtn;
+        introPrimaryAction = () => _onIntroContinueAfterDeny(context);
+        introShowTrailingArrow = false;
       default:
         introPrimaryLabel = l10n.onboardingStartBtn;
         introPrimaryAction = () => unawaited(_onIntroStart(context));

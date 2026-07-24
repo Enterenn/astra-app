@@ -1,6 +1,6 @@
 # Story 31.4: Centralize Permission Status Mapping by Type
 
-Status: review
+Status: done
 
 <!-- audits_2 Epic 31 — tracker: sprint-status-audits-2.yaml -->
 <!-- Source: epics-audits-2.md Story 31-4 · diagnostic-permissions-notifications.md #4, #5 · AUD2-FR15 · AUD2-FR16 · AUD2-UX5 -->

@@ -25,6 +25,7 @@ class OnboardingCubit extends Cubit<OnboardingState> {
   final UserHealthMetricsRepositoryContract userHealthMetrics;
   final PermissionRequester _requestPermission;
   final ActivityPermissionResolver _activityPermissionResolver;
+  int _activityPermissionRequestGeneration = 0;
 
   static Future<PermissionStatus> _defaultRequestPermission(
     Permission permission,
@@ -87,6 +88,11 @@ class OnboardingCubit extends Cubit<OnboardingState> {
   }
 
   Future<void> requestActivityPermission() async {
+    if (state.activityPermissionStatus == PermissionRequestStatus.requesting) {
+      return;
+    }
+
+    final requestGeneration = ++_activityPermissionRequestGeneration;
     final isRetry =
         state.activityPermissionStatus == PermissionRequestStatus.denied ||
         state.activityPermissionStatus == PermissionRequestStatus.failed;
@@ -99,6 +105,10 @@ class OnboardingCubit extends Cubit<OnboardingState> {
 
     final permission = _activityPermissionResolver();
     final resolved = await _resolvePermission(permission);
+
+    if (isClosed || requestGeneration != _activityPermissionRequestGeneration) {
+      return;
+    }
 
     emit(
       state.copyWith(
