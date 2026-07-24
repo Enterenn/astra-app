@@ -10,6 +10,7 @@ import '../../data/repositories/step/step_aggregation_repository.dart';
 import '../../data/repositories/step/step_ingestion_repository.dart';
 import '../../data/repositories/user_health_metrics_repository.dart';
 import '../../data/repositories/user_settings_repository.dart';
+import '../constants/preference_keys.dart';
 import '../time/local_day_formatter.dart';
 import '../time/time_provider.dart';
 import 'ingestion_collection_lock.dart';
@@ -71,8 +72,16 @@ class BackgroundCollector {
       return 0;
     }
     _collectInFlight = true;
-    final lock = IngestionCollectionLock(repository.databaseSession, clock: clock);
     try {
+      if (await IngestionCollectionLock.isHeld(
+        repository.databaseSession,
+        kDatabaseMaintenanceLockKey,
+        clock: clock,
+      )) {
+        return 0;
+      }
+
+      final lock = IngestionCollectionLock(repository.databaseSession, clock: clock);
       if (!await lock.tryAcquire()) {
         return 0;
       }
