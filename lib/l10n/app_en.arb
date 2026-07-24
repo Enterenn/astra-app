@@ -500,6 +500,14 @@
   "@myDataBackgroundPermissionDenied": {
     "description": "Background status when activity permission is denied"
   },
+  "myDataBackgroundPermissionPermanentlyDenied": "Activity access blocked in system settings",
+  "@myDataBackgroundPermissionPermanentlyDenied": {
+    "description": "Background status when activity permission is permanently denied"
+  },
+  "myDataBackgroundPermissionDeniedRetry": "Activity permission required for background sync",
+  "@myDataBackgroundPermissionDeniedRetry": {
+    "description": "Background status when activity permission can be retried"
+  },
   "myDataOpenSettings": "Open settings",
   "@myDataOpenSettings": {
     "description": "Button to open OS settings when activity permission is off"

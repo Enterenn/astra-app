@@ -10,13 +10,17 @@ import '../../core/validation/step_goal_validator.dart';
 import '../../data/csv/import_validation_exception.dart';
 import '../../core/health/stale_data_evaluator.dart';
 import '../../core/permissions/activity_permission_resolver.dart'
-    show isActivityRecognitionGranted;
+    show
+        ActivityPermissionStatusChecker,
+        isActivityRecognitionGranted,
+        resolveActivityPermissionStatus;
 import '../../core/time/time_provider.dart';
 import '../../data/csv/timeseries_csv_codec.dart';
 import '../../data/models/database_footprint.dart';
 import '../../data/contracts/contracts.dart';
 import 'my_data_errors.dart';
 import 'my_data_state.dart';
+import 'onboarding_state.dart' show PermissionRequestStatus;
 
 typedef ActivityPermissionChecker = Future<bool> Function();
 typedef TempDirectoryProvider = Future<String> Function();
@@ -41,6 +45,7 @@ class MyDataCubit extends Cubit<MyDataState> {
     required this.clock,
     required this.databasePath,
     ActivityPermissionChecker? activityPermissionGranted,
+    ActivityPermissionStatusChecker? activityPermissionStatus,
     TempDirectoryProvider? tempDirectoryProvider,
     required SaveCsvFileCallback saveCsvFile,
     required PickCsvFileCallback pickCsvFile,
@@ -52,6 +57,8 @@ class MyDataCubit extends Cubit<MyDataState> {
     bool? isIos,
   }) : _activityPermissionGranted =
            activityPermissionGranted ?? isActivityRecognitionGranted,
+       _activityPermissionStatus =
+           activityPermissionStatus ?? resolveActivityPermissionStatus,
        _tempDirectoryProvider =
            tempDirectoryProvider ?? _defaultTempDirectoryProvider,
        _saveCsvFile = saveCsvFile,
@@ -67,6 +74,7 @@ class MyDataCubit extends Cubit<MyDataState> {
   final TimeProvider clock;
   final String databasePath;
   final ActivityPermissionChecker _activityPermissionGranted;
+  final ActivityPermissionStatusChecker _activityPermissionStatus;
   final TempDirectoryProvider _tempDirectoryProvider;
   final SaveCsvFileCallback _saveCsvFile;
   final PickCsvFileCallback _pickCsvFile;
@@ -550,6 +558,14 @@ class MyDataCubit extends Cubit<MyDataState> {
         return;
       }
 
+      PermissionRequestStatus? activityPermissionDenial;
+      if (!activityGranted) {
+        activityPermissionDenial = await _activityPermissionStatus();
+        if (isClosed) {
+          return;
+        }
+      }
+
       _emitReadySnapshot(
         sampleCount: footprint.sampleCount,
         fileSizeBytes: footprint.fileSizeBytes,
@@ -560,6 +576,7 @@ class MyDataCubit extends Cubit<MyDataState> {
           lastIngestionUtc: lastIngestionUtc,
           nowUtc: nowUtc,
         ),
+        activityPermissionDenial: activityPermissionDenial,
       );
     } catch (error, stackTrace) {
       if (kDebugMode) {
@@ -612,6 +629,7 @@ class MyDataCubit extends Cubit<MyDataState> {
     required BackgroundCollectionStatus backgroundStatus,
     int? dailyStepGoal,
     String? displayName,
+    PermissionRequestStatus? activityPermissionDenial,
   }) {
     emit(
       MyDataState.ready(
@@ -625,6 +643,7 @@ class MyDataCubit extends Cubit<MyDataState> {
         isIos: _isIos,
         dailyStepGoal: dailyStepGoal ?? state.dailyStepGoal,
         displayName: displayName ?? state.displayName,
+        activityPermissionDenial: activityPermissionDenial,
       ).copyWith(
         isExporting: state.isExporting,
         exportError: state.exportError,

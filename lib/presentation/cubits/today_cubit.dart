@@ -5,7 +5,10 @@ import 'package:flutter/foundation.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 
 import '../../core/permissions/activity_permission_resolver.dart'
-    show isActivityRecognitionGranted;
+    show
+        ActivityPermissionStatusChecker,
+        isActivityRecognitionGranted,
+        resolveActivityPermissionStatus;
 import '../../core/services/live_step_monitor.dart' show LiveStepMonitor;
 import '../../core/time/time_provider.dart';
 import '../../core/validation/step_goal_validator.dart';
@@ -28,11 +31,14 @@ class TodayCubit extends Cubit<TodayState> {
     required UserHealthMetricsRepositoryContract userHealthMetrics,
     required TimeProvider clock,
     ActivityPermissionChecker? activityPermissionGranted,
+    ActivityPermissionStatusChecker? activityPermissionStatus,
     bool? isIos,
     this.postGoalUpdate,
   }) : super(const TodayState.loading()) {
     final permissionChecker =
         activityPermissionGranted ?? isActivityRecognitionGranted;
+    final permissionStatusChecker =
+        activityPermissionStatus ?? resolveActivityPermissionStatus;
     final ios = isIos ?? Platform.isIOS;
     _cache = TodaySessionCache();
     _userHealthMetrics = userHealthMetrics;
@@ -80,6 +86,7 @@ class TodayCubit extends Cubit<TodayState> {
       userSettings: userSettings,
       clock: clock,
       activityPermissionGranted: permissionChecker,
+      activityPermissionStatus: permissionStatusChecker,
       isIos: ios,
     );
 

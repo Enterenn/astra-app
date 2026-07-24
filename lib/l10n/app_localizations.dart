@@ -739,6 +739,18 @@ abstract class AppLocalizations {
   /// **'Activity permission off'**
   String get myDataBackgroundPermissionDenied;
 
+  /// Background status when activity permission is permanently denied
+  ///
+  /// In en, this message translates to:
+  /// **'Activity access blocked in system settings'**
+  String get myDataBackgroundPermissionPermanentlyDenied;
+
+  /// Background status when activity permission can be retried
+  ///
+  /// In en, this message translates to:
+  /// **'Activity permission required for background sync'**
+  String get myDataBackgroundPermissionDeniedRetry;
+
   /// Button to open OS settings when activity permission is off
   ///
   /// In en, this message translates to:

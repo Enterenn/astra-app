@@ -14,6 +14,7 @@ import 'package:astra_app/data/repositories/user_health_metrics_repository.dart'
 import 'package:astra_app/data/repositories/user_settings_repository.dart';
 import 'package:astra_app/presentation/cubits/today_cubit.dart';
 import 'package:astra_app/presentation/cubits/today_state.dart';
+import 'package:astra_app/presentation/cubits/onboarding_state.dart';
 import 'package:astra_app/presentation/models/week_day_status.dart';
 import 'dart:async';
 
@@ -74,6 +75,7 @@ void main() {
 
     TodayCubit buildCubit({
       Future<bool> Function()? activityPermissionGranted,
+      Future<PermissionRequestStatus> Function()? activityPermissionStatus,
       bool isIos = false,
       UserHealthMetricsRepository? healthMetrics,
     }) {
@@ -84,6 +86,7 @@ void main() {
         clock: clock,
         activityPermissionGranted:
             activityPermissionGranted ?? () async => true,
+        activityPermissionStatus: activityPermissionStatus,
         isIos: isIos,
       );
     }
@@ -130,13 +133,47 @@ void main() {
           zoneOffset: '+02:00',
         ),
       );
-      final cubit = buildCubit(activityPermissionGranted: () async => false);
+      final cubit = buildCubit(
+        activityPermissionGranted: () async => false,
+        activityPermissionStatus: () async => PermissionRequestStatus.denied,
+      );
       await cubit.refresh();
 
       expect(cubit.state.status, TodayStatus.noPermission);
       expect(cubit.state.weekDays, hasLength(7));
       expect(cubit.state.activityMetrics, ActivityMetricsSnapshot.zero);
       expect(cubit.state.showCelebration, isFalse);
+      cubit.close();
+    });
+
+    test('noPermission maps permanentlyDenied activity denial', () async {
+      final cubit = buildCubit(
+        activityPermissionGranted: () async => false,
+        activityPermissionStatus: () async =>
+            PermissionRequestStatus.permanentlyDenied,
+      );
+      await cubit.refresh();
+
+      expect(cubit.state.status, TodayStatus.noPermission);
+      expect(
+        cubit.state.activityPermissionDenial,
+        PermissionRequestStatus.permanentlyDenied,
+      );
+      cubit.close();
+    });
+
+    test('noPermission maps reversible denied activity denial', () async {
+      final cubit = buildCubit(
+        activityPermissionGranted: () async => false,
+        activityPermissionStatus: () async => PermissionRequestStatus.denied,
+      );
+      await cubit.refresh();
+
+      expect(cubit.state.status, TodayStatus.noPermission);
+      expect(
+        cubit.state.activityPermissionDenial,
+        PermissionRequestStatus.denied,
+      );
       cubit.close();
     });
 

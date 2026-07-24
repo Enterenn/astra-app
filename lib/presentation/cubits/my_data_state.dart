@@ -1,5 +1,6 @@
 import '../../core/constants/preference_keys.dart';
 import 'my_data_errors.dart';
+import 'onboarding_state.dart' show PermissionRequestStatus;
 
 enum MyDataStatus { loading, ready }
 
@@ -31,6 +32,7 @@ class MyDataState {
     this.purgeSuccessPending = false,
     this.dailyStepGoal = kDefaultStepGoal,
     this.displayName,
+    this.activityPermissionDenial,
   });
 
   final MyDataStatus status;
@@ -57,6 +59,9 @@ class MyDataState {
   final int dailyStepGoal;
   final String? displayName;
 
+  /// Permanent vs reversible denial when [backgroundStatus] is permissionDenied.
+  final PermissionRequestStatus? activityPermissionDenial;
+
   const MyDataState.loading() : this(status: MyDataStatus.loading);
 
   factory MyDataState.ready({
@@ -68,6 +73,7 @@ class MyDataState {
     required bool isIos,
     int dailyStepGoal = kDefaultStepGoal,
     String? displayName,
+    PermissionRequestStatus? activityPermissionDenial,
   }) {
     return MyDataState(
       status: MyDataStatus.ready,
@@ -79,6 +85,7 @@ class MyDataState {
       isIos: isIos,
       dailyStepGoal: dailyStepGoal,
       displayName: displayName,
+      activityPermissionDenial: activityPermissionDenial,
     );
   }
 
@@ -104,6 +111,7 @@ class MyDataState {
     bool? purgeSuccessPending,
     int? dailyStepGoal,
     Object? displayName = _unset,
+    Object? activityPermissionDenial = _unset,
   }) {
     return MyDataState(
       status: status ?? this.status,
@@ -137,6 +145,9 @@ class MyDataState {
       displayName: displayName == _unset
           ? this.displayName
           : displayName as String?,
+      activityPermissionDenial: activityPermissionDenial == _unset
+          ? this.activityPermissionDenial
+          : activityPermissionDenial as PermissionRequestStatus?,
     );
   }
 }

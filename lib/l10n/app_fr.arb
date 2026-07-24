@@ -112,6 +112,8 @@
   "myDataBackgroundStale": "Collecte en arrière-plan retardée · Dernière synchro {relativeTime}",
   "myDataBackgroundIosBackfill": "Les pas se synchronisent à l'ouverture de l'app · Dernière synchro {relativeTime}",
   "myDataBackgroundPermissionDenied": "Autorisation d'activité désactivée",
+  "myDataBackgroundPermissionPermanentlyDenied": "Accès activité bloqué dans les paramètres système",
+  "myDataBackgroundPermissionDeniedRetry": "Autorisation d'activité requise pour la synchro",
   "myDataOpenSettings": "Ouvrir les paramètres",
   "myDataStatusIndicator": "Indicateur d'état",
   "myDataFootprintSamplesStored": "échantillons stockés",

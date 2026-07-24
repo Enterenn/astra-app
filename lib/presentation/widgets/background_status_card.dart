@@ -5,6 +5,7 @@ import '../../core/constants/astra_colors.dart';
 import '../../core/constants/astra_spacing.dart';
 import '../../core/constants/astra_typography.dart';
 import '../cubits/my_data_state.dart';
+import '../cubits/onboarding_state.dart' show PermissionRequestStatus;
 import '../formatters/relative_time_formatter.dart';
 
 class BackgroundStatusCard extends StatelessWidget {
@@ -12,14 +13,18 @@ class BackgroundStatusCard extends StatelessWidget {
     required this.status,
     required this.lastIngestionUtc,
     required this.nowUtc,
+    this.activityPermissionDenial,
     this.onOpenSettings,
+    this.onRetryPermission,
     super.key,
   });
 
   final BackgroundCollectionStatus status;
   final DateTime? lastIngestionUtc;
   final DateTime nowUtc;
+  final PermissionRequestStatus? activityPermissionDenial;
   final VoidCallback? onOpenSettings;
+  final VoidCallback? onRetryPermission;
 
   @override
   Widget build(BuildContext context) {
@@ -46,7 +51,7 @@ class BackgroundStatusCard extends StatelessWidget {
       BackgroundCollectionStatus.iosBackfill =>
         l10n.myDataBackgroundIosBackfill(lastSync),
       BackgroundCollectionStatus.permissionDenied =>
-        l10n.myDataBackgroundPermissionDenied,
+        _permissionDeniedCopy(l10n),
     };
 
     return Column(
@@ -85,12 +90,34 @@ class BackgroundStatusCard extends StatelessWidget {
           Align(
             alignment: Alignment.centerLeft,
             child: TextButton(
-              onPressed: onOpenSettings,
-              child: Text(l10n.myDataOpenSettings),
+              onPressed:
+                  activityPermissionDenial ==
+                      PermissionRequestStatus.permanentlyDenied
+                  ? onOpenSettings
+                  : activityPermissionDenial == PermissionRequestStatus.denied
+                  ? onRetryPermission
+                  : onOpenSettings,
+              child: Text(
+                activityPermissionDenial ==
+                        PermissionRequestStatus.permanentlyDenied ||
+                    activityPermissionDenial == null
+                    ? l10n.myDataOpenSettings
+                    : l10n.commonRetry,
+              ),
             ),
           ),
         ],
       ],
     );
+  }
+
+  String _permissionDeniedCopy(AppLocalizations l10n) {
+    return switch (activityPermissionDenial) {
+      PermissionRequestStatus.permanentlyDenied =>
+        l10n.myDataBackgroundPermissionPermanentlyDenied,
+      PermissionRequestStatus.denied =>
+        l10n.myDataBackgroundPermissionDeniedRetry,
+      _ => l10n.myDataBackgroundPermissionDenied,
+    };
   }
 }

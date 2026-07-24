@@ -364,6 +364,14 @@ class AppLocalizationsEn extends AppLocalizations {
   String get myDataBackgroundPermissionDenied => 'Activity permission off';
 
   @override
+  String get myDataBackgroundPermissionPermanentlyDenied =>
+      'Activity access blocked in system settings';
+
+  @override
+  String get myDataBackgroundPermissionDeniedRetry =>
+      'Activity permission required for background sync';
+
+  @override
   String get myDataOpenSettings => 'Open settings';
 
   @override

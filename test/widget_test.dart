@@ -11,6 +11,7 @@ import 'package:astra_app/data/repositories/user_health_metrics_repository.dart'
 import 'package:astra_app/data/repositories/user_settings_repository.dart';
 import 'package:astra_app/l10n/app_localizations.dart';
 import 'package:astra_app/presentation/cubits/onboarding_cubit.dart';
+import 'package:astra_app/presentation/cubits/onboarding_state.dart';
 import 'package:astra_app/presentation/cubits/theme_state.dart';
 import 'package:astra_app/presentation/cubits/history_cubit.dart';
 import 'package:astra_app/presentation/cubits/my_data_cubit.dart';
@@ -350,6 +351,8 @@ void main() {
                   userHealthMetrics: deps.userHealthMetrics,
                   clock: deps.timeProvider,
                   activityPermissionGranted: () async => false,
+                  activityPermissionStatus: () async =>
+                      PermissionRequestStatus.denied,
                 );
                 return todayCubitRef!;
               },
@@ -401,13 +404,13 @@ void main() {
         expect(
           find.text(
             lookupAppLocalizations(const Locale('en'))
-                .myDataBackgroundPermissionDenied,
+                .myDataBackgroundPermissionDeniedRetry,
           ),
           findsOneWidget,
         );
         expect(
           find.text(
-            lookupAppLocalizations(const Locale('en')).myDataOpenSettings,
+            lookupAppLocalizations(const Locale('en')).commonRetry,
           ),
           findsOneWidget,
         );

@@ -8,6 +8,8 @@ import '../../../core/metrics/derived_activity_metrics.dart';
 import '../../../core/time/local_day_formatter.dart';
 import '../../../core/time/time_provider.dart';
 import '../../../data/contracts/contracts.dart';
+import '../../../core/permissions/activity_permission_resolver.dart'
+    show ActivityPermissionStatusChecker;
 import '../../../core/services/live_step_monitor.dart'
     show ActivityPermissionChecker;
 import '../../../data/models/timeseries_sample_model.dart';
@@ -27,6 +29,7 @@ class TodayRefreshService {
     required this.userSettings,
     required this.clock,
     required this.activityPermissionGranted,
+    required this.activityPermissionStatus,
     required this.isIos,
   });
 
@@ -39,6 +42,7 @@ class TodayRefreshService {
   final UserSettingsRepositoryContract userSettings;
   final TimeProvider clock;
   final ActivityPermissionChecker activityPermissionGranted;
+  final ActivityPermissionStatusChecker activityPermissionStatus;
   final bool isIos;
 
   late Future<List<WeekDayStatus>> Function() loadWeekDays;
@@ -72,7 +76,15 @@ class TodayRefreshService {
     final granted = await activityPermissionGranted();
     if (!_generationStillValid(fastPathGeneration)) return;
     if (!granted) {
-      emit(const TodayState(status: TodayStatus.noPermission, weekDays: []));
+      final denial = await activityPermissionStatus();
+      if (!_generationStillValid(fastPathGeneration)) return;
+      emit(
+        TodayState(
+          status: TodayStatus.noPermission,
+          activityPermissionDenial: denial,
+          weekDays: [],
+        ),
+      );
       unawaited(_enrichAfterFastPath(fastPathGeneration));
       return;
     }
@@ -114,9 +126,12 @@ class TodayRefreshService {
     if (!granted) {
       final weekDays = await loadWeekDays();
       if (isClosed()) return;
+      final denial = await activityPermissionStatus();
+      if (isClosed()) return;
       emit(
         TodayState(
           status: TodayStatus.noPermission,
+          activityPermissionDenial: denial,
           weekDays: weekDays,
           activityMetrics: ActivityMetricsSnapshot.zero,
           selectedLocalDay: resolveSelectedLocalDay(weekDays),
@@ -318,9 +333,12 @@ class TodayRefreshService {
     if (!granted) {
       final weekDays = await loadWeekDays();
       if (isClosed()) return;
+      final denial = await activityPermissionStatus();
+      if (isClosed()) return;
       emit(
         TodayState(
           status: TodayStatus.noPermission,
+          activityPermissionDenial: denial,
           weekDays: weekDays,
           activityMetrics: ActivityMetricsSnapshot.zero,
           selectedLocalDay: resolveSelectedLocalDay(weekDays),

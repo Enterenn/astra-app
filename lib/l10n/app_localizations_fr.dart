@@ -371,6 +371,14 @@ class AppLocalizationsFr extends AppLocalizations {
       'Autorisation d\'activité désactivée';
 
   @override
+  String get myDataBackgroundPermissionPermanentlyDenied =>
+      'Accès activité bloqué dans les paramètres système';
+
+  @override
+  String get myDataBackgroundPermissionDeniedRetry =>
+      'Autorisation d\'activité requise pour la synchro';
+
+  @override
   String get myDataOpenSettings => 'Ouvrir les paramètres';
 
   @override

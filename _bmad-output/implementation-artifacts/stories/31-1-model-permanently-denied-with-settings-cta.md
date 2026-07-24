@@ -69,14 +69,14 @@ So that I am not stuck with a silent toggle or button.
   - [x] Preserve: disabling notifications without permission request; `isClosed` guards; no exception to UI
   - [x] **Stop → review brief → wait for Baptiste OK → commit**
 
-- [ ] **Sub-task C — Today + My Data activity permission CTAs** (AC: #1, #2)
-  - [ ] Read fully: `today_state.dart`, `today_refresh_service.dart`, `today_screen.dart` (`_PermissionDeniedSlot`), `my_data_cubit.dart` (`_deriveBackgroundStatus`), `background_status_card.dart`, `my_data_screen.dart`
-  - [ ] Plumb `PermissionRequestStatus` (or narrowed `ActivityPermissionDenial { reversible, permanent }`) into `TodayState` when `status == noPermission`
-  - [ ] Plumb same into `MyDataState` when `backgroundStatus == permissionDenied` (field or sub-enum — avoid overloading `BackgroundCollectionStatus` if it conflates iOS/stale)
-  - [ ] `BackgroundStatusCard`: permanent → **Open settings**; reversible → **Retry** (`permission.request()` via injected callback from screen/cubit)
-  - [ ] Today `_PermissionDeniedSlot`: same dual-CTA pattern; after successful grant → `TodayCubit.refresh()`
-  - [ ] Add ARB keys (en/fr): permanent-denied copy, reversible-denied copy reuse `commonRetry` where appropriate
-  - [ ] Run `flutter gen-l10n`
+- [x] **Sub-task C — Today + My Data activity permission CTAs** (AC: #1, #2)
+  - [x] Read fully: `today_state.dart`, `today_refresh_service.dart`, `today_screen.dart` (`_PermissionDeniedSlot`), `my_data_cubit.dart` (`_deriveBackgroundStatus`), `background_status_card.dart`, `my_data_screen.dart`
+  - [x] Plumb `PermissionRequestStatus` (or narrowed `ActivityPermissionDenial { reversible, permanent }`) into `TodayState` when `status == noPermission`
+  - [x] Plumb same into `MyDataState` when `backgroundStatus == permissionDenied` (field or sub-enum — avoid overloading `BackgroundCollectionStatus` if it conflates iOS/stale)
+  - [x] `BackgroundStatusCard`: permanent → **Open settings**; reversible → **Retry** (`permission.request()` via injected callback from screen/cubit)
+  - [x] Today `_PermissionDeniedSlot`: same dual-CTA pattern; after successful grant → `TodayCubit.refresh()`
+  - [x] Add ARB keys (en/fr): permanent-denied copy, reversible-denied copy reuse `commonRetry` where appropriate
+  - [x] Run `flutter gen-l10n`
   - [ ] **Stop → review brief → wait for Baptiste OK → commit**
 
 - [ ] **Sub-task D — Tests + diagnostic partial close** (AC: #5)
@@ -306,6 +306,7 @@ Active branch `main`; `base_version: 0.13.1+33` per sprint tracker.
 
 - Sub-task A: Added `permanentlyDenied` to enum, `mapPermissionStatus()` + `resolveActivityPermissionStatus()` in resolver, OnboardingCubit delegates to shared mapper. Tests pass.
 - Sub-task B: `NotificationToggleResult` on ProfileCubit; Settings SnackBar branches permanent vs reversible; l10n keys added. Tests pass.
+- Sub-task C: Dual CTA on Today + My Data; `activityPermissionDenial` plumbed through state/cubits; l10n + tests. Critical suite passes.
 
 ### File List
 
@@ -324,3 +325,13 @@ Active branch `main`; `base_version: 0.13.1+33` per sprint tracker.
 - `lib/l10n/app_localizations_fr.dart`
 - `test/presentation/cubits/profile_cubit_test.dart`
 - `test/presentation/screens/settings_screen_test.dart`
+- `lib/presentation/cubits/today_state.dart`
+- `lib/presentation/cubits/today/today_refresh_service.dart`
+- `lib/presentation/cubits/today_cubit.dart`
+- `lib/presentation/screens/today_screen.dart`
+- `lib/presentation/cubits/my_data_state.dart`
+- `lib/presentation/cubits/my_data_cubit.dart`
+- `lib/presentation/widgets/background_status_card.dart`
+- `lib/presentation/screens/my_data_screen.dart`
+- `test/presentation/widgets/background_status_card_test.dart`
+- `test/widget_test.dart`

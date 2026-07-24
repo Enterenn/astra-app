@@ -9,7 +9,10 @@ import 'package:permission_handler/permission_handler.dart';
 import '../../core/constants/astra_colors.dart';
 import '../../core/constants/astra_spacing.dart';
 import '../../core/constants/astra_typography.dart';
+import '../../core/permissions/activity_permission_resolver.dart'
+    show resolveActivityPermission;
 import '../helpers/collection_health_evaluator.dart';
+import '../cubits/onboarding_state.dart' show PermissionRequestStatus;
 import '../cubits/today_cubit.dart';
 import '../cubits/today_state.dart';
 import '../widgets/activity_stats_row.dart';
@@ -504,16 +507,26 @@ class _PermissionDeniedSlot extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return BlocSelector<TodayCubit, TodayState, bool>(
+    return BlocSelector<TodayCubit, TodayState, PermissionRequestStatus?>(
       key: sectionKey,
-      selector: (state) => state.status == TodayStatus.noPermission,
-      builder: (context, showPermissionDenied) {
-        if (!showPermissionDenied) {
+      selector: (state) => state.status == TodayStatus.noPermission
+          ? state.activityPermissionDenial
+          : null,
+      builder: (context, denial) {
+        if (denial == null) {
           return const SizedBox.shrink();
         }
         final colors = context.astraColors;
         final l10n = AppLocalizations.of(context);
-        final message = l10n.myDataBackgroundPermissionDenied;
+        final message = switch (denial) {
+          PermissionRequestStatus.permanentlyDenied =>
+            l10n.myDataBackgroundPermissionPermanentlyDenied,
+          PermissionRequestStatus.denied =>
+            l10n.myDataBackgroundPermissionDeniedRetry,
+          _ => l10n.myDataBackgroundPermissionDenied,
+        };
+        final isPermanent =
+            denial == PermissionRequestStatus.permanentlyDenied;
         return Column(
           crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
@@ -549,8 +562,16 @@ class _PermissionDeniedSlot extends StatelessWidget {
             Align(
               alignment: Alignment.centerLeft,
               child: TextButton(
-                onPressed: () => unawaited(openAppSettings()),
-                child: Text(l10n.myDataOpenSettings),
+                onPressed: () {
+                  if (isPermanent) {
+                    unawaited(openAppSettings());
+                    return;
+                  }
+                  unawaited(_retryActivityPermission(context));
+                },
+                child: Text(
+                  isPermanent ? l10n.myDataOpenSettings : l10n.commonRetry,
+                ),
               ),
             ),
             const SizedBox(height: AstraSpacing.kSpaceMd),
@@ -558,6 +579,14 @@ class _PermissionDeniedSlot extends StatelessWidget {
         );
       },
     );
+  }
+
+  Future<void> _retryActivityPermission(BuildContext context) async {
+    await resolveActivityPermission().request();
+    if (!context.mounted) {
+      return;
+    }
+    await context.read<TodayCubit>().refresh();
   }
 }
 

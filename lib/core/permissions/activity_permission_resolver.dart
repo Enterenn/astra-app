@@ -25,6 +25,9 @@ Future<PermissionRequestStatus> resolveActivityPermissionStatus() async {
   return mapPermissionStatus(status);
 }
 
+typedef ActivityPermissionStatusChecker =
+    Future<PermissionRequestStatus> Function();
+
 /// Canonical activity gate for FGS and Today screens.
 Future<bool> isActivityRecognitionGranted() async {
   final permission = resolveActivityPermission();

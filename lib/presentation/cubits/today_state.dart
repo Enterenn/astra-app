@@ -1,5 +1,6 @@
 import '../../core/constants/preference_keys.dart';
 import '../models/week_day_status.dart';
+import 'onboarding_state.dart' show PermissionRequestStatus;
 
 /// Raw derived activity metrics for the Today stats row (format in widget).
 class ActivityMetricsSnapshot {
@@ -46,6 +47,7 @@ class TodayState {
     this.selectedLocalDay,
     this.lastDisplayedSteps,
     this.lastDisplayedStepsLoaded = false,
+    this.activityPermissionDenial,
   });
 
   final TodayStatus status;
@@ -73,9 +75,18 @@ class TodayState {
   /// True once [lastDisplayedSteps] has been loaded from prefs for the display day.
   final bool lastDisplayedStepsLoaded;
 
+  /// Permanent vs reversible denial when [status] is [TodayStatus.noPermission].
+  final PermissionRequestStatus? activityPermissionDenial;
+
   const TodayState.loading() : this(status: TodayStatus.loading);
 
-  const TodayState.noPermission() : this(status: TodayStatus.noPermission);
+  const TodayState.noPermission({
+    PermissionRequestStatus activityPermissionDenial =
+        PermissionRequestStatus.denied,
+  }) : this(
+         status: TodayStatus.noPermission,
+         activityPermissionDenial: activityPermissionDenial,
+       );
 
   factory TodayState.fromData({
     required int steps,
@@ -128,6 +139,7 @@ class TodayState {
     Object? selectedLocalDay = _unset,
     Object? lastDisplayedSteps = _unset,
     bool? lastDisplayedStepsLoaded,
+    Object? activityPermissionDenial = _unset,
   }) {
     return TodayState(
       status: status ?? this.status,
@@ -152,6 +164,9 @@ class TodayState {
           : lastDisplayedSteps as int?,
       lastDisplayedStepsLoaded:
           lastDisplayedStepsLoaded ?? this.lastDisplayedStepsLoaded,
+      activityPermissionDenial: activityPermissionDenial == _unset
+          ? this.activityPermissionDenial
+          : activityPermissionDenial as PermissionRequestStatus?,
     );
   }
 

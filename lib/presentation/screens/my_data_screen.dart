@@ -8,6 +8,8 @@ import 'package:permission_handler/permission_handler.dart';
 import '../../core/constants/astra_colors.dart';
 import '../../core/constants/astra_spacing.dart';
 import '../../core/constants/astra_typography.dart';
+import '../../core/permissions/activity_permission_resolver.dart'
+    show resolveActivityPermission;
 import '../cubits/my_data_cubit.dart';
 import '../cubits/my_data_state.dart';
 import '../l10n/my_data_error_messages.dart';
@@ -19,6 +21,17 @@ import '../widgets/data_purge_button.dart';
 import '../widgets/footprint_kpi_row.dart';
 import '../widgets/section_card.dart';
 import '../widgets/status_banner.dart';
+
+Future<void> _retryActivityPermission(
+  BuildContext context,
+  MyDataCubit cubit,
+) async {
+  await resolveActivityPermission().request();
+  if (!context.mounted) {
+    return;
+  }
+  await cubit.refresh();
+}
 
 class MyDataScreen extends StatelessWidget {
   const MyDataScreen({
@@ -180,7 +193,11 @@ class _MyDataScreenBody extends StatelessWidget {
                     status: state.backgroundStatus,
                     lastIngestionUtc: state.lastIngestionUtc,
                     nowUtc: nowUtc,
-                    onOpenSettings: () => openAppSettings(),
+                    activityPermissionDenial: state.activityPermissionDenial,
+                    onOpenSettings: () => unawaited(openAppSettings()),
+                    onRetryPermission: () {
+                      unawaited(_retryActivityPermission(context, cubit));
+                    },
                   ),
           ),
           const SizedBox(height: AstraSpacing.kSpaceMd),
