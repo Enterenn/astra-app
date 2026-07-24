@@ -2,6 +2,7 @@
 library;
 
 import 'package:astra_app/core/ids/sample_id_generator.dart';
+import 'package:astra_app/data/models/normalized_step_bucket.dart';
 import 'package:flutter_test/flutter_test.dart';
 
 import '../time/fake_time_provider.dart';
@@ -88,13 +89,88 @@ void main() {
           startTimeUtc: start,
           provider: 'internal_phone',
           deviceId: 'smartphone',
+          type: kStepSampleType,
+          resolution: kFiveMinuteResolution,
         ),
         isNot(
           SampleIdGenerator.deterministicFromIngestionBucket(
             startTimeUtc: start,
             provider: 'adp_ble',
             deviceId: 'ring',
+            type: kStepSampleType,
+            resolution: kFiveMinuteResolution,
           ),
+        ),
+      );
+    });
+
+    test('deterministicFromIngestionBucket keeps legacy id for steps and 5min defaults', () {
+      final start = DateTime.utc(2026, 6, 1, 22, 30);
+      const legacyIdentity = 'internalphonesmartphone';
+      final expected =
+          '${start.microsecondsSinceEpoch.toRadixString(36)}-$legacyIdentity';
+
+      expect(
+        SampleIdGenerator.deterministicFromIngestionBucket(
+          startTimeUtc: start,
+          provider: 'internal_phone',
+          deviceId: 'smartphone',
+          type: kStepSampleType,
+          resolution: kFiveMinuteResolution,
+        ),
+        expected,
+      );
+    });
+
+    test('deterministicFromIngestionBucket differs when type or resolution changes', () {
+      final start = DateTime.utc(2026, 6, 1, 22, 30);
+      const provider = 'internal_phone';
+      const deviceId = 'smartphone';
+
+      final stepsFiveMin = SampleIdGenerator.deterministicFromIngestionBucket(
+        startTimeUtc: start,
+        provider: provider,
+        deviceId: deviceId,
+        type: kStepSampleType,
+        resolution: kFiveMinuteResolution,
+      );
+      final heartRateFiveMin = SampleIdGenerator.deterministicFromIngestionBucket(
+        startTimeUtc: start,
+        provider: provider,
+        deviceId: deviceId,
+        type: 'heart_rate',
+        resolution: kFiveMinuteResolution,
+      );
+      final stepsHourly = SampleIdGenerator.deterministicFromIngestionBucket(
+        startTimeUtc: start,
+        provider: provider,
+        deviceId: deviceId,
+        type: kStepSampleType,
+        resolution: kHourlyResolution,
+      );
+
+      expect(heartRateFiveMin, isNot(stepsFiveMin));
+      expect(stepsHourly, isNot(stepsFiveMin));
+      expect(stepsHourly, isNot(heartRateFiveMin));
+    });
+
+    test('deterministicFromIngestionBucket normalizes provider and device case', () {
+      final start = DateTime.utc(2026, 6, 1, 22, 30);
+
+      expect(
+        SampleIdGenerator.deterministicFromIngestionBucket(
+          startTimeUtc: start,
+          provider: 'ProviderA',
+          deviceId: 'DeviceX',
+          type: kStepSampleType,
+          resolution: kFiveMinuteResolution,
+        ),
+        SampleIdGenerator.deterministicFromIngestionBucket(
+          startTimeUtc: start,
+          provider: 'providera',
+          deviceId: 'devicex',
+          type: kStepSampleType,
+          resolution: kFiveMinuteResolution,
         ),
       );
     });
