@@ -1,7 +1,7 @@
 # Diagnostic — permissions & notifications
 
 **Généré :** 2026-07-21  
-**Base code :** `0.12.0+30` (`pubspec.yaml`)  
+**Base code :** `0.12.1+31` (`pubspec.yaml`)  
 **Périmètre :** `activity_permission_resolver.dart` · `notification_service.dart` · `onboarding_cubit.dart` · `profile_cubit.dart` · écrans Today / Settings / My Data  
 **Statut global :** `open`
 

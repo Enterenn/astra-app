@@ -1,7 +1,7 @@
 # Diagnostic — couche données (SQLite / ingestion)
 
 **Généré :** 2026-07-20  
-**Base code :** `0.12.0+30` (`pubspec.yaml`)  
+**Base code :** `0.12.1+31` (`pubspec.yaml`)  
 **Périmètre :** ouverture DB → session → migrations → `StepIngestionRepository` → génération d'ID  
 **Statut global :** `open`
 

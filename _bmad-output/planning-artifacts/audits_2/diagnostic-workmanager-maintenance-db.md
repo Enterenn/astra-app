@@ -1,7 +1,7 @@
 # Diagnostic — WorkManager & maintenance DB
 
 **Généré :** 2026-07-21  
-**Base code :** `0.12.0+30` (`pubspec.yaml`)  
+**Base code :** `0.12.1+31` (`pubspec.yaml`)  
 **Périmètre :** `BackgroundCollector` · `IngestionCollectionLock` · `DataLifecycleService` · `workmanager_callback.dart` · boot `main.dart`  
 **Statut global :** `open`
 

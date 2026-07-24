@@ -1,8 +1,8 @@
 # Audits données & pipeline — index (`audits_2`)
 
 **Généré :** 2026-07-21  
-**Dernière resync :** 2026-07-24  
-**Base code :** `0.12.0+30` (`pubspec.yaml`)  
+**Dernière resync :** 2026-07-24 (version `0.12.1+31`)  
+**Base code :** `0.12.1+31` (`pubspec.yaml`)  
 **Périmètre :** couche SQLite → ingestion pedometer → `LiveStepMonitor` → compaction FR11 → WorkManager → agrégations charts → prefs utilisateur → permissions/notifications  
 **Statut chantier :** `open` — aucun point marqué `fixed` dans ce dossier
 

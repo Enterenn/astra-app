@@ -1,7 +1,7 @@
 # Diagnostic — préférences utilisateur
 
 **Généré :** 2026-07-21  
-**Base code :** `0.12.0+30` (`pubspec.yaml`)  
+**Base code :** `0.12.1+31` (`pubspec.yaml`)  
 **Périmètre :** `UserHealthMetricsRepository` · `UserSettingsRepository` · `UserPreferencesKvStore` · migration v3 `daily_goal_effective`  
 **Statut global :** `partial`
 

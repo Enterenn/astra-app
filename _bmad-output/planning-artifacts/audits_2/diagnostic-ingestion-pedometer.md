@@ -1,7 +1,7 @@
 # Diagnostic — ingestion pedometer (normalizer + calculator)
 
 **Généré :** 2026-07-21  
-**Base code :** `0.12.0+30` (`pubspec.yaml`)  
+**Base code :** `0.12.1+31` (`pubspec.yaml`)  
 **Périmètre :** `StepNormalizer` · `StepIncrementCalculator` · persistance baseline (`BackgroundCollector`)  
 **Statut global :** `open`
 

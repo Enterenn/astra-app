@@ -1,7 +1,7 @@
 # Diagnostic — fuseaux horaires / jours locaux
 
 **Généré :** 2026-07-21  
-**Base code :** `0.12.0+30` (`pubspec.yaml`)  
+**Base code :** `0.12.1+31` (`pubspec.yaml`)  
 **Périmètre :** `LocalDayCalculator` · `lifecycle_compaction.dart` · ingestion `zone_offset` · agrégations lecture  
 **Statut global :** `partial` (architecture solide ; documentation DST compaction manquante)
 

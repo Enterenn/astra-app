@@ -1,7 +1,7 @@
 # Diagnostic — downsampling / compaction (FR11)
 
 **Généré :** 2026-07-21  
-**Base code :** `0.12.0+30` (`pubspec.yaml`)  
+**Base code :** `0.12.1+31` (`pubspec.yaml`)  
 **Périmètre :** `SampleCompactionRunner` · `TransactionCompactionWriter` · `StepAggregationRepository.downsampleStepSamples` · `lifecycle_compaction.dart`  
 **Statut global :** `open`
 

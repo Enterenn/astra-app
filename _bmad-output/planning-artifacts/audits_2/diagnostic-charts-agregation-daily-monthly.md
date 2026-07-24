@@ -1,7 +1,7 @@
 # Diagnostic — charts (agrégation daily / monthly)
 
 **Généré :** 2026-07-21  
-**Base code :** `0.12.0+30` (`pubspec.yaml`)  
+**Base code :** `0.12.1+31` (`pubspec.yaml`)  
 **Périmètre :** `_step_chart_queries.dart` · `StepAggregationRepository.getChartDailyAggregates` / `getChartMonthlyAggregates` · History / Trends consumers  
 **Statut global :** `partial` (solide ; dette doc/perf mineure)
 

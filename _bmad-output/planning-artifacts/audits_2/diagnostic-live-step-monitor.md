@@ -1,7 +1,7 @@
 # Diagnostic — LiveStepMonitor (drain & affichage live)
 
 **Généré :** 2026-07-24  
-**Base code :** `0.12.0+30` (`pubspec.yaml`)  
+**Base code :** `0.12.1+31` (`pubspec.yaml`)  
 **Périmètre :** `LiveStepMonitor` · `MonitorDrainSource` · chemin persist vs UI live · lien `StepIncrementCalculator` / `BackgroundCollector`  
 **Statut global :** `open`
 
