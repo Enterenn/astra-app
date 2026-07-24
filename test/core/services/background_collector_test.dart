@@ -112,6 +112,133 @@ void main() {
       expect(rows.last['value'], 15);
     });
 
+    test(
+      'rolls back bucket upserts when baseline persist fails within source txn',
+      () async {
+        final readings = [
+          StepReading(
+            cumulativeSteps: 10,
+            observedAtUtc: DateTime.utc(2026, 6, 2, 8),
+          ),
+          StepReading(
+            cumulativeSteps: 15,
+            observedAtUtc: DateTime.utc(2026, 6, 2, 8, 1),
+          ),
+          StepReading(
+            cumulativeSteps: 30,
+            observedAtUtc: DateTime.utc(2026, 6, 2, 8, 6),
+          ),
+        ];
+        final failingBaseline = _FailingOnSetBaselineRepository(db);
+
+        final failedCollector = BackgroundCollector(
+          sources: [_FakeStepSource(readings)],
+          normalizer: normalizer,
+          repository: repository,
+          stepAggregation: stepAggregation,
+          baselineRepository: failingBaseline,
+          sourceTimeout: const Duration(milliseconds: 10),
+        );
+
+        expect(await failedCollector.collectOnce(), 0);
+        expect(await db.query('timeseries_samples'), isEmpty);
+        expect(
+          await baselineRepository.getBaseline(
+            provider: kInternalPhoneProvider,
+            deviceId: kSmartphoneDeviceId,
+          ),
+          isNull,
+        );
+      },
+    );
+
+    test(
+      'second collect after simulated mid-cycle failure does not double-count additive buckets',
+      () async {
+        final readings = [
+          StepReading(
+            cumulativeSteps: 10,
+            observedAtUtc: DateTime.utc(2026, 6, 2, 8),
+          ),
+          StepReading(
+            cumulativeSteps: 15,
+            observedAtUtc: DateTime.utc(2026, 6, 2, 8, 1),
+          ),
+          StepReading(
+            cumulativeSteps: 30,
+            observedAtUtc: DateTime.utc(2026, 6, 2, 8, 6),
+          ),
+        ];
+        final failingBaseline = _FailingOnSetBaselineRepository(db);
+
+        final failedCollector = BackgroundCollector(
+          sources: [_FakeStepSource(readings)],
+          normalizer: normalizer,
+          repository: repository,
+          stepAggregation: stepAggregation,
+          baselineRepository: failingBaseline,
+          sourceTimeout: const Duration(milliseconds: 10),
+        );
+        await failedCollector.collectOnce();
+
+        final recoveryCollector = BackgroundCollector(
+          sources: [_FakeStepSource(readings)],
+          normalizer: normalizer,
+          repository: repository,
+          stepAggregation: stepAggregation,
+          baselineRepository: baselineRepository,
+          sourceTimeout: const Duration(milliseconds: 10),
+        );
+
+        expect(await recoveryCollector.collectOnce(), 2);
+        final rowsAfterRecovery = await db.query(
+          'timeseries_samples',
+          orderBy: 'start_time ASC',
+        );
+        expect(rowsAfterRecovery, hasLength(2));
+        expect(rowsAfterRecovery.first['value'], 5);
+        expect(rowsAfterRecovery.last['value'], 15);
+        expect(
+          await baselineRepository.getBaseline(
+            provider: kInternalPhoneProvider,
+            deviceId: kSmartphoneDeviceId,
+          ),
+          30,
+        );
+
+        final idleCollector = BackgroundCollector(
+          sources: [
+            _FakeStepSource([
+              StepReading(
+                cumulativeSteps: 30,
+                observedAtUtc: DateTime.utc(2026, 6, 2, 8, 6),
+              ),
+            ]),
+          ],
+          normalizer: normalizer,
+          repository: repository,
+          stepAggregation: stepAggregation,
+          baselineRepository: baselineRepository,
+          sourceTimeout: const Duration(milliseconds: 10),
+        );
+        expect(await idleCollector.collectOnce(), 0);
+        final rowsAfterIdle = await db.query(
+          'timeseries_samples',
+          orderBy: 'start_time ASC',
+        );
+        expect(rowsAfterIdle, hasLength(2));
+        expect(rowsAfterIdle.first['value'], 5);
+        expect(rowsAfterIdle.last['value'], 15);
+        expect(
+          await baselineRepository.getBaseline(
+            provider: kInternalPhoneProvider,
+            deviceId: kSmartphoneDeviceId,
+          ),
+          30,
+        );
+      },
+    );
+
     test('collectOnce no-ops when ingestion lock is held', () async {
       final lock = IngestionCollectionLock(
         AstraDatabaseSession(databasePath: inMemoryDatabasePath, initial: db),
@@ -973,4 +1100,29 @@ class _NeverEmittingStepSource implements DataIngestionSource {
 
   @override
   Stream<StepReading> watchStepReadings() => Stream<StepReading>.multi((_) {});
+}
+
+class _FailingOnSetBaselineRepository extends IngestionBaselineRepository {
+  _FailingOnSetBaselineRepository(super.sessionOrDatabase, {this.failOnce = true});
+
+  bool failOnce;
+
+  @override
+  Future<void> setBaseline({
+    required String provider,
+    required String deviceId,
+    required int cumulative,
+    Transaction? txn,
+  }) async {
+    if (failOnce) {
+      failOnce = false;
+      throw StateError('simulated baseline persist failure');
+    }
+    return super.setBaseline(
+      provider: provider,
+      deviceId: deviceId,
+      cumulative: cumulative,
+      txn: txn,
+    );
+  }
 }
