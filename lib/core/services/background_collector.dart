@@ -113,18 +113,25 @@ class BackgroundCollector {
           initialBaseline: initialBaseline,
         );
 
-        for (final bucket in result.buckets) {
-          await repository.upsertIngestionBucket(bucket);
-          upsertedCount += 1;
-        }
-
         final terminalBaseline = result.terminalBaseline;
-        if (terminalBaseline != null) {
-          await baselineRepository.setBaseline(
-            provider: source.providerId,
-            deviceId: source.deviceId,
-            cumulative: terminalBaseline,
-          );
+        if (result.buckets.isNotEmpty || terminalBaseline != null) {
+          final bucketCount = result.buckets.length;
+          await repository.databaseSession.withRetry((db) async {
+            await db.transaction((txn) async {
+              for (final bucket in result.buckets) {
+                await repository.upsertIngestionBucket(bucket, txn: txn);
+              }
+              if (terminalBaseline != null) {
+                await baselineRepository.setBaseline(
+                  provider: source.providerId,
+                  deviceId: source.deviceId,
+                  cumulative: terminalBaseline,
+                  txn: txn,
+                );
+              }
+            });
+          });
+          upsertedCount += bucketCount;
         }
       } catch (error, stackTrace) {
         debugPrint(
