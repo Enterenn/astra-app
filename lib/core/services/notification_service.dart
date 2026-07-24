@@ -4,6 +4,8 @@ import 'package:flutter/foundation.dart';
 import 'package:flutter_local_notifications/flutter_local_notifications.dart';
 import 'package:permission_handler/permission_handler.dart';
 
+import '../permissions/notification_permission_resolver.dart';
+
 typedef NotificationPermissionChecker = Future<PermissionStatus> Function();
 
 typedef GoalNotificationPresenter = Future<void> Function({
@@ -127,7 +129,7 @@ class NotificationService {
 
   Future<bool> hasNotificationPermission() async {
     final status = await _permissionChecker();
-    return status.isGranted || status.isLimited || status.isProvisional;
+    return isNotificationPermissionGranted(status);
   }
 
   Future<PermissionStatus> getNotificationPermissionStatus() async {

@@ -112,7 +112,7 @@ class OnboardingCubit extends Cubit<OnboardingState> {
   ) async {
     try {
       final status = await _requestPermission(permission);
-      return _mapPermissionStatus(status);
+      return mapActivityPermissionStatus(status);
     } catch (error, stackTrace) {
       if (kDebugMode) {
         debugPrint('OnboardingCubit._resolvePermission failed: $error');
@@ -120,9 +120,5 @@ class OnboardingCubit extends Cubit<OnboardingState> {
       }
       return PermissionRequestStatus.denied;
     }
-  }
-
-  PermissionRequestStatus _mapPermissionStatus(PermissionStatus status) {
-    return mapPermissionStatus(status);
   }
 }

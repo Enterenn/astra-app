@@ -10,8 +10,10 @@ Permission resolveActivityPermission() {
   return Platform.isIOS ? Permission.sensors : Permission.activityRecognition;
 }
 
-PermissionRequestStatus mapPermissionStatus(PermissionStatus status) {
-  if (status.isGranted || status.isLimited || status.isProvisional) {
+bool isActivityPermissionGranted(PermissionStatus status) => status.isGranted;
+
+PermissionRequestStatus mapActivityPermissionStatus(PermissionStatus status) {
+  if (status.isGranted) {
     return PermissionRequestStatus.granted;
   }
   if (status.isPermanentlyDenied) {
@@ -22,7 +24,7 @@ PermissionRequestStatus mapPermissionStatus(PermissionStatus status) {
 
 Future<PermissionRequestStatus> resolveActivityPermissionStatus() async {
   final status = await resolveActivityPermission().status;
-  return mapPermissionStatus(status);
+  return mapActivityPermissionStatus(status);
 }
 
 typedef ActivityPermissionStatusChecker =
@@ -30,7 +32,6 @@ typedef ActivityPermissionStatusChecker =
 
 /// Canonical activity gate for FGS and Today screens.
 Future<bool> isActivityRecognitionGranted() async {
-  final permission = resolveActivityPermission();
-  final status = await permission.status;
-  return status.isGranted || status.isLimited || status.isProvisional;
+  final status = await resolveActivityPermission().status;
+  return isActivityPermissionGranted(status);
 }
