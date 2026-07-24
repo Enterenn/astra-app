@@ -151,7 +151,7 @@ WorkManager is **orchestration**, not a guaranteed 5-minute cadence — OEM batt
 - Live pipeline enabled → `LifecyclePersistService.runPersistCycle(sourceTimeout: Duration.zero)`
 - Otherwise → `BackgroundCollector.collectOnce`
 
-`AppScaffold` awaits `foregroundBackfill` before shell paint. Parallel reconcile via `LifecycleLivePipelineService.reconcileAfterBackfillCompletes()`.
+`AppScaffold` starts backfill in `_initialRefresh()` on mount — the shell may paint first. Today waits via `initialTodayRefresh()` / `reconcileAfterBackfillCompletes()` (fast-path display, then SQLite reconcile when backfill completes).
 
 **Resume** — `onLifecycleResumed` → `resumeLivePipeline()`: local day boundary check → drain persist → optional phone peek (`PhonePedometerSource`) → monitor reconcile → silent Today/History/My Data refresh.
 
