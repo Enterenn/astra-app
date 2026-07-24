@@ -1,5 +1,5 @@
 # generated: 2026-07-24
-# last_updated: 2026-07-24 (Story 31-1 ready-for-dev)
+# last_updated: 2026-07-24 (Story 31-1 review)
 # NEXT: dev-story 31-1-model-permanently-denied-with-settings-cta
 # Ref: planning-artifacts/epics-audits-2.md · implementation-readiness-report-2026-07-24.md
 # project: astra-app
@@ -47,7 +47,7 @@
 # NAVIGATION: _bmad-output/README.md · planning-artifacts/audits_2/README.md
 
 generated: 2026-07-24
-last_updated: 2026-07-24 (Story 31-1 ready-for-dev)
+last_updated: 2026-07-24 (Story 31-1 review)
 project: astra-app
 project_key: NOKEY
 tracking_system: file-system
@@ -73,7 +73,7 @@ development_status:
   epic-30-retrospective: optional
 
   epic-31: in-progress
-  31-1-model-permanently-denied-with-settings-cta: in-progress
+  31-1-model-permanently-denied-with-settings-cta: review
   31-2-onboarding-intro-post-denial-feedback: backlog
   31-3-propagate-notification-platform-init-failures: backlog
   31-4-centralize-permission-status-mapping-by-type: backlog

@@ -1,6 +1,6 @@
 # Story 31.1: Model permanentlyDenied with Settings CTA
 
-Status: in-progress
+Status: review
 
 <!-- audits_2 Epic 31 — tracker: sprint-status-audits-2.yaml -->
 <!-- Source: epics-audits-2.md Story 31-1 · diagnostic-permissions-notifications.md #1 · AUD2-FR7 · AUD2-FR9 · AUD2-UX1 · AUD2-UX2 -->
@@ -59,7 +59,7 @@ So that I am not stuck with a silent toggle or button.
   - [x] Add `resolveActivityPermissionStatus()` (async) in `activity_permission_resolver.dart` returning `PermissionRequestStatus` (`idle`/`requesting` stay caller-owned)
   - [x] Map: granted path = `isGranted || isLimited || isProvisional` (preserve current behaviour until 31-4); `isPermanentlyDenied` → `permanentlyDenied`; else → `denied`
   - [x] Update `OnboardingCubit._mapPermissionStatus` to use shared mapper (minimal — onboarding UI feedback is 31-2)
-  - [ ] **Stop → review brief → wait for Baptiste OK → commit**
+  - [x] **Stop → review brief → wait for Baptiste OK → commit**
 
 - [x] **Sub-task B — ProfileCubit + Settings notification UX** (AC: #1, #3)
   - [x] Read fully: `profile_cubit.dart` (`setGoalNotificationsEnabled`), `settings_screen.dart` (notification Switch + SnackBar), `notification_service.dart` (`hasNotificationPermission`)
@@ -87,9 +87,11 @@ So that I am not stuck with a silent toggle or button.
   - [x] Update `planning-artifacts/audits_2/diagnostic-permissions-notifications.md` #1 → `partial (31-1 post-onboarding; onboarding UI → 31-2)`; README row if tracked
   - [x] Run: `flutter test test/presentation/cubits/profile_cubit_test.dart test/presentation/screens/settings_screen_test.dart` (+ other touched test files)
   - [x] Run: `flutter test --tags critical`
-  - [ ] **Stop → review brief → wait for Baptiste OK → commit**
+  - [x] **Stop → review brief → wait for Baptiste OK → commit**
 
-## Dev Notes
+## Change Log
+
+- 2026-07-24: Story 31-1 implemented — permanentlyDenied model, Settings/Today/My Data dual CTAs, diagnostic #1 partial.
 
 ### Problem (read before editing)
 
@@ -307,6 +309,7 @@ Active branch `main`; `base_version: 0.13.1+33` per sprint tracker.
 - Sub-task A: Added `permanentlyDenied` to enum, `mapPermissionStatus()` + `resolveActivityPermissionStatus()` in resolver, OnboardingCubit delegates to shared mapper. Tests pass.
 - Sub-task B: `NotificationToggleResult` on ProfileCubit; Settings SnackBar branches permanent vs reversible; l10n keys added. Tests pass.
 - Sub-task C: Dual CTA on Today + My Data; `activityPermissionDenial` plumbed through state/cubits; l10n + tests. Critical suite passes.
+- Sub-task D: Diagnostic #1 → partial; README synced; all AC tests green (`flutter test --tags critical` 205 pass). Story ready for review.
 
 ### File List
 
@@ -334,4 +337,5 @@ Active branch `main`; `base_version: 0.13.1+33` per sprint tracker.
 - `lib/presentation/widgets/background_status_card.dart`
 - `lib/presentation/screens/my_data_screen.dart`
 - `test/presentation/widgets/background_status_card_test.dart`
-- `test/widget_test.dart`
+- `_bmad-output/planning-artifacts/audits_2/diagnostic-permissions-notifications.md`
+- `_bmad-output/planning-artifacts/audits_2/README.md`
