@@ -1,6 +1,6 @@
 # generated: 2026-07-24
-# last_updated: 2026-07-24 (Epic 31 close)
-# NEXT: create-story 32-1 or dev-story epic-32
+# last_updated: 2026-07-25 (Story 32-1 review)
+# NEXT: dev-story 32-1-align-ingestion-sample-ids-with-bucket-identity-index
 # Ref: planning-artifacts/epics-audits-2.md · implementation-readiness-report-2026-07-24.md
 # project: astra-app
 # project_key: NOKEY
@@ -47,7 +47,7 @@
 # NAVIGATION: _bmad-output/README.md · planning-artifacts/audits_2/README.md
 
 generated: 2026-07-24
-last_updated: 2026-07-24 (Epic 31 close)
+last_updated: 2026-07-25 (Story 32-1 review)
 project: astra-app
 project_key: NOKEY
 tracking_system: file-system
@@ -81,8 +81,8 @@ development_status:
   31-6-harden-profile-notification-toggle-concurrency: done
   epic-31-retrospective: optional
 
-  epic-32: backlog
-  32-1-align-ingestion-sample-ids-with-bucket-identity-index: backlog
+  epic-32: in-progress
+  32-1-align-ingestion-sample-ids-with-bucket-identity-index: review
   32-2-release-safe-guard-on-dev-sample-batch-insert: backlog
   32-3-privacy-at-rest-product-decision: backlog
   32-4-single-goal-source-and-safe-database-open-check: backlog

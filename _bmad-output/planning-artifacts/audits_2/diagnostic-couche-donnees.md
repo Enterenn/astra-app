@@ -3,15 +3,15 @@
 **Généré :** 2026-07-20  
 **Base code :** `0.12.1+31` (`pubspec.yaml`)  
 **Périmètre :** ouverture DB → session → migrations → `StepIngestionRepository` → génération d'ID  
-**Statut global :** `open`
+**Statut global :** `partial` (P0 #2 fixed — 32-1 · P1 #4 fixed — 32-1 · P1 #5 fixed — 30-2)
 
 ---
 
 ## Statut
 
-- **Dernière vérification :** 2026-07-20
-- **Statut :** `open`
-- **Story / PR :** —
+- **Dernière vérification :** 2026-07-25
+- **Statut :** `partial`
+- **Story / PR :** Story 32-1 (#2, #4)
 
 ---
 
@@ -20,9 +20,9 @@
 | Priorité | # | Domaine | Statut |
 |----------|---|---------|--------|
 | 🔴 P0 | 1 | Chiffrement au repos absent | `open` |
-| 🔴 P0 | 2 | Collision ID multi-types | `open` |
+| 🔴 P0 | 2 | Collision ID multi-types | `fixed` (32-1) |
 | 🔴 P0 | 3 | Garde-fou dev/prod (`assert`) inopérant en release | `open` |
-| 🟡 P1 | 4 | Regex normalisation sensible à la casse | `open` |
+| 🟡 P1 | 4 | Regex normalisation sensible à la casse | `fixed` (32-1) |
 | 🟡 P1 | 5 | Contention multi-isolate sans `busy_timeout` | `fixed` (30-2) |
 | 🟡 P2 | 6 | Fuite d'abstraction `testHookAfterDeleteSamples` | `open` |
 | 🟡 P2 | 7 | Migration v3 non déterministe (`DateTime.now()`) | `open` |
@@ -66,9 +66,9 @@
 
 **Mitigation actuelle :** Un seul type ingéré (`steps`) — bombe à retardement dès qu'un second type arrive.
 
-**Piste :** Aligner l'ID sur l'index unique, ex. suffixe `type` + `resolution` (cf. `deterministicFromMergedBucket`).
+**Piste :** ~~Aligner l'ID sur l'index unique~~ — **done** (32-1) : `type`/`resolution` dans le hash ; branche legacy `steps`/`5min` sans migration.
 
----
+**Statut :** `fixed` — Story 32-1
 
 ### 3. Garde-fou dev/prod inopérant
 
@@ -103,7 +103,9 @@ Ou isoler derrière une implémentation debug-only / `@visibleForTesting` non ex
 
 **Comportement probablement non voulu :** `ProviderA` vs `providera` → IDs différents alors que l'index DB est case-sensitive sur `provider` tel quel.
 
-**Piste :** `.toLowerCase()` avant la regex, ou documenter la convention provider/device en minuscules.
+**Piste :** ~~`.toLowerCase()` avant la regex~~ — **done** (32-1).
+
+**Statut :** `fixed` — Story 32-1
 
 ---
 
@@ -169,8 +171,8 @@ Ou isoler derrière une implémentation debug-only / `@visibleForTesting` non ex
 | Phase | Action | Lié |
 |-------|--------|-----|
 | **Quick fix** | Garde `kDebugMode` runtime sur `insertDevSamplesBatch` | #3 |
-| **Quick fix** | Inclure `type` + `resolution` dans `deterministicFromIngestionBucket` | #2 |
-| **Quick fix** | `.toLowerCase()` sur identity provider/device | #4 |
+| **Quick fix** | ~~Inclure `type` + `resolution` dans `deterministicFromIngestionBucket`~~ — done (32-1) | #2 |
+| **Quick fix** | ~~`.toLowerCase()` sur identity provider/device~~ — done (32-1) | #4 |
 | **Moyen** | ~~`PRAGMA busy_timeout` + doc contention isolate~~ — done (30-2) | #5 |
 | **Moyen** | Retirer `testHookAfterDeleteSamples` du contrat | #6 |
 | **Moyen** | `TimeProvider` injectable pour migration v3 | #7 |
