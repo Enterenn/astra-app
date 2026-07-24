@@ -149,7 +149,7 @@ Priorités : **P0** critique (corruption données / sur-comptage / sécurité) �
 | 3 | P1 | Pas de WM background iOS | `fixed` (30-3) | `project-context.md` §Platform background collection |
 | 4 | P1 | Ordre cancel WM / init notifications | `partial` | `main.dart:61-63` |
 | 5 | P2 | TTL lock 35s inadapté VACUUM | `open` | `ingestion_collection_lock.dart:14` |
-| 6 | P2 | `DateTime.now()` dans `_TimeoutBoundedSource` | `open` | `background_collector.dart:220,227` |
+| 6 | P2 | `DateTime.now()` dans `_TimeoutBoundedSource` | `fixed` (30-4) | `background_collector.dart` |
 
 **Tâches WM Android :**
 

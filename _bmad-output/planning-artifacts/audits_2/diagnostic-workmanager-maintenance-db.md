@@ -24,7 +24,7 @@
 | 🟡 P1 | 3 | Pas de scheduling background iOS | `fixed` (30-3) |
 | 🟡 P1 | 4 | Ordre cancel WM / init notifications non structuré | `partial` |
 | 🟡 P2 | 5 | TTL lock 35s inadapté au VACUUM | `open` |
-| 🟡 P2 | 6 | `DateTime.now()` dans `_TimeoutBoundedSource` | `open` |
+| 🟡 P2 | 6 | `DateTime.now()` dans `_TimeoutBoundedSource` | `fixed` (30-4) |
 
 ---
 
@@ -115,14 +115,14 @@ Réutiliser le même lock/TTL pour VACUUM risquerait expiration mid-operation �
 
 ---
 
-### 6. `DateTime.now()` au lieu de `TimeProvider` injecté
+### 6. `DateTime.now()` au lieu de `TimeProvider` injecté — **fixed (30-4)**
 
 | Référence | Détail |
 |-----------|--------|
-| `lib/core/services/background_collector.dart:201-231` | `_TimeoutBoundedSource.watchStepReadings` |
-| `lib/core/services/background_collector.dart:220,227` | `DateTime.now().add(maxCollectionDuration)` / `isAfter(deadline)` |
+| `lib/core/services/background_collector.dart` | `_TimeoutBoundedSource` reçoit `clock` ; deadline via `_nowUtc()` |
+| Story 30-4 | Test déterministe `maxCollectionDuration` avec `FakeTimeProvider` |
 
-`BackgroundCollector` reçoit `clock` pour le lock et les notifications, pas pour le timeout source — tests non déterministes sur cette fenêtre.
+~~`BackgroundCollector` reçoit `clock` pour le lock et les notifications, pas pour le timeout source — tests non déterministes sur cette fenêtre.~~ Corrigé : `clock` propagé à `_TimeoutBoundedSource`.
 
 ---
 
@@ -157,7 +157,7 @@ Réutiliser le même lock/TTL pour VACUUM risquerait expiration mid-operation �
 | **P0** | Txn atomique upsert + baseline par source (T2) — **done** (29-3) |
 | **P1** | ~~Documenter gap iOS + stratégie resume/backfill~~ — **done** (30-3) |
 | **P1** | Boot gate : cancel WM → await notification init |
-| **P2** | Injecter `TimeProvider` dans `_TimeoutBoundedSource` |
+| **P2** | ~~Injecter `TimeProvider` dans `_TimeoutBoundedSource`~~ — **done** (30-4) |
 | **P2** | TTL maintenance distinct si réutilisation du pattern lock |
 
 ---

@@ -1,6 +1,6 @@
 # generated: 2026-07-24
-# last_updated: 2026-07-24 (Story 30-3 done)
-# NEXT: create-story 30-4-inject-timeprovider-into-collection-timeout-source
+# last_updated: 2026-07-24 (Story 30-4 review)
+# NEXT: dev-story 30-4-inject-timeprovider-into-collection-timeout-source
 # Ref: planning-artifacts/epics-audits-2.md · implementation-readiness-report-2026-07-24.md
 # project: astra-app
 # project_key: NOKEY
@@ -47,7 +47,7 @@
 # NAVIGATION: _bmad-output/README.md · planning-artifacts/audits_2/README.md
 
 generated: 2026-07-24
-last_updated: 2026-07-24 (Story 30-3 done)
+last_updated: 2026-07-24 (Story 30-4 review)
 project: astra-app
 project_key: NOKEY
 tracking_system: file-system
@@ -69,7 +69,7 @@ development_status:
   30-1-cross-isolate-lock-for-maintenance-and-vacuum: done
   30-2-configure-pragma-busy-timeout-on-database-open: done
   30-3-document-ios-background-collection-gap: done
-  30-4-inject-timeprovider-into-collection-timeout-source: backlog
+  30-4-inject-timeprovider-into-collection-timeout-source: review
   epic-30-retrospective: optional
 
   epic-31: backlog

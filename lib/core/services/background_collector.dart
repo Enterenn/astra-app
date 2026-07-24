@@ -117,6 +117,7 @@ class BackgroundCollector {
             source,
             timeout: sourceTimeout,
             maxCollectionDuration: maxCollectionDuration,
+            clock: clock,
           ),
           maxReadings: maxReadingsPerSource,
           initialBaseline: initialBaseline,
@@ -215,15 +216,19 @@ class BackgroundCollector {
 }
 
 class _TimeoutBoundedSource implements DataIngestionSource {
-  const _TimeoutBoundedSource(
+  _TimeoutBoundedSource(
     this._delegate, {
     required this.timeout,
     required this.maxCollectionDuration,
-  });
+    TimeProvider? clock,
+  }) : _clock = clock;
 
   final DataIngestionSource _delegate;
   final Duration timeout;
   final Duration maxCollectionDuration;
+  final TimeProvider? _clock;
+
+  DateTime _nowUtc() => (_clock?.nowUtc() ?? DateTime.now().toUtc());
 
   @override
   String get providerId => _delegate.providerId;
@@ -233,14 +238,14 @@ class _TimeoutBoundedSource implements DataIngestionSource {
 
   @override
   Stream<StepReading> watchStepReadings() async* {
-    final deadline = DateTime.now().add(maxCollectionDuration);
+    final deadline = _nowUtc().add(maxCollectionDuration);
     await for (final reading in _delegate.watchStepReadings().timeout(
       timeout,
       onTimeout: (sink) {
         sink.close();
       },
     )) {
-      if (DateTime.now().isAfter(deadline)) {
+      if (_nowUtc().isAfter(deadline)) {
         break;
       }
       yield reading;

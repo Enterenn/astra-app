@@ -409,6 +409,54 @@ void main() {
       expect(await db.query('timeseries_samples'), isEmpty);
     });
 
+    test(
+      'stops reading after maxCollectionDuration using injected clock',
+      () async {
+        await baselineRepository.setBaseline(
+          provider: kInternalPhoneProvider,
+          deviceId: kSmartphoneDeviceId,
+          cumulative: 10,
+        );
+        final first = StepReading(
+          cumulativeSteps: 25,
+          observedAtUtc: DateTime.utc(2026, 6, 2, 8, 5),
+        );
+        final second = StepReading(
+          cumulativeSteps: 40,
+          observedAtUtc: DateTime.utc(2026, 6, 2, 8, 10),
+        );
+        final collector = BackgroundCollector(
+          sources: [
+            _ClockAdvancingStepSource(
+              clock: clock,
+              first: first,
+              second: second,
+            ),
+          ],
+          normalizer: normalizer,
+          repository: repository,
+          stepAggregation: stepAggregation,
+          baselineRepository: baselineRepository,
+          clock: clock,
+          maxCollectionDuration: const Duration(minutes: 30),
+          sourceTimeout: const Duration(seconds: 5),
+        );
+
+        expect(await collector.collectOnce(), 1);
+
+        final rows = await db.query('timeseries_samples');
+        expect(rows, hasLength(1));
+        expect(rows.first['value'], 15);
+        expect(
+          await baselineRepository.getBaseline(
+            provider: kInternalPhoneProvider,
+            deviceId: kSmartphoneDeviceId,
+          ),
+          25,
+        );
+      },
+    );
+
     test('registerOnIngestionComplete can be set after construction', () async {
       var callbackCount = 0;
       final collector = BackgroundCollector(
@@ -1095,6 +1143,31 @@ class _ThrowingStepSource implements DataIngestionSource {
   @override
   Stream<StepReading> watchStepReadings() async* {
     throw StateError('sensor unavailable');
+  }
+}
+
+class _ClockAdvancingStepSource implements DataIngestionSource {
+  _ClockAdvancingStepSource({
+    required this.clock,
+    required this.first,
+    required this.second,
+  });
+
+  final FakeTimeProvider clock;
+  final StepReading first;
+  final StepReading second;
+
+  @override
+  String get providerId => kInternalPhoneProvider;
+
+  @override
+  String get deviceId => kSmartphoneDeviceId;
+
+  @override
+  Stream<StepReading> watchStepReadings() async* {
+    yield first;
+    clock.setNowUtc(clock.nowUtc().add(const Duration(hours: 1)));
+    yield second;
   }
 }
 
