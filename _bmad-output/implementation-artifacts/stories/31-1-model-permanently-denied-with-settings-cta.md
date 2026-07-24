@@ -1,6 +1,6 @@
 # Story 31.1: Model permanentlyDenied with Settings CTA
 
-Status: review
+Status: done
 
 <!-- audits_2 Epic 31 — tracker: sprint-status-audits-2.yaml -->
 <!-- Source: epics-audits-2.md Story 31-1 · diagnostic-permissions-notifications.md #1 · AUD2-FR7 · AUD2-FR9 · AUD2-UX1 · AUD2-UX2 -->
@@ -92,6 +92,7 @@ So that I am not stuck with a silent toggle or button.
 ## Change Log
 
 - 2026-07-24: Story 31-1 implemented — permanentlyDenied model, Settings/Today/My Data dual CTAs, diagnostic #1 partial.
+- 2026-07-24: Code review passed — story done (minor follow-ups deferred to 31-4 / polish).
 
 ## Dev Notes
 
