@@ -52,7 +52,7 @@ Priorités : **P0** critique (corruption données / sur-comptage / sécurité) �
 | **P0-03** | `insertDevSamplesBatch` protégé par `assert` (strippé release) | 01 | `step_ingestion_repository.dart:92-99` | Garde `if (!kDebugMode) throw` |
 | **P0-04** | `permanentlyDenied` jamais modélisé — toggle/bouton muet | 02 | `onboarding_state.dart`, `profile_cubit.dart`, `settings_screen.dart` | **Partial** — 31-1 post-onboarding + 31-2 intro feedback |
 | **P0-05** | Pas de `.request()` activité post-onboarding ; onboarding avance si denied | 02 | `onboarding_flow.dart` | **Partial** — 31-2 retry + no silent advance ; 31-1 post-onboarding Retry |
-| **P0-06** | `_initializePlatform` avale erreurs — `initialize()` ne rethrow jamais | 02 | `notification_service.dart:105-122` | `rethrow` ou signal explicite |
+| **P0-06** | `_initializePlatform` avale erreurs — `initialize()` ne rethrow jamais | 02 | `notification_service.dart:105-122` | **Fixed** — Story 31-3 : `rethrow` + lazy-init guard |
 | **P0-07** | Double comptage : upsert buckets sans txn avec `setBaseline` | 03 | `background_collector.dart:116-128` | **Fixed** — Story 29-3 : txn atomique par source |
 | **P0-08** | VACUUM maintenance sans lock vs collecte WM 15 min | 03 | `data_lifecycle_service.dart`, `workmanager_callback.dart` | **Fixed** — Story 30-1 : `kDatabaseMaintenanceLockKey` + TTL 10 min |
 | **P0-09** | Compaction : `ConflictAlgorithm.ignore` puis delete sources inconditionnel | 04 | `sample_compaction_runner.dart` | **Fixed** — Story 29-4 : `CompactionInsertOutcome` + guard delete |

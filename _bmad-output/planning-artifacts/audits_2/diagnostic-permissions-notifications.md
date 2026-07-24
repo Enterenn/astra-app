@@ -72,6 +72,8 @@
 
 ### 3. `_initializePlatform` avale les erreurs sans les remonter
 
+**Statut :** `done` — Story 31-3 (`rethrow` + guard `showGoalReached`)
+
 **Constat :** Le `catch` interne logue puis retourne normalement. L'appelant `initialize()` a un `catch` + `rethrow` qui ne s'exécute jamais sur échec natif.
 
 | Référence | Détail |

@@ -71,5 +71,45 @@ void main() {
 
       expect(await service.initializeForBackground(), isFalse);
     });
+
+    test('initialize rethrows when platform init fails', () async {
+      final service = NotificationService(
+        platformInitializer: (_) async => throw StateError('plugin init failed'),
+      );
+
+      await expectLater(
+        service.initialize(),
+        throwsA(isA<StateError>()),
+      );
+    });
+
+    test('failed init clears state so second initialize retries', () async {
+      var initCount = 0;
+      final service = NotificationService(
+        platformInitializer: (_) async {
+          initCount += 1;
+          if (initCount == 1) {
+            throw StateError('plugin init failed');
+          }
+        },
+      );
+
+      await expectLater(
+        service.initialize(),
+        throwsA(isA<StateError>()),
+      );
+      await service.initialize();
+
+      expect(initCount, 2);
+    });
+
+    test('showGoalReached returns false when init fails', () async {
+      final service = NotificationService(
+        permissionChecker: () async => PermissionStatus.granted,
+        platformInitializer: (_) async => throw StateError('plugin init failed'),
+      );
+
+      expect(await service.showGoalReached(), isFalse);
+    });
   });
 }

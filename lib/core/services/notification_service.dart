@@ -140,7 +140,11 @@ class NotificationService {
 
     if (_usesPlatformPresenter) {
       if (!_initialized) {
-        await initialize();
+        try {
+          await initialize();
+        } catch (_) {
+          return false;
+        }
       }
       if (!_initialized) {
         return false;
