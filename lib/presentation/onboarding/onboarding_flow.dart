@@ -49,10 +49,26 @@ class OnboardingFlow extends StatelessWidget {
 class _OnboardingFlowView extends StatelessWidget {
   const _OnboardingFlowView();
 
-  Future<void> _onIntroContinue(BuildContext context) async {
+  Future<void> _onIntroStart(BuildContext context) async {
     final cubit = context.read<OnboardingCubit>();
     await cubit.requestActivityPermission();
-    cubit.nextStep();
+    if (cubit.state.activityPermissionStatus ==
+        PermissionRequestStatus.granted) {
+      cubit.nextStep();
+    }
+  }
+
+  Future<void> _onIntroRetry(BuildContext context) async {
+    final cubit = context.read<OnboardingCubit>();
+    await cubit.requestActivityPermission();
+    if (cubit.state.activityPermissionStatus ==
+        PermissionRequestStatus.granted) {
+      cubit.nextStep();
+    }
+  }
+
+  void _onIntroContinueAfterDeny(BuildContext context) {
+    context.read<OnboardingCubit>().nextStep();
   }
 
   Future<void> _onHeightLetsGo(BuildContext context) async {
@@ -72,6 +88,32 @@ class _OnboardingFlowView extends StatelessWidget {
     final step = state.currentStep;
     final isRequestingActivity =
         state.activityPermissionStatus == PermissionRequestStatus.requesting;
+
+    final permissionStatus = state.activityPermissionStatus;
+
+    String introPrimaryLabel;
+    VoidCallback? introPrimaryAction;
+    String? introSecondaryLabel;
+    VoidCallback? introSecondaryAction;
+    var introShowTrailingArrow = true;
+
+    switch (permissionStatus) {
+      case PermissionRequestStatus.denied:
+        introPrimaryLabel = l10n.commonRetry;
+        introPrimaryAction = () => unawaited(_onIntroRetry(context));
+        introSecondaryLabel = l10n.onboardingContinueBtn;
+        introSecondaryAction = () => _onIntroContinueAfterDeny(context);
+        introShowTrailingArrow = false;
+      case PermissionRequestStatus.permanentlyDenied:
+        introPrimaryLabel = l10n.onboardingContinueBtn;
+        introPrimaryAction = () => _onIntroContinueAfterDeny(context);
+        introShowTrailingArrow = false;
+      default:
+        introPrimaryLabel = l10n.onboardingStartBtn;
+        introPrimaryAction = isRequestingActivity
+            ? null
+            : () => unawaited(_onIntroStart(context));
+    }
 
     return PopScope(
       canPop: step == 0,
@@ -94,12 +136,12 @@ class _OnboardingFlowView extends StatelessWidget {
                   key: const ValueKey('onboarding-step-0'),
                   currentStep: 0,
                   showBack: false,
-                  showPrimaryTrailingArrow: true,
-                  primaryLabel: l10n.onboardingStartBtn,
+                  showPrimaryTrailingArrow: introShowTrailingArrow,
+                  primaryLabel: introPrimaryLabel,
                   primaryLoading: isRequestingActivity,
-                  onPrimary: isRequestingActivity
-                      ? null
-                      : () => unawaited(_onIntroContinue(context)),
+                  onPrimary: introPrimaryAction,
+                  secondaryLabel: introSecondaryLabel,
+                  onSecondary: introSecondaryAction,
                   content: const OnboardingIntroPage(),
                 ),
                 OnboardingShell(
