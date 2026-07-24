@@ -22,6 +22,12 @@ Future<void> startNotificationInitForBoot(
   }
 }
 
+/// Serializes WM step-collection cancel before notification init starts.
+///
+/// [notificationService] may be constructed before this gate; its constructor
+/// has no platform side effects — only [NotificationService.initialize] is
+/// gated after cancel to avoid WM isolate races (workmanager_callback.dart).
+@visibleForTesting
 Future<void> runBootGateBeforeDependencies({
   required NotificationService notificationService,
   Future<void> Function()? cancelStepCollection,
@@ -31,7 +37,7 @@ Future<void> runBootGateBeforeDependencies({
   final cancel = cancelStepCollection ?? cancelStepCollectionWorkmanager;
   final startInit = startNotificationInit ?? startNotificationInitForBoot;
 
-  await cancel();
+  await cancel(); // barrier before UI-isolate notification plugin init
 
   final initFuture = startInit(notificationService);
   (scheduleParallelInit ?? unawaited)(initFuture);

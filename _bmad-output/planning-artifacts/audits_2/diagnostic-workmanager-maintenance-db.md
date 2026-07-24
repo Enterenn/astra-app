@@ -93,7 +93,8 @@
 
 | Référence | Détail |
 |-----------|--------|
-| `lib/main.dart:61-63` | `await cancelStepCollectionWorkmanager()` puis `unawaited(startNotificationInitForBoot(...))` |
+| `lib/main.dart:45-46` | `await runBootGateBeforeDependencies(...)` — délègue à `boot_sequence.dart` |
+| `lib/core/services/boot_sequence.dart:34-37` | `await cancel()` puis `unawaited(startNotificationInitForBoot(...))` |
 | `lib/core/services/workmanager_callback.dart:167-169` | Doc : éviter race isolate background vs `NotificationService.initialize` |
 
 **Statut :** `done` — Story 31-5 : `runBootGateBeforeDependencies` (`boot_sequence.dart`) — `await cancel()` puis init non-bloquant via `unawaited`. Tests ordre `@Tags(['critical'])`. `cancel` ne couvre que `kStepCollectionUniqueName`, pas la maintenance (hors scope).

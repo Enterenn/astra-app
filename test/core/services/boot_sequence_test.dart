@@ -34,43 +34,26 @@ void main() {
       expect(events, ['cancel-start', 'cancel-done', 'init']);
     });
 
-    test(
-      'fails order guard if init ran before cancel completed',
-      () async {
-        final order = <String>[];
-        final cancelGate = Completer<void>()..complete();
-
-        await runBootGateBeforeDependencies(
-          notificationService: NotificationService(),
-          cancelStepCollection: () async {
-            order.add('cancel');
-            await cancelGate.future;
-          },
-          startNotificationInit: (_) async {
-            order.add('init');
-          },
-        );
-
-        expect(order, ['cancel', 'init']);
-      },
-    );
-
     test('returns before init completes when init is scheduled in parallel',
         () async {
       final initGate = Completer<void>();
-      var gateReturned = false;
+      var initCompleted = false;
 
       final gateFuture = runBootGateBeforeDependencies(
         notificationService: NotificationService(),
         cancelStepCollection: () async {},
-        startNotificationInit: (_) => initGate.future,
+        startNotificationInit: (_) async {
+          await initGate.future;
+          initCompleted = true;
+        },
       );
 
-      gateReturned = true;
-      initGate.complete();
       await gateFuture;
+      expect(initCompleted, isFalse);
 
-      expect(gateReturned, isTrue);
+      initGate.complete();
+      await Future<void>.delayed(Duration.zero);
+      expect(initCompleted, isTrue);
     });
   });
 }

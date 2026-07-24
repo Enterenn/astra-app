@@ -1,6 +1,6 @@
 # Story 31.5: Structural Boot Gate — Cancel WM Before Notification Init
 
-Status: review
+Status: done
 
 <!-- audits_2 Epic 31 — tracker: sprint-status-audits-2.yaml -->
 <!-- Source: epics-audits-2.md Story 31-5 · diagnostic-workmanager-maintenance-db.md #4 · diagnostic-permissions-notifications.md · AUD2-FR17 · AUD2-FR34 (partial) -->
