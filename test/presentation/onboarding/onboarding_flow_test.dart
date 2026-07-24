@@ -13,6 +13,7 @@ import 'package:astra_app/presentation/cubits/onboarding_cubit.dart';
 import 'package:astra_app/presentation/cubits/onboarding_state.dart';
 import 'package:astra_app/presentation/onboarding/onboarding_flow.dart';
 import 'package:astra_app/presentation/widgets/animated_step_count.dart';
+import 'package:astra_app/presentation/widgets/astra_button.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:permission_handler/permission_handler.dart';
@@ -464,6 +465,56 @@ void main() {
       );
       expect(retryButton.onPressed, isNotNull);
       expect(find.byType(CircularProgressIndicator), findsNothing);
+    });
+
+    testWidgets('shows Retry label while re-requesting after deny', (
+      tester,
+    ) async {
+      final permissionCompleter = Completer<PermissionStatus>();
+      var requestCount = 0;
+
+      await tester.pumpWidget(
+        buildFlow(
+          onComplete: () {},
+          createCubit: (deps) => OnboardingCubit(
+            userSettings: deps.userSettings,
+            userHealthMetrics: deps.userHealthMetrics,
+            permissionRequester: (_) async {
+              requestCount++;
+              if (requestCount == 1) return PermissionStatus.denied;
+              return permissionCompleter.future;
+            },
+          ),
+        ),
+      );
+
+      await tester.tap(_introContinue());
+      await tester.pumpAndSettle();
+
+      await tester.tap(_introRetry());
+      await tester.pump();
+
+      expect(
+        find.byWidgetPredicate(
+          (w) => w is AstraButton && w.label == 'Retry' && w.isLoading,
+        ),
+        findsOneWidget,
+      );
+      expect(
+        find.byWidgetPredicate(
+          (w) => w is AstraButton && w.label == 'Start' && w.isLoading,
+        ),
+        findsNothing,
+      );
+      expect(_introContinueAfterDeny().hitTestable(), findsOneWidget);
+
+      permissionCompleter.complete(PermissionStatus.granted);
+      await tester.pumpAndSettle();
+
+      expect(
+        find.text('What is your weight?').hitTestable(),
+        findsOneWidget,
+      );
     });
 
     testWidgets('shows loading on Continue during permission request', (

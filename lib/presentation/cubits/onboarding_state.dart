@@ -15,6 +15,7 @@ class OnboardingState {
     this.currentStep = 0,
     this.status = OnboardingStatus.inProgress,
     this.activityPermissionStatus = PermissionRequestStatus.idle,
+    this.introRequestIsRetry = false,
     this.weightKg,
     this.heightCm,
     this.weightSkipped = false,
@@ -26,6 +27,7 @@ class OnboardingState {
   final int currentStep;
   final OnboardingStatus status;
   final PermissionRequestStatus activityPermissionStatus;
+  final bool introRequestIsRetry;
   final double? weightKg;
   final int? heightCm;
   final bool weightSkipped;
@@ -39,6 +41,7 @@ class OnboardingState {
     int? currentStep,
     OnboardingStatus? status,
     PermissionRequestStatus? activityPermissionStatus,
+    bool? introRequestIsRetry,
     double? weightKg,
     int? heightCm,
     bool? weightSkipped,
@@ -53,6 +56,7 @@ class OnboardingState {
       status: status ?? this.status,
       activityPermissionStatus:
           activityPermissionStatus ?? this.activityPermissionStatus,
+      introRequestIsRetry: introRequestIsRetry ?? this.introRequestIsRetry,
       weightKg: clearWeightKg ? null : (weightKg ?? this.weightKg),
       heightCm: clearHeightCm ? null : (heightCm ?? this.heightCm),
       weightSkipped: weightSkipped ?? this.weightSkipped,

@@ -87,16 +87,24 @@ class OnboardingCubit extends Cubit<OnboardingState> {
   }
 
   Future<void> requestActivityPermission() async {
+    final isRetry =
+        state.activityPermissionStatus == PermissionRequestStatus.denied;
     emit(
       state.copyWith(
         activityPermissionStatus: PermissionRequestStatus.requesting,
+        introRequestIsRetry: isRetry,
       ),
     );
 
     final permission = _activityPermissionResolver();
     final resolved = await _resolvePermission(permission);
 
-    emit(state.copyWith(activityPermissionStatus: resolved));
+    emit(
+      state.copyWith(
+        activityPermissionStatus: resolved,
+        introRequestIsRetry: false,
+      ),
+    );
   }
 
   Future<PermissionRequestStatus> _resolvePermission(

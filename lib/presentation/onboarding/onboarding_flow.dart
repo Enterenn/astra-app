@@ -108,11 +108,20 @@ class _OnboardingFlowView extends StatelessWidget {
         introPrimaryLabel = l10n.onboardingContinueBtn;
         introPrimaryAction = () => _onIntroContinueAfterDeny(context);
         introShowTrailingArrow = false;
+      case PermissionRequestStatus.requesting:
+        if (state.introRequestIsRetry) {
+          introPrimaryLabel = l10n.commonRetry;
+          introPrimaryAction = null;
+          introSecondaryLabel = l10n.onboardingContinueBtn;
+          introSecondaryAction = () => _onIntroContinueAfterDeny(context);
+          introShowTrailingArrow = false;
+        } else {
+          introPrimaryLabel = l10n.onboardingStartBtn;
+          introPrimaryAction = null;
+        }
       default:
         introPrimaryLabel = l10n.onboardingStartBtn;
-        introPrimaryAction = isRequestingActivity
-            ? null
-            : () => unawaited(_onIntroStart(context));
+        introPrimaryAction = () => unawaited(_onIntroStart(context));
     }
 
     return PopScope(
