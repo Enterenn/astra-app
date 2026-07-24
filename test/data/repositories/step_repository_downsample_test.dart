@@ -208,6 +208,8 @@ List<TimeseriesSampleModel> _tierTwoHourBuckets({
         startTimeUtc: start,
         provider: kInternalPhoneProvider,
         deviceId: kSmartphoneDeviceId,
+        type: kStepSampleType,
+        resolution: kFiveMinuteResolution,
       ),
       startTimeUtc: start,
       endTimeUtc: start.add(const Duration(minutes: 5)),

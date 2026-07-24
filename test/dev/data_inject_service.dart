@@ -67,6 +67,8 @@ class DataInjectService {
               startTimeUtc: startTimeUtc,
               provider: kInternalPhoneProvider,
               deviceId: kSmartphoneDeviceId,
+              type: kStepSampleType,
+              resolution: kFiveMinuteResolution,
             ),
             startTimeUtc: startTimeUtc,
             endTimeUtc: endTimeUtc,

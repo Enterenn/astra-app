@@ -42,6 +42,8 @@ class StepIngestionRepository implements StepIngestionRepositoryContract {
         startTimeUtc: bucket.startTimeUtc,
         provider: bucket.provider,
         deviceId: bucket.deviceId,
+        type: bucket.type,
+        resolution: bucket.resolution,
       ),
     );
     final row = model.toMap();
