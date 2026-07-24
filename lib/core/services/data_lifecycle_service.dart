@@ -7,11 +7,13 @@ import 'package:sqflite/sqflite.dart';
 
 import '../../data/repositories/step/step_aggregation_repository.dart';
 import '../../data/repositories/user_settings_repository.dart';
+import '../constants/preference_keys.dart';
 import '../lifecycle/sample_compaction_runner.dart';
 import '../time/time_provider.dart';
 import '../time/system_time_provider.dart';
 import '../database/isolate_database_factory.dart';
 import '../database/astra_database_session.dart';
+import 'ingestion_collection_lock.dart';
 
 /// Weekly interval between database optimize/VACUUM runs (FR12).
 const kDatabaseMaintenanceInterval = Duration(days: 7);
@@ -178,6 +180,40 @@ class DataLifecycleService {
           force: force,
         ),
       );
+    }
+
+    if (_maintenanceOnCurrentConnection) {
+      if (await IngestionCollectionLock.isHeld(
+        _session,
+        kIngestionCollectLockKey,
+        clock: _clock,
+      )) {
+        return const LifecycleRunResult(skipped: true);
+      }
+
+      final lock = IngestionCollectionLock.forMaintenance(
+        _session,
+        clock: _clock,
+      );
+      if (!await lock.tryAcquire()) {
+        return const LifecycleRunResult(skipped: true);
+      }
+
+      try {
+        return await _session.withRetry(
+          (db) => runMaintenanceOnConnection(
+            db: db,
+            databasePath: _databasePath,
+            repository: _repository,
+            userSettings: _userSettings,
+            clock: _clock,
+            force: force,
+            optimizeAndVacuum: _optimizeAndVacuum,
+          ),
+        );
+      } finally {
+        await lock.release();
+      }
     }
 
     return _session.withRetry(
