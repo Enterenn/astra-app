@@ -1,6 +1,6 @@
 # Story 32.3: Privacy at Rest — Product Decision (Disclaimer or SQLCipher)
 
-Status: review
+Status: done
 
 <!-- audits_2 Epic 32 — tracker: sprint-status-audits-2.yaml -->
 <!-- Source: epics-audits-2.md Story 32-3 · diagnostic-couche-donnees.md #1 · AUD2-FR12 · AUD2-FR33 · AUD2-UX4 · AUD2-NFR3 -->
@@ -323,6 +323,7 @@ Composer (create-story) · Composer (dev-story)
 - README Included bullet + `docs/project-context.md` NFR-4 subsection
 - Diagnostic #1 + P0-01 closed as `fixed` (32-3)
 - Tests: `my_data_screen_test.dart` + `flutter test --tags critical` green
+- Code review: `ExcludeSemantics` on Footprint disclaimer; critical-path assertion in `app_scaffold_test.dart` (Menu → Data)
 
 ### File List
 
@@ -344,3 +345,4 @@ Composer (create-story) · Composer (dev-story)
 
 - 2026-07-25: Story 32-3 created — privacy-at-rest product decision (disclaimer default vs SQLCipher branch)
 - 2026-07-25: Path A implemented — Footprint disclaimer + Phase 1 SQLCipher roadmap, docs, diagnostic P0-01 closed
+- 2026-07-25: Code review fixes — ExcludeSemantics on disclaimer; critical gate assertion; story closed

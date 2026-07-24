@@ -801,6 +801,10 @@ void main() {
       expect(find.text('My Data'), findsNothing);
       expect(find.text(l10n.menuTrackingStatus), findsOneWidget);
       expect(find.text(l10n.myDataFootprint), findsOneWidget);
+      expect(
+        find.text(l10n.myDataFootprintStorageProtectionPlaintext),
+        findsOneWidget,
+      );
       expect(find.text(l10n.myDataYourData), findsOneWidget);
       expect(find.byIcon(PhosphorIconsRegular.arrowLeft), findsOneWidget);
 

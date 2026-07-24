@@ -217,9 +217,11 @@ class _MyDataScreenBody extends StatelessWidget {
                       const SizedBox(height: AstraSpacing.kSpaceSm),
                       Semantics(
                         label: l10n.myDataFootprintStorageProtectionSemantics,
-                        child: Text(
-                          l10n.myDataFootprintStorageProtectionPlaintext,
-                          style: AstraTypography.captionFor(colors),
+                        child: ExcludeSemantics(
+                          child: Text(
+                            l10n.myDataFootprintStorageProtectionPlaintext,
+                            style: AstraTypography.captionFor(colors),
+                          ),
                         ),
                       ),
                     ],
