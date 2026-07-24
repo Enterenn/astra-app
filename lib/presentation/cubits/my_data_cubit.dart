@@ -14,6 +14,7 @@ import '../../core/permissions/activity_permission_resolver.dart'
         ActivityPermissionStatusChecker,
         isActivityRecognitionGranted,
         resolveActivityPermissionStatus;
+import '../../core/time/local_day_formatter.dart';
 import '../../core/time/time_provider.dart';
 import '../../data/csv/timeseries_csv_codec.dart';
 import '../../data/models/database_footprint.dart';
@@ -537,11 +538,13 @@ class MyDataCubit extends Cubit<MyDataState> {
     }
 
     try {
+      final todayIso = formatLocalDayIso(clock.snapshot());
       final results = await Future.wait<Object?>([
         stepAggregation.getFootprint(databasePath: databasePath),
         stepAggregation.getLastIngestionUtc(),
         _activityPermissionGranted(),
         userSettings.getLastDatabaseOptimizedAt(),
+        userHealthMetrics.getGoalForLocalDay(todayIso),
       ]);
 
       if (isClosed) {
@@ -552,6 +555,7 @@ class MyDataCubit extends Cubit<MyDataState> {
       final lastIngestionUtc = results[1] as DateTime?;
       final activityGranted = results[2]! as bool;
       final lastOptimizedUtc = results[3] as DateTime?;
+      final dailyStepGoal = results[4]! as int;
       final nowUtc = clock.nowUtc();
 
       if (isClosed) {
@@ -571,6 +575,7 @@ class MyDataCubit extends Cubit<MyDataState> {
         fileSizeBytes: footprint.fileSizeBytes,
         lastOptimizedUtc: lastOptimizedUtc,
         lastIngestionUtc: lastIngestionUtc,
+        dailyStepGoal: dailyStepGoal,
         backgroundStatus: _deriveBackgroundStatus(
           activityGranted: activityGranted,
           lastIngestionUtc: lastIngestionUtc,
