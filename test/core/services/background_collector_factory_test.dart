@@ -232,5 +232,59 @@ void main() {
         );
       },
     );
+
+    test(
+      'createIsolateBackgroundCollector skips notification when background init fails but still collects',
+      () async {
+        final notificationService = NotificationService(
+          platformInitializer: (_) async => throw StateError('plugin init failed'),
+          permissionChecker: () async => PermissionStatus.granted,
+        );
+
+        final userSettings = UserSettingsRepository(db);
+        final userHealthMetrics = UserHealthMetricsRepository(db, clock: clock);
+        await userHealthMetrics.setDailyStepGoal(5000);
+        await userSettings.setGoalNotificationsEnabled(true);
+        final ingestionRepository = StepIngestionRepository(db);
+        await ingestionRepository.upsertIngestionBucket(
+          NormalizedStepBucket(
+            startTimeUtc: DateTime.utc(2026, 6, 2, 6),
+            endTimeUtc: DateTime.utc(2026, 6, 2, 6, 5),
+            value: 4900,
+            provider: kInternalPhoneProvider,
+            deviceId: kSmartphoneDeviceId,
+            zoneOffset: '+02:00',
+          ),
+        );
+
+        final collector = await createIsolateBackgroundCollector(
+          db: db,
+          sources: [
+            _FakeStepSource([
+              StepReading(
+                cumulativeSteps: 10,
+                observedAtUtc: DateTime.utc(2026, 6, 2, 10),
+              ),
+              StepReading(
+                cumulativeSteps: 200,
+                observedAtUtc: DateTime.utc(2026, 6, 2, 10, 1),
+              ),
+            ]),
+          ],
+          clock: clock,
+          notificationService: notificationService,
+          notificationPermissionGranted: () async => true,
+        );
+
+        final upserted = await collector.collectOnce(enableGoalNotification: true);
+
+        expect(upserted, 1);
+        expect(await userSettings.getGoalNotificationShownDate(), isNull);
+        expect(
+          await aggregationRepository.getLastIngestionUtc(),
+          DateTime.utc(2026, 6, 2, 10, 5),
+        );
+      },
+    );
   });
 }

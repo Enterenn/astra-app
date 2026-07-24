@@ -72,6 +72,14 @@ void main() {
       expect(await service.initializeForBackground(), isFalse);
     });
 
+    test('initializeForBackground returns false when init fails', () async {
+      final service = NotificationService(
+        platformInitializer: (_) async => throw StateError('plugin init failed'),
+      );
+
+      expect(await service.initializeForBackground(), isFalse);
+    });
+
     test('initialize rethrows when platform init fails', () async {
       final service = NotificationService(
         platformInitializer: (_) async => throw StateError('plugin init failed'),

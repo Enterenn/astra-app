@@ -76,6 +76,8 @@ class NotificationService {
     } on TimeoutException catch (error) {
       debugPrint('NotificationService background init timed out: $error');
       return false;
+    } catch (_) {
+      return false;
     }
   }
 
