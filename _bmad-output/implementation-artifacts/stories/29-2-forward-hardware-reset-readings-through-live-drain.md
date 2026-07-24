@@ -1,6 +1,6 @@
 # Story 29.2: Forward Hardware Reset Readings Through Live Drain
 
-Status: review
+Status: done
 
 <!-- audits_2 Epic 29 — tracker: sprint-status-audits-2.yaml -->
 <!-- Source: epics-audits-2.md Story 29-2 · diagnostic-live-step-monitor.md #1 · AUD2-FR2, AUD2-FR34, AUD2-NFR6 -->
