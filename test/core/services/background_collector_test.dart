@@ -266,6 +266,33 @@ void main() {
       expect(await db.query('timeseries_samples'), isEmpty);
     });
 
+    test('collectOnce no-ops when maintenance lock is held', () async {
+      final lock = IngestionCollectionLock.forMaintenance(
+        AstraDatabaseSession(databasePath: inMemoryDatabasePath, initial: db),
+      );
+      expect(await lock.tryAcquire(), isTrue);
+      addTearDown(lock.release);
+
+      final collector = BackgroundCollector(
+        sources: [
+          _FakeStepSource([
+            StepReading(
+              cumulativeSteps: 10,
+              observedAtUtc: DateTime.utc(2026, 6, 2, 8),
+            ),
+          ]),
+        ],
+        normalizer: normalizer,
+        repository: repository,
+        stepAggregation: stepAggregation,
+        baselineRepository: baselineRepository,
+        sourceTimeout: const Duration(milliseconds: 10),
+      );
+
+      expect(await collector.collectOnce(), 0);
+      expect(await db.query('timeseries_samples'), isEmpty);
+    });
+
     test('skips sources that emit no readings', () async {
       var callbackCount = 0;
       final collector = BackgroundCollector(

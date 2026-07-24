@@ -3,8 +3,11 @@ library;
 
 import 'dart:io';
 
+import 'package:astra_app/core/constants/preference_keys.dart';
 import 'package:astra_app/core/database/app_database.dart';
+import 'package:astra_app/core/database/astra_database_session.dart';
 import 'package:astra_app/core/services/data_lifecycle_service.dart';
+import 'package:astra_app/core/services/ingestion_collection_lock.dart';
 
 import 'package:astra_app/data/repositories/user_settings_repository.dart';
 import '../../dev/data_inject_service.dart';
@@ -146,6 +149,69 @@ void main() {
       expect(results.every((r) => !r.skipped), isTrue);
       expect(results.first.compaction?.hourlyCreated, 1440);
     });
+
+    test(
+      'maintenanceOnCurrentConnection skips when collection lock is held',
+      () async {
+        final session = AstraDatabaseSession(
+          databasePath: inMemoryDatabasePath,
+          initial: db,
+        );
+        final wmService = DataLifecycleService(
+          session: session,
+          databasePath: inMemoryDatabasePath,
+          repository: repository,
+          userSettings: userSettings,
+          clock: clock,
+          maintenanceOnCurrentConnection: true,
+          optimizeAndVacuum: (_, _) async {
+            vacuumInvoked++;
+          },
+        );
+
+        final collectionLock = IngestionCollectionLock(session, clock: clock);
+        expect(await collectionLock.tryAcquire(), isTrue);
+        addTearDown(collectionLock.release);
+
+        final result = await wmService.runMaintenance(force: true);
+
+        expect(result.skipped, isTrue);
+        expect(vacuumInvoked, 0);
+      },
+    );
+
+    test(
+      'maintenanceOnCurrentConnection skips when maintenance lock already held',
+      () async {
+        final session = AstraDatabaseSession(
+          databasePath: inMemoryDatabasePath,
+          initial: db,
+        );
+        final wmService = DataLifecycleService(
+          session: session,
+          databasePath: inMemoryDatabasePath,
+          repository: repository,
+          userSettings: userSettings,
+          clock: clock,
+          maintenanceOnCurrentConnection: true,
+          optimizeAndVacuum: (_, _) async {
+            vacuumInvoked++;
+          },
+        );
+
+        final maintenanceLock = IngestionCollectionLock.forMaintenance(
+          session,
+          clock: clock,
+        );
+        expect(await maintenanceLock.tryAcquire(), isTrue);
+        addTearDown(maintenanceLock.release);
+
+        final result = await wmService.runMaintenance(force: true);
+
+        expect(result.skipped, isTrue);
+        expect(vacuumInvoked, 0);
+      },
+    );
   });
 
   group('bounded growth (file database)', () {

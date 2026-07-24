@@ -3,9 +3,12 @@ library;
 
 import 'dart:io';
 
+import 'package:astra_app/core/constants/preference_keys.dart';
 import 'package:astra_app/core/database/app_database.dart';
+import 'package:astra_app/core/database/astra_database_session.dart';
 import 'package:astra_app/core/services/notification_service.dart';
 import 'package:astra_app/core/services/data_lifecycle_service.dart';
+import 'package:astra_app/core/services/ingestion_collection_lock.dart';
 import 'package:astra_app/core/services/workmanager_callback.dart';
 import 'package:astra_app/core/services/workmanager_tasks.dart';
 import '../../dev/data_inject_service.dart';
@@ -304,6 +307,45 @@ void main() {
           return captured!;
         },
       );
+
+      final verifyDb = await openAstraDatabase(databasePath: databasePath);
+      addTearDown(verifyDb.close);
+      final verifyRepository = StepAggregationRepository(verifyDb, clock: clock);
+
+      expect(success, isTrue);
+      expect(captured!.skipped, isTrue);
+      expect(await verifyRepository.countStepSamples(), 25920);
+    });
+
+    test('skips downsampling when maintenance lock is already held', () async {
+      final seedDb = await openAstraDatabase(databasePath: databasePath);
+      final repository = StepIngestionRepository(seedDb);
+      await DataInjectService(repository: repository).inject90Days(clock: clock);
+      await seedDb.close();
+
+      final lockDb = await openAstraDatabase(databasePath: databasePath);
+      final session = AstraDatabaseSession(
+        databasePath: databasePath,
+        initial: lockDb,
+      );
+      final maintenanceLock = IngestionCollectionLock.forMaintenance(
+        session,
+        clock: clock,
+      );
+      expect(await maintenanceLock.tryAcquire(), isTrue);
+
+      LifecycleRunResult? captured;
+      final success = await runDatabaseMaintenanceWorkmanagerTask(
+        databasePath: databasePath,
+        clock: clock,
+        runMaintenance: (service) async {
+          captured = await service.runMaintenance(force: true);
+          return captured!;
+        },
+      );
+
+      await maintenanceLock.release();
+      await lockDb.close();
 
       final verifyDb = await openAstraDatabase(databasePath: databasePath);
       addTearDown(verifyDb.close);

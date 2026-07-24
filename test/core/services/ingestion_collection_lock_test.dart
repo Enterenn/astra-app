@@ -8,6 +8,7 @@ import 'package:astra_app/core/services/ingestion_collection_lock.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:sqflite/sqflite.dart';
 
+import '../../core/time/fake_time_provider.dart';
 import '../../helpers/sqflite_test_helper.dart';
 
 void main() {
@@ -65,6 +66,77 @@ void main() {
 
       expect(await lock.tryAcquire(), isTrue);
       expect(session.database.isOpen, isTrue);
+      await lock.release();
+    });
+
+    test('forMaintenance uses dedicated key separate from collection lock', () async {
+      final collectionLock = IngestionCollectionLock(session);
+      final maintenanceLock = IngestionCollectionLock.forMaintenance(session);
+
+      expect(await collectionLock.tryAcquire(), isTrue);
+      expect(await maintenanceLock.tryAcquire(), isTrue);
+
+      final rows = await session.database.query(
+        'user_preferences',
+        where: 'key IN (?, ?)',
+        whereArgs: [kIngestionCollectLockKey, kDatabaseMaintenanceLockKey],
+      );
+      expect(rows.length, 2);
+
+      await collectionLock.release();
+      await maintenanceLock.release();
+    });
+
+    test('forMaintenance TTL exceeds collection default', () {
+      final maintenanceLock = IngestionCollectionLock.forMaintenance(session);
+      final collectionLock = IngestionCollectionLock(session);
+
+      expect(maintenanceLock.ttl, kDatabaseMaintenanceLockTtl);
+      expect(maintenanceLock.ttl, greaterThan(collectionLock.ttl));
+      expect(kDatabaseMaintenanceLockTtl.inMinutes, 10);
+    });
+
+    test('isHeld reflects non-expired and expired lock rows', () async {
+      final clock = FakeTimeProvider(
+        fixedNowUtc: DateTime.utc(2026, 6, 2, 12),
+        zoneOffset: const Duration(hours: 2),
+      );
+      final lock = IngestionCollectionLock(
+        session,
+        lockKey: kDatabaseMaintenanceLockKey,
+        ttl: const Duration(minutes: 5),
+        clock: clock,
+      );
+
+      expect(
+        await IngestionCollectionLock.isHeld(
+          session,
+          kDatabaseMaintenanceLockKey,
+          clock: clock,
+        ),
+        isFalse,
+      );
+
+      expect(await lock.tryAcquire(), isTrue);
+      expect(
+        await IngestionCollectionLock.isHeld(
+          session,
+          kDatabaseMaintenanceLockKey,
+          clock: clock,
+        ),
+        isTrue,
+      );
+
+      clock.setNowUtc(DateTime.utc(2026, 6, 2, 12, 6));
+      expect(
+        await IngestionCollectionLock.isHeld(
+          session,
+          kDatabaseMaintenanceLockKey,
+          clock: clock,
+        ),
+        isFalse,
+      );
+
       await lock.release();
     });
   });
