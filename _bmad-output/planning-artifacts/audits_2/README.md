@@ -31,7 +31,7 @@ Priorités : **P0** critique (corruption données / sur-comptage / sécurité) �
 |---|---------|---------|---------------|------------|-------------|
 | 01 | [diagnostic-couche-donnees.md](./diagnostic-couche-donnees.md) | SQLite, migrations, ingestion write, IDs | `open` | 3 | 4 |
 | 02 | [diagnostic-permissions-notifications.md](./diagnostic-permissions-notifications.md) | Permissions activité/notif, `NotificationService` | `open` | 3 | 4 |
-| 03 | [diagnostic-workmanager-maintenance-db.md](./diagnostic-workmanager-maintenance-db.md) | WM 15 min, maintenance hebdo, VACUUM, boot | `open` | 2 | 4 |
+| 03 | [diagnostic-workmanager-maintenance-db.md](./diagnostic-workmanager-maintenance-db.md) | WM 15 min, maintenance hebdo, VACUUM, boot | `partial` | 1 | 4 |
 | 04 | [diagnostic-downsampling-compaction-fr11.md](./diagnostic-downsampling-compaction-fr11.md) | FR11 compaction, `SampleCompactionRunner` | `open` | 1 | 2 |
 | 05 | [diagnostic-fuseaux-jours-locaux.md](./diagnostic-fuseaux-jours-locaux.md) | TZ, DST, clés regroupement, offset stocké | `partial` | 0 | 1 (doc) |
 | 06 | [diagnostic-preferences-utilisateur.md](./diagnostic-preferences-utilisateur.md) | Prefs KV, journal objectif, `isDatabaseOpen` | `partial` | 0 | 2 |
@@ -53,7 +53,7 @@ Priorités : **P0** critique (corruption données / sur-comptage / sécurité) �
 | **P0-04** | `permanentlyDenied` jamais modélisé — toggle/bouton muet | 02 | `onboarding_state.dart`, `profile_cubit.dart`, `settings_screen.dart` | État UI + CTA `openAppSettings()` |
 | **P0-05** | Pas de `.request()` activité post-onboarding ; onboarding avance si denied | 02 | `onboarding_flow.dart:52-55` | Retry + ne pas `nextStep()` si denied |
 | **P0-06** | `_initializePlatform` avale erreurs — `initialize()` ne rethrow jamais | 02 | `notification_service.dart:105-122` | `rethrow` ou signal explicite |
-| **P0-07** | Double comptage : upsert buckets sans txn avec `setBaseline` | 03 | `background_collector.dart:116-128` | Txn atomique par source |
+| **P0-07** | Double comptage : upsert buckets sans txn avec `setBaseline` | 03 | `background_collector.dart:116-128` | **Fixed** — Story 29-3 : txn atomique par source |
 | **P0-08** | VACUUM maintenance sans lock vs collecte WM 15 min | 03 | `data_lifecycle_service.dart`, `workmanager_callback.dart` | Lock dédié (TTL long) ou clé séparée |
 | **P0-09** | Compaction : `ConflictAlgorithm.ignore` puis delete sources inconditionnel | 04 | `sample_compaction_runner.dart:51-56,145-254` | Vérifier insert OK avant delete |
 | **P0-10** | `terminalBaseline: lastCumulative` au lieu de `baseline` (bruit capteur) | 07 | `step_normalizer.dart:108` | `baseline ?? initialBaseline` |
@@ -68,7 +68,7 @@ Priorités : **P0** critique (corruption données / sur-comptage / sécurité) �
 | Cause | Diagnostic | Mécanisme | Symptôme |
 |-------|------------|-----------|----------|
 | Baseline persistée trop basse après bruit rejeté | **07** | `lastCumulative` ≠ `baseline` interne → cycle suivant crédite trop | Sur-comptage |
-| Upsert additif + baseline non commitée mid-cycle | **03** | `ON CONFLICT DO UPDATE value +=` + exception avant `setBaseline` | Sur-comptage |
+| Upsert additif + baseline non commitée mid-cycle | **03** | `ON CONFLICT DO UPDATE value +=` + exception avant `setBaseline` | **Fixed (29-3)** — txn rollback buckets + baseline |
 | Compaction delete sans insert effectif | **04** | Sources fines supprimées, agrégat obsolète conservé | Perte / agrégat stale |
 | Drain `>` aveugle après reboot matériel | **09** | Lectures `< baseline` jetées avant `StepIncrementCalculator` | **Fixed (29-2)** — pass-through reset threshold |
 | Multi-résolution même jour | **05, 08** | Atténué en lecture par `finestResolutionTotal` — **ne pas sommer toutes résolutions** | — |
@@ -144,7 +144,7 @@ Priorités : **P0** critique (corruption données / sur-comptage / sécurité) �
 
 | # | Priorité | Finding | Statut | Réf. |
 |---|----------|---------|--------|------|
-| 1 | P0 | Double comptage mid-cycle collecte | `open` | `background_collector.dart:116-128` |
+| 1 | P0 | Double comptage mid-cycle collecte | `fixed` (Story 29-3) | `background_collector.dart` txn per source |
 | 2 | P0 | VACUUM sans lock vs collecte | `open` | WM maintenance `maintenanceOnCurrentConnection: true` |
 | 3 | P1 | Pas de WM background iOS | `open` | Early return `!Platform.isAndroid` |
 | 4 | P1 | Ordre cancel WM / init notifications | `partial` | `main.dart:61-63` |
@@ -326,7 +326,7 @@ My Data editor → state local + setDailyStepGoal (pas reload journal au refresh
 | LiveStepMonitor | `live_step_monitor_test.dart`, `idle_flush_persist_test.dart` | Pas de test reboot : baseline haute → readings basses post-reset |
 | Calculator | `step_increment_calculator_test.dart` | — |
 | Compaction | `step_repository_downsample_test.dart`, `lifecycle_compaction_test.dart` | Pas de régression insert ignoré + delete |
-| Collecte | `background_collector_test.dart` | Pas de fault injection mid-cycle baseline |
+| Collecte | `background_collector_test.dart` | Fault injection mid-cycle baseline — Story 29-3 |
 | Charts | `step_repository_chart_*_test.dart` | — |
 | TZ | `local_day_calculator_test.dart` (DST boundary) | Pas de test compaction jour DST |
 | Lock | `ingestion_collection_lock_test.dart` | — |

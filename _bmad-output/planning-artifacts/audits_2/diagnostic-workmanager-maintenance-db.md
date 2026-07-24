@@ -3,15 +3,15 @@
 **Généré :** 2026-07-21  
 **Base code :** `0.12.1+31` (`pubspec.yaml`)  
 **Périmètre :** `BackgroundCollector` · `IngestionCollectionLock` · `DataLifecycleService` · `workmanager_callback.dart` · boot `main.dart`  
-**Statut global :** `open`
+**Statut global :** `partial` (P0 #1 fixed — story 29-3)
 
 ---
 
 ## Statut
 
-- **Dernière vérification :** 2026-07-21
-- **Statut :** `open`
-- **Story / PR :** —
+- **Dernière vérification :** 2026-07-24
+- **Statut :** `partial` (P0 #1 fixed)
+- **Story / PR :** Story 29-3 (`29-3-atomic-bucket-upsert-and-baseline-commit-per-source`)
 
 ---
 
@@ -19,7 +19,7 @@
 
 | Priorité | # | Domaine | Statut |
 |----------|---|---------|--------|
-| 🔴 P0 | 1 | Double comptage pas si échec mid-cycle | `open` |
+| 🔴 P0 | 1 | Double comptage pas si échec mid-cycle | `fixed` (29-3) |
 | 🔴 P0 | 2 | VACUUM sans lock cross-isolate vs collecte | `open` |
 | 🟡 P1 | 3 | Pas de scheduling background iOS | `open` |
 | 🟡 P1 | 4 | Ordre cancel WM / init notifications non structuré | `partial` |
@@ -32,7 +32,9 @@
 
 ### 1. Risque de double comptage des pas (`BackgroundCollector._collectOnce`)
 
-**Constat :** Boucle par source sans transaction atomique bucket + baseline. L'upsert est **additif** (`ON CONFLICT … DO UPDATE SET value = value + excluded.value`). Si une exception survient après un ou plusieurs `upsertIngestionBucket` mais **avant** `setBaseline`, le prochain cycle repart de l'ancienne baseline et peut re-additionner les mêmes deltas.
+**Statut :** `fixed` — Story 29-3 (txn atomique upsert + baseline par source)
+
+**Constat (résolu Story 29-3) :** Avant fix, boucle par source sans transaction atomique bucket + baseline. L'upsert est **additif** (`ON CONFLICT … DO UPDATE SET value = value + excluded.value`). Si une exception survient après un ou plusieurs `upsertIngestionBucket` mais **avant** `setBaseline`, le prochain cycle repart de l'ancienne baseline et peut re-additionner les mêmes deltas.
 
 | Référence | Détail |
 |-----------|--------|
@@ -139,7 +141,7 @@ Réutiliser le même lock/TTL pour VACUUM risquerait expiration mid-operation �
 | # | Action | Lié |
 |---|--------|-----|
 | T1 | Étendre `IngestionCollectionLock` (ou clé/TTL dédiés) autour de `runMaintenanceOnConnection` en `maintenanceOnCurrentConnection: true` | #2 |
-| T2 | Transaction bucket + baseline ou idempotence anti double-add | #1 |
+| T2 | Transaction bucket + baseline ou idempotence anti double-add | #1 — **done** (29-3) |
 
 ---
 
@@ -148,7 +150,7 @@ Réutiliser le même lock/TTL pour VACUUM risquerait expiration mid-operation �
 | Phase | Action |
 |-------|--------|
 | **P0** | Mutex maintenance partagé avec collecte (T1) |
-| **P0** | Txn atomique upsert + baseline par source (T2) |
+| **P0** | Txn atomique upsert + baseline par source (T2) — **done** (29-3) |
 | **P1** | Documenter gap iOS + stratégie resume/backfill |
 | **P1** | Boot gate : cancel WM → await notification init |
 | **P2** | Injecter `TimeProvider` dans `_TimeoutBoundedSource` |

@@ -1,6 +1,6 @@
 # generated: 2026-07-24
-# last_updated: 2026-07-24 (Story 29-2 done)
-# NEXT: create-story 29-3-atomic-bucket-upsert-and-baseline-commit-per-source
+# last_updated: 2026-07-24 (Story 29-3 review)
+# NEXT: code-review 29-3 · then dev-story 29-4-guard-compaction-delete-until-insert-succeeds
 # Ref: planning-artifacts/epics-audits-2.md · implementation-readiness-report-2026-07-24.md
 # project: astra-app
 # project_key: NOKEY
@@ -47,7 +47,7 @@
 # NAVIGATION: _bmad-output/README.md · planning-artifacts/audits_2/README.md
 
 generated: 2026-07-24
-last_updated: 2026-07-24 (Story 29-2 done)
+last_updated: 2026-07-24 (Story 29-3 review)
 project: astra-app
 project_key: NOKEY
 tracking_system: file-system
@@ -60,7 +60,7 @@ development_status:
   epic-29: in-progress
   29-1-fix-terminal-baseline-after-rejected-sensor-noise: done
   29-2-forward-hardware-reset-readings-through-live-drain: done
-  29-3-atomic-bucket-upsert-and-baseline-commit-per-source: backlog
+  29-3-atomic-bucket-upsert-and-baseline-commit-per-source: review
   29-4-guard-compaction-delete-until-insert-succeeds: backlog
   29-5-unify-persist-credit-rules-drain-vs-calculator: backlog
   epic-29-retrospective: optional
