@@ -93,6 +93,8 @@ So that I am not stuck with a silent toggle or button.
 
 - 2026-07-24: Story 31-1 implemented — permanentlyDenied model, Settings/Today/My Data dual CTAs, diagnostic #1 partial.
 
+## Dev Notes
+
 ### Problem (read before editing)
 
 **Zero `isPermanentlyDenied` usage in `lib/` today.** After permanent denial, `Permission.request()` is a no-op on Android — only `openAppSettings()` works. Current UI always routes to Settings even for first reversible deny, and notification toggle fails silently (`return false` + generic SnackBar).
