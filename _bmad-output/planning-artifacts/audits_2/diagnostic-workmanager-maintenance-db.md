@@ -21,7 +21,7 @@
 |----------|---|---------|--------|
 | 🔴 P0 | 1 | Double comptage pas si échec mid-cycle | `fixed` (29-3) |
 | 🔴 P0 | 2 | VACUUM sans lock cross-isolate vs collecte | `fixed` (30-1) |
-| 🟡 P1 | 3 | Pas de scheduling background iOS | `open` |
+| 🟡 P1 | 3 | Pas de scheduling background iOS | `fixed` (30-3) |
 | 🟡 P1 | 4 | Ordre cancel WM / init notifications non structuré | `partial` |
 | 🟡 P2 | 5 | TTL lock 35s inadapté au VACUUM | `open` |
 | 🟡 P2 | 6 | `DateTime.now()` dans `_TimeoutBoundedSource` | `open` |
@@ -76,14 +76,16 @@
 
 ### 3. Pas de scheduling background sur iOS
 
+**Statut :** `fixed` — Story 30-3 (`docs/project-context.md` §Platform background collection)
+
 **Constat :** Enregistrement WM conditionné à Android uniquement.
 
 | Référence | Détail |
 |-----------|--------|
 | `lib/core/services/workmanager_callback.dart:174-176,191-193,221-223` | Early return si `!Platform.isAndroid` |
-| `lib/core/services/data_lifecycle_service.dart:106-107` | Doc : « Android weekly WorkManager ; iOS via WorkManager / My Data flows » |
+| `docs/project-context.md` | Gap iOS + stratégie resume/backfill documentés (AUD2-FR18) |
 
-**Assumé/documenté** — trou de collecte réel si l'app iOS reste fermée plusieurs jours (reconciliation au resume uniquement).
+**Assumé/documenté** — trou de collecte réel si l'app iOS reste fermée plusieurs jours (reconciliation au resume uniquement). Phase 0 : pas de `BGAppRefresh` ; catch-up à l'ouverture de l'app.
 
 ---
 
@@ -153,7 +155,7 @@ Réutiliser le même lock/TTL pour VACUUM risquerait expiration mid-operation �
 |-------|--------|
 | **P0** | Mutex maintenance partagé avec collecte (T1) |
 | **P0** | Txn atomique upsert + baseline par source (T2) — **done** (29-3) |
-| **P1** | Documenter gap iOS + stratégie resume/backfill |
+| **P1** | ~~Documenter gap iOS + stratégie resume/backfill~~ — **done** (30-3) |
 | **P1** | Boot gate : cancel WM → await notification init |
 | **P2** | Injecter `TimeProvider` dans `_TimeoutBoundedSource` |
 | **P2** | TTL maintenance distinct si réutilisation du pattern lock |
