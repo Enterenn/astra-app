@@ -26,13 +26,28 @@ class SampleIdGenerator {
   }) =>
       '${deterministicFromStartUtc(startTimeUtc)}-$resolution';
 
-  /// Ingestion row id — provider/device suffix when multiple sources share a start window.
+  /// Ingestion row id — provider/device/type/resolution aligned with [idx_bucket_identity].
+  ///
+  /// Phase 0 defaults (`steps` + `5min`) keep the legacy suffix-free formula so existing
+  /// rows and upsert id preservation stay stable without a migration.
   static String deterministicFromIngestionBucket({
     required DateTime startTimeUtc,
     required String provider,
     required String deviceId,
+    required String type,
+    required String resolution,
   }) {
-    final identity = '$provider$deviceId'.replaceAll(RegExp(r'[^a-z0-9]'), '');
-    return '${deterministicFromStartUtc(startTimeUtc)}-$identity';
+    final normalizedProvider = provider.toLowerCase();
+    final normalizedDeviceId = deviceId.toLowerCase();
+    final identity =
+        '$normalizedProvider$normalizedDeviceId'.replaceAll(
+          RegExp(r'[^a-z0-9]'),
+          '',
+        );
+    final startPart = deterministicFromStartUtc(startTimeUtc);
+    if (type == 'steps' && resolution == '5min') {
+      return '$startPart-$identity';
+    }
+    return '$startPart-$identity-${type.toLowerCase()}-${resolution.toLowerCase()}';
   }
 }
