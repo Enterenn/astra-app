@@ -45,9 +45,11 @@ class SampleIdGenerator {
           '',
         );
     final startPart = deterministicFromStartUtc(startTimeUtc);
-    if (type == 'steps' && resolution == '5min') {
+    final normalizedType = type.toLowerCase();
+    final normalizedResolution = resolution.toLowerCase();
+    if (normalizedType == 'steps' && normalizedResolution == '5min') {
       return '$startPart-$identity';
     }
-    return '$startPart-$identity-${type.toLowerCase()}-${resolution.toLowerCase()}';
+    return '$startPart-$identity-$normalizedType-$normalizedResolution';
   }
 }

@@ -1,6 +1,6 @@
 # Story 32.1: Align Ingestion Sample IDs with Bucket Identity Index
 
-Status: review
+Status: done
 
 <!-- audits_2 Epic 32 — tracker: sprint-status-audits-2.yaml -->
 <!-- Source: epics-audits-2.md Story 32-1 · diagnostic-couche-donnees.md #2, #4 · AUD2-FR5 · AUD2-FR13 -->
@@ -303,4 +303,5 @@ Composer
 
 ## Change Log
 
+- 2026-07-25: Code review follow-ups — case-insensitive legacy branch, golden suffix test, decouple core test from data layer.
 - 2026-07-25: Story 32-1 — align ingestion sample IDs with bucket identity index; legacy steps/5min preserved.

@@ -2,7 +2,6 @@
 library;
 
 import 'package:astra_app/core/ids/sample_id_generator.dart';
-import 'package:astra_app/data/models/normalized_step_bucket.dart';
 import 'package:flutter_test/flutter_test.dart';
 
 import '../time/fake_time_provider.dart';
@@ -89,16 +88,16 @@ void main() {
           startTimeUtc: start,
           provider: 'internal_phone',
           deviceId: 'smartphone',
-          type: kStepSampleType,
-          resolution: kFiveMinuteResolution,
+          type: 'steps',
+          resolution: '5min',
         ),
         isNot(
           SampleIdGenerator.deterministicFromIngestionBucket(
             startTimeUtc: start,
             provider: 'adp_ble',
             deviceId: 'ring',
-            type: kStepSampleType,
-            resolution: kFiveMinuteResolution,
+            type: 'steps',
+            resolution: '5min',
           ),
         ),
       );
@@ -115,8 +114,44 @@ void main() {
           startTimeUtc: start,
           provider: 'internal_phone',
           deviceId: 'smartphone',
-          type: kStepSampleType,
-          resolution: kFiveMinuteResolution,
+          type: 'steps',
+          resolution: '5min',
+        ),
+        expected,
+      );
+    });
+
+    test('deterministicFromIngestionBucket keeps legacy id when type or resolution casing varies', () {
+      final start = DateTime.utc(2026, 6, 1, 22, 30);
+      const legacyIdentity = 'internalphonesmartphone';
+      final expected =
+          '${start.microsecondsSinceEpoch.toRadixString(36)}-$legacyIdentity';
+
+      expect(
+        SampleIdGenerator.deterministicFromIngestionBucket(
+          startTimeUtc: start,
+          provider: 'internal_phone',
+          deviceId: 'smartphone',
+          type: 'Steps',
+          resolution: '5Min',
+        ),
+        expected,
+      );
+    });
+
+    test('deterministicFromIngestionBucket appends type and resolution suffix for non-default buckets', () {
+      final start = DateTime.utc(2026, 6, 1, 22, 30);
+      const identity = 'internalphonesmartphone';
+      final expected =
+          '${start.microsecondsSinceEpoch.toRadixString(36)}-$identity-heart_rate-5min';
+
+      expect(
+        SampleIdGenerator.deterministicFromIngestionBucket(
+          startTimeUtc: start,
+          provider: 'internal_phone',
+          deviceId: 'smartphone',
+          type: 'heart_rate',
+          resolution: '5min',
         ),
         expected,
       );
@@ -131,22 +166,22 @@ void main() {
         startTimeUtc: start,
         provider: provider,
         deviceId: deviceId,
-        type: kStepSampleType,
-        resolution: kFiveMinuteResolution,
+        type: 'steps',
+        resolution: '5min',
       );
       final heartRateFiveMin = SampleIdGenerator.deterministicFromIngestionBucket(
         startTimeUtc: start,
         provider: provider,
         deviceId: deviceId,
         type: 'heart_rate',
-        resolution: kFiveMinuteResolution,
+        resolution: '5min',
       );
       final stepsHourly = SampleIdGenerator.deterministicFromIngestionBucket(
         startTimeUtc: start,
         provider: provider,
         deviceId: deviceId,
-        type: kStepSampleType,
-        resolution: kHourlyResolution,
+        type: 'steps',
+        resolution: '1hour',
       );
 
       expect(heartRateFiveMin, isNot(stepsFiveMin));
@@ -162,15 +197,15 @@ void main() {
           startTimeUtc: start,
           provider: 'ProviderA',
           deviceId: 'DeviceX',
-          type: kStepSampleType,
-          resolution: kFiveMinuteResolution,
+          type: 'steps',
+          resolution: '5min',
         ),
         SampleIdGenerator.deterministicFromIngestionBucket(
           startTimeUtc: start,
           provider: 'providera',
           deviceId: 'devicex',
-          type: kStepSampleType,
-          resolution: kFiveMinuteResolution,
+          type: 'steps',
+          resolution: '5min',
         ),
       );
     });
