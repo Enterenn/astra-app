@@ -60,7 +60,7 @@ class NotificationService {
     try {
       await _initFuture;
     } catch (_) {
-      if (!_initialized) {
+      if (!_initialized && generation == _initGeneration) {
         _initFuture = null;
       }
       rethrow;
@@ -133,7 +133,9 @@ class NotificationService {
         _initialized = true;
       }
     } catch (error, stackTrace) {
-      _initFuture = null;
+      if (generation == _initGeneration) {
+        _initFuture = null;
+      }
       debugPrint('NotificationService init failed: $error');
       debugPrintStack(stackTrace: stackTrace);
       rethrow;

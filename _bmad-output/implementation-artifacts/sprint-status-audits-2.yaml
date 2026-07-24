@@ -1,6 +1,6 @@
 # generated: 2026-07-24
-# last_updated: 2026-07-24 (Story 31-6 review)
-# NEXT: dev-story 31-6-harden-profile-notification-toggle-concurrency
+# last_updated: 2026-07-24 (Epic 31 close)
+# NEXT: create-story 32-1 or dev-story epic-32
 # Ref: planning-artifacts/epics-audits-2.md · implementation-readiness-report-2026-07-24.md
 # project: astra-app
 # project_key: NOKEY
@@ -47,13 +47,13 @@
 # NAVIGATION: _bmad-output/README.md · planning-artifacts/audits_2/README.md
 
 generated: 2026-07-24
-last_updated: 2026-07-24 (Story 31-6 review)
+last_updated: 2026-07-24 (Epic 31 close)
 project: astra-app
 project_key: NOKEY
 tracking_system: file-system
 story_location: _bmad-output/implementation-artifacts/stories
 epics_source: planning-artifacts/epics-audits-2.md
-base_version: 0.13.1+33
+base_version: 0.14.0+34
 git_branch: main
 
 development_status:
@@ -72,13 +72,13 @@ development_status:
   30-4-inject-timeprovider-into-collection-timeout-source: done
   epic-30-retrospective: optional
 
-  epic-31: in-progress
+  epic-31: done
   31-1-model-permanently-denied-with-settings-cta: done
   31-2-onboarding-intro-post-denial-feedback: done
   31-3-propagate-notification-platform-init-failures: done
   31-4-centralize-permission-status-mapping-by-type: done
   31-5-structural-boot-gate-cancel-wm-before-notification-init: done
-  31-6-harden-profile-notification-toggle-concurrency: review
+  31-6-harden-profile-notification-toggle-concurrency: done
   epic-31-retrospective: optional
 
   epic-32: backlog

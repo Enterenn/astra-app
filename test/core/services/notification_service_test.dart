@@ -96,6 +96,30 @@ void main() {
       expect(initCount, 2);
     });
 
+    test('background init timeout ignores late stale init failure for retry', () async {
+      var initCount = 0;
+      final staleInitGate = Completer<void>();
+      final service = NotificationService(
+        platformInitializer: (_) async {
+          initCount++;
+          if (initCount == 1) {
+            await staleInitGate.future;
+            throw StateError('stale init failed');
+          }
+        },
+        backgroundInitTimeout: const Duration(milliseconds: 10),
+      );
+
+      expect(await service.initializeForBackground(), isFalse);
+
+      final retryFuture = service.initializeForBackground();
+      staleInitGate.complete();
+      await Future<void>.delayed(Duration.zero);
+
+      expect(await retryFuture, isTrue);
+      expect(initCount, 2);
+    });
+
     test('initializeForBackground returns false when init fails', () async {
       final service = NotificationService(
         platformInitializer: (_) async => throw StateError('plugin init failed'),

@@ -1,6 +1,6 @@
 # Story 31.6: Harden Profile Notification Toggle Concurrency
 
-Status: review
+Status: done
 
 <!-- audits_2 Epic 31 — tracker: sprint-status-audits-2.yaml -->
 <!-- Source: epics-audits-2.md Story 31-6 · diagnostic-permissions-notifications.md #6, #7 · AUD2-FR24 · AUD2-FR25 · AUD2-FR34 (partial) -->
@@ -361,3 +361,4 @@ Composer
 ### Change Log
 
 - 2026-07-24: Story 31-6 — toggle concurrency guard + background init timeout abandonment + tests + diagnostic close
+- 2026-07-24: Code review — guard `_initFuture` clear on stale init failure after background timeout
