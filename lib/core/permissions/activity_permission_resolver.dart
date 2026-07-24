@@ -2,10 +2,27 @@ import 'dart:io';
 
 import 'package:permission_handler/permission_handler.dart';
 
+import '../../presentation/cubits/onboarding_state.dart';
+
 typedef ActivityPermissionResolver = Permission Function();
 
 Permission resolveActivityPermission() {
   return Platform.isIOS ? Permission.sensors : Permission.activityRecognition;
+}
+
+PermissionRequestStatus mapPermissionStatus(PermissionStatus status) {
+  if (status.isGranted || status.isLimited || status.isProvisional) {
+    return PermissionRequestStatus.granted;
+  }
+  if (status.isPermanentlyDenied) {
+    return PermissionRequestStatus.permanentlyDenied;
+  }
+  return PermissionRequestStatus.denied;
+}
+
+Future<PermissionRequestStatus> resolveActivityPermissionStatus() async {
+  final status = await resolveActivityPermission().status;
+  return mapPermissionStatus(status);
 }
 
 /// Canonical activity gate for FGS and Today screens.

@@ -2,7 +2,13 @@ import '../../core/constants/display_unit_preferences.dart';
 
 enum OnboardingStatus { inProgress, completed }
 
-enum PermissionRequestStatus { idle, requesting, granted, denied }
+enum PermissionRequestStatus {
+  idle,
+  requesting,
+  granted,
+  denied,
+  permanentlyDenied,
+}
 
 class OnboardingState {
   const OnboardingState({

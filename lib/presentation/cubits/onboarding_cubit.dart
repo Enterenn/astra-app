@@ -115,9 +115,6 @@ class OnboardingCubit extends Cubit<OnboardingState> {
   }
 
   PermissionRequestStatus _mapPermissionStatus(PermissionStatus status) {
-    if (status.isGranted || status.isLimited || status.isProvisional) {
-      return PermissionRequestStatus.granted;
-    }
-    return PermissionRequestStatus.denied;
+    return mapPermissionStatus(status);
   }
 }

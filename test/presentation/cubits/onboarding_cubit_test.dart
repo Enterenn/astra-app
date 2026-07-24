@@ -135,6 +135,24 @@ void main() {
       cubit.close();
     });
 
+    test('requestActivityPermission maps permanentlyDenied platform status',
+        () async {
+      final cubit = OnboardingCubit(
+        userSettings: userSettings,
+        userHealthMetrics: userHealthMetrics,
+        permissionRequester: (_) async => PermissionStatus.permanentlyDenied,
+      );
+
+      await cubit.requestActivityPermission();
+
+      expect(
+        cubit.state.activityPermissionStatus,
+        PermissionRequestStatus.permanentlyDenied,
+      );
+
+      cubit.close();
+    });
+
     test('requestActivityPermission recovers when requester throws', () async {
       final cubit = OnboardingCubit(
         userSettings: userSettings,
