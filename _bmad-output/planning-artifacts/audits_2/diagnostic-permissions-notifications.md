@@ -10,8 +10,8 @@
 ## Statut
 
 - **Dernière vérification :** 2026-07-24
-- **Statut :** `partial` — #1/#2 onboarding intro feedback + retry (story 31-2) ; post-onboarding CTAs (31-1) ; #4/#5 central mappers + platform error distinction (31-4)
-- **Story / PR :** 31-1 · 31-2 · 31-4
+- **Statut :** `partial` — #1/#2 onboarding intro feedback + retry (story 31-2) ; post-onboarding CTAs (31-1) ; #4/#5 central mappers + platform error distinction (31-4) ; #6/#7 toggle dedup + background init abandonment (31-6)
+- **Story / PR :** 31-1 · 31-2 · 31-4 · 31-6
 
 ---
 
@@ -24,8 +24,8 @@
 | 🔴 P0 | 3 | `_initializePlatform` avale les erreurs | `open` |
 | 🟡 P1 | 4 | Logique `_mapPermissionStatus` dupliquée / incohérente | `done` (31-4) |
 | 🟡 P1 | 5 | Catch générique → `denied` (masque bugs plateforme) | `done` (31-4) |
-| 🟡 P2 | 6 | Pas de dédup sur `setGoalNotificationsEnabled` | `open` |
-| 🟡 P2 | 7 | Timeout background n'annule pas l'init sous-jacente | `open` |
+| 🟡 P2 | 6 | Pas de dédup sur `setGoalNotificationsEnabled` | `done` (31-6) |
+| 🟡 P2 | 7 | Timeout background n'annule pas l'init sous-jacente | `done` (31-6) |
 
 ---
 
@@ -120,10 +120,12 @@ Bug plateforme indiscernable d'un refus volontaire dans logs/métriques.
 
 ### 6. Pas de déduplication sur `setGoalNotificationsEnabled`
 
+**Statut :** `done` (31-6)
+
 | Référence | Détail |
 |-----------|--------|
 | `lib/presentation/cubits/profile_cubit.dart:39,56-70` | `refresh()` protégé par `_refreshInFlight` |
-| `lib/presentation/cubits/profile_cubit.dart:232-288` | `setGoalNotificationsEnabled` — pas de guard concurrent |
+| `lib/presentation/cubits/profile_cubit.dart:239+` | `setGoalNotificationsEnabled` — `_toggleInFlight` coalescing |
 
 Risque faible ; incohérence de pattern dans le même cubit.
 
@@ -131,10 +133,12 @@ Risque faible ; incohérence de pattern dans le même cubit.
 
 ### 7. `initializeForBackground` timeout n'annule pas le travail sous-jacent
 
+**Statut :** `done` (31-6)
+
 | Référence | Détail |
 |-----------|--------|
-| `lib/core/services/notification_service.dart:67-79` | `.timeout()` → `return false` sur `TimeoutException` |
-| `lib/core/services/notification_service.dart:55,105-117` | `_initFuture` / `_initializePlatform` continuent après timeout |
+| `lib/core/services/notification_service.dart:69-84` | `.timeout()` → `return false` sur `TimeoutException` |
+| `lib/core/services/notification_service.dart:55,105-117` | `_initGeneration` — late completion ignored after timeout |
 
 État temporairement incohérent (`_initialized` peut flipper plus tard). Test couvert : `notification_service_test.dart:65-73`.
 

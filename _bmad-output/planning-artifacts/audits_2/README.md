@@ -131,8 +131,8 @@ Priorités : **P0** critique (corruption données / sur-comptage / sécurité) �
 | 3 | P0 | `_initializePlatform` avale erreurs | `open` | `notification_service.dart:118-122` |
 | 4 | P1 | `_mapPermissionStatus` dupliqué / `isLimited` sur activity | `done` | 31-4 |
 | 5 | P1 | Catch → `denied` masque bugs plateforme | `done` | 31-4 |
-| 6 | P2 | Pas de dédup `setGoalNotificationsEnabled` | `open` | vs `_refreshInFlight` |
-| 7 | P2 | Timeout background n'annule pas init | `open` | `notification_service.dart:67-79` |
+| 6 | P2 | Pas de dédup `setGoalNotificationsEnabled` | `done` (31-6) | `_toggleInFlight` |
+| 7 | P2 | Timeout background n'annule pas init | `done` (31-6) | `_initGeneration` |
 
 **Deps :** `permission_handler ^12.0.1`, `flutter_local_notifications ^21.0.0`
 

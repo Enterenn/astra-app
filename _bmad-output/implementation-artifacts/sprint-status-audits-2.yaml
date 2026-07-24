@@ -1,6 +1,6 @@
 # generated: 2026-07-24
-# last_updated: 2026-07-24 (Story 31-5 done)
-# NEXT: 31-6-harden-profile-notification-toggle-concurrency
+# last_updated: 2026-07-24 (Story 31-6 review)
+# NEXT: dev-story 31-6-harden-profile-notification-toggle-concurrency
 # Ref: planning-artifacts/epics-audits-2.md · implementation-readiness-report-2026-07-24.md
 # project: astra-app
 # project_key: NOKEY
@@ -47,7 +47,7 @@
 # NAVIGATION: _bmad-output/README.md · planning-artifacts/audits_2/README.md
 
 generated: 2026-07-24
-last_updated: 2026-07-24 (Story 31-5 done)
+last_updated: 2026-07-24 (Story 31-6 review)
 project: astra-app
 project_key: NOKEY
 tracking_system: file-system
@@ -78,7 +78,7 @@ development_status:
   31-3-propagate-notification-platform-init-failures: done
   31-4-centralize-permission-status-mapping-by-type: done
   31-5-structural-boot-gate-cancel-wm-before-notification-init: done
-  31-6-harden-profile-notification-toggle-concurrency: backlog
+  31-6-harden-profile-notification-toggle-concurrency: review
   epic-31-retrospective: optional
 
   epic-32: backlog
