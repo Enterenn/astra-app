@@ -44,6 +44,7 @@ class ProfileCubit extends Cubit<ProfileState> {
   final PostDisplayNameUpdateCallback? _postDisplayNameUpdate;
 
   Future<void>? _refreshInFlight;
+  Future<NotificationToggleResult>? _toggleInFlight;
 
   Future<void> _bootstrapNotificationPref() async {
     try {
@@ -237,6 +238,21 @@ class ProfileCubit extends Cubit<ProfileState> {
   }
 
   Future<NotificationToggleResult> setGoalNotificationsEnabled(bool enabled) async {
+    if (_toggleInFlight != null) {
+      return _toggleInFlight!;
+    }
+
+    _toggleInFlight = _setGoalNotificationsEnabledImpl(enabled);
+    try {
+      return await _toggleInFlight!;
+    } finally {
+      _toggleInFlight = null;
+    }
+  }
+
+  Future<NotificationToggleResult> _setGoalNotificationsEnabledImpl(
+    bool enabled,
+  ) async {
     if (isClosed) {
       return NotificationToggleResult.failed;
     }
