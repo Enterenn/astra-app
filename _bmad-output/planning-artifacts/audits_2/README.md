@@ -31,7 +31,7 @@ Priorités : **P0** critique (corruption données / sur-comptage / sécurité) �
 |---|---------|---------|---------------|------------|-------------|
 | 01 | [diagnostic-couche-donnees.md](./diagnostic-couche-donnees.md) | SQLite, migrations, ingestion write, IDs | `open` | 3 | 4 |
 | 02 | [diagnostic-permissions-notifications.md](./diagnostic-permissions-notifications.md) | Permissions activité/notif, `NotificationService` | `partial` | 1 | 4 |
-| 03 | [diagnostic-workmanager-maintenance-db.md](./diagnostic-workmanager-maintenance-db.md) | WM 15 min, maintenance hebdo, VACUUM, boot | `partial` | 0 | 3 |
+| 03 | [diagnostic-workmanager-maintenance-db.md](./diagnostic-workmanager-maintenance-db.md) | WM 15 min, maintenance hebdo, VACUUM, boot | `partial` | 0 | 2 |
 | 04 | [diagnostic-downsampling-compaction-fr11.md](./diagnostic-downsampling-compaction-fr11.md) | FR11 compaction, `SampleCompactionRunner` | `partial` | 0 | 2 |
 | 05 | [diagnostic-fuseaux-jours-locaux.md](./diagnostic-fuseaux-jours-locaux.md) | TZ, DST, clés regroupement, offset stocké | `partial` | 0 | 1 (doc) |
 | 06 | [diagnostic-preferences-utilisateur.md](./diagnostic-preferences-utilisateur.md) | Prefs KV, journal objectif, `isDatabaseOpen` | `partial` | 0 | 2 |
@@ -147,7 +147,7 @@ Priorités : **P0** critique (corruption données / sur-comptage / sécurité) �
 | 1 | P0 | Double comptage mid-cycle collecte | `fixed` (Story 29-3) | `background_collector.dart` txn per source |
 | 2 | P0 | VACUUM sans lock vs collecte | `open` | WM maintenance `maintenanceOnCurrentConnection: true` |
 | 3 | P1 | Pas de WM background iOS | `fixed` (30-3) | `project-context.md` §Platform background collection |
-| 4 | P1 | Ordre cancel WM / init notifications | `partial` | `main.dart:61-63` |
+| 4 | P1 | Ordre cancel WM / init notifications | `done` (31-5) | `boot_sequence.dart` |
 | 5 | P2 | TTL lock 35s inadapté VACUUM | `open` | `ingestion_collection_lock.dart:14` |
 | 6 | P2 | `DateTime.now()` dans `_TimeoutBoundedSource` | `fixed` (30-4) | `background_collector.dart` |
 
@@ -293,7 +293,7 @@ My Data editor → state local + setDailyStepGoal (pas reload journal au refresh
 | M4 | 06 | `isDatabaseOpen` safe + fix `today_live_pipeline` |
 | M5 | 06 | My Data refresh via `getGoalForLocalDay(today)` ; deprecate `getDailyStepGoal` |
 | M6 | 02 | Centraliser permission status par type |
-| M7 | 03 | Boot gate cancel WM → await notification init |
+| M7 | 03 | ~~Boot gate cancel WM → await notification init~~ — done (31-5) |
 | M8 | 03 | ~~Documenter gap iOS background~~ — done (30-3) |
 | M9 | 08 | Borne haute SQL charts (perf) |
 

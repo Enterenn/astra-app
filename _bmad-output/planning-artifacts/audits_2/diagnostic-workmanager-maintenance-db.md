@@ -22,7 +22,7 @@
 | 🔴 P0 | 1 | Double comptage pas si échec mid-cycle | `fixed` (29-3) |
 | 🔴 P0 | 2 | VACUUM sans lock cross-isolate vs collecte | `fixed` (30-1) |
 | 🟡 P1 | 3 | Pas de scheduling background iOS | `fixed` (30-3) |
-| 🟡 P1 | 4 | Ordre cancel WM / init notifications non structuré | `partial` |
+| 🟡 P1 | 4 | Ordre cancel WM / init notifications non structuré | `done` (31-5) |
 | 🟡 P2 | 5 | TTL lock 35s inadapté au VACUUM | `open` |
 | 🟡 P2 | 6 | `DateTime.now()` dans `_TimeoutBoundedSource` | `fixed` (30-4) |
 
@@ -96,9 +96,7 @@
 | `lib/main.dart:61-63` | `await cancelStepCollectionWorkmanager()` puis `unawaited(startNotificationInitForBoot(...))` |
 | `lib/core/services/workmanager_callback.dart:167-169` | Doc : éviter race isolate background vs `NotificationService.initialize` |
 
-**Statut :** `partial` — ordre correct dans `main()` aujourd'hui ; **non protégé structurellement** (init notifications en parallèle non-awaited, pas de barrière explicite). `cancel` ne couvre que `kStepCollectionUniqueName`, pas la maintenance.
-
-**Piste :** Séquence boot encapsulée (cancel → await init ou gate) ; tests de non-régression boot.
+**Statut :** `done` — Story 31-5 : `runBootGateBeforeDependencies` (`boot_sequence.dart`) — `await cancel()` puis init non-bloquant via `unawaited`. Tests ordre `@Tags(['critical'])`. `cancel` ne couvre que `kStepCollectionUniqueName`, pas la maintenance (hors scope).
 
 ---
 
@@ -156,7 +154,7 @@ Réutiliser le même lock/TTL pour VACUUM risquerait expiration mid-operation �
 | **P0** | Mutex maintenance partagé avec collecte (T1) |
 | **P0** | Txn atomique upsert + baseline par source (T2) — **done** (29-3) |
 | **P1** | ~~Documenter gap iOS + stratégie resume/backfill~~ — **done** (30-3) |
-| **P1** | Boot gate : cancel WM → await notification init |
+| **P1** | ~~Boot gate : cancel WM → await notification init~~ — **done** (31-5) |
 | **P2** | ~~Injecter `TimeProvider` dans `_TimeoutBoundedSource`~~ — **done** (30-4) |
 | **P2** | TTL maintenance distinct si réutilisation du pattern lock |
 
