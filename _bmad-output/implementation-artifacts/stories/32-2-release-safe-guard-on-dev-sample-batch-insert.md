@@ -1,6 +1,6 @@
 # Story 32.2: Release-Safe Guard on Dev Sample Batch Insert
 
-Status: review
+Status: done
 
 <!-- audits_2 Epic 32 — tracker: sprint-status-audits-2.yaml -->
 <!-- Source: epics-audits-2.md Story 32-2 · diagnostic-couche-donnees.md #3 · AUD2-FR6 -->
@@ -59,13 +59,13 @@ So that production builds cannot accidentally bypass ingestion safeguards.
   - [x] Create `test/data/repositories/step_ingestion_repository_dev_guard_test.dart`:
   - [x] Run: `flutter test test/data/repositories/step_ingestion_repository_dev_guard_test.dart`
   - [x] Run: `flutter test --tags critical`
-  - [ ] **Stop → review brief → wait for Baptiste OK → commit**
+  - [x] **Stop → review brief → wait for Baptiste OK → commit**
 
 - [x] **Sub-task C — Diagnostic close** (AC: #4)
   - [x] Update `diagnostic-couche-donnees.md` #3 → `fixed` (32-2)
   - [x] Sync `audits_2/README.md` P0-03 row → `fixed` (32-2)
   - [x] Update README inventory table row #3 statut → `fixed` (32-2)
-  - [ ] **Stop → review brief → wait for Baptiste OK → commit**
+  - [x] **Stop → review brief → wait for Baptiste OK → commit**
 
 ## Dev Notes
 
