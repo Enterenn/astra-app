@@ -27,6 +27,7 @@ class UserHealthMetricsRepository implements UserHealthMetricsRepositoryContract
   final UserPreferencesKvStore _kv;
   final TimeProvider _clock;
 
+  @Deprecated('Use getGoalForLocalDay with today local-day ISO')
   Future<int> getDailyStepGoal() async {
     final value = await _kv.readValue(kDailyStepGoalKey);
     final parsed = int.tryParse(value ?? '');
