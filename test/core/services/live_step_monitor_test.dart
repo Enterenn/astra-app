@@ -8,6 +8,7 @@ import 'package:astra_app/core/services/background_collector.dart';
 import 'package:astra_app/core/services/live_step_monitor.dart';
 import 'package:astra_app/core/time/time_provider.dart';
 import 'package:astra_app/data/contracts/step_aggregation_repository_contract.dart';
+import 'package:astra_app/data/datasources/data_ingestion_source.dart';
 import 'package:astra_app/data/datasources/monitor_drain_source.dart';
 import 'package:astra_app/data/datasources/phone_pedometer_source.dart';
 import 'package:astra_app/data/datasources/step_normalizer.dart';
@@ -192,6 +193,58 @@ void main() {
 
       expect(monitor.currentTodaySteps, greaterThanOrEqualTo(71));
     });
+
+    test(
+      'forwards hardware reset readings through baseline-gated drain',
+      () async {
+        await baselineRepository.setBaseline(
+          provider: kInternalPhoneProvider,
+          deviceId: kSmartphoneDeviceId,
+          cumulative: 10_000,
+        );
+        await monitor.start();
+        events.add(
+          PhoneStepEvent(steps: 50, timeStamp: DateTime.utc(2026, 6, 2, 12)),
+        );
+        events.add(
+          PhoneStepEvent(steps: 100, timeStamp: DateTime.utc(2026, 6, 2, 12, 1)),
+        );
+        events.add(
+          PhoneStepEvent(steps: 150, timeStamp: DateTime.utc(2026, 6, 2, 12, 2)),
+        );
+        await Future<void>.delayed(Duration.zero);
+
+        final gated = await monitor.drainReadingsForCollectionGated();
+
+        expect(gated, hasLength(3));
+        expect(
+          gated.map((r) => r.cumulativeSteps).toList(),
+          [50, 100, 150],
+        );
+        expect(monitor.drainReadingsForCollection(), isEmpty);
+      },
+    );
+
+    test(
+      'drops noise dip above reset threshold in baseline-gated drain',
+      () async {
+        await baselineRepository.setBaseline(
+          provider: kInternalPhoneProvider,
+          deviceId: kSmartphoneDeviceId,
+          cumulative: 10_000,
+        );
+        await monitor.start();
+        events.add(
+          PhoneStepEvent(steps: 9900, timeStamp: DateTime.utc(2026, 6, 2, 12)),
+        );
+        await Future<void>.delayed(Duration.zero);
+
+        final gated = await monitor.drainReadingsForCollectionGated();
+
+        expect(gated, isEmpty);
+        expect(monitor.drainReadingsForCollection(), isEmpty);
+      },
+    );
 
     test('drainReadingsForCollection empties the full buffer', () async {
       await monitor.start();

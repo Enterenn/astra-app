@@ -143,6 +143,42 @@ void main() {
       expect(persistedAfterFlush, greaterThan(persistedBeforeWalk));
     });
 
+    test(
+      'idle flush persists steps after hardware counter reset below baseline',
+      () async {
+        const priorBaseline = 10_000;
+
+        await baselineRepository.setBaseline(
+          provider: kInternalPhoneProvider,
+          deviceId: kSmartphoneDeviceId,
+          cumulative: priorBaseline,
+        );
+
+        await monitor.start();
+        events.add(
+          PhoneStepEvent(steps: 50, timeStamp: DateTime.utc(2026, 6, 5, 10)),
+        );
+        events.add(
+          PhoneStepEvent(steps: 100, timeStamp: DateTime.utc(2026, 6, 5, 10, 1)),
+        );
+        events.add(
+          PhoneStepEvent(steps: 150, timeStamp: DateTime.utc(2026, 6, 5, 10, 2)),
+        );
+        await Future<void>.delayed(Duration.zero);
+
+        await _idleFlushPersist(monitor, collector);
+
+        expect(await stepRepos.aggregation.getTodaySteps(), 150);
+        expect(
+          await baselineRepository.getBaseline(
+            provider: kInternalPhoneProvider,
+            deviceId: kSmartphoneDeviceId,
+          ),
+          150,
+        );
+      },
+    );
+
     test('baseline-gated drain skips readings already credited in baseline', () async {
       await baselineRepository.setBaseline(
         provider: kInternalPhoneProvider,

@@ -3,15 +3,15 @@
 **Généré :** 2026-07-24  
 **Base code :** `0.12.1+31` (`pubspec.yaml`)  
 **Périmètre :** `LiveStepMonitor` · `MonitorDrainSource` · chemin persist vs UI live · lien `StepIncrementCalculator` / `BackgroundCollector`  
-**Statut global :** `open`
+**Statut global :** `partial` (P0 #1 fixed — story 29-2)
 
 ---
 
 ## Statut
 
 - **Dernière vérification :** 2026-07-24
-- **Statut :** `open`
-- **Story / PR :** —
+- **Statut :** `partial` (P0 #1 fixed)
+- **Story / PR :** Story 29-2 (`29-2-forward-hardware-reset-readings-through-live-drain`)
 
 ---
 
@@ -19,7 +19,7 @@
 
 | Priorité | # | Domaine | Statut |
 |----------|---|---------|--------|
-| 🔴 P0 | 1 | Filtre `sinceCumulative` élimine resets matériels | `open` |
+| 🔴 P0 | 1 | Filtre `sinceCumulative` élimine resets matériels | `fixed` (29-2) |
 | 🟡 P1 | 2 | Duplication logique crédit vs `StepIncrementCalculator` | `open` |
 
 ---
@@ -28,7 +28,9 @@
 
 ### 1. `drainReadingsForCollection` élimine silencieusement les pas après reset matériel
 
-**Constat :** Le filtre `cumulativeSteps > sinceCumulative` traite tout cumulatif ≤ baseline persistée comme « déjà crédité / bruit ». Il ne distingue pas :
+**Statut :** `fixed` — Story 29-2 (reset-aware pass-through + drop logging)
+
+**Constat :** Le filtre `cumulativeSteps > sinceCumulative` traitait tout cumulatif ≤ baseline persistée comme « déjà crédité / bruit ». Il ne distinguait pas :
 
 | Cas | `StepIncrementCalculator` | Filtre drain |
 |-----|---------------------------|--------------|

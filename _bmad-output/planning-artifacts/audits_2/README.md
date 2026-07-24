@@ -37,7 +37,7 @@ Priorités : **P0** critique (corruption données / sur-comptage / sécurité) �
 | 06 | [diagnostic-preferences-utilisateur.md](./diagnostic-preferences-utilisateur.md) | Prefs KV, journal objectif, `isDatabaseOpen` | `partial` | 0 | 2 |
 | 07 | [diagnostic-ingestion-pedometer.md](./diagnostic-ingestion-pedometer.md) | `StepNormalizer`, `StepIncrementCalculator`, baseline | `fixed` | 0 | 0 |
 | 08 | [diagnostic-charts-agregation-daily-monthly.md](./diagnostic-charts-agregation-daily-monthly.md) | History 30j, Trends 12 mois, `finestResolutionTotal` | `partial` | 0 | 2 |
-| 09 | [diagnostic-live-step-monitor.md](./diagnostic-live-step-monitor.md) | Drain persist, affichage live, reset matériel | `open` | 1 | 1 |
+| 09 | [diagnostic-live-step-monitor.md](./diagnostic-live-step-monitor.md) | Drain persist, affichage live, reset matériel | `partial` | 1 | 1 |
 
 **Ordre de lecture recommandé (dépendances) :** 01 → 07 → **09** → 03 → 04 → 05 → 08 → 06 → 02
 
@@ -57,7 +57,7 @@ Priorités : **P0** critique (corruption données / sur-comptage / sécurité) �
 | **P0-08** | VACUUM maintenance sans lock vs collecte WM 15 min | 03 | `data_lifecycle_service.dart`, `workmanager_callback.dart` | Lock dédié (TTL long) ou clé séparée |
 | **P0-09** | Compaction : `ConflictAlgorithm.ignore` puis delete sources inconditionnel | 04 | `sample_compaction_runner.dart:51-56,145-254` | Vérifier insert OK avant delete |
 | **P0-10** | `terminalBaseline: lastCumulative` au lieu de `baseline` (bruit capteur) | 07 | `step_normalizer.dart:108` | `baseline ?? initialBaseline` |
-| **P0-11** | Drain `sinceCumulative` : filtre `>` élimine resets matériels avant normalizer | 09 | `live_step_monitor.dart:333-346`, `monitor_drain_source.dart:29` | Pass-through `<= baseline/2` ou déléguer au calculateur |
+| **P0-11** | Drain `sinceCumulative` : filtre `>` élimine resets matériels avant normalizer | 09 | `live_step_monitor.dart:333-346`, `monitor_drain_source.dart:29` | **Fixed** — Story 29-2 : pass-through `<= baseline/2` + drop log |
 
 ---
 
@@ -70,7 +70,7 @@ Priorités : **P0** critique (corruption données / sur-comptage / sécurité) �
 | Baseline persistée trop basse après bruit rejeté | **07** | `lastCumulative` ≠ `baseline` interne → cycle suivant crédite trop | Sur-comptage |
 | Upsert additif + baseline non commitée mid-cycle | **03** | `ON CONFLICT DO UPDATE value +=` + exception avant `setBaseline` | Sur-comptage |
 | Compaction delete sans insert effectif | **04** | Sources fines supprimées, agrégat obsolète conservé | Perte / agrégat stale |
-| Drain `>` aveugle après reboot matériel | **09** | Lectures `< baseline` jetées avant `StepIncrementCalculator` | **Sous-comptage persist** (UI live OK) |
+| Drain `>` aveugle après reboot matériel | **09** | Lectures `< baseline` jetées avant `StepIncrementCalculator` | **Fixed (29-2)** — pass-through reset threshold |
 | Multi-résolution même jour | **05, 08** | Atténué en lecture par `finestResolutionTotal` — **ne pas sommer toutes résolutions** | — |
 
 ### Duplication logique « créditer cette lecture ? »
@@ -239,7 +239,7 @@ My Data editor → state local + setDailyStepGoal (pas reload journal au refresh
 
 | # | Priorité | Finding | Statut | Réf. |
 |---|----------|---------|--------|------|
-| 1 | P0 | Filtre `sinceCumulative` (`>`) élimine resets matériels | `open` | `live_step_monitor.dart:333-346` |
+| 1 | P0 | Filtre `sinceCumulative` (`>`) élimine resets matériels | `fixed` (29-2) | `live_step_monitor.dart` drain gate |
 | 2 | P1 | Duplication règle crédit drain vs `StepIncrementCalculator` | `open` | Gate `>` vs seuil `baseline/2` |
 
 **Chaîne :** `MonitorDrainSource` → `drainReadingsForCollectionGated()` → `BackgroundCollector` → `StepNormalizer`.
@@ -259,7 +259,7 @@ My Data editor → state local + setDailyStepGoal (pas reload journal au refresh
 | Todo | Diagnostics | Action |
 |------|-------------|--------|
 | Q1 | 07 | `terminalBaseline: baseline ?? initialBaseline` + test |
-| Q2 | 09 | Fix filtre drain reset matériel + test reboot post-baseline 10k |
+| Q2 | 09 | Fix filtre drain reset matériel + test reboot post-baseline 10k | **done** (29-2) |
 | Q3 | 01 | Garde runtime `insertDevSamplesBatch` |
 | Q4 | 01 | ID ingestion : inclure `type` + `resolution` |
 | Q5 | 01 | `.toLowerCase()` identity provider/device |

@@ -327,8 +327,8 @@ class LiveStepMonitor {
 
   /// Drains buffered readings for [BackgroundCollector] normalization.
   ///
-  /// When [sinceCumulative] is set, only readings with a higher cumulative counter
-  /// are returned; the rest are discarded from the buffer.
+  /// When [sinceCumulative] is set, forwards readings above baseline or at/below
+  /// the hardware-reset threshold (`sinceCumulative ~/ 2`); others are dropped with log.
   @visibleForTesting
   List<StepReading> drainReadingsForCollection({int? sinceCumulative}) {
     if (_readingsBuffer.isEmpty) {
@@ -341,9 +341,41 @@ class LiveStepMonitor {
     if (sinceCumulative == null) {
       return drained;
     }
-    return drained
-        .where((reading) => reading.cumulativeSteps > sinceCumulative)
-        .toList(growable: false);
+    final forwarded = <StepReading>[];
+    final resetThreshold = sinceCumulative ~/ 2;
+    for (final reading in drained) {
+      final cumulative = reading.cumulativeSteps;
+      if (_shouldForwardDrainedReading(cumulative, sinceCumulative)) {
+        if (cumulative <= resetThreshold) {
+          livePipelineLog(
+            'monitor',
+            'drain gate pass reset',
+            details: {
+              'cumulative': cumulative,
+              'sinceCumulative': sinceCumulative,
+            },
+          );
+        }
+        forwarded.add(reading);
+      } else {
+        livePipelineLog(
+          'monitor',
+          'drain gate drop',
+          details: {
+            'cumulative': cumulative,
+            'sinceCumulative': sinceCumulative,
+            'reason': 'already_credited_or_noise',
+          },
+        );
+      }
+    }
+    return forwarded;
+  }
+
+  bool _shouldForwardDrainedReading(int cumulative, int sinceCumulative) {
+    if (cumulative > sinceCumulative) return true;
+    if (cumulative <= sinceCumulative ~/ 2) return true;
+    return false;
   }
 
   Future<void> dispose() async {
