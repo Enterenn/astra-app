@@ -3,7 +3,7 @@
 **Généré :** 2026-07-20  
 **Base code :** `0.12.1+31` (`pubspec.yaml`)  
 **Périmètre :** ouverture DB → session → migrations → `StepIngestionRepository` → génération d'ID  
-**Statut global :** `partial` (P0 #2 fixed — 32-1 · P0 #3 fixed — 32-2 · P1 #4 fixed — 32-1 · P1 #5 fixed — 30-2)
+**Statut global :** `partial` (P0 #1 fixed — 32-3 · P0 #2 fixed — 32-1 · P0 #3 fixed — 32-2 · P1 #4 fixed — 32-1 · P1 #5 fixed — 30-2)
 
 ---
 
@@ -11,7 +11,7 @@
 
 - **Dernière vérification :** 2026-07-25
 - **Statut :** `partial`
-- **Story / PR :** Story 32-1 (#2, #4) · Story 32-2 (#3)
+- **Story / PR :** Story 32-1 (#2, #4) · Story 32-2 (#3) · Story 32-3 (#1, Path A disclaimer)
 
 ---
 
@@ -19,7 +19,7 @@
 
 | Priorité | # | Domaine | Statut |
 |----------|---|---------|--------|
-| 🔴 P0 | 1 | Chiffrement au repos absent | `open` |
+| 🔴 P0 | 1 | Chiffrement au repos absent | `fixed` (32-3, Path A disclaimer) |
 | 🔴 P0 | 2 | Collision ID multi-types | `fixed` (32-1) |
 | 🔴 P0 | 3 | Garde-fou dev/prod (`assert`) inopérant en release | `fixed` (32-2) |
 | 🟡 P1 | 4 | Regex normalisation sensible à la casse | `fixed` (32-1) |
@@ -43,13 +43,13 @@
 
 **Impact :** Pour une app positionnée « privacy-first », soit manque réel à combler (ex. `sqlcipher_flutter_libs` + passphrase dérivée device/biométrie), soit point à documenter explicitement pour ne pas induire en erreur sur le niveau de protection.
 
-**Contexte produit :** Phase 0 accepte le plaintext (NFR-4, `architecture.md` § SQLCipher Phase 1). Écart entre promesse marketing (« encrypted ») et implémentation actuelle à clarifier.
+**Contexte produit :** Phase 0 accepte le plaintext (NFR-4, `architecture.md` § SQLCipher Phase 1). Écart marketing vs implémentation clos via disclaimer My Data + roadmap Phase 1 (32-3).
 
 **Piste :**
 - Phase 1 : SQLCipher + Keystore escrow (déjà documenté dans PRD/addendum)
-- Court terme : disclaimer UX / My Data footprint si plaintext maintenu
+- ~~Court terme : disclaimer UX / My Data footprint si plaintext maintenu~~ — **done** (32-3, Path A)
 
----
+**Statut :** `fixed` — Story 32-3 (Path A : disclosure plaintext + SQLCipher Phase 1 roadmap)
 
 ### 2. Bug de génération d'ID — collision multi-types
 

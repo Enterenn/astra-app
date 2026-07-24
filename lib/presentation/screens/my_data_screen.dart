@@ -205,11 +205,24 @@ class _MyDataScreenBody extends StatelessWidget {
             headline: l10n.myDataFootprint,
             child: state.status == MyDataStatus.loading
                 ? const _SectionLoadingIndicator()
-                : FootprintKpiRow(
-                    sampleCount: state.sampleCount,
-                    fileSizeBytes: state.fileSizeBytes,
-                    lastOptimizedUtc: state.lastOptimizedUtc,
-                    nowUtc: nowUtc,
+                : Column(
+                    crossAxisAlignment: CrossAxisAlignment.stretch,
+                    children: [
+                      FootprintKpiRow(
+                        sampleCount: state.sampleCount,
+                        fileSizeBytes: state.fileSizeBytes,
+                        lastOptimizedUtc: state.lastOptimizedUtc,
+                        nowUtc: nowUtc,
+                      ),
+                      const SizedBox(height: AstraSpacing.kSpaceSm),
+                      Semantics(
+                        label: l10n.myDataFootprintStorageProtectionSemantics,
+                        child: Text(
+                          l10n.myDataFootprintStorageProtectionPlaintext,
+                          style: AstraTypography.captionFor(colors),
+                        ),
+                      ),
+                    ],
                   ),
           ),
           const SizedBox(height: AstraSpacing.kSpaceMd),

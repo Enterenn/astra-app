@@ -47,7 +47,7 @@ Priorités : **P0** critique (corruption données / sur-comptage / sécurité) �
 
 | ID | Point | Diagnostic | Fichiers clés | Correctif / action |
 |----|-------|------------|---------------|-------------------|
-| **P0-01** | Plaintext SQLite (NFR-4 Phase 0) — écart privacy marketing | 01 | `pubspec.yaml`, `app_database.dart` | SQLCipher Phase 1 **ou** disclaimer UX explicite |
+| **P0-01** | Plaintext SQLite (NFR-4 Phase 0) — écart privacy marketing | 01 | `pubspec.yaml`, `app_database.dart` | **Fixed** — Story 32-3 : disclaimer My Data + roadmap SQLCipher Phase 1 |
 | **P0-02** | Collision PK multi-types (`deterministicFromIngestionBucket` sans `type`/`resolution`) | 01 | `sample_id_generator.dart:30-37`, `migrations.dart:85-93` | **Fixed** — Story 32-1 : suffixe aligné sur `idx_bucket_identity` + branche legacy `steps`/`5min` |
 | **P0-03** | `insertDevSamplesBatch` protégé par `assert` (strippé release) | 01 | `step_ingestion_repository.dart:92-99` | **Fixed** — Story 32-2 : garde runtime `if (!kDebugMode) throw` |
 | **P0-04** | `permanentlyDenied` jamais modélisé — toggle/bouton muet | 02 | `onboarding_state.dart`, `profile_cubit.dart`, `settings_screen.dart` | **Partial** — 31-1 post-onboarding + 31-2 intro feedback |
@@ -110,7 +110,7 @@ Priorités : **P0** critique (corruption données / sur-comptage / sécurité) �
 
 | # | Priorité | Finding | Statut | Réf. |
 |---|----------|---------|--------|------|
-| 1 | P0 | Chiffrement au repos absent | `open` | `sqflite` pur, `astra_app.db` clair |
+| 1 | P0 | Chiffrement au repos absent | `fixed` (32-3) | `sqflite` pur — disclaimer My Data + SQLCipher Phase 1 roadmap |
 | 2 | P0 | Collision ID multi-types | `open` | `sample_id_generator.dart:30-37` |
 | 3 | P0 | Garde-fou `assert` dev/prod | `fixed` (32-2) | `step_ingestion_repository.dart:92-99` |
 | 4 | P1 | Regex identity case-sensitive | `open` | `sample_id_generator.dart:35` |

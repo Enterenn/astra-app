@@ -799,6 +799,18 @@ abstract class AppLocalizations {
   /// **'optimized {relativeTime}'**
   String myDataFootprintOptimized(String relativeTime);
 
+  /// Footprint trust copy: Phase 0 plaintext at rest with Phase 1 SQLCipher roadmap
+  ///
+  /// In en, this message translates to:
+  /// **'Stored locally on this device without encryption. Data never leaves your phone, but is not protected if someone accesses your unlocked device or backup files. Local database encryption (SQLCipher) is planned for Phase 1.'**
+  String get myDataFootprintStorageProtectionPlaintext;
+
+  /// Screen reader label for Footprint storage protection disclosure
+  ///
+  /// In en, this message translates to:
+  /// **'Local storage protection: data is not encrypted at rest on this device. Database encryption is planned for Phase 1.'**
+  String get myDataFootprintStorageProtectionSemantics;
+
   /// Purge confirmation dialog title
   ///
   /// In en, this message translates to:

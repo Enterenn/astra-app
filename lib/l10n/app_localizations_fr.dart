@@ -409,6 +409,14 @@ class AppLocalizationsFr extends AppLocalizations {
   }
 
   @override
+  String get myDataFootprintStorageProtectionPlaintext =>
+      'Stocké localement sur cet appareil sans chiffrement. Les données ne quittent jamais votre téléphone, mais ne sont pas protégées si quelqu\'un accède à votre appareil déverrouillé ou à vos sauvegardes. Le chiffrement local de la base (SQLCipher) est prévu en Phase 1.';
+
+  @override
+  String get myDataFootprintStorageProtectionSemantics =>
+      'Protection du stockage local : les données ne sont pas chiffrées au repos sur cet appareil. Le chiffrement de la base est prévu en Phase 1.';
+
+  @override
   String get myDataPurgeConfirmTitle =>
       'Supprimer toutes les données locales ?';
 

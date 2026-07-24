@@ -555,6 +555,14 @@
       }
     }
   },
+  "myDataFootprintStorageProtectionPlaintext": "Stored locally on this device without encryption. Data never leaves your phone, but is not protected if someone accesses your unlocked device or backup files. Local database encryption (SQLCipher) is planned for Phase 1.",
+  "@myDataFootprintStorageProtectionPlaintext": {
+    "description": "Footprint trust copy: Phase 0 plaintext at rest with Phase 1 SQLCipher roadmap"
+  },
+  "myDataFootprintStorageProtectionSemantics": "Local storage protection: data is not encrypted at rest on this device. Database encryption is planned for Phase 1.",
+  "@myDataFootprintStorageProtectionSemantics": {
+    "description": "Screen reader label for Footprint storage protection disclosure"
+  },
   "myDataPurgeConfirmTitle": "Delete all local data?",
   "@myDataPurgeConfirmTitle": {
     "description": "Purge confirmation dialog title"

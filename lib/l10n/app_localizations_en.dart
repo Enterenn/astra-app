@@ -402,6 +402,14 @@ class AppLocalizationsEn extends AppLocalizations {
   }
 
   @override
+  String get myDataFootprintStorageProtectionPlaintext =>
+      'Stored locally on this device without encryption. Data never leaves your phone, but is not protected if someone accesses your unlocked device or backup files. Local database encryption (SQLCipher) is planned for Phase 1.';
+
+  @override
+  String get myDataFootprintStorageProtectionSemantics =>
+      'Local storage protection: data is not encrypted at rest on this device. Database encryption is planned for Phase 1.';
+
+  @override
   String get myDataPurgeConfirmTitle => 'Delete all local data?';
 
   @override

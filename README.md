@@ -51,7 +51,7 @@ Phase 0 is not a throwaway prototype. It is a **learning sandbox** that delivers
 
 - Step counter via phone sensors (`PhonePedometerSource`)
 - Background collection (Android = reference; iOS = foreground backfill)
-- Local SQLite storage (`timeseries_samples`, 5-minute buckets)
+- Local SQLite storage (`timeseries_samples`, 5-minute buckets) — **not encrypted at rest** in Phase 0 (SQLCipher planned Phase 1; disclosed on My Data → Footprint)
 - Four tabs: **Today** · **Trends** · **Data** · **Profile**
 - Trust-first onboarding (permissions, daily goal)
 - CSV export / import ([Open Wearables](https://github.com/theopenwearables/open-wearables)-aligned columns, vocabulary only, no OW server dependency)

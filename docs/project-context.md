@@ -171,6 +171,16 @@ Android 12 h avoids false stale after overnight sleep. iOS 4 h reflects the back
 
 `DataLifecycleService` runs downsampling + `VACUUM` in a `[compute]` isolate (short-lived connection) so VACUUM does not race the UI connection. iOS maintenance is **opportunistic** — triggered from My Data flows or foreground offload when due. **Resume must not VACUUM** while the UI SQLite connection is open (`AppLifecycleCoordinator._onAppForegrounded` comment).
 
+## Data at rest (NFR-4)
+
+| Phase | Stance |
+|-------|--------|
+| **Phase 0** | Plaintext SQLite (`sqflite`, `astra_app.db`) is acceptable per architecture — health rows are readable if device storage or backups are compromised |
+| **In-app disclosure** | My Data → Footprint section states plaintext storage and Phase 1 SQLCipher roadmap (Story 32-3) |
+| **Phase 1** | SQLCipher + Keystore/Keychain passphrase — see `architecture.md` and PRD addendum §4.1 |
+
+This is a **product positioning and user-risk** choice: honest disclosure now, encryption when Phase 1 scope lands — not a silent security gap.
+
 ---
 
 ## Story completion checklist (applies to every story)

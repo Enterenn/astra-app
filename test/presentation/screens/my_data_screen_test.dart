@@ -259,6 +259,33 @@ void main() {
       expect(find.text(l10n.myDataFootprintSamplesStored), findsOneWidget);
     });
 
+    testWidgets(
+      'Footprint section shows plaintext storage disclosure with Phase 1 roadmap',
+      (tester) async {
+        final cubit = buildSeededCubit(_readyState());
+        addTearDown(cubit.close);
+
+        await pumpScreen(tester, cubit: cubit);
+
+        expect(
+          find.text(l10n.myDataFootprintStorageProtectionPlaintext),
+          findsOneWidget,
+        );
+        expect(
+          find.descendant(
+            of: find.byType(MyDataScreen),
+            matching: find.byWidgetPredicate(
+              (widget) =>
+                  widget is Semantics &&
+                  widget.properties.label ==
+                      l10n.myDataFootprintStorageProtectionSemantics,
+            ),
+          ),
+          findsOneWidget,
+        );
+      },
+    );
+
     testWidgets('stale state shows full stale banner above Background card', (
       tester,
     ) async {
