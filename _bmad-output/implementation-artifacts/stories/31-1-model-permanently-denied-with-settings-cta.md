@@ -67,7 +67,7 @@ So that I am not stuck with a silent toggle or button.
   - [x] After `.request()`, read `Permission.notification.status` (or injected checker) and map `isPermanentlyDenied`
   - [x] Settings: on `deniedPermanent` → SnackBar with **Open settings** action (`openAppSettings()`); on `deniedReversible` → distinct copy (retry hint)
   - [x] Preserve: disabling notifications without permission request; `isClosed` guards; no exception to UI
-  - [ ] **Stop → review brief → wait for Baptiste OK → commit**
+  - [x] **Stop → review brief → wait for Baptiste OK → commit**
 
 - [ ] **Sub-task C — Today + My Data activity permission CTAs** (AC: #1, #2)
   - [ ] Read fully: `today_state.dart`, `today_refresh_service.dart`, `today_screen.dart` (`_PermissionDeniedSlot`), `my_data_cubit.dart` (`_deriveBackgroundStatus`), `background_status_card.dart`, `my_data_screen.dart`
