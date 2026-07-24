@@ -45,6 +45,7 @@ class NotificationService {
 
   bool _initialized = false;
   Future<void>? _initFuture;
+  int _initGeneration = 0;
 
   bool get _usesPlatformPresenter => _goalNotificationPresenter == null;
 
@@ -54,7 +55,8 @@ class NotificationService {
       return;
     }
 
-    _initFuture ??= _initializePlatform();
+    final generation = _initGeneration;
+    _initFuture ??= _initializePlatform(generation: generation);
     try {
       await _initFuture;
     } catch (_) {
@@ -72,10 +74,15 @@ class NotificationService {
       return true;
     }
 
+    final generation = _initGeneration;
     try {
       await initialize().timeout(_backgroundInitTimeout);
-      return _initialized;
+      return _initialized && generation == _initGeneration;
     } on TimeoutException catch (error) {
+      _initGeneration++;
+      if (!_initialized) {
+        _initFuture = null;
+      }
       debugPrint('NotificationService background init timed out: $error');
       return false;
     } catch (_) {
@@ -83,15 +90,19 @@ class NotificationService {
     }
   }
 
-  Future<void> _initializePlatform() async {
+  Future<void> _initializePlatform({required int generation}) async {
     if (!_usesPlatformPresenter) {
-      _initialized = true;
+      if (generation == _initGeneration) {
+        _initialized = true;
+      }
       return;
     }
 
     if (_platformInitializer != null) {
       await _platformInitializer(_plugin);
-      _initialized = true;
+      if (generation == _initGeneration) {
+        _initialized = true;
+      }
       return;
     }
 
@@ -118,7 +129,9 @@ class NotificationService {
           goalChannelName,
         ),
       );
-      _initialized = true;
+      if (generation == _initGeneration) {
+        _initialized = true;
+      }
     } catch (error, stackTrace) {
       _initFuture = null;
       debugPrint('NotificationService init failed: $error');
