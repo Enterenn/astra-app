@@ -183,6 +183,16 @@ This is a **product positioning and user-risk** choice: honest disclosure now, e
 
 ---
 
+## Daily goal storage
+
+| Path | API | Store | Role |
+|------|-----|-------|------|
+| **Read (display/comparison)** | `getGoalForLocalDay(localDayIso)` | `daily_goal_effective` journal | Authoritative per local day — Today, History, My Data refresh, notifications |
+| **Write (single writer)** | `setDailyStepGoal(goal)` | Txn: journal row for today + prefs cache `daily_step_goal` | Only write path; journal + cache stay atomic |
+| **Prefs cache** | `getDailyStepGoal()` (`@Deprecated` on concrete repo) | `user_preferences.daily_step_goal` | Migration v3 seed, purge allowlist (D-11), not authoritative for display after refresh |
+
+---
+
 ## Story completion checklist (applies to every story)
 
 Before marking a story done:

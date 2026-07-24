@@ -1,5 +1,5 @@
 # generated: 2026-07-24
-# last_updated: 2026-07-25 (Story 32-4 in-progress)
+# last_updated: 2026-07-25 (Story 32-4 review)
 # NEXT: dev-story 32-4-single-goal-source-and-safe-database-open-check
 # Ref: planning-artifacts/epics-audits-2.md · implementation-readiness-report-2026-07-24.md
 # project: astra-app
@@ -47,7 +47,7 @@
 # NAVIGATION: _bmad-output/README.md · planning-artifacts/audits_2/README.md
 
 generated: 2026-07-24
-last_updated: 2026-07-25 (Story 32-4 in-progress)
+last_updated: 2026-07-25 (Story 32-4 review)
 project: astra-app
 project_key: NOKEY
 tracking_system: file-system
@@ -85,7 +85,7 @@ development_status:
   32-1-align-ingestion-sample-ids-with-bucket-identity-index: done
   32-2-release-safe-guard-on-dev-sample-batch-insert: done
   32-3-privacy-at-rest-product-decision: done
-  32-4-single-goal-source-and-safe-database-open-check: in-progress
+  32-4-single-goal-source-and-safe-database-open-check: review
   32-5-test-hook-and-deterministic-migration-v3: backlog
   epic-32-retrospective: optional
 

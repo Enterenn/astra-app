@@ -3,15 +3,15 @@
 **Généré :** 2026-07-21  
 **Base code :** `0.12.1+31` (`pubspec.yaml`)  
 **Périmètre :** `UserHealthMetricsRepository` · `UserSettingsRepository` · `UserPreferencesKvStore` · migration v3 `daily_goal_effective`  
-**Statut global :** `partial`
+**Statut global :** `fixed` (Story 32-4)
 
 ---
 
 ## Statut
 
-- **Dernière vérification :** 2026-07-21
-- **Statut :** `partial`
-- **Story / PR :** —
+- **Dernière vérification :** 2026-07-25
+- **Statut :** `fixed`
+- **Story / PR :** Story 32-4
 
 ---
 
@@ -19,8 +19,8 @@
 
 | Priorité | # | Domaine | Statut |
 |----------|---|---------|--------|
-| 🟡 P1 | 1 | Double source de vérité objectif du jour | `open` |
-| 🟡 P2 | 2 | `isDatabaseOpen` trompeur (peut lever) | `open` |
+| 🟡 P1 | 1 | Double source de vérité objectif du jour | `fixed` (32-4) |
+| 🟡 P2 | 2 | `isDatabaseOpen` trompeur (peut lever) | `fixed` (32-4) |
 
 ---
 
@@ -47,11 +47,11 @@
 
 **Chemins prod (comparaison / notif) :** utilisent `getGoalForLocalDay(todayIso)` — Today, History, BackgroundCollector (Story 8.2).
 
-**Vestige / display :** `getDailyStepGoal()` reste sur la classe concrète ; **aucun appel dans `lib/`** hors repository. Usages restants : **tests** + doc stories. My Data affiche `state.dailyStepGoal` (défaut `kDefaultStepGoal`, mis à jour via `setDailyStepGoal` sans reload journal au refresh).
+**Vestige / display :** `getDailyStepGoal()` reste sur la classe concrète avec `@Deprecated` ; **aucun appel dans `lib/`** hors repository. Usages restants : **tests** + doc stories. My Data refresh charge via `getGoalForLocalDay(todayIso)` (Story 32-4).
 
 **Risque :** Futur write ne mettant à jour qu'une des deux stores → divergence historique vs cache / editor My Data.
 
-**Piste :** Converger lecture display vers `getGoalForLocalDay(formatLocalDayIso(clock.snapshot()))` ; deprecate / retirer `getDailyStepGoal()` ; ou contrainte doc « single writer » + test d'intégrité prefs↔journal.
+**Piste :** ~~Converger lecture display~~ — **Fixed (32-4)** : My Data refresh via journal ; `@Deprecated` sur `getDailyStepGoal()` ; doc single-writer dans `project-context.md`.
 
 ---
 
@@ -66,7 +66,7 @@
 | `lib/data/repositories/user_settings_repository.dart:30` | Exposé via contrat `UserSettingsRepositoryContract` |
 | `lib/presentation/cubits/today/today_live_pipeline.dart:198` | `if (!userSettings.isDatabaseOpen) return` — ne protège pas si DB fermée (exception avant le `return`) |
 
-**Piste :** Renommer (`tryGetDatabase`) ou implémenter safe : `_db?.isOpen ?? false` sans passer par le getter throwing.
+**Piste :** ~~Renommer ou implémenter safe~~ — **Fixed (32-4)** : `AstraDatabaseSession.isOpen` + `UserPreferencesKvStore.isDatabaseOpen` retourne `false` sans lever ; guard `today_live_pipeline.dart:198` opérationnel.
 
 ---
 
@@ -94,8 +94,8 @@ setDailyStepGoal(goal)
        └─ user_preferences.daily_step_goal (replace)
 
 Comparaison ring / history / notif  → getGoalForLocalDay(todayIso)
-Editor My Data (state)              → setDailyStepGoal + emit local state
-getDailyStepGoal()                  → tests + API concrète legacy
+Editor My Data (state)              → refresh via getGoalForLocalDay + setDailyStepGoal
+getDailyStepGoal()                  → @Deprecated ; tests + introspection migration
 ```
 
 ---
@@ -104,10 +104,10 @@ getDailyStepGoal()                  → tests + API concrète legacy
 
 | Phase | Action |
 |-------|--------|
-| **Doc** | Documenter rôle cache prefs vs journal ; single-writer `setDailyStepGoal` |
-| **Moyen** | My Data refresh : charger via `getGoalForLocalDay(today)` |
-| **Moyen** | Retirer ou `@Deprecated` `getDailyStepGoal()` ; test prefs↔journal sync |
-| **Quick fix** | `isDatabaseOpen` safe bool ou renommage + fix guard `today_live_pipeline` |
+| **Doc** | ~~Documenter rôle cache prefs vs journal~~ — done (32-4, `project-context.md`) |
+| **Moyen** | ~~My Data refresh : charger via `getGoalForLocalDay(today)`~~ — done (32-4) |
+| **Moyen** | ~~Retirer ou `@Deprecated` `getDailyStepGoal()`~~ — done (32-4) |
+| **Quick fix** | ~~`isDatabaseOpen` safe bool~~ — done (32-4) |
 
 ---
 

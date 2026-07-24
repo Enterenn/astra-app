@@ -34,7 +34,7 @@ Priorités : **P0** critique (corruption données / sur-comptage / sécurité) �
 | 03 | [diagnostic-workmanager-maintenance-db.md](./diagnostic-workmanager-maintenance-db.md) | WM 15 min, maintenance hebdo, VACUUM, boot | `partial` | 0 | 2 |
 | 04 | [diagnostic-downsampling-compaction-fr11.md](./diagnostic-downsampling-compaction-fr11.md) | FR11 compaction, `SampleCompactionRunner` | `partial` | 0 | 2 |
 | 05 | [diagnostic-fuseaux-jours-locaux.md](./diagnostic-fuseaux-jours-locaux.md) | TZ, DST, clés regroupement, offset stocké | `partial` | 0 | 1 (doc) |
-| 06 | [diagnostic-preferences-utilisateur.md](./diagnostic-preferences-utilisateur.md) | Prefs KV, journal objectif, `isDatabaseOpen` | `partial` | 0 | 2 |
+| 06 | [diagnostic-preferences-utilisateur.md](./diagnostic-preferences-utilisateur.md) | Prefs KV, journal objectif, `isDatabaseOpen` | `fixed` | 0 | 0 |
 | 07 | [diagnostic-ingestion-pedometer.md](./diagnostic-ingestion-pedometer.md) | `StepNormalizer`, `StepIncrementCalculator`, baseline | `fixed` | 0 | 0 |
 | 08 | [diagnostic-charts-agregation-daily-monthly.md](./diagnostic-charts-agregation-daily-monthly.md) | History 30j, Trends 12 mois, `finestResolutionTotal` | `partial` | 0 | 2 |
 | 09 | [diagnostic-live-step-monitor.md](./diagnostic-live-step-monitor.md) | Drain persist, affichage live, reset matériel | `partial` | 1 | 1 |
@@ -193,15 +193,15 @@ Priorités : **P0** critique (corruption données / sur-comptage / sécurité) �
 
 | # | Priorité | Finding | Statut | Réf. |
 |---|----------|---------|--------|------|
-| 1 | P1 | Double source vérité objectif (`daily_step_goal` vs `daily_goal_effective`) | `open` | `getDailyStepGoal` vestige ; prod → `getGoalForLocalDay` |
-| 2 | P2 | `isDatabaseOpen` peut lever au lieu de `false` | `open` | `_user_preferences_kv_store.dart:13` ; guard `today_live_pipeline.dart:198` |
+| 1 | P1 | Double source vérité objectif (`daily_step_goal` vs `daily_goal_effective`) | `fixed` (32-4) | My Data refresh → `getGoalForLocalDay` ; `@Deprecated` `getDailyStepGoal` |
+| 2 | P2 | `isDatabaseOpen` peut lever au lieu de `false` | `fixed` (32-4) | `AstraDatabaseSession.isOpen` ; guard `today_live_pipeline.dart:198` |
 
 **Cartographie objectif :**
 
 ```
 setDailyStepGoal → txn → journal + prefs cache
 Comparaison ring/history/notif → getGoalForLocalDay(todayIso)
-My Data editor → state local + setDailyStepGoal (pas reload journal au refresh)
+My Data editor → refresh via getGoalForLocalDay(todayIso) + setDailyStepGoal
 ```
 
 **Points forts :** validation bornée, poids arrondi 1 décimale, `getGoalsForLocalDays` O(n+m), writes GoalRing sérialisés.
@@ -280,7 +280,7 @@ My Data editor → state local + setDailyStepGoal (pas reload journal au refresh
 |------|-------------|--------|
 | D1 | 05 | Commentaire DST non-compaction `lifecycle_compaction.dart` |
 | D2 | 08 | Commentaire rollover `DateTime.utc` charts |
-| D3 | 06 | Doc cache prefs vs journal objectif ; single-writer |
+| D3 | 06 | ~~Doc cache prefs vs journal objectif ; single-writer~~ — done (32-4) |
 | D4 | 01 | NFR-4 / footprint plaintext si maintenu Phase 0 |
 
 ### Moyen terme
@@ -290,8 +290,8 @@ My Data editor → state local + setDailyStepGoal (pas reload journal au refresh
 | M1 | 01 | ~~`PRAGMA busy_timeout`~~ — done (30-2) |
 | M2 | 01 | Retirer `testHookAfterDeleteSamples` du contrat |
 | M3 | 01 | `TimeProvider` migration v3 |
-| M4 | 06 | `isDatabaseOpen` safe + fix `today_live_pipeline` |
-| M5 | 06 | My Data refresh via `getGoalForLocalDay(today)` ; deprecate `getDailyStepGoal` |
+| M4 | 06 | ~~`isDatabaseOpen` safe + fix `today_live_pipeline`~~ — done (32-4) |
+| M5 | 06 | ~~My Data refresh via `getGoalForLocalDay(today)` ; deprecate `getDailyStepGoal`~~ — done (32-4) |
 | M6 | 02 | Centraliser permission status par type |
 | M7 | 03 | ~~Boot gate cancel WM → await notification init~~ — done (31-5) |
 | M8 | 03 | ~~Documenter gap iOS background~~ — done (30-3) |
