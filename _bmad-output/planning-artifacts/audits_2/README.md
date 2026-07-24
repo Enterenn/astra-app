@@ -31,7 +31,7 @@ Priorités : **P0** critique (corruption données / sur-comptage / sécurité) �
 |---|---------|---------|---------------|------------|-------------|
 | 01 | [diagnostic-couche-donnees.md](./diagnostic-couche-donnees.md) | SQLite, migrations, ingestion write, IDs | `open` | 3 | 4 |
 | 02 | [diagnostic-permissions-notifications.md](./diagnostic-permissions-notifications.md) | Permissions activité/notif, `NotificationService` | `open` | 3 | 4 |
-| 03 | [diagnostic-workmanager-maintenance-db.md](./diagnostic-workmanager-maintenance-db.md) | WM 15 min, maintenance hebdo, VACUUM, boot | `partial` | 1 | 4 |
+| 03 | [diagnostic-workmanager-maintenance-db.md](./diagnostic-workmanager-maintenance-db.md) | WM 15 min, maintenance hebdo, VACUUM, boot | `partial` | 0 | 4 |
 | 04 | [diagnostic-downsampling-compaction-fr11.md](./diagnostic-downsampling-compaction-fr11.md) | FR11 compaction, `SampleCompactionRunner` | `partial` | 0 | 2 |
 | 05 | [diagnostic-fuseaux-jours-locaux.md](./diagnostic-fuseaux-jours-locaux.md) | TZ, DST, clés regroupement, offset stocké | `partial` | 0 | 1 (doc) |
 | 06 | [diagnostic-preferences-utilisateur.md](./diagnostic-preferences-utilisateur.md) | Prefs KV, journal objectif, `isDatabaseOpen` | `partial` | 0 | 2 |
@@ -54,7 +54,7 @@ Priorités : **P0** critique (corruption données / sur-comptage / sécurité) �
 | **P0-05** | Pas de `.request()` activité post-onboarding ; onboarding avance si denied | 02 | `onboarding_flow.dart:52-55` | Retry + ne pas `nextStep()` si denied |
 | **P0-06** | `_initializePlatform` avale erreurs — `initialize()` ne rethrow jamais | 02 | `notification_service.dart:105-122` | `rethrow` ou signal explicite |
 | **P0-07** | Double comptage : upsert buckets sans txn avec `setBaseline` | 03 | `background_collector.dart:116-128` | **Fixed** — Story 29-3 : txn atomique par source |
-| **P0-08** | VACUUM maintenance sans lock vs collecte WM 15 min | 03 | `data_lifecycle_service.dart`, `workmanager_callback.dart` | Lock dédié (TTL long) ou clé séparée |
+| **P0-08** | VACUUM maintenance sans lock vs collecte WM 15 min | 03 | `data_lifecycle_service.dart`, `workmanager_callback.dart` | **Fixed** — Story 30-1 : `kDatabaseMaintenanceLockKey` + TTL 10 min |
 | **P0-09** | Compaction : `ConflictAlgorithm.ignore` puis delete sources inconditionnel | 04 | `sample_compaction_runner.dart` | **Fixed** — Story 29-4 : `CompactionInsertOutcome` + guard delete |
 | **P0-10** | `terminalBaseline: lastCumulative` au lieu de `baseline` (bruit capteur) | 07 | `step_normalizer.dart:108` | `baseline ?? initialBaseline` |
 | **P0-11** | Drain `sinceCumulative` : filtre `>` élimine resets matériels avant normalizer | 09 | `live_step_monitor.dart:333-346`, `monitor_drain_source.dart:29` | **Fixed** — Story 29-2 : pass-through `<= baseline/2` + drop log |

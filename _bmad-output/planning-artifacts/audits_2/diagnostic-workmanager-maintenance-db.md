@@ -3,15 +3,15 @@
 **Généré :** 2026-07-21  
 **Base code :** `0.12.1+31` (`pubspec.yaml`)  
 **Périmètre :** `BackgroundCollector` · `IngestionCollectionLock` · `DataLifecycleService` · `workmanager_callback.dart` · boot `main.dart`  
-**Statut global :** `partial` (P0 #1 fixed — story 29-3)
+**Statut global :** `partial` (P0 #1 fixed — story 29-3 · P0 #2 fixed — story 30-1)
 
 ---
 
 ## Statut
 
 - **Dernière vérification :** 2026-07-24
-- **Statut :** `partial` (P0 #1 fixed)
-- **Story / PR :** Story 29-3 (`29-3-atomic-bucket-upsert-and-baseline-commit-per-source`)
+- **Statut :** `partial` (P0 #1 fixed · P0 #2 fixed)
+- **Story / PR :** Story 29-3 · Story 30-1 (`30-1-cross-isolate-lock-for-maintenance-and-vacuum`)
 
 ---
 
@@ -20,7 +20,7 @@
 | Priorité | # | Domaine | Statut |
 |----------|---|---------|--------|
 | 🔴 P0 | 1 | Double comptage pas si échec mid-cycle | `fixed` (29-3) |
-| 🔴 P0 | 2 | VACUUM sans lock cross-isolate vs collecte | `open` |
+| 🔴 P0 | 2 | VACUUM sans lock cross-isolate vs collecte | `fixed` (30-1) |
 | 🟡 P1 | 3 | Pas de scheduling background iOS | `open` |
 | 🟡 P1 | 4 | Ordre cancel WM / init notifications non structuré | `partial` |
 | 🟡 P2 | 5 | TTL lock 35s inadapté au VACUUM | `open` |
@@ -53,7 +53,9 @@
 
 ### 2. Aucun lock cross-isolate autour du VACUUM
 
-**Constat :** La collecte 15 min est protégée par `IngestionCollectionLock`. La maintenance hebdomadaire (`runMaintenanceOnConnection` en `maintenanceOnCurrentConnection: true`) n'acquiert **aucun** lock — collision possible si Android déclenche les deux tâches WM simultanément.
+**Statut :** `fixed` — Story 30-1 (lock maintenance dédié + exclusion mutuelle collecte)
+
+**Constat (résolu Story 30-1) :** La collecte 15 min est protégée par `IngestionCollectionLock`. La maintenance hebdomadaire (`runMaintenanceOnConnection` en `maintenanceOnCurrentConnection: true`) n'acquiert **aucun** lock — collision possible si Android déclenche les deux tâches WM simultanément.
 
 | Référence | Détail |
 |-----------|--------|
@@ -140,7 +142,7 @@ Réutiliser le même lock/TTL pour VACUUM risquerait expiration mid-operation �
 
 | # | Action | Lié |
 |---|--------|-----|
-| T1 | Étendre `IngestionCollectionLock` (ou clé/TTL dédiés) autour de `runMaintenanceOnConnection` en `maintenanceOnCurrentConnection: true` | #2 |
+| T1 | Étendre `IngestionCollectionLock` (ou clé/TTL dédiés) autour de `runMaintenanceOnConnection` en `maintenanceOnCurrentConnection: true` | #2 — **done** (30-1) |
 | T2 | Transaction bucket + baseline ou idempotence anti double-add | #1 — **done** (29-3) |
 
 ---

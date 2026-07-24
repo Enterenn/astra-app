@@ -1,6 +1,6 @@
 # generated: 2026-07-24
-# last_updated: 2026-07-24 (Epic 29 done)
-# NEXT: epic-30 or 29-5 review follow-ups (optional)
+# last_updated: 2026-07-24 (Story 30-1 review)
+# NEXT: dev-story 30-1-cross-isolate-lock-for-maintenance-and-vacuum
 # Ref: planning-artifacts/epics-audits-2.md · implementation-readiness-report-2026-07-24.md
 # project: astra-app
 # project_key: NOKEY
@@ -47,7 +47,7 @@
 # NAVIGATION: _bmad-output/README.md · planning-artifacts/audits_2/README.md
 
 generated: 2026-07-24
-last_updated: 2026-07-24 (Epic 29 done)
+last_updated: 2026-07-24 (Story 30-1 review)
 project: astra-app
 project_key: NOKEY
 tracking_system: file-system
@@ -65,8 +65,8 @@ development_status:
   29-5-unify-persist-credit-rules-drain-vs-calculator: done
   epic-29-retrospective: optional
 
-  epic-30: backlog
-  30-1-cross-isolate-lock-for-maintenance-and-vacuum: backlog
+  epic-30: in-progress
+  30-1-cross-isolate-lock-for-maintenance-and-vacuum: review
   30-2-configure-pragma-busy-timeout-on-database-open: backlog
   30-3-document-ios-background-collection-gap: backlog
   30-4-inject-timeprovider-into-collection-timeout-source: backlog
