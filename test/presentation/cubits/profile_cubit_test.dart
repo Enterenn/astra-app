@@ -1,6 +1,7 @@
 @Tags(['slow'])
 library;
 
+import 'dart:async';
 import 'dart:io';
 
 import 'package:astra_app/core/database/app_database.dart';
@@ -246,6 +247,34 @@ void main() {
 
       expect(saved, NotificationToggleResult.success);
       expect(cubit.state.goalNotificationsEnabled, isTrue);
+
+      await cubit.close();
+    });
+
+    test('concurrent setGoalNotificationsEnabled coalesces to one permission request', () async {
+      final permissionCompleter = Completer<void>();
+      final cubit = ProfileCubit(
+        userSettings: userSettings,
+        userHealthMetrics: userHealthMetrics,
+        notificationService: notificationService,
+        permissionRequester: (permission) async {
+          permissionRequestCount++;
+          await permissionCompleter.future;
+          permissionGrantedByOs = true;
+          return PermissionStatus.granted;
+        },
+      );
+      await cubit.refresh();
+
+      final first = cubit.setGoalNotificationsEnabled(true);
+      final second = cubit.setGoalNotificationsEnabled(true);
+      permissionCompleter.complete();
+      final results = await Future.wait([first, second]);
+
+      expect(permissionRequestCount, 1);
+      expect(results[0], NotificationToggleResult.success);
+      expect(results[1], NotificationToggleResult.success);
+      expect(await userSettings.getGoalNotificationsEnabled(), isTrue);
 
       await cubit.close();
     });

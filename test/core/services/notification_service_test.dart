@@ -1,6 +1,8 @@
 @Tags(['slow'])
 library;
 
+import 'dart:async';
+
 import 'package:astra_app/core/services/notification_service.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:permission_handler/permission_handler.dart';
@@ -70,6 +72,28 @@ void main() {
       );
 
       expect(await service.initializeForBackground(), isFalse);
+    });
+
+    test('background init timeout ignores late platform init for _initialized', () async {
+      var initCount = 0;
+      final initCompleter = Completer<void>();
+      final service = NotificationService(
+        permissionChecker: () async => PermissionStatus.granted,
+        platformInitializer: (_) async {
+          initCount++;
+          if (initCount == 1) {
+            await initCompleter.future;
+          }
+        },
+        backgroundInitTimeout: const Duration(milliseconds: 10),
+      );
+
+      expect(await service.initializeForBackground(), isFalse);
+      initCompleter.complete();
+      await Future<void>.delayed(Duration.zero);
+
+      expect(await service.initializeForBackground(), isTrue);
+      expect(initCount, 2);
     });
 
     test('initializeForBackground returns false when init fails', () async {
