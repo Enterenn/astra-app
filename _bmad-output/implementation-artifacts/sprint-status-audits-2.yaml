@@ -1,5 +1,5 @@
 # generated: 2026-07-24
-# last_updated: 2026-07-24 (Story 29-1 review)
+# last_updated: 2026-07-24 (Story 29-1 done)
 # NEXT: dev-story 29-1-fix-terminal-baseline-after-rejected-sensor-noise
 # Ref: planning-artifacts/epics-audits-2.md · implementation-readiness-report-2026-07-24.md
 # project: astra-app
@@ -47,7 +47,7 @@
 # NAVIGATION: _bmad-output/README.md · planning-artifacts/audits_2/README.md
 
 generated: 2026-07-24
-last_updated: 2026-07-24 (Story 29-1 review)
+last_updated: 2026-07-24 (Story 29-1 done)
 project: astra-app
 project_key: NOKEY
 tracking_system: file-system
@@ -58,7 +58,7 @@ git_branch: main
 
 development_status:
   epic-29: in-progress
-  29-1-fix-terminal-baseline-after-rejected-sensor-noise: review
+  29-1-fix-terminal-baseline-after-rejected-sensor-noise: done
   29-2-forward-hardware-reset-readings-through-live-drain: backlog
   29-3-atomic-bucket-upsert-and-baseline-commit-per-source: backlog
   29-4-guard-compaction-delete-until-insert-succeeds: backlog
