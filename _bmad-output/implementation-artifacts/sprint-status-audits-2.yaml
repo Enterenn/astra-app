@@ -1,0 +1,95 @@
+# generated: 2026-07-24
+# last_updated: 2026-07-24 (Story 29-1 review)
+# NEXT: dev-story 29-1-fix-terminal-baseline-after-rejected-sensor-noise
+# Ref: planning-artifacts/epics-audits-2.md · implementation-readiness-report-2026-07-24.md
+# project: astra-app
+# project_key: NOKEY
+# tracking_system: file-system
+# story_location: _bmad-output/implementation-artifacts/stories
+#
+# STATUS DEFINITIONS:
+# ==================
+# Epic Status:
+#   - backlog: Epic not yet started
+#   - in-progress: Epic actively being worked on
+#   - done: All stories in epic completed
+#
+# Story Status:
+#   - backlog: Story only exists in epic file
+#   - ready-for-dev: Story file created in stories folder
+#   - in-progress: Developer actively working on implementation
+#   - review: Ready for code review
+#   - done: Story completed
+#
+# PRIORITY ORDER (audits_2):
+#   1) epic-29 (P0 — persist path integrity, atomic E-B bundle)
+#   2) epic-30 (P0–P1 — SQLite under background load)
+#   3) epic-31 (P0 — permissions & notifications UX)
+#   4) epic-32 (P1 — trustworthy local storage)
+#   5) epic-33 (P2 — charts & TZ documentation)
+#
+# VERSIONING (mandatory at each epic close — stay on 0.x.y, no 1.0.0):
+# - Epic 29 (data integrity): minor+1, patch=0, build+1
+# - Epic 30: patch+1, build+1
+# - Epic 31 (UX): minor+1, patch=0, build+1
+# - Epic 32: patch+1, build+1
+# - Epic 33: patch+1, build+1
+# - Update pubspec.yaml + README.md before marking epic done
+# - Ref: docs/project-context.md · .cursor/rules/app-versioning.mdc
+#
+# EPIC TITLES:
+#   epic-29: Accurate Step Tracking (Persist Path)
+#   epic-30: Stable Database Under Background Load
+#   epic-31: Clear Permission & Notification Flows
+#   epic-32: Trustworthy Local Data Storage
+#   epic-33: Maintainable Charts & Time-Zone Pipeline
+#
+# NAVIGATION: _bmad-output/README.md · planning-artifacts/audits_2/README.md
+
+generated: 2026-07-24
+last_updated: 2026-07-24 (Story 29-1 review)
+project: astra-app
+project_key: NOKEY
+tracking_system: file-system
+story_location: _bmad-output/implementation-artifacts/stories
+epics_source: planning-artifacts/epics-audits-2.md
+base_version: 0.12.1+31
+git_branch: main
+
+development_status:
+  epic-29: in-progress
+  29-1-fix-terminal-baseline-after-rejected-sensor-noise: review
+  29-2-forward-hardware-reset-readings-through-live-drain: backlog
+  29-3-atomic-bucket-upsert-and-baseline-commit-per-source: backlog
+  29-4-guard-compaction-delete-until-insert-succeeds: backlog
+  29-5-unify-persist-credit-rules-drain-vs-calculator: backlog
+  epic-29-retrospective: optional
+
+  epic-30: backlog
+  30-1-cross-isolate-lock-for-maintenance-and-vacuum: backlog
+  30-2-configure-pragma-busy-timeout-on-database-open: backlog
+  30-3-document-ios-background-collection-gap: backlog
+  30-4-inject-timeprovider-into-collection-timeout-source: backlog
+  epic-30-retrospective: optional
+
+  epic-31: backlog
+  31-1-model-permanently-denied-with-settings-cta: backlog
+  31-2-onboarding-intro-post-denial-feedback: backlog
+  31-3-propagate-notification-platform-init-failures: backlog
+  31-4-centralize-permission-status-mapping-by-type: backlog
+  31-5-structural-boot-gate-cancel-wm-before-notification-init: backlog
+  31-6-harden-profile-notification-toggle-concurrency: backlog
+  epic-31-retrospective: optional
+
+  epic-32: backlog
+  32-1-align-ingestion-sample-ids-with-bucket-identity-index: backlog
+  32-2-release-safe-guard-on-dev-sample-batch-insert: backlog
+  32-3-privacy-at-rest-product-decision: backlog
+  32-4-single-goal-source-and-safe-database-open-check: backlog
+  32-5-test-hook-and-deterministic-migration-v3: backlog
+  epic-32-retrospective: optional
+
+  epic-33: backlog
+  33-1-document-dst-non-compaction-intent: backlog
+  33-2-document-chart-date-rollover-and-optional-sql-upper-bound: backlog
+  epic-33-retrospective: optional

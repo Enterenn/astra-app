@@ -35,7 +35,7 @@ Priorités : **P0** critique (corruption données / sur-comptage / sécurité) �
 | 04 | [diagnostic-downsampling-compaction-fr11.md](./diagnostic-downsampling-compaction-fr11.md) | FR11 compaction, `SampleCompactionRunner` | `open` | 1 | 2 |
 | 05 | [diagnostic-fuseaux-jours-locaux.md](./diagnostic-fuseaux-jours-locaux.md) | TZ, DST, clés regroupement, offset stocké | `partial` | 0 | 1 (doc) |
 | 06 | [diagnostic-preferences-utilisateur.md](./diagnostic-preferences-utilisateur.md) | Prefs KV, journal objectif, `isDatabaseOpen` | `partial` | 0 | 2 |
-| 07 | [diagnostic-ingestion-pedometer.md](./diagnostic-ingestion-pedometer.md) | `StepNormalizer`, `StepIncrementCalculator`, baseline | `open` | 1 | 0 |
+| 07 | [diagnostic-ingestion-pedometer.md](./diagnostic-ingestion-pedometer.md) | `StepNormalizer`, `StepIncrementCalculator`, baseline | `fixed` | 0 | 0 |
 | 08 | [diagnostic-charts-agregation-daily-monthly.md](./diagnostic-charts-agregation-daily-monthly.md) | History 30j, Trends 12 mois, `finestResolutionTotal` | `partial` | 0 | 2 |
 | 09 | [diagnostic-live-step-monitor.md](./diagnostic-live-step-monitor.md) | Drain persist, affichage live, reset matériel | `open` | 1 | 1 |
 
@@ -212,11 +212,11 @@ My Data editor → state local + setDailyStepGoal (pas reload journal au refresh
 
 | # | Priorité | Finding | Statut | Réf. |
 |---|----------|---------|--------|------|
-| 1 | P0 | `terminalBaseline` = `lastCumulative` ≠ `baseline` | `open` | `step_normalizer.dart:108` |
+| 1 | P0 | `terminalBaseline` = `lastCumulative` ≠ `baseline` | `fixed` (Story 29-1) | `step_normalizer.dart:118` |
 
-**Correctif one-liner :** `terminalBaseline: baseline ?? initialBaseline`
+**Correctif :** `terminalBaseline: baseline ?? initialBaseline` — livré Story 29-1.
 
-**Gap test :** `rejects small counter dips` ne vérifie pas `terminalBaseline` en dernière position bruit.
+**Tests :** `rejects small counter dips` + `terminalBaseline reflects last accepted baseline not rejected reading`.
 
 **Points forts :** reset/bruit/seuil relatif, cap 5 steps/s, `--dart-define=STEP_RATE_LIMIT_ENABLED`.
 
@@ -322,7 +322,7 @@ My Data editor → state local + setDailyStepGoal (pas reload journal au refresh
 
 | Zone | Tests | Gap |
 |------|-------|-----|
-| Normalizer | `step_normalizer_test.dart` (`@Tags critical`) | Pas d'assert `terminalBaseline` quand dernière lecture = bruit |
+| Normalizer | `step_normalizer_test.dart` (`@Tags critical`) | `terminalBaseline` couvert (bruit milieu + dernière position) — Story 29-1 |
 | LiveStepMonitor | `live_step_monitor_test.dart`, `idle_flush_persist_test.dart` | Pas de test reboot : baseline haute → readings basses post-reset |
 | Calculator | `step_increment_calculator_test.dart` | — |
 | Compaction | `step_repository_downsample_test.dart`, `lifecycle_compaction_test.dart` | Pas de régression insert ignoré + delete |

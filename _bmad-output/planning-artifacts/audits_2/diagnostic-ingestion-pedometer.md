@@ -3,15 +3,15 @@
 **Généré :** 2026-07-21  
 **Base code :** `0.12.1+31` (`pubspec.yaml`)  
 **Périmètre :** `StepNormalizer` · `StepIncrementCalculator` · persistance baseline (`BackgroundCollector`)  
-**Statut global :** `open`
+**Statut global :** `fixed` (Story 29-1)
 
 ---
 
 ## Statut
 
-- **Dernière vérification :** 2026-07-21
-- **Statut :** `open`
-- **Story / PR :** —
+- **Dernière vérification :** 2026-07-24
+- **Statut :** `fixed`
+- **Story / PR :** Story 29-1 (`29-1-fix-terminal-baseline-after-rejected-sensor-noise`)
 
 ---
 
@@ -19,7 +19,7 @@
 
 | Priorité | # | Domaine | Statut |
 |----------|---|---------|--------|
-| 🔴 P0 | 1 | `terminalBaseline` = `lastCumulative` au lieu de `baseline` | `open` |
+| 🔴 P0 | 1 | `terminalBaseline` = `lastCumulative` au lieu de `baseline` | `fixed` |
 
 ---
 
@@ -27,14 +27,18 @@
 
 ### 1. Baseline persistée corrompue si dernière lecture = bruit rejeté
 
-**Constat :** `normalizeReadings` retourne `terminalBaseline: lastCumulative ?? initialBaseline`. Or `lastCumulative` est mis à jour sur **chaque** lecture (l.59), y compris quand `StepIncrementCalculator.calculate` retourne `null` (bruit) — cas où la variable **`baseline` locale n'avance pas** (l.78-80 `continue` sans `baseline = cumulativeSteps`).
+**Constat (résolu Story 29-1) :** Avant fix, `normalizeReadings` retournait `terminalBaseline: lastCumulative ?? initialBaseline`. Or `lastCumulative` était mis à jour sur **chaque** lecture, y compris quand `StepIncrementCalculator.calculate` retourne `null` (bruit) — cas où la variable **`baseline` locale n'avance pas** (`continue` sans `baseline = cumulativeSteps`).
+
+**Fix appliqué :** `terminalBaseline: baseline ?? initialBaseline` (`step_normalizer.dart:118`, commit `febd523`).
+
+**Tests :** `terminalBaseline reflects last accepted baseline not rejected reading` (bruit en dernière position) ; `rejects small counter dips as glitches` étendu avec assert `terminalBaseline == 1055` (AUD2-FR34).
 
 | Référence | Détail |
 |-----------|--------|
 | `lib/data/datasources/step_normalizer.dart:54-59` | `lastCumulative = cumulativeSteps` à chaque itération |
 | `lib/data/datasources/step_normalizer.dart:72-80` | `increment == null` → `continue` — baseline inchangée |
 | `lib/data/datasources/step_normalizer.dart:82` | Baseline avancée **seulement** si increment non null |
-| `lib/data/datasources/step_normalizer.dart:108` | **`terminalBaseline: lastCumulative ?? initialBaseline`** |
+| `lib/data/datasources/step_normalizer.dart:118` | **`terminalBaseline: baseline ?? initialBaseline`** (fix Story 29-1) |
 | `lib/core/services/background_collector.dart:121-127` | `setBaseline(cumulative: terminalBaseline)` |
 | `lib/data/datasources/step_increment_calculator.dart:51-56` | Petite baisse → `null` (bruit capteur) |
 
@@ -44,9 +48,7 @@
 3. `terminalBaseline` = **5099** (`lastCumulative`) persisté
 4. Cycle N+1 : delta depuis 5099 alors que le compteur réel est ~5100 → **sur-comptage** au prochain increment valide
 
-**Test existant partiel :** `step_normalizer_test.dart:264-291` — « rejects small counter dips » vérifie les buckets, **pas** `terminalBaseline`.
-
-**Test rate-limit :** l.240-261 — `terminalBaseline` 1050 coïncide avec `baseline` car dernière lecture acceptée ; ne couvre pas le cas bruit en **dernière** position.
+**Test existant :** `step_normalizer_test.dart` — « rejects small counter dips » + « terminalBaseline reflects last accepted baseline not rejected reading » couvrent buckets et `terminalBaseline` (AUD2-FR34).
 
 **Correctif suggéré :**
 

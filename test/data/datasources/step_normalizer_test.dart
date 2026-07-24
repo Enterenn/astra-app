@@ -286,10 +286,12 @@ void main() {
         ),
       ]);
 
-      final buckets = (await normalizer.normalize(source, maxReadings: 4)).buckets;
+      final result = await normalizer.normalize(source, maxReadings: 4);
 
-      expect(buckets, hasLength(1));
-      expect(buckets.single.value, 55);
+      expect(result.buckets, hasLength(1));
+      expect(result.buckets.single.value, 55);
+      // AUD2-FR34: middle noise rejected; terminalBaseline = last accepted, not 1049
+      expect(result.terminalBaseline, 1055);
     });
 
     test('same local day gap keeps single bucket at reading time', () {
