@@ -84,7 +84,7 @@ Priorités : **P0** critique (corruption données / sur-comptage / sécurité) �
 
 | Sujet | Diagnostic 01 | Diagnostic 03 | Audits v1 |
 |-------|---------------|-----------------|-----------|
-| `withRetry` / `database_closed` | `partial` — pas `busy_timeout` | UI offload VACUUM OK ; WM vs WM gap | [diagnostic-acces-concurrents.md](../audits/diagnostic-acces-concurrents.md) E21 done |
+| `withRetry` / `database_closed` | `fixed` — `busy_timeout` 5000 ms (30-2) | UI offload VACUUM OK ; WM vs WM gap | [diagnostic-acces-concurrents.md](../audits/diagnostic-acces-concurrents.md) E21 done |
 | Lock cross-isolate | `IngestionCollectionLock` collecte | **Absent** sur maintenance/VACUUM | Story 21-4 |
 
 ### Fuseaux / DST / agrégation
@@ -114,7 +114,7 @@ Priorités : **P0** critique (corruption données / sur-comptage / sécurité) �
 | 2 | P0 | Collision ID multi-types | `open` | `sample_id_generator.dart:30-37` |
 | 3 | P0 | Garde-fou `assert` dev/prod | `open` | `step_ingestion_repository.dart:92-99` |
 | 4 | P1 | Regex identity case-sensitive | `open` | `sample_id_generator.dart:35` |
-| 5 | P1 | Contention multi-isolate sans `busy_timeout` | `partial` | `app_database.dart`, `astra_database_session.dart` |
+| 5 | P1 | Contention multi-isolate sans `busy_timeout` | `fixed` (30-2) | `app_database.dart` |
 | 6 | P2 | `testHookAfterDeleteSamples` dans contrat public | `open` | `step_ingestion_repository_contract.dart` |
 | 7 | P2 | Migration v3 `DateTime.now()` non déterministe | `open` | `migrations.dart:119-123` |
 
@@ -287,7 +287,7 @@ My Data editor → state local + setDailyStepGoal (pas reload journal au refresh
 
 | Todo | Diagnostics | Action |
 |------|-------------|--------|
-| M1 | 01 | `PRAGMA busy_timeout` |
+| M1 | 01 | ~~`PRAGMA busy_timeout`~~ — done (30-2) |
 | M2 | 01 | Retirer `testHookAfterDeleteSamples` du contrat |
 | M3 | 01 | `TimeProvider` migration v3 |
 | M4 | 06 | `isDatabaseOpen` safe + fix `today_live_pipeline` |

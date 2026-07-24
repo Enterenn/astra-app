@@ -1,5 +1,5 @@
 # generated: 2026-07-24
-# last_updated: 2026-07-24 (Story 30-1 done)
+# last_updated: 2026-07-24 (Story 30-2 review)
 # NEXT: dev-story 30-2-configure-pragma-busy-timeout-on-database-open
 # Ref: planning-artifacts/epics-audits-2.md · implementation-readiness-report-2026-07-24.md
 # project: astra-app
@@ -47,7 +47,7 @@
 # NAVIGATION: _bmad-output/README.md · planning-artifacts/audits_2/README.md
 
 generated: 2026-07-24
-last_updated: 2026-07-24 (Story 30-1 done)
+last_updated: 2026-07-24 (Story 30-2 review)
 project: astra-app
 project_key: NOKEY
 tracking_system: file-system
@@ -67,7 +67,7 @@ development_status:
 
   epic-30: in-progress
   30-1-cross-isolate-lock-for-maintenance-and-vacuum: done
-  30-2-configure-pragma-busy-timeout-on-database-open: backlog
+  30-2-configure-pragma-busy-timeout-on-database-open: review
   30-3-document-ios-background-collection-gap: backlog
   30-4-inject-timeprovider-into-collection-timeout-source: backlog
   epic-30-retrospective: optional

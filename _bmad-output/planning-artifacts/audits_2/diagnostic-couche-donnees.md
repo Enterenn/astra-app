@@ -23,7 +23,7 @@
 | 🔴 P0 | 2 | Collision ID multi-types | `open` |
 | 🔴 P0 | 3 | Garde-fou dev/prod (`assert`) inopérant en release | `open` |
 | 🟡 P1 | 4 | Regex normalisation sensible à la casse | `open` |
-| 🟡 P1 | 5 | Contention multi-isolate sans `busy_timeout` | `partial` |
+| 🟡 P1 | 5 | Contention multi-isolate sans `busy_timeout` | `fixed` (30-2) |
 | 🟡 P2 | 6 | Fuite d'abstraction `testHookAfterDeleteSamples` | `open` |
 | 🟡 P2 | 7 | Migration v3 non déterministe (`DateTime.now()`) | `open` |
 
@@ -115,11 +115,11 @@ Ou isoler derrière une implémentation debug-only / `@visibleForTesting` non ex
 |-----------|--------|
 | `lib/core/database/astra_database_session.dart:5-9` | Commentaire multi-isolate |
 | `lib/core/database/astra_database_session.dart:66-76` | `withRetry` — reopen unique, pas de boucle |
-| `lib/core/database/app_database.dart:16-21` | WAL activé ; **pas** de `PRAGMA busy_timeout` |
+| `lib/core/database/app_database.dart:16-24` | WAL + `foreign_keys` + `PRAGMA busy_timeout=5000` |
 
-**Statut :** `partial` — fonctionne apparemment bien ; fragile si fréquence des tâches de fond augmente.
+**Statut :** `fixed` — Story 30-2 (`kDatabaseBusyTimeoutMs` dans `onConfigure`)
 
-**Piste :** `PRAGMA busy_timeout=5000` dans `onConfigure` ; surveiller lock ingestion existant (`IngestionCollectionLock`).
+**Piste :** ~~`PRAGMA busy_timeout=5000` dans `onConfigure`~~ — done ; surveiller lock ingestion existant (`IngestionCollectionLock`).
 
 ---
 
@@ -171,7 +171,7 @@ Ou isoler derrière une implémentation debug-only / `@visibleForTesting` non ex
 | **Quick fix** | Garde `kDebugMode` runtime sur `insertDevSamplesBatch` | #3 |
 | **Quick fix** | Inclure `type` + `resolution` dans `deterministicFromIngestionBucket` | #2 |
 | **Quick fix** | `.toLowerCase()` sur identity provider/device | #4 |
-| **Moyen** | `PRAGMA busy_timeout` + doc contention isolate | #5 |
+| **Moyen** | ~~`PRAGMA busy_timeout` + doc contention isolate~~ — done (30-2) | #5 |
 | **Moyen** | Retirer `testHookAfterDeleteSamples` du contrat | #6 |
 | **Moyen** | `TimeProvider` injectable pour migration v3 | #7 |
 | **Epic** | SQLCipher Phase 1 ou disclaimer privacy explicite | #1 |

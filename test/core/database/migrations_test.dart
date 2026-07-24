@@ -89,6 +89,28 @@ void main() {
       expect(result.first['foreign_keys'], 1);
     });
 
+    test('sets busy_timeout on in-memory database', () async {
+      final result = await db.rawQuery('PRAGMA busy_timeout;');
+      expect(result.first.values.first, kDatabaseBusyTimeoutMs);
+    });
+
+    test('sets busy_timeout on file-backed database', () async {
+      final tempDir = await Directory.systemTemp.createTemp('astra_db_test');
+      addTearDown(() async {
+        if (tempDir.existsSync()) {
+          await tempDir.delete(recursive: true);
+        }
+      });
+
+      final fileDb = await openAstraDatabase(
+        databasePath: p.join(tempDir.path, 'astra_app.db'),
+      );
+      addTearDown(() => fileDb.close());
+
+      final result = await fileDb.rawQuery('PRAGMA busy_timeout;');
+      expect(result.first.values.first, kDatabaseBusyTimeoutMs);
+    });
+
     test('creates canonical timeseries columns with required fields', () async {
       final columns = await db.rawQuery(
         'PRAGMA table_info(timeseries_samples);',

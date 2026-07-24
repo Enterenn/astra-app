@@ -60,5 +60,67 @@ void main() {
       await session.ensureOpen();
       expect(session.database.isOpen, isTrue);
     });
+
+    test('reopen inherits busy_timeout from openAstraDatabase', () async {
+      final tempDir = await Directory.systemTemp.createTemp(
+        'astra_db_session_busy_',
+      );
+
+      final databasePath = p.join(tempDir.path, 'test.db');
+      final db = await openAstraDatabase(databasePath: databasePath);
+      final session = AstraDatabaseSession(
+        databasePath: databasePath,
+        initial: db,
+      );
+      addTearDown(() async {
+        if (session.database.isOpen) {
+          await session.database.close();
+        }
+        await tempDir.delete(recursive: true);
+      });
+
+      await session.database.close();
+      await session.reopen();
+
+      final result = await session.database.rawQuery('PRAGMA busy_timeout;');
+      expect(result.first.values.first, kDatabaseBusyTimeoutMs);
+    });
+
+    test('withRetry write succeeds while another connection holds write lock',
+        () async {
+      final tempDir = await Directory.systemTemp.createTemp(
+        'astra_db_session_contention_',
+      );
+
+      final databasePath = p.join(tempDir.path, 'test.db');
+      final dbA = await openAstraDatabase(databasePath: databasePath);
+      final dbB = await openAstraDatabase(databasePath: databasePath);
+      final sessionB = AstraDatabaseSession(
+        databasePath: databasePath,
+        initial: dbB,
+      );
+      addTearDown(() async {
+        if (dbA.isOpen) {
+          await dbA.close();
+        }
+        if (dbB.isOpen) {
+          await dbB.close();
+        }
+        await tempDir.delete(recursive: true);
+      });
+
+      await dbA.execute('BEGIN IMMEDIATE');
+      final future = sessionB.withRetry(
+        (db) => db.update(
+          'user_preferences',
+          {'value': '8500'},
+          where: 'key = ?',
+          whereArgs: ['daily_step_goal'],
+        ),
+      );
+      await Future<void>.delayed(const Duration(milliseconds: 100));
+      await dbA.execute('COMMIT');
+      await expectLater(future, completion(equals(1)));
+    });
   });
 }
