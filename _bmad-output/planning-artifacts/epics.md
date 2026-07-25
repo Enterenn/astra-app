@@ -5223,7 +5223,7 @@ So that privacy claims match actual storage.
 
 **Given** either path
 **When** story closes
-**Then** decision recorded in story notes and `audits_2/README.md` P0-01 status updated
+**Then** decision recorded in story notes and `audits/data-pipeline/README.md` P0-01 status updated
 
 **Target files:** `pubspec.yaml`, `lib/core/database/app_database.dart`, My Data privacy UI, `docs/project-context.md`  
 **Diagnostic:** `diagnostic-couche-donnees.md` #1

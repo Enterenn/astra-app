@@ -97,7 +97,7 @@ These live under [`docs/`](../docs/README.md) (not in `_bmad-output/`):
 
 | Location | Contents |
 |----------|----------|
-| [brainstorming/](./brainstorming/) | Phase 0 ideation session |
+| [planning-artifacts/archive/brainstorming/](./planning-artifacts/archive/brainstorming/) | Phase 0 ideation session |
 | [planning-artifacts/research/](./planning-artifacts/research/) | Market & domain research |
 | [planning-artifacts/archive/](./planning-artifacts/archive/) | Superseded readiness, change proposals, epic snapshots |
 | [implementation-artifacts/archive/](./implementation-artifacts/archive/) | Per-phase sprint snapshots, delivered ad-hoc specs |

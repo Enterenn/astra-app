@@ -73,5 +73,3 @@ planning-artifacts/audits/
 ├── post-refacto/      # E21–28 diagnostics
 └── data-pipeline/     # E29–33 diagnostics
 ```
-
-Legacy `audits_2/` → redirect stub only.

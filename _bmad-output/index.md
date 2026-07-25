@@ -21,10 +21,10 @@
 
 | Path | Contents |
 |------|----------|
-| [planning-artifacts/archive/](./planning-artifacts/archive/) | Readiness, change proposals, epic snapshots |
-| [implementation-artifacts/archive/](./implementation-artifacts/archive/) | Per-phase sprint YAML snapshots, delivered `spec-*.md` |
+| [planning-artifacts/archive/](./planning-artifacts/archive/) | Readiness, change proposals, epic snapshots, Phase 0 brainstorming |
+| [implementation-artifacts/archive/](./implementation-artifacts/archive/) | Per-phase sprint YAML snapshots, delivered `spec-*.md`, investigations |
 
 ## Research
 
-- [brainstorming/brainstorming-session-2026-05-22-1521.md](./brainstorming/brainstorming-session-2026-05-22-1521.md)
+- [planning-artifacts/archive/brainstorming/brainstorming-session-2026-05-22-1521.md](./planning-artifacts/archive/brainstorming/brainstorming-session-2026-05-22-1521.md)
 - [planning-artifacts/research/](./planning-artifacts/research/)

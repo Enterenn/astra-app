@@ -127,6 +127,6 @@ Removed four low-value test files; see `_bmad-output/implementation-artifacts/sp
 
 ## Deferred from: code review of 30-3-document-ios-background-collection-gap (2026-07-24)
 
-- **README diagnostic 03 #2 still `open` vs diagnostic `fixed` (30-1)** — `_bmad-output/planning-artifacts/audits_2/README.md:148` row not synced when 30-1 closed VACUUM lock finding.
+- **README diagnostic 03 #2 still `open` vs diagnostic `fixed` (30-1)** — `_bmad-output/planning-artifacts/audits/data-pipeline/README.md` row not synced when 30-1 closed VACUUM lock finding.
 
 - **`architecture.md:362` BGAppRefresh as active iOS maintenance path** — Pre-existing cross-doc drift; `project-context.md` correctly states Phase 0 not shipped.

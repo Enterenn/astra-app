@@ -27,5 +27,3 @@ Technical audit diagnostics for Epics 21–33. **All complete** as of 2026-07-25
 - Parent : [`planning-artifacts/`](../)
 - Projet : [`_bmad-output/README.md`](../../README.md)
 - Contexte dev : [`docs/project-context.md`](../../../docs/project-context.md)
-
-Historical path `audits_2/` redirects here → [data-pipeline/](./data-pipeline/README.md).
