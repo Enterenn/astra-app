@@ -1,6 +1,6 @@
 # Story 32.5: Test Hook and Deterministic Migration v3
 
-Status: review
+Status: done
 
 <!-- audits_2 Epic 32 — tracker: sprint-status-audits-2.yaml -->
 <!-- Source: epics-audits-2.md Story 32-5 · diagnostic-couche-donnees.md #6, #7 · AUD2-FR22 · AUD2-FR23 · AUD2-NFR7 -->
