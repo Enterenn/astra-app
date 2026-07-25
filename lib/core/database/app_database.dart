@@ -1,6 +1,7 @@
 import 'package:path/path.dart';
 import 'package:sqflite/sqflite.dart';
 
+import '../time/time_provider.dart';
 import 'migrations.dart';
 
 /// SQLite busy wait (ms) before returning `SQLITE_BUSY` on lock contention.
@@ -9,7 +10,10 @@ const kDatabaseBusyTimeoutMs = 5000;
 /// Opens (or creates) the ASTRA SQLite database with WAL and foreign keys enabled.
 ///
 /// Pass [databasePath] for tests (e.g. [inMemoryDatabasePath] via FFI factory).
-Future<Database> openAstraDatabase({String? databasePath}) async {
+Future<Database> openAstraDatabase({
+  String? databasePath,
+  TimeProvider? clock,
+}) async {
   final path = databasePath ?? join(await getDatabasesPath(), 'astra_app.db');
   final enableWal = path != inMemoryDatabasePath;
 
@@ -25,10 +29,10 @@ Future<Database> openAstraDatabase({String? databasePath}) async {
       await db.rawQuery('PRAGMA busy_timeout = $kDatabaseBusyTimeoutMs');
     },
     onCreate: (db, version) async {
-      await runMigrations(db, version);
+      await runMigrations(db, version, clock: clock);
     },
     onUpgrade: (db, oldVersion, newVersion) async {
-      await runMigrations(db, newVersion, fromVersion: oldVersion);
+      await runMigrations(db, newVersion, fromVersion: oldVersion, clock: clock);
     },
   );
 }

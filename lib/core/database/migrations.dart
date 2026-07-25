@@ -2,6 +2,7 @@ import 'package:sqflite/sqflite.dart';
 
 import '../constants/preference_keys.dart';
 import '../time/local_day_formatter.dart';
+import '../time/system_time_provider.dart';
 import '../time/time_provider.dart';
 
 const kDbVersion = 4;
@@ -11,7 +12,9 @@ Future<void> runMigrations(
   Database db,
   int targetVersion, {
   int fromVersion = 0,
+  TimeProvider? clock,
 }) async {
+  final time = clock ?? const SystemTimeProvider();
   for (var version = fromVersion + 1; version <= targetVersion; version++) {
     switch (version) {
       case 1:
@@ -19,7 +22,7 @@ Future<void> runMigrations(
       case 2:
         await onCreateV2(db);
       case 3:
-        await onCreateV3(db);
+        await onCreateV3(db, clock: time);
       case 4:
         await onCreateV4(db);
       default:
@@ -95,7 +98,7 @@ Future<void> onCreateV2(Database db) async {
 }
 
 /// Migration v3: effective-dated daily goal history journal.
-Future<void> onCreateV3(Database db) async {
+Future<void> onCreateV3(Database db, {required TimeProvider clock}) async {
   await db.execute('''
     CREATE TABLE IF NOT EXISTS daily_goal_effective (
       effective_from_local_day TEXT PRIMARY KEY,
@@ -116,11 +119,8 @@ Future<void> onCreateV3(Database db) async {
       : int.tryParse(prefRows.first['value'] as String) ?? kDefaultStepGoal;
   final goal = parsedGoal > 0 ? parsedGoal : kDefaultStepGoal;
 
-  // One-time upgrade path: device-local calendar day (no injected clock).
-  final now = DateTime.now();
-  final todayIso = formatLocalDayIso(
-    TimeSnapshot(nowUtc: now.toUtc(), zoneOffset: now.timeZoneOffset),
-  );
+  // One-time upgrade path: injectable clock (SystemTimeProvider in production).
+  final todayIso = formatLocalDayIso(clock.snapshot());
 
   await db.insert(
     'daily_goal_effective',
