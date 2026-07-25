@@ -12,6 +12,14 @@ import 'package:sqflite_common_ffi/sqflite_ffi.dart';
 import 'package:flutter_test/flutter_test.dart';
 
 import '../../helpers/sqflite_test_helper.dart';
+import '../time/fake_time_provider.dart';
+
+final _migrationV3Clock = FakeTimeProvider(
+  fixedNowUtc: DateTime.utc(2026, 6, 15, 10),
+  zoneOffset: const Duration(hours: 2),
+);
+
+const _migrationV3PinnedLocalDay = '2026-06-15';
 
 Future<void> expectLastEndIndexShape(Database db) async {
   final lastEndColumns = await db.rawQuery(
@@ -367,7 +375,10 @@ void main() {
     late Database db;
 
     setUp(() async {
-      db = await openAstraDatabase(databasePath: inMemoryDatabasePath);
+      db = await openAstraDatabase(
+        databasePath: inMemoryDatabasePath,
+        clock: _migrationV3Clock,
+      );
     });
 
     tearDown(() async {
@@ -383,13 +394,7 @@ void main() {
       final rows = await db.query('daily_goal_effective');
       expect(rows.length, 1);
       expect(rows.single['goal'], kDefaultStepGoal);
-
-      final local = DateTime.now().toLocal();
-      final todayIso =
-          '${local.year.toString().padLeft(4, '0')}-'
-          '${local.month.toString().padLeft(2, '0')}-'
-          '${local.day.toString().padLeft(2, '0')}';
-      expect(rows.single['effective_from_local_day'], todayIso);
+      expect(rows.single['effective_from_local_day'], _migrationV3PinnedLocalDay);
     });
   });
 
@@ -480,7 +485,10 @@ void main() {
       );
       await v2Db.close();
 
-      final upgradedDb = await openAstraDatabase(databasePath: databasePath);
+      final upgradedDb = await openAstraDatabase(
+        databasePath: databasePath,
+        clock: _migrationV3Clock,
+      );
       addTearDown(() => upgradedDb.close());
 
       final prefs = {
@@ -492,13 +500,28 @@ void main() {
       final goalRows = await upgradedDb.query('daily_goal_effective');
       expect(goalRows.length, 1);
       expect(goalRows.single['goal'], 12000);
+      expect(
+        goalRows.single['effective_from_local_day'],
+        _migrationV3PinnedLocalDay,
+      );
+    });
 
-      final local = DateTime.now().toLocal();
-      final todayIso =
-          '${local.year.toString().padLeft(4, '0')}-'
-          '${local.month.toString().padLeft(2, '0')}-'
-          '${local.day.toString().padLeft(2, '0')}';
-      expect(goalRows.single['effective_from_local_day'], todayIso);
+    test('runMigrations v2 to v3 uses injected clock for seed date', () async {
+      final db = await openDatabase(
+        inMemoryDatabasePath,
+        version: 2,
+        onCreate: (db, version) => runMigrations(db, version),
+      );
+      addTearDown(() => db.close());
+
+      await runMigrations(db, 3, fromVersion: 2, clock: _migrationV3Clock);
+
+      final goalRows = await db.query('daily_goal_effective');
+      expect(goalRows.length, 1);
+      expect(
+        goalRows.single['effective_from_local_day'],
+        _migrationV3PinnedLocalDay,
+      );
     });
   });
 }
