@@ -1,7 +1,7 @@
 # Audits post-refacto — index
 
 **Généré :** 2026-06-22  
-**Dernière resync :** 2026-07-19 (Epics 21–26 `done` · Epics 27–28 backlog)  
+**Dernière resync :** 2026-07-25 (Epics 21–28 **done** · app `0.15.2+40`)  
 **Base code :** `0.11.3+28` (`pubspec.yaml`)  
 **Périmètre :** diagnostics techniques post-Epics 14–20 (branche `refacto` close)
 
@@ -94,7 +94,7 @@ Actions initiales — **toutes adressées** dans les Epics 21–24 :
 | Extraire `SheetDragHandle` | 07 | 24-1 |
 | Nettoyage typo morte + tokens orphelins | 08 | 24-2, 24-5 |
 
-**Chantiers restants :** Epics 27–28 (voir tableau sprint ci-dessous). Hors scope : modèle `AppFailure` unifié (04), split read/write repos (11).
+**Chantiers restants :** aucun — Epics 21–28 clos. Hors scope différé : modèle `AppFailure` unifié (04), split read/write repos (11).
 
 ---
 
@@ -108,10 +108,10 @@ Actions initiales — **toutes adressées** dans les Epics 21–24 :
 | **E24** | Design System & états de chargement | 06, 07, 08 | **done** |
 | **E25** | Architecture & dette structurelle | 09, 11 | **done** (`0.11.2+27`) |
 | **E26** | Tests d’orchestration & résilience | 10 | **done** (`0.11.3+28`) |
-| **E27** | Boot polish & lazy Trends | 02 (D, C1) | **backlog** |
-| **E28** | UX cohérence (erreurs & permissions) | 04, 06 | **backlog** |
+| **E27** | Boot polish & lazy Trends | 02 (D, C1) | **done** |
+| **E28** | UX cohérence (erreurs & permissions) | 04, 06 | **done** |
 
-Tracker : [`sprint-status-post-audit.yaml`](../../implementation-artifacts/sprint-status-post-audit.yaml) — **NEXT:** E27 → E28
+Tracker : [`sprint-status.yaml`](../../implementation-artifacts/sprint-status.yaml) (consolidé) · snapshot : [`archive/sprint-trackers/sprint-status-post-audit.yaml`](../../implementation-artifacts/archive/sprint-trackers/sprint-status-post-audit.yaml)
 
 ---
 
@@ -121,9 +121,9 @@ Tracker : [`sprint-status-post-audit.yaml`](../../implementation-artifacts/sprin
 |----------|------|
 | [`refactoring-audit-master-v0.6.1.md`](../refactoring-audit-master-v0.6.1.md) | Audit refacto Epics 14–20 (historique, done) |
 | [`epics-refacto.md`](../epics-refacto.md) | Stories refacto livrées |
-| [`sprint-status-refacto.yaml`](../../implementation-artifacts/sprint-status-refacto.yaml) | Tracker Epics 14–20 |
-| [`sprint-status-post-audit.yaml`](../../implementation-artifacts/sprint-status-post-audit.yaml) | Tracker Epics 21–28 (actif) |
+| [`sprint-status.yaml`](../../implementation-artifacts/sprint-status.yaml) | Tracker consolidé (Epics 1–33) |
 | [`epics-post-audit.md`](../epics-post-audit.md) | Stories 21–28 + AUDs différés |
+| [`EPIC-INDEX.md`](../EPIC-INDEX.md) | Registre epics 1–33 |
 | [`architecture.md`](../architecture.md) | Décisions techniques (Today Display Truth Model, etc.) |
 | [`ux-design-specification.md`](../ux-design-specification.md) | Tokens, accessibilité cible |
 

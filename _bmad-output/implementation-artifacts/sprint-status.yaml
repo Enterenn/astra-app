@@ -1,74 +1,34 @@
-# generated: 2026-05-25
-# last_updated: 2026-06-17 (Story 13.4 done — Epic 13 closed)
-# NEXT: dev-story 13-4-flow-completion-and-cleanup
-# Ref: planning-artifacts/sprint-change-proposal-2026-06-17.md
+# Consolidated sprint tracker — Epics 1–33 (all complete)
+# generated: 2026-05-25 (Phase 0) · consolidated: 2026-07-25
+# last_updated: 2026-07-25 · app version 0.15.2+40
+# NEXT: Phase 1 planning (no active stories)
+#
 # project: astra-app
-# project_key: NOKEY
 # tracking_system: file-system
-# story_location: _bmad-output/implementation-artifacts
+# story_location: _bmad-output/implementation-artifacts/stories
+# navigation: _bmad-output/README.md · planning-artifacts/EPIC-INDEX.md
+#
+# PHASES (epic source files):
+#   1–13  → planning-artifacts/epics.md
+#   14–20 → planning-artifacts/epics-refacto.md
+#   21–28 → planning-artifacts/epics-post-audit.md · planning-artifacts/audits/
+#   29–33 → planning-artifacts/epics-audits-2.md · planning-artifacts/audits_2/
+#
+# Per-phase snapshots (historical): implementation-artifacts/archive/sprint-trackers/
+#
+# STATUS: backlog | ready-for-dev | in-progress | review | done | optional (retrospectives)
 
-# STATUS DEFINITIONS:
-# ==================
-# Epic Status:
-#   - backlog: Epic not yet started
-#   - in-progress: Epic actively being worked on
-#   - done: All stories in epic completed
-#
-# Epic Status Transitions:
-#   - backlog → in-progress: Automatically when first story is created (via create-story)
-#   - in-progress → done: Manually when all stories reach 'done' status
-#
-# Story Status:
-#   - backlog: Story only exists in epic file
-#   - ready-for-dev: Story file created in stories folder
-#   - in-progress: Developer actively working on implementation
-#   - review: Ready for code review (via Dev's code-review workflow)
-#   - done: Story completed
-#
-# Retrospective Status:
-#   - optional: Can be completed but not required
-#   - done: Retrospective has been completed
-#
-# WORKFLOW NOTES:
-# ===============
-# - Epic transitions to 'in-progress' automatically when first story is created
-# - Stories can be worked in parallel if team capacity allows
-# - Developer typically creates next story after previous one is 'done' to incorporate learnings
-# - Dev moves story to 'review', then runs code-review (fresh context, different LLM recommended)
-#
-# VERSIONING (mandatory at each epic close — stay on 0.x.y, no 1.0.0):
-# - Fix epics (8, 9): patch+1, build+1  → e.g. 0.2.0+2 → 0.2.1+3 → 0.2.2+4
-# - Feature epics (10–12): minor+1, patch=0, build+1 → 0.3.0+5 … 0.5.0+7
-# - Epic 10: one moyen bump when full epic done (nav + surfaces + units; not per sub-story)
-# - Update pubspec.yaml + README.md project status row before marking epic done
-# - Ref: sprint-change-proposal-2026-06-15.md · docs/project-context.md · .cursor/rules/app-versioning.mdc
-#
-# EPIC TITLES (human-readable):
-#   epic-1: Trust Onboarding & App Shell
-#   epic-2: Passive Step Tracking & Today Dashboard
-#   epic-3: History & Trends
-#   epic-4: Data Sovereignty & Lifecycle (My Data)
-#   epic-5: Design Polish & Visual Cohesion (Figma shell)
-#   epic-6: Derived Activity Metrics
-#   epic-7: OSS Credibility & Beta Readiness
-#   epic-8: Goal Time Semantics
-#   epic-9: Android FGS Notification
-#   epic-10: App Shell, Navigation & Settings Surfaces
-#   epic-11: Steps Dashboard
-#   epic-12: Trends Analytics
-#   epic-13: Onboarding Redesign
-#
-# NAVIGATION: _bmad-output/README.md
-
-generated: 2026-05-25
-last_updated: 2026-06-17 (Story 13.4 done — Epic 13 closed)
-# Story 9.1 context file: stories/9-1-android-fgs-notification-visibility.md
+generated: 2026-07-25
+last_updated: 2026-07-25
 project: astra-app
 project_key: NOKEY
 tracking_system: file-system
-story_location: _bmad-output/implementation-artifacts
+story_location: _bmad-output/implementation-artifacts/stories
+app_version: 0.15.2+40
+overall_status: complete
 
 development_status:
+  # ── Phase 0 (Epics 1–13) ──────────────────────────────────────────────
   epic-1: done
   1-1-flutter-project-initialization: done
   1-2-design-tokens-and-theme-system: done
@@ -111,22 +71,21 @@ development_status:
 
   epic-5: done
   5-5-built-in-kotlin-plugin-migration: done
-  # Mandatory order (2026-06-04 — IDs match sequence):
-  5-6-phosphor-icons-dependency: done               # 1
-  5-7-four-tab-floating-navigation: done            # q
-  5-9-today-figma-layout-no-greeting: done          # 4 — stats row visible, empty until epic-6
-  5-10-data-screen-sovereignty-layout: done         # 5 — tab DATA, screen title "My Data"
-  5-11-profil-informations-and-appearance: done     # 6 — bi-tone circles + theme_mode + PROFILE nav label
-  5-12-cross-screen-visual-cohesion-audit: done     # 7
-  5-13-goal-overflow-animation-polish: done  # after 5.12 (optional)
+  5-6-phosphor-icons-dependency: done
+  5-7-four-tab-floating-navigation: done
+  5-9-today-figma-layout-no-greeting: done
+  5-10-data-screen-sovereignty-layout: done
+  5-11-profil-informations-and-appearance: done
+  5-12-cross-screen-visual-cohesion-audit: done
+  5-13-goal-overflow-animation-polish: done
   epic-5-retrospective: optional
 
   epic-6: done
-  6-1-derived-activity-metrics: done          # after epic-5.12
-  6-2-pedometer-shake-noise-rate-limit: done  # inter-arrival rate cap; Nord drip shake deferred to 6.3
-  6-3-activity-idle-persist-flush: done  # universal: flush after step-stream idle
-  6-4-screen-lock-pedometer-freeze: done  # keep monitor alive on lock; resume drain + clamp stale prefs
-  6-5-idle-flush-bucket-merge: done  # hotfix: additive upsert + baseline-gated drain
+  6-1-derived-activity-metrics: done
+  6-2-pedometer-shake-noise-rate-limit: done
+  6-3-activity-idle-persist-flush: done
+  6-4-screen-lock-pedometer-freeze: done
+  6-5-idle-flush-bucket-merge: done
   6-6-midnight-day-rollover-flush: done
   epic-6-retrospective: optional
 
@@ -141,7 +100,7 @@ development_status:
   8-2-goal-history-consumer-migration: done
   epic-8-retrospective: optional
 
-  epic-9: in-progress
+  epic-9: done
   9-1-android-fgs-notification-visibility: done
   epic-9-retrospective: optional
 
@@ -176,3 +135,159 @@ development_status:
   13-3-weight-and-height-onboarding-steps: done
   13-4-flow-completion-and-cleanup: done
   epic-13-retrospective: optional
+
+  # ── Refacto (Epics 14–20) ─────────────────────────────────────────────
+  epic-14: done
+  14-1-harden-post-purge-refresh-callback: done
+  14-2-fix-lifecycle-transition-deadlock: done
+  epic-14-retrospective: optional
+
+  epic-15: done
+  15-1-batch-sql-goal-resolution-for-history: done
+  15-2-move-goal-ring-display-persistence-to-today-cubit: done
+  15-3-relocate-dev-tooling-to-test-dev: done
+  15-4-replace-uuid-with-timestamp-based-bucket-ids: done
+  epic-15-retrospective: optional
+
+  epic-16: done
+  16-1-introduce-repository-abstraction-contracts: done
+  16-2-cache-static-gpu-inset-shadows: done
+  16-3-tab-repaint-isolation-in-app-scaffold: done
+  16-4-goal-ring-repaint-boundary-and-controller-lifecycle-audit: done
+  16-5-granular-bloc-selector-on-today-screen: done
+  16-6-collection-health-indicator-and-stale-banner-cta: done
+  16-7-cold-start-loading-shimmer-for-today: done
+  epic-16-retrospective: optional
+
+  epic-17: done
+  17-1-replace-share-plus-with-file-picker-csv-export: done
+  17-2-pin-file-picker-to-exact-beta-version: done
+  17-3-replace-figma-squircle-with-native-clip-path: done
+  epic-17-retrospective: optional
+
+  epic-18: done
+  18-1-extract-app-lifecycle-coordinator-from-app-dart: done
+  18-2-split-user-preferences-repository: done
+  18-3-split-step-repository-and-extract-csv-service: done
+  epic-18-retrospective: optional
+
+  epic-19: done
+  19-1-flutter-localizations-scaffold: done
+  19-2-migrate-hardcoded-strings-to-arb-keys: done
+  19-3-persist-and-apply-user-locale-preference: done
+  epic-19-retrospective: optional
+
+  epic-20: done
+  20-1-onboarding-permission-after-value-proposition: done
+  20-2-local-trends-insight-cards: done
+  20-3-tab-navigation-haptic-feedback: done
+  20-4-replace-fl-chart-with-custom-painter-charts: done
+  20-5-phosphor-icons-selective-font-subsetting: done
+  epic-20-retrospective: optional
+
+  # ── Post-audit (Epics 21–28) ──────────────────────────────────────────
+  epic-21: done
+  21-1-fast-path-today-refresh-for-cold-start: done
+  21-2-decouple-foreground-backfill-from-first-today-paint: done
+  21-3-deduplicate-cold-start-get-today-steps-queries: done
+  21-4-route-ingestion-lock-through-session-with-retry: done
+  21-5-batch-week-goal-resolution-and-reduce-n-plus-1: done
+  21-6-add-end-time-index-for-last-ingestion-query: done
+  21-7-guard-trends-refresh-on-ingestion-by-active-tab: done
+  21-8-non-blocking-pedometer-drain-on-cold-backfill: done
+  epic-21-retrospective: optional
+
+  epic-22: done
+  22-1-harden-live-step-monitor-dispose-sequencing: done
+  22-2-disable-goal-cta-during-today-loading-states: done
+  22-3-add-retry-path-for-profile-and-settings-load-errors: done
+  22-4-align-theme-preference-error-feedback-with-other-settings: done
+  22-5-enable-discarded-futures-lint-and-fix-callback-sites: done
+  epic-22-retrospective: optional
+
+  epic-23: done
+  23-1-add-semantic-button-label-for-today-goal-action: done
+  23-2-add-semantic-coverage-for-unit-option-tiles: done
+  23-3-introduce-live-region-for-goal-ring-and-activity-stats: done
+  23-4-restore-visible-keyboard-focus-on-segmented-controls: done
+  23-5-complete-chart-keyboard-and-semantic-selection-support: done
+  23-6-add-goal-achieved-semantics-in-week-day-pills: done
+  23-7-merge-semantics-for-settings-notifications-switch: done
+  epic-23-retrospective: optional
+
+  epic-24: done
+  24-1-extract-shared-sheet-drag-handle-component: done
+  24-2-remove-or-wire-dead-typography-and-color-tokens: done
+  24-3-unify-loading-patterns-for-week-and-trends-surfaces: done
+  24-4-centralize-repeated-chart-layout-and-typography-values: done
+  24-5-clean-orphan-preference-default-constants: done
+  24-6-disable-period-toggle-during-history-loading: done
+  epic-24-retrospective: optional
+
+  epic-25: done
+  25-1-split-today-cubit-by-responsibility-boundaries: done
+  25-2-split-app-lifecycle-coordinator-into-focused-services: done
+  25-3-remove-presentation-dependency-from-core-di-layer: done
+  25-4-decouple-my-data-cubit-from-ui-dialog-types: done
+  25-5-add-core-data-class-doc-comments-for-public-services: done
+  epic-25-retrospective: optional
+
+  epic-26: done
+  26-1-cover-on-today-cubit-ready-cold-start-orchestration: done
+  26-2-cover-on-lifecycle-state-resumed-failure-and-recovery: done
+  26-3-cover-goal-notification-evaluation-and-rollback-path: done
+  26-4-cover-refresh-after-day-rollover-contract: done
+  26-5-cover-isolate-background-collector-factory-bootstrap: done
+  26-6-add-fault-injection-tests-for-live-monitor-stream-errors: done
+  epic-26-retrospective: optional
+
+  epic-27: done
+  27-1-parallelize-initial-preference-reads-with-future-wait: done
+  27-2-defer-workmanager-registration-until-after-runapp: done
+  27-3-non-blocking-notification-init-before-first-frame: done
+  27-4-lazy-instantiate-history-cubit-on-first-trends-tab: done
+  epic-27-retrospective: optional
+
+  epic-28: done
+  28-1-add-tap-to-refresh-on-my-data-stale-banner: done
+  28-2-unify-today-permission-denied-messaging-and-cta: done
+  28-3-decouple-settings-theme-locale-units-from-profile-loading-gate: done
+  epic-28-retrospective: optional
+
+  # ── Data pipeline audit (Epics 29–33) ─────────────────────────────────
+  epic-29: done
+  29-1-fix-terminal-baseline-after-rejected-sensor-noise: done
+  29-2-forward-hardware-reset-readings-through-live-drain: done
+  29-3-atomic-bucket-upsert-and-baseline-commit-per-source: done
+  29-4-guard-compaction-delete-until-insert-succeeds: done
+  29-5-unify-persist-credit-rules-drain-vs-calculator: done
+  epic-29-retrospective: optional
+
+  epic-30: done
+  30-1-cross-isolate-lock-for-maintenance-and-vacuum: done
+  30-2-configure-pragma-busy-timeout-on-database-open: done
+  30-3-document-ios-background-collection-gap: done
+  30-4-inject-timeprovider-into-collection-timeout-source: done
+  epic-30-retrospective: optional
+
+  epic-31: done
+  31-1-model-permanently-denied-with-settings-cta: done
+  31-2-onboarding-intro-post-denial-feedback: done
+  31-3-propagate-notification-platform-init-failures: done
+  31-4-centralize-permission-status-mapping-by-type: done
+  31-5-structural-boot-gate-cancel-wm-before-notification-init: done
+  31-6-harden-profile-notification-toggle-concurrency: done
+  epic-31-retrospective: optional
+
+  epic-32: done
+  32-1-align-ingestion-sample-ids-with-bucket-identity-index: done
+  32-2-release-safe-guard-on-dev-sample-batch-insert: done
+  32-3-privacy-at-rest-product-decision: done
+  32-4-single-goal-source-and-safe-database-open-check: done
+  32-5-test-hook-and-deterministic-migration-v3: done
+  epic-32-retrospective: optional
+
+  epic-33: done
+  33-1-document-dst-non-compaction-intent: done
+  33-2-document-chart-date-rollover-and-optional-sql-upper-bound: done
+  epic-33-retrospective: optional

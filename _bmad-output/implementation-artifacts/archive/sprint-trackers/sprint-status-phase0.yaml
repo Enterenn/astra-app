@@ -1,0 +1,178 @@
+# generated: 2026-05-25
+# last_updated: 2026-06-17 (Story 13.4 done — Epic 13 closed)
+# NEXT: dev-story 13-4-flow-completion-and-cleanup
+# Ref: planning-artifacts/sprint-change-proposal-2026-06-17.md
+# project: astra-app
+# project_key: NOKEY
+# tracking_system: file-system
+# story_location: _bmad-output/implementation-artifacts
+
+# STATUS DEFINITIONS:
+# ==================
+# Epic Status:
+#   - backlog: Epic not yet started
+#   - in-progress: Epic actively being worked on
+#   - done: All stories in epic completed
+#
+# Epic Status Transitions:
+#   - backlog → in-progress: Automatically when first story is created (via create-story)
+#   - in-progress → done: Manually when all stories reach 'done' status
+#
+# Story Status:
+#   - backlog: Story only exists in epic file
+#   - ready-for-dev: Story file created in stories folder
+#   - in-progress: Developer actively working on implementation
+#   - review: Ready for code review (via Dev's code-review workflow)
+#   - done: Story completed
+#
+# Retrospective Status:
+#   - optional: Can be completed but not required
+#   - done: Retrospective has been completed
+#
+# WORKFLOW NOTES:
+# ===============
+# - Epic transitions to 'in-progress' automatically when first story is created
+# - Stories can be worked in parallel if team capacity allows
+# - Developer typically creates next story after previous one is 'done' to incorporate learnings
+# - Dev moves story to 'review', then runs code-review (fresh context, different LLM recommended)
+#
+# VERSIONING (mandatory at each epic close — stay on 0.x.y, no 1.0.0):
+# - Fix epics (8, 9): patch+1, build+1  → e.g. 0.2.0+2 → 0.2.1+3 → 0.2.2+4
+# - Feature epics (10–12): minor+1, patch=0, build+1 → 0.3.0+5 … 0.5.0+7
+# - Epic 10: one moyen bump when full epic done (nav + surfaces + units; not per sub-story)
+# - Update pubspec.yaml + README.md project status row before marking epic done
+# - Ref: sprint-change-proposal-2026-06-15.md · docs/project-context.md · .cursor/rules/app-versioning.mdc
+#
+# EPIC TITLES (human-readable):
+#   epic-1: Trust Onboarding & App Shell
+#   epic-2: Passive Step Tracking & Today Dashboard
+#   epic-3: History & Trends
+#   epic-4: Data Sovereignty & Lifecycle (My Data)
+#   epic-5: Design Polish & Visual Cohesion (Figma shell)
+#   epic-6: Derived Activity Metrics
+#   epic-7: OSS Credibility & Beta Readiness
+#   epic-8: Goal Time Semantics
+#   epic-9: Android FGS Notification
+#   epic-10: App Shell, Navigation & Settings Surfaces
+#   epic-11: Steps Dashboard
+#   epic-12: Trends Analytics
+#   epic-13: Onboarding Redesign
+#
+# NAVIGATION: _bmad-output/README.md
+
+generated: 2026-05-25
+last_updated: 2026-06-17 (Story 13.4 done — Epic 13 closed)
+# Story 9.1 context file: stories/9-1-android-fgs-notification-visibility.md
+project: astra-app
+project_key: NOKEY
+tracking_system: file-system
+story_location: _bmad-output/implementation-artifacts
+
+development_status:
+  epic-1: done
+  1-1-flutter-project-initialization: done
+  1-2-design-tokens-and-theme-system: done
+  1-3-app-scaffold-and-bottom-navigation: done
+  1-4-user-preferences-persistence: done
+  1-5-trust-first-onboarding-flow: done
+  epic-1-retrospective: optional
+
+  epic-2: done
+  2-1-sqlite-schema-for-timeseries-samples: done
+  2-2-data-ingestion-abstraction-and-step-normalizer: done
+  2-3-step-repository-and-time-semantics: done
+  2-4-background-collector-and-android-workmanager: done
+  2-5-today-dashboard-with-goal-ring: done
+  2-6-goal-celebration-animation: done
+  2-7-daily-goal-local-notification: done
+  2-8-android-fgs-health-passive-pipeline: done
+  2-9-today-display-truth-model-and-live-overlay: done
+  2-10-workmanager-orchestration-and-oem-deferral-hardening: done
+  epic-2-retrospective: optional
+
+  epic-3: done
+  3-1-dev-data-inject-and-lifecycle-simulator: done
+  3-2-history-chart-data-aggregation: done
+  3-3-history-screen-with-bar-chart-and-trend: done
+  3-4-chart-performance-benchmark-kpi-01: done
+  epic-3-retrospective: optional
+
+  epic-4: done
+  4-1-data-lifecycle-service-downsampling-and-maintenance: done
+  4-2-my-data-footprint-and-background-status: done
+  4-3-csv-export: done
+  4-4-csv-import: done
+  4-5-full-data-purge-with-export-nudge: done
+  4-6-daily-goal-editor-on-my-data: done
+  4-7-theme-selector-and-my-data-integration: done
+  4-8-local-display-name-and-today-greeting: done
+  4-9-profile-initials-on-my-data: done
+  epic-4-retrospective: optional
+
+  epic-5: done
+  5-5-built-in-kotlin-plugin-migration: done
+  # Mandatory order (2026-06-04 — IDs match sequence):
+  5-6-phosphor-icons-dependency: done               # 1
+  5-7-four-tab-floating-navigation: done            # q
+  5-9-today-figma-layout-no-greeting: done          # 4 — stats row visible, empty until epic-6
+  5-10-data-screen-sovereignty-layout: done         # 5 — tab DATA, screen title "My Data"
+  5-11-profil-informations-and-appearance: done     # 6 — bi-tone circles + theme_mode + PROFILE nav label
+  5-12-cross-screen-visual-cohesion-audit: done     # 7
+  5-13-goal-overflow-animation-polish: done  # after 5.12 (optional)
+  epic-5-retrospective: optional
+
+  epic-6: done
+  6-1-derived-activity-metrics: done          # after epic-5.12
+  6-2-pedometer-shake-noise-rate-limit: done  # inter-arrival rate cap; Nord drip shake deferred to 6.3
+  6-3-activity-idle-persist-flush: done  # universal: flush after step-stream idle
+  6-4-screen-lock-pedometer-freeze: done  # keep monitor alive on lock; resume drain + clamp stale prefs
+  6-5-idle-flush-bucket-merge: done  # hotfix: additive upsert + baseline-gated drain
+  6-6-midnight-day-rollover-flush: done
+  epic-6-retrospective: optional
+
+  epic-7: done
+  7-1-open-source-license-and-documentation-bundle: done
+  7-2-release-manifest-hardening-and-privacy-audit: done
+  7-3-beta-acceptance-checklist: done
+  epic-7-retrospective: optional
+
+  epic-8: done
+  8-1-daily-goal-history-schema-and-repository: done
+  8-2-goal-history-consumer-migration: done
+  epic-8-retrospective: optional
+
+  epic-9: in-progress
+  9-1-android-fgs-notification-visibility: done
+  epic-9-retrospective: optional
+
+  epic-10: done
+  10-1-three-tab-bottom-navigation: done
+  10-2-menu-hub-full-screen-list: done
+  10-3-secondary-screen-navigator-stack: done
+  10-4-profile-slim-informations: done
+  10-5-settings-appearance-and-notifications: done
+  10-6-display-units-preferences: done
+  10-7-app-wide-unit-formatters: done
+  10-8-data-and-about-screens: done
+  epic-10-retrospective: optional
+
+  epic-11: done
+  11-1-steps-screen-layout-week-first: done
+  11-2-day-picker-and-selected-day-state: done
+  11-3-selected-day-indicators-and-live-guards: done
+  11-4-week-trophy-and-historical-goal-dots: done
+  epic-11-retrospective: optional
+
+  epic-12: done
+  12-1-trends-average-stats-cards: done
+  12-2-trends-peak-day-card: done
+  12-3-trends-twelve-month-monthly-chart: done
+  12-4-trends-historical-goal-line: done
+  epic-12-retrospective: optional
+
+  epic-13: done
+  13-1-onboarding-shell-and-intro-screen: done
+  13-2-astra-horizontal-ruler-widget: done
+  13-3-weight-and-height-onboarding-steps: done
+  13-4-flow-completion-and-cleanup: done
+  epic-13-retrospective: optional

@@ -4,7 +4,7 @@
 **Dernière resync :** 2026-07-25 (Story 33-2 — diagnostic 08 fixed, D2 + M9 closed)  
 **Base code :** `0.12.1+31` (`pubspec.yaml`)  
 **Périmètre :** couche SQLite → ingestion pedometer → `LiveStepMonitor` → compaction FR11 → WorkManager → agrégations charts → prefs utilisateur → permissions/notifications  
-**Statut chantier :** `open` — aucun point marqué `fixed` dans ce dossier
+**Statut chantier :** **complete** — Epics 29–33 done (`0.15.2+40`)
 
 Ce dossier complète [`audits/`](../audits/) (post-refacto Epics 21–28, UI/runtime) avec une analyse **granulaire du pipeline données** : chemins de fichiers, numéros de lignes, scénarios de failure, todos consolidées et liens croisés entre diagnostics.
 
@@ -359,7 +359,7 @@ My Data editor → refresh via getGoalForLocalDay(todayIso) + setDailyStepGoal
 | **E32?** | Hygiène données & IDs | 01, 06 | ID multi-type, dev guard, objectif single source |
 | **E33?** | Doc & perf pipeline | 05, 08 | ~~DST comment~~ done (33-1) · ~~chart SQL bound~~ done (33-2) |
 
-*(Numérotation à valider avec [`epics-post-audit.md`](../epics-post-audit.md) / sprint planning — E27–E28 restent backlog audits v1.)*
+*(Epics 29–33 clos — voir [`epics-audits-2.md`](../epics-audits-2.md). Epics 21–28 (audits v1, dont E27–E28) : **done** — [`audits/README.md`](../audits/README.md).)*
 
 ---
 
@@ -370,7 +370,8 @@ My Data editor → refresh via getGoalForLocalDay(todayIso) + setDailyStepGoal
 | [`audits/README.md`](../audits/README.md) | Index audits v1 (Epics 21–28) |
 | [`epics-post-audit.md`](../epics-post-audit.md) | Stories 21–28 + AUDs différés |
 | [`architecture.md`](../architecture.md) | NFR-4 SQLCipher, Today Display Truth Model |
-| [`sprint-status-post-audit.yaml`](../../implementation-artifacts/sprint-status-post-audit.yaml) | Tracker actif |
+| [`sprint-status.yaml`](../../implementation-artifacts/sprint-status.yaml) | Tracker consolidé (Epics 1–33) |
+| [`EPIC-INDEX.md`](../EPIC-INDEX.md) | Registre epics 1–33 |
 | Stories clés | 4-1 downsampling · 8-1/8-2 goal history · 18-2/18-3 split repos · 21-4 ingestion lock · 2-9 Today Display Truth / live pipeline |
 
 ---
