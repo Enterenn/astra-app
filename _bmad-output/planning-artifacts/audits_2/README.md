@@ -115,8 +115,8 @@ Priorités : **P0** critique (corruption données / sur-comptage / sécurité) �
 | 3 | P0 | Garde-fou `assert` dev/prod | `fixed` (32-2) | `step_ingestion_repository.dart:92-99` |
 | 4 | P1 | Regex identity case-sensitive | `open` | `sample_id_generator.dart:35` |
 | 5 | P1 | Contention multi-isolate sans `busy_timeout` | `fixed` (30-2) | `app_database.dart` |
-| 6 | P2 | `testHookAfterDeleteSamples` dans contrat public | `open` | `step_ingestion_repository_contract.dart` |
-| 7 | P2 | Migration v3 `DateTime.now()` non déterministe | `open` | `migrations.dart:119-123` |
+| 6 | P2 | `testHookAfterDeleteSamples` dans contrat public | `fixed` (32-5) | `step_ingestion_repository_contract.dart` |
+| 7 | P2 | Migration v3 `DateTime.now()` non déterministe | `fixed` (32-5) | `migrations.dart` |
 
 **Points forts :** migrations idempotentes, CHECK steps entiers, `idx_bucket_identity`, upsert additif, purge sélective, WAL + retry session.
 
@@ -288,8 +288,8 @@ My Data editor → refresh via getGoalForLocalDay(todayIso) + setDailyStepGoal
 | Todo | Diagnostics | Action |
 |------|-------------|--------|
 | M1 | 01 | ~~`PRAGMA busy_timeout`~~ — done (30-2) |
-| M2 | 01 | Retirer `testHookAfterDeleteSamples` du contrat |
-| M3 | 01 | `TimeProvider` migration v3 |
+| M2 | 01 | ~~Retirer `testHookAfterDeleteSamples` du contrat~~ — done (32-5) |
+| M3 | 01 | ~~`TimeProvider` migration v3~~ — done (32-5) |
 | M4 | 06 | ~~`isDatabaseOpen` safe + fix `today_live_pipeline`~~ — done (32-4) |
 | M5 | 06 | ~~My Data refresh via `getGoalForLocalDay(today)` ; deprecate `getDailyStepGoal`~~ — done (32-4) |
 | M6 | 02 | Centraliser permission status par type |

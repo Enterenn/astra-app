@@ -1,6 +1,6 @@
 # generated: 2026-07-24
-# last_updated: 2026-07-25 (Story 32-4 done)
-# NEXT: dev-story 32-5-test-hook-and-deterministic-migration-v3
+# last_updated: 2026-07-25 (Story 32-5 review)
+# NEXT: code-review 32-5-test-hook-and-deterministic-migration-v3
 # Ref: planning-artifacts/epics-audits-2.md · implementation-readiness-report-2026-07-24.md
 # project: astra-app
 # project_key: NOKEY
@@ -47,7 +47,7 @@
 # NAVIGATION: _bmad-output/README.md · planning-artifacts/audits_2/README.md
 
 generated: 2026-07-24
-last_updated: 2026-07-25 (Story 32-4 done)
+last_updated: 2026-07-25 (Story 32-5 review)
 project: astra-app
 project_key: NOKEY
 tracking_system: file-system
@@ -86,7 +86,7 @@ development_status:
   32-2-release-safe-guard-on-dev-sample-batch-insert: done
   32-3-privacy-at-rest-product-decision: done
   32-4-single-goal-source-and-safe-database-open-check: done
-  32-5-test-hook-and-deterministic-migration-v3: backlog
+  32-5-test-hook-and-deterministic-migration-v3: review
   epic-32-retrospective: optional
 
   epic-33: backlog

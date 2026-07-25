@@ -3,15 +3,15 @@
 **Généré :** 2026-07-20  
 **Base code :** `0.12.1+31` (`pubspec.yaml`)  
 **Périmètre :** ouverture DB → session → migrations → `StepIngestionRepository` → génération d'ID  
-**Statut global :** `partial` (P0 #1 fixed — 32-3 · P0 #2 fixed — 32-1 · P0 #3 fixed — 32-2 · P1 #4 fixed — 32-1 · P1 #5 fixed — 30-2)
+**Statut global :** `done` (P0 #1 fixed — 32-3 · P0 #2 fixed — 32-1 · P0 #3 fixed — 32-2 · P1 #4 fixed — 32-1 · P1 #5 fixed — 30-2 · P2 #6 fixed — 32-5 · P2 #7 fixed — 32-5)
 
 ---
 
 ## Statut
 
 - **Dernière vérification :** 2026-07-25
-- **Statut :** `partial`
-- **Story / PR :** Story 32-1 (#2, #4) · Story 32-2 (#3) · Story 32-3 (#1, Path A disclaimer)
+- **Statut :** `done`
+- **Story / PR :** Story 32-1 (#2, #4) · Story 32-2 (#3) · Story 32-3 (#1, Path A disclaimer) · Story 32-5 (#6, #7)
 
 ---
 
@@ -24,8 +24,8 @@
 | 🔴 P0 | 3 | Garde-fou dev/prod (`assert`) inopérant en release | `fixed` (32-2) |
 | 🟡 P1 | 4 | Regex normalisation sensible à la casse | `fixed` (32-1) |
 | 🟡 P1 | 5 | Contention multi-isolate sans `busy_timeout` | `fixed` (30-2) |
-| 🟡 P2 | 6 | Fuite d'abstraction `testHookAfterDeleteSamples` | `open` |
-| 🟡 P2 | 7 | Migration v3 non déterministe (`DateTime.now()`) | `open` |
+| 🟡 P2 | 6 | Fuite d'abstraction `testHookAfterDeleteSamples` | `fixed` (32-5) |
+| 🟡 P2 | 7 | Migration v3 non déterministe (`DateTime.now()`) | `fixed` (32-5) |
 
 ---
 
@@ -134,9 +134,9 @@ Ou isoler derrière une implémentation debug-only / `@visibleForTesting` non ex
 | `lib/data/contracts/step_ingestion_repository_contract.dart:5-7` | `testHookAfterDeleteSamples` dans l'interface |
 | `lib/data/repositories/step/step_ingestion_repository.dart:124-131` | `@override` + hook dans `purge()` |
 
-**Impact :** Toute implémentation alternative doit porter ce paramètre test-only dans son contrat public.
+**Statut :** `fixed` — Story 32-5 (hook retiré du contrat ; `@visibleForTesting` sur impl concrète uniquement)
 
-**Piste :** Retirer du contrat ; exposer via sous-classe test / mixin `@visibleForTesting` sur l'impl concrète uniquement.
+**Piste :** ~~Retirer du contrat ; exposer via sous-classe test / mixin `@visibleForTesting` sur l'impl concrète uniquement.~~ — done (32-5)
 
 ---
 
@@ -147,9 +147,9 @@ Ou isoler derrière une implémentation debug-only / `@visibleForTesting` non ex
 | `lib/core/database/migrations.dart:119-123` | `DateTime.now()` pour `effective_from_local_day` |
 | Commentaire l.119 | « One-time upgrade path: device-local calendar day (no injected clock) » |
 
-**Assumé et commenté** — mais empêche tests migration déterministes sans mock horloge au niveau migration.
+**Statut :** `fixed` — Story 32-5 (`TimeProvider` injectable dans `runMigrations` / `onCreateV3`)
 
-**Piste :** Injecter `TimeProvider` dans `runMigrations` / `onCreateV3` (comme ailleurs dans le codebase).
+**Piste :** ~~Injecter `TimeProvider` dans `runMigrations` / `onCreateV3` (comme ailleurs dans le codebase).~~ — done (32-5)
 
 ---
 
@@ -176,8 +176,8 @@ Ou isoler derrière une implémentation debug-only / `@visibleForTesting` non ex
 | **Quick fix** | ~~Inclure `type` + `resolution` dans `deterministicFromIngestionBucket`~~ — done (32-1) | #2 |
 | **Quick fix** | ~~`.toLowerCase()` sur identity provider/device~~ — done (32-1) | #4 |
 | **Moyen** | ~~`PRAGMA busy_timeout` + doc contention isolate~~ — done (30-2) | #5 |
-| **Moyen** | Retirer `testHookAfterDeleteSamples` du contrat | #6 |
-| **Moyen** | `TimeProvider` injectable pour migration v3 | #7 |
+| **Moyen** | ~~Retirer `testHookAfterDeleteSamples` du contrat~~ — done (32-5) | #6 |
+| **Moyen** | ~~`TimeProvider` injectable pour migration v3~~ — done (32-5) | #7 |
 | **Epic** | SQLCipher Phase 1 ou disclaimer privacy explicite | #1 |
 
 ---
