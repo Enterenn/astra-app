@@ -9,6 +9,7 @@ import '../../data/datasources/step_increment_calculator.dart';
 import '../../data/models/step_reading.dart';
 import '../../data/contracts/step_aggregation_repository_contract.dart';
 import '../../data/repositories/ingestion_baseline_repository.dart';
+import '../debug/field_diagnostic_log.dart';
 import '../debug/live_pipeline_log.dart';
 import '../time/local_day_formatter.dart';
 import '../time/time_provider.dart';
@@ -463,6 +464,18 @@ class LiveStepMonitor {
     final elapsedSincePrevious = _lastProcessedObservedAtUtc == null
         ? null
         : reading.observedAtUtc.difference(_lastProcessedObservedAtUtc!);
+    if (elapsedSincePrevious != null &&
+        elapsedSincePrevious > kFieldLogGapThreshold) {
+      fieldDiagnosticLog(
+        'monitor',
+        'reading GAP',
+        details: {
+          'gapSec': elapsedSincePrevious.inSeconds,
+          'cumulative': cumulative,
+        },
+        minInterval: const Duration(minutes: 1),
+      );
+    }
     _lastProcessedObservedAtUtc = reading.observedAtUtc;
 
     final increment = incrementCalculator.calculate(

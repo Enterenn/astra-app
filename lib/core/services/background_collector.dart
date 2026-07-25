@@ -11,6 +11,7 @@ import '../../data/repositories/step/step_ingestion_repository.dart';
 import '../../data/repositories/user_health_metrics_repository.dart';
 import '../../data/repositories/user_settings_repository.dart';
 import '../constants/preference_keys.dart';
+import '../debug/field_diagnostic_log.dart';
 import '../time/local_day_formatter.dart';
 import '../time/time_provider.dart';
 import 'ingestion_collection_lock.dart';
@@ -67,8 +68,15 @@ class BackgroundCollector {
     int maxReadingsPerSource = 50,
     bool enableGoalNotification = false,
     Duration? sourceTimeout,
+    String? fieldLogOrigin,
   }) async {
     if (_collectInFlight) {
+      if (fieldLogOrigin != null) {
+        fieldDiagnosticLog(
+          fieldLogOrigin,
+          'collection SKIPPED reason=in_flight',
+        );
+      }
       return 0;
     }
     _collectInFlight = true;
@@ -78,11 +86,23 @@ class BackgroundCollector {
         kDatabaseMaintenanceLockKey,
         clock: clock,
       )) {
+        if (fieldLogOrigin != null) {
+          fieldDiagnosticLog(
+            fieldLogOrigin,
+            'collection SKIPPED reason=maintenance_lock',
+          );
+        }
         return 0;
       }
 
       final lock = IngestionCollectionLock(repository.databaseSession, clock: clock);
       if (!await lock.tryAcquire()) {
+        if (fieldLogOrigin != null) {
+          fieldDiagnosticLog(
+            fieldLogOrigin,
+            'collection SKIPPED reason=lock_busy',
+          );
+        }
         return 0;
       }
       try {
@@ -90,6 +110,7 @@ class BackgroundCollector {
           maxReadingsPerSource: maxReadingsPerSource,
           enableGoalNotification: enableGoalNotification,
           sourceTimeout: sourceTimeout ?? this.sourceTimeout,
+          fieldLogOrigin: fieldLogOrigin,
         );
       } finally {
         await lock.release();
@@ -103,6 +124,7 @@ class BackgroundCollector {
     required int maxReadingsPerSource,
     required bool enableGoalNotification,
     required Duration sourceTimeout,
+    String? fieldLogOrigin,
   }) async {
     var upsertedCount = 0;
 
@@ -144,6 +166,17 @@ class BackgroundCollector {
           upsertedCount += bucketCount;
         }
       } catch (error, stackTrace) {
+        if (fieldLogOrigin != null) {
+          fieldDiagnosticLog(
+            fieldLogOrigin,
+            'source FAIL',
+            details: {
+              'provider': source.providerId,
+              'device': source.deviceId,
+              'error': error,
+            },
+          );
+        }
         debugPrint(
           'BackgroundCollector failed for ${source.providerId}/${source.deviceId}: $error',
         );
@@ -157,6 +190,14 @@ class BackgroundCollector {
 
     if (upsertedCount > 0) {
       _onIngestionComplete?.call();
+    }
+
+    if (fieldLogOrigin != null) {
+      fieldDiagnosticLog(
+        fieldLogOrigin,
+        upsertedCount > 0 ? 'collection OK' : 'collection OK no_buckets',
+        details: {'upserted': upsertedCount},
+      );
     }
 
     return upsertedCount;
@@ -189,6 +230,11 @@ class BackgroundCollector {
     }
 
     if (!await permissionCheck()) {
+      fieldDiagnosticLog(
+        'notify',
+        'goal SKIPPED reason=no_notification_permission',
+        minInterval: const Duration(hours: 1),
+      );
       return;
     }
 

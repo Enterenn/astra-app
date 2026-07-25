@@ -23,6 +23,9 @@ class MyDataState {
     this.isExporting = false,
     this.exportError,
     this.exportSuccessPending = false,
+    this.isExportingFieldLog = false,
+    this.fieldLogExportSuccessPending = false,
+    this.fieldLogExportError,
     this.isImporting = false,
     this.importError,
     this.importValidationDetail,
@@ -49,6 +52,10 @@ class MyDataState {
   final MyDataExportError? exportError;
   /// True after successful CSV save; drives success snackbar once.
   final bool exportSuccessPending;
+  final bool isExportingFieldLog;
+  final MyDataExportError? fieldLogExportError;
+  /// True after successful field log save; drives success snackbar once.
+  final bool fieldLogExportSuccessPending;
   final bool isImporting;
   final MyDataImportError? importError;
   /// Raw parser detail when [importError] is [MyDataImportError.validation].
@@ -122,6 +129,9 @@ class MyDataState {
     bool? isExporting,
     Object? exportError = _unset,
     bool? exportSuccessPending,
+    bool? isExportingFieldLog,
+    Object? fieldLogExportError = _unset,
+    bool? fieldLogExportSuccessPending,
     bool? isImporting,
     Object? importError = _unset,
     Object? importValidationDetail = _unset,
@@ -150,6 +160,13 @@ class MyDataState {
           : exportError as MyDataExportError?,
       exportSuccessPending:
           exportSuccessPending ?? this.exportSuccessPending,
+      isExportingFieldLog:
+          isExportingFieldLog ?? this.isExportingFieldLog,
+      fieldLogExportError: fieldLogExportError == _unset
+          ? this.fieldLogExportError
+          : fieldLogExportError as MyDataExportError?,
+      fieldLogExportSuccessPending:
+          fieldLogExportSuccessPending ?? this.fieldLogExportSuccessPending,
       isImporting: isImporting ?? this.isImporting,
       importError: importError == _unset
           ? this.importError

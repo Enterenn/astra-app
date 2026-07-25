@@ -3,6 +3,7 @@ import 'package:sqflite/sqflite.dart';
 
 import '../../data/datasources/data_ingestion_source.dart';
 import '../database/isolate_database_factory.dart';
+import '../debug/field_diagnostic_log.dart';
 import '../time/time_provider.dart';
 import 'background_collector_factory.dart';
 import 'notification_service.dart';
@@ -34,9 +35,13 @@ Future<bool> runFgsStepCollectionCycle({
       includePhonePedometerSource:
           sources == null && !skipPhoneSourceWhenUiActive,
     );
-    await collector.collectOnce(enableGoalNotification: true);
+    await collector.collectOnce(
+      enableGoalNotification: true,
+      fieldLogOrigin: 'fgs',
+    );
     return true;
   } catch (error, stackTrace) {
+    fieldDiagnosticLog('fgs', 'cycle FAIL', details: {'error': error});
     debugPrint('FGS step collection failed: $error');
     debugPrintStack(stackTrace: stackTrace);
     return false;

@@ -649,6 +649,18 @@ abstract class AppLocalizations {
   /// **'Export saved'**
   String get myDataExportSaved;
 
+  /// Snack bar after successful field diagnostic log export
+  ///
+  /// In en, this message translates to:
+  /// **'Diagnostic log saved'**
+  String get myDataFieldLogExportSaved;
+
+  /// Semantics for hidden long-press export of field diagnostic log
+  ///
+  /// In en, this message translates to:
+  /// **'Export background diagnostic log'**
+  String get myDataFieldLogExportSemantics;
+
   /// Snack bar after successful CSV import
   ///
   /// In en, this message translates to:

@@ -43,6 +43,7 @@ class AppCubitCoordinator {
           activityPermissionGranted: deps.activityPermissionGranted,
           pickCsvFile: pickCsvFileForImport,
           saveCsvFile: saveCsvExportFile,
+          saveFieldLogFile: saveFieldLogExportFile,
           postImportRefresh: _onImportComplete,
           postPurgeRefresh: refreshAfterPurge,
           postGoalUpdate: _onMyDataGoalUpdate,

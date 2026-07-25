@@ -156,7 +156,10 @@ class AppDependencies {
       activityPermissionGranted: resolveActivityRecognitionGranted,
       collectionRunner: ({bool skipPhoneSourceWhenUiActive = false}) async {
         try {
-          await backgroundCollector.collectOnce(enableGoalNotification: true);
+          await backgroundCollector.collectOnce(
+            enableGoalNotification: true,
+            fieldLogOrigin: 'fgs',
+          );
           return true;
         } catch (error, stackTrace) {
           debugPrint('Health FGS in-process collection failed: $error');

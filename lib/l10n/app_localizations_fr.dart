@@ -314,6 +314,13 @@ class AppLocalizationsFr extends AppLocalizations {
   String get myDataExportSaved => 'Export enregistré';
 
   @override
+  String get myDataFieldLogExportSaved => 'Journal de diagnostic enregistré';
+
+  @override
+  String get myDataFieldLogExportSemantics =>
+      'Exporter le journal de diagnostic d\'arrière-plan';
+
+  @override
   String get myDataImportComplete => 'Importation terminée';
 
   @override

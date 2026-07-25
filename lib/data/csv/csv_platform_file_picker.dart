@@ -22,3 +22,15 @@ Future<bool> saveCsvExportFile(String filePath) async {
   );
   return savedPath != null;
 }
+
+Future<bool> saveFieldLogExportFile(String filePath) async {
+  final bytes = await File(filePath).readAsBytes();
+  final savedPath = await FilePicker.saveFile(
+    dialogTitle: 'Save diagnostic log',
+    fileName: p.basename(filePath),
+    bytes: bytes,
+    type: FileType.custom,
+    allowedExtensions: ['txt'],
+  );
+  return savedPath != null;
+}

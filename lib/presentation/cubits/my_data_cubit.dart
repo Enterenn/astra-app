@@ -5,6 +5,7 @@ import 'package:flutter/foundation.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:path_provider/path_provider.dart';
 
+import '../../core/debug/field_diagnostic_log.dart';
 import '../../core/constants/purge_confirm_action.dart';
 import '../../core/validation/step_goal_validator.dart';
 import '../../data/csv/import_validation_exception.dart';
@@ -28,6 +29,7 @@ typedef ActivityPermissionChecker = Future<bool> Function();
 typedef TempDirectoryProvider = Future<String> Function();
 /// Returns true when the user saved to a chosen on-device location.
 typedef SaveCsvFileCallback = Future<bool> Function(String filePath);
+typedef SaveFieldLogFileCallback = Future<bool> Function(String filePath);
 typedef PickCsvFileCallback = Future<String?> Function();
 typedef ConfirmImportCallback =
     Future<bool> Function(int csvRowCount, int existingSampleCount);
@@ -50,6 +52,7 @@ class MyDataCubit extends Cubit<MyDataState> {
     ActivityPermissionStatusChecker? activityPermissionStatus,
     TempDirectoryProvider? tempDirectoryProvider,
     required SaveCsvFileCallback saveCsvFile,
+    SaveFieldLogFileCallback? saveFieldLogFile,
     required PickCsvFileCallback pickCsvFile,
     this._confirmImport,
     this._postImportRefresh,
@@ -65,6 +68,7 @@ class MyDataCubit extends Cubit<MyDataState> {
        _tempDirectoryProvider =
            tempDirectoryProvider ?? _defaultTempDirectoryProvider,
        _saveCsvFile = saveCsvFile,
+       _saveFieldLogFile = saveFieldLogFile ?? ((_) async => false),
        _pickCsvFile = pickCsvFile,
        _isIos = isIos ?? Platform.isIOS,
        _batteryOptimizationProbe =
@@ -82,6 +86,7 @@ class MyDataCubit extends Cubit<MyDataState> {
   final ActivityPermissionStatusChecker _activityPermissionStatus;
   final TempDirectoryProvider _tempDirectoryProvider;
   final SaveCsvFileCallback _saveCsvFile;
+  final SaveFieldLogFileCallback _saveFieldLogFile;
   final PickCsvFileCallback _pickCsvFile;
   final ConfirmImportCallback? _confirmImport;
   final PostImportRefreshCallback? _postImportRefresh;
@@ -93,6 +98,7 @@ class MyDataCubit extends Cubit<MyDataState> {
 
   Future<void>? _refreshInFlight;
   Future<void>? _exportInFlight;
+  Future<void>? _fieldLogExportInFlight;
   Future<void>? _importInFlight;
   Future<void>? _purgeInFlight;
 
@@ -104,7 +110,11 @@ class MyDataCubit extends Cubit<MyDataState> {
   Future<void> pickAndImport({
     ConfirmImportCallback? confirmImport,
   }) async {
-    if (isClosed || state.isImporting || state.isExporting || state.isPurging) {
+    if (isClosed ||
+        state.isImporting ||
+        state.isExporting ||
+        state.isExportingFieldLog ||
+        state.isPurging) {
       return;
     }
     if (_importInFlight != null) {
@@ -222,6 +232,7 @@ class MyDataCubit extends Cubit<MyDataState> {
   Future<void> exportAndShare() async {
     if (isClosed ||
         state.isExporting ||
+        state.isExportingFieldLog ||
         state.isImporting ||
         state.isPurging) {
       return;
@@ -293,12 +304,95 @@ class MyDataCubit extends Cubit<MyDataState> {
     }
   }
 
+  /// Exports retained field diagnostic logs via the platform save dialog.
+  Future<void> exportFieldDiagnosticLog() async {
+    if (isClosed ||
+        state.isExporting ||
+        state.isExportingFieldLog ||
+        state.isImporting ||
+        state.isPurging) {
+      return;
+    }
+    if (_fieldLogExportInFlight != null) {
+      return _fieldLogExportInFlight!;
+    }
+
+    _fieldLogExportInFlight = _exportFieldDiagnosticLogImpl();
+    try {
+      await _fieldLogExportInFlight!;
+    } finally {
+      _fieldLogExportInFlight = null;
+    }
+  }
+
+  Future<void> _exportFieldDiagnosticLogImpl() async {
+    emit(
+      state.copyWith(
+        isExportingFieldLog: true,
+        fieldLogExportError: null,
+        fieldLogExportSuccessPending: false,
+      ),
+    );
+
+    try {
+      await flushFieldDiagnosticLog();
+      final tempDirectory = await _tempDirectoryProvider();
+      final filePath = await prepareFieldDiagnosticLogExport(
+        outputDirectory: tempDirectory,
+      );
+      try {
+        final savedOnDevice = await _saveFieldLogFile(filePath);
+        if (isClosed) {
+          return;
+        }
+
+        if (savedOnDevice) {
+          emit(
+            state.copyWith(
+              isExportingFieldLog: false,
+              fieldLogExportError: null,
+              fieldLogExportSuccessPending: true,
+            ),
+          );
+        } else {
+          emit(state.copyWith(isExportingFieldLog: false));
+        }
+      } finally {
+        try {
+          await File(filePath).delete();
+        } catch (_) {}
+      }
+    } catch (error, stackTrace) {
+      if (kDebugMode) {
+        debugPrint('MyDataCubit.exportFieldDiagnosticLog failed: $error');
+        debugPrintStack(stackTrace: stackTrace);
+      }
+      if (isClosed) {
+        return;
+      }
+
+      emit(
+        state.copyWith(
+          isExportingFieldLog: false,
+          fieldLogExportError: MyDataExportError.generic,
+        ),
+      );
+    }
+  }
+
   /// Clears [MyDataState.exportSuccessPending] after the UI shows the snackbar.
   void ackExportSuccess() {
     if (isClosed || !state.exportSuccessPending) {
       return;
     }
     emit(state.copyWith(exportSuccessPending: false));
+  }
+
+  void ackFieldLogExportSuccess() {
+    if (isClosed || !state.fieldLogExportSuccessPending) {
+      return;
+    }
+    emit(state.copyWith(fieldLogExportSuccessPending: false));
   }
 
   /// Clears [MyDataState.importSuccessPending] after the UI shows the snackbar.

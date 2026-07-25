@@ -10,6 +10,7 @@ import '../database/isolate_database_factory.dart';
 import '../time/time_provider.dart';
 import '../../data/repositories/step/step_aggregation_repository.dart';
 import '../../data/repositories/user_settings_repository.dart';
+import '../debug/field_diagnostic_log.dart';
 import '../time/system_time_provider.dart';
 import 'background_collector_factory.dart';
 import 'data_lifecycle_service.dart';
@@ -105,6 +106,7 @@ Future<bool> runStepCollectionWorkmanagerTask({
 }) async {
   Database? db;
   try {
+    fieldDiagnosticLog('wm', 'task START');
     db = await openDatabase(databasePath: databasePath);
     final collector = await createIsolateBackgroundCollector(
       db: db,
@@ -115,9 +117,14 @@ Future<bool> runStepCollectionWorkmanagerTask({
       notificationPermissionGranted: notificationPermissionGranted,
     );
 
-    await collector.collectOnce(enableGoalNotification: true);
+    await collector.collectOnce(
+      enableGoalNotification: true,
+      fieldLogOrigin: 'wm',
+    );
+    fieldDiagnosticLog('wm', 'task OK');
     return true;
   } catch (error, stackTrace) {
+    fieldDiagnosticLog('wm', 'task FAIL', details: {'error': error});
     debugPrint('WorkManager step collection failed: $error');
     debugPrintStack(stackTrace: stackTrace);
     return false;

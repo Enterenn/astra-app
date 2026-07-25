@@ -4,6 +4,7 @@ import 'package:flutter/foundation.dart';
 import 'package:flutter/services.dart';
 
 import 'fgs_step_collection.dart';
+import '../debug/field_diagnostic_log.dart';
 
 typedef FgsStepCollectionRunner = Future<bool> Function({
   bool skipPhoneSourceWhenUiActive,
@@ -69,12 +70,20 @@ class HealthForegroundServiceCoordinator {
       return;
     }
     if (!await _activityPermissionGranted()) {
+      fieldDiagnosticLog('fgs', 'start SKIPPED reason=no_permission');
       return;
     }
     registerPlatformHandlers();
+    fieldDiagnosticLog('fgs', 'start REQUEST');
     try {
       await _channel.invokeMethod<void>(_methodStart);
+      fieldDiagnosticLog('fgs', 'start OK');
     } on PlatformException catch (error, stackTrace) {
+      fieldDiagnosticLog(
+        'fgs',
+        'start FAIL',
+        details: {'error': error.message ?? error.code},
+      );
       debugPrint('Health FGS start failed: $error');
       debugPrintStack(stackTrace: stackTrace);
     }
@@ -84,9 +93,16 @@ class HealthForegroundServiceCoordinator {
     if (!_isAndroidPlatform()) {
       return;
     }
+    fieldDiagnosticLog('fgs', 'stop REQUEST');
     try {
       await _channel.invokeMethod<void>(_methodStop);
+      fieldDiagnosticLog('fgs', 'stop OK');
     } on PlatformException catch (error, stackTrace) {
+      fieldDiagnosticLog(
+        'fgs',
+        'stop FAIL',
+        details: {'error': error.message ?? error.code},
+      );
       debugPrint('Health FGS stop failed: $error');
       debugPrintStack(stackTrace: stackTrace);
     }
@@ -107,6 +123,7 @@ class HealthForegroundServiceCoordinator {
   /// Native defensive gate: skip phone pedometer reads while UI owns the stream.
   Future<void> setUiActive(bool active) async {
     _uiActive = active;
+    fieldDiagnosticLog('fgs', 'uiActive', details: {'active': active});
     if (!_isAndroidPlatform()) {
       return;
     }

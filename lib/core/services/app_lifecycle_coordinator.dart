@@ -5,6 +5,7 @@ import 'package:flutter/foundation.dart';
 import '../../presentation/cubits/history_cubit.dart';
 import '../../presentation/cubits/my_data_cubit.dart';
 import '../../presentation/cubits/today_cubit.dart';
+import '../debug/field_diagnostic_log.dart';
 import '../debug/live_pipeline_log.dart';
 import '../di/app_dependencies.dart';
 import 'lifecycle/lifecycle_day_boundary_service.dart';
@@ -114,6 +115,7 @@ class AppLifecycleCoordinator {
     if (initialShowMainShell) {
       _session.coldStartStopwatch = Stopwatch()..start();
       livePipelineLog('app', 'cold start START', details: {'elapsedMs': 0});
+      fieldDiagnosticLog('app', 'cold start START');
     }
     _session.foregroundBackfill = enableLiveStepPipeline
         ? _persist.runPersistCycle(
@@ -122,6 +124,7 @@ class AppLifecycleCoordinator {
           )
         : deps.backgroundCollector.collectOnce(
             enableGoalNotification: false,
+            fieldLogOrigin: 'cold_start',
           );
   }
 
@@ -202,6 +205,14 @@ class AppLifecycleCoordinator {
         'cubitSteps': _session.todayCubit?.state.steps,
       },
     );
+    fieldDiagnosticLog(
+      'app',
+      'lifecycle PAUSED',
+      details: {
+        'monitorRunning': deps.liveStepMonitor.isRunning,
+        'monitorTotal': deps.liveStepMonitor.currentTodaySteps,
+      },
+    );
     await _persist.persistOnPause();
     if (!_session.shellVisible()) {
       return;
@@ -219,6 +230,7 @@ class AppLifecycleCoordinator {
   Future<void> _onAppForegrounded() async {
     _session.appInBackground = false;
     livePipelineLog('app', 'lifecycle RESUMED');
+    fieldDiagnosticLog('app', 'lifecycle RESUMED');
     await deps.databaseSession.ensureOpen();
     final healthFgs = deps.healthForegroundCoordinator;
     await healthFgs.stopHealthCollectionService();

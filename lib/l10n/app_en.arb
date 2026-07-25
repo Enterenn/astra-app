@@ -425,6 +425,14 @@
   "@myDataExportSaved": {
     "description": "Snack bar after successful CSV export"
   },
+  "myDataFieldLogExportSaved": "Diagnostic log saved",
+  "@myDataFieldLogExportSaved": {
+    "description": "Snack bar after successful field diagnostic log export"
+  },
+  "myDataFieldLogExportSemantics": "Export background diagnostic log",
+  "@myDataFieldLogExportSemantics": {
+    "description": "Semantics for hidden long-press export of field diagnostic log"
+  },
   "myDataImportComplete": "Import complete",
   "@myDataImportComplete": {
     "description": "Snack bar after successful CSV import"

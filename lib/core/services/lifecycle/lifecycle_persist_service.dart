@@ -49,6 +49,7 @@ class LifecyclePersistService {
         maxReadingsPerSource: persistMaxReadingsPerSource,
         enableGoalNotification: enableGoalNotification,
         sourceTimeout: sourceTimeout,
+        fieldLogOrigin: 'persist',
       );
       await monitor.reconcileFromDatabase();
       _lastPersistAt = DateTime.now();
@@ -111,6 +112,7 @@ class LifecyclePersistService {
 
     await deps.backgroundCollector.collectOnce(
       enableGoalNotification: enableGoalNotification,
+      fieldLogOrigin: 'persist',
     );
     if (syncTodayAfter) {
       await session.todayCubit?.refresh(silent: true);
@@ -141,6 +143,7 @@ class LifecyclePersistService {
       upserted = await deps.backgroundCollector.collectOnce(
         enableGoalNotification: enableGoalNotification,
         sourceTimeout: sourceTimeout,
+        fieldLogOrigin: 'persist',
       );
     }();
     _persistInFlight = operation;

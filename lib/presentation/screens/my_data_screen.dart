@@ -79,6 +79,21 @@ class MyDataScreen extends StatelessWidget {
             ),
             BlocListener<MyDataCubit, MyDataState>(
               listenWhen: (previous, current) =>
+                  !previous.fieldLogExportSuccessPending &&
+                  current.fieldLogExportSuccessPending,
+              listener: (context, state) {
+                final l10n = AppLocalizations.of(context);
+                ScaffoldMessenger.of(context).showSnackBar(
+                  SnackBar(
+                    content: Text(l10n.myDataFieldLogExportSaved),
+                    duration: const Duration(seconds: 3),
+                  ),
+                );
+                context.read<MyDataCubit>().ackFieldLogExportSuccess();
+              },
+            ),
+            BlocListener<MyDataCubit, MyDataState>(
+              listenWhen: (previous, current) =>
                   !previous.purgeSuccessPending && current.purgeSuccessPending,
               listener: (context, state) {
                 final l10n = AppLocalizations.of(context);
@@ -116,7 +131,10 @@ class _MyDataScreenBody extends StatelessWidget {
     final state = context.watch<MyDataCubit>().state;
     final cubit = context.read<MyDataCubit>();
     final dataActionInFlight =
-        state.isExporting || state.isImporting || state.isPurging;
+        state.isExporting ||
+        state.isExportingFieldLog ||
+        state.isImporting ||
+        state.isPurging;
     final horizontalPadding = AstraSpacing.kScreenHorizontalPadding;
     final bottomScrollPadding =
         AstraSpacing.kBottomNavBottomOffset +
@@ -124,6 +142,10 @@ class _MyDataScreenBody extends StatelessWidget {
         AstraSpacing.kSpaceMd;
     final nowUtc = cubit.clock.nowUtc();
     final exportErrorMessage = myDataExportErrorMessage(l10n, state.exportError);
+    final fieldLogExportErrorMessage = myDataExportErrorMessage(
+      l10n,
+      state.fieldLogExportError,
+    );
     final importErrorMessage = myDataImportErrorMessage(l10n, state);
     final purgeErrorMessage = myDataPurgeErrorMessage(l10n, state.purgeError);
 
@@ -149,6 +171,14 @@ class _MyDataScreenBody extends StatelessWidget {
               variant: StatusBannerVariant.error,
               message: exportErrorMessage,
               onTap: () => unawaited(cubit.exportAndShare()),
+            ),
+          ],
+          if (fieldLogExportErrorMessage != null) ...[
+            const SizedBox(height: AstraSpacing.kSpaceMd),
+            StatusBanner(
+              variant: StatusBannerVariant.error,
+              message: fieldLogExportErrorMessage,
+              onTap: () => unawaited(cubit.exportFieldDiagnosticLog()),
             ),
           ],
           if (importErrorMessage != null) ...[
@@ -185,26 +215,34 @@ class _MyDataScreenBody extends StatelessWidget {
             ),
           ],
           const SizedBox(height: AstraSpacing.kSpaceMd),
-          SectionCard(
-            headline: l10n.menuTrackingStatus,
-            child: state.status == MyDataStatus.loading
-                ? const _SectionLoadingIndicator()
-                : BackgroundStatusCard(
-                    status: state.backgroundStatus,
-                    lastIngestionUtc: state.lastIngestionUtc,
-                    nowUtc: nowUtc,
-                    activityPermissionDenial: state.activityPermissionDenial,
-                    batteryOptimizationExempt: state.batteryOptimizationExempt,
-                    likelyOemBatteryDeferral: state.likelyOemBatteryDeferral,
-                    deviceManufacturer: state.deviceManufacturer,
-                    onOpenSettings: () => unawaited(openAppSettings()),
-                    onRetryPermission: () {
-                      unawaited(_retryActivityPermission(context, cubit));
-                    },
-                    onRequestBatteryExemption: () {
-                      unawaited(cubit.requestBatteryOptimizationExemption());
-                    },
-                  ),
+          Semantics(
+            label: l10n.myDataFieldLogExportSemantics,
+            child: GestureDetector(
+              onLongPress: dataActionInFlight
+                  ? null
+                  : () => unawaited(cubit.exportFieldDiagnosticLog()),
+              child: SectionCard(
+                headline: l10n.menuTrackingStatus,
+                child: state.status == MyDataStatus.loading
+                    ? const _SectionLoadingIndicator()
+                    : BackgroundStatusCard(
+                        status: state.backgroundStatus,
+                        lastIngestionUtc: state.lastIngestionUtc,
+                        nowUtc: nowUtc,
+                        activityPermissionDenial: state.activityPermissionDenial,
+                        batteryOptimizationExempt: state.batteryOptimizationExempt,
+                        likelyOemBatteryDeferral: state.likelyOemBatteryDeferral,
+                        deviceManufacturer: state.deviceManufacturer,
+                        onOpenSettings: () => unawaited(openAppSettings()),
+                        onRetryPermission: () {
+                          unawaited(_retryActivityPermission(context, cubit));
+                        },
+                        onRequestBatteryExemption: () {
+                          unawaited(cubit.requestBatteryOptimizationExemption());
+                        },
+                      ),
+              ),
+            ),
           ),
           const SizedBox(height: AstraSpacing.kSpaceMd),
           SectionCard(
