@@ -1,7 +1,7 @@
 # Audits données & pipeline — index (`audits_2`)
 
 **Généré :** 2026-07-21  
-**Dernière resync :** 2026-07-25 (Story 33-1 — diagnostic 05 fixed, D1 closed)  
+**Dernière resync :** 2026-07-25 (Story 33-2 — diagnostic 08 fixed, D2 + M9 closed)  
 **Base code :** `0.12.1+31` (`pubspec.yaml`)  
 **Périmètre :** couche SQLite → ingestion pedometer → `LiveStepMonitor` → compaction FR11 → WorkManager → agrégations charts → prefs utilisateur → permissions/notifications  
 **Statut chantier :** `open` — aucun point marqué `fixed` dans ce dossier
@@ -36,7 +36,7 @@ Priorités : **P0** critique (corruption données / sur-comptage / sécurité) �
 | 05 | [diagnostic-fuseaux-jours-locaux.md](./diagnostic-fuseaux-jours-locaux.md) | TZ, DST, clés regroupement, offset stocké | `fixed` | 0 | 0 |
 | 06 | [diagnostic-preferences-utilisateur.md](./diagnostic-preferences-utilisateur.md) | Prefs KV, journal objectif, `isDatabaseOpen` | `fixed` | 0 | 0 |
 | 07 | [diagnostic-ingestion-pedometer.md](./diagnostic-ingestion-pedometer.md) | `StepNormalizer`, `StepIncrementCalculator`, baseline | `fixed` | 0 | 0 |
-| 08 | [diagnostic-charts-agregation-daily-monthly.md](./diagnostic-charts-agregation-daily-monthly.md) | History 30j, Trends 12 mois, `finestResolutionTotal` | `partial` | 0 | 2 |
+| 08 | [diagnostic-charts-agregation-daily-monthly.md](./diagnostic-charts-agregation-daily-monthly.md) | History 30j, Trends 12 mois, `finestResolutionTotal` | `fixed` | 0 | 0 |
 | 09 | [diagnostic-live-step-monitor.md](./diagnostic-live-step-monitor.md) | Drain persist, affichage live, reset matériel | `partial` | 1 | 1 |
 
 **Ordre de lecture recommandé (dépendances) :** 01 → 07 → **09** → 03 → 04 → 05 → 08 → 06 → 02
@@ -226,8 +226,8 @@ My Data editor → refresh via getGoalForLocalDay(todayIso) + setDailyStepGoal
 
 | # | Priorité | Finding | Statut | Réf. |
 |---|----------|---------|--------|------|
-| 1 | P3 | Rollover `DateTime.utc` implicite (mois/jour 0) | `open` | `_step_chart_queries.dart:48-51,126-133` |
-| 2 | P3 | SQL sans borne haute (`start_time >=` seulement) | `open` | Filtre jour local côté Dart |
+| 1 | P3 | Rollover `DateTime.utc` implicite (mois/jour 0) | `fixed` (33-2) | `_step_chart_queries.dart:48-51,126-133` |
+| 2 | P3 | SQL sans borne haute (`start_time >=` seulement) | `fixed` (33-2) | `start_time < sqlUpperBoundUtc` via `sampleUtcBoundsForLocalDay` |
 
 **Consommateurs :** `HistoryCubit` (30j + 12 mois), `TodayWeekSelection` (7j).
 
@@ -279,7 +279,7 @@ My Data editor → refresh via getGoalForLocalDay(todayIso) + setDailyStepGoal
 | Todo | Diagnostics | Action |
 |------|-------------|--------|
 | D1 | 05 | ~~Commentaire DST non-compaction `lifecycle_compaction.dart`~~ — done (33-1) |
-| D2 | 08 | Commentaire rollover `DateTime.utc` charts |
+| D2 | 08 | ~~Commentaire rollover `DateTime.utc` charts~~ — done (33-2) |
 | D3 | 06 | ~~Doc cache prefs vs journal objectif ; single-writer~~ — done (32-4) |
 | D4 | 01 | NFR-4 / footprint plaintext si maintenu Phase 0 |
 
@@ -295,7 +295,7 @@ My Data editor → refresh via getGoalForLocalDay(todayIso) + setDailyStepGoal
 | M6 | 02 | Centraliser permission status par type |
 | M7 | 03 | ~~Boot gate cancel WM → await notification init~~ — done (31-5) |
 | M8 | 03 | ~~Documenter gap iOS background~~ — done (30-3) |
-| M9 | 08 | Borne haute SQL charts (perf) |
+| M9 | 08 | ~~Borne haute SQL charts (perf)~~ — done (33-2) |
 
 ---
 
@@ -357,7 +357,7 @@ My Data editor → refresh via getGoalForLocalDay(todayIso) + setDailyStepGoal
 | **E30?** | Concurrence SQLite & maintenance | 03, 01 | Lock VACUUM, `busy_timeout` |
 | **E31?** | Permissions & notifications UX | 02 | permanentlyDenied, retry, init rethrow |
 | **E32?** | Hygiène données & IDs | 01, 06 | ID multi-type, dev guard, objectif single source |
-| **E33?** | Doc & perf pipeline | 05, 08 | ~~DST comment~~ done (33-1) · chart SQL bound (33-2) |
+| **E33?** | Doc & perf pipeline | 05, 08 | ~~DST comment~~ done (33-1) · ~~chart SQL bound~~ done (33-2) |
 
 *(Numérotation à valider avec [`epics-post-audit.md`](../epics-post-audit.md) / sprint planning — E27–E28 restent backlog audits v1.)*
 

@@ -134,7 +134,10 @@ class StepAggregationRepository implements StepAggregationRepositoryContract {
       (db) => db.query(
         'timeseries_samples',
         where: chartSamplesWhereClause,
-        whereArgs: chartSamplesWhereArgs(bounds.sqlLowerBoundUtc),
+        whereArgs: chartSamplesWhereArgs(
+          sqlLowerBoundUtc: bounds.sqlLowerBoundUtc,
+          sqlUpperBoundUtc: bounds.sqlUpperBoundUtc,
+        ),
       ),
     );
 
@@ -163,7 +166,10 @@ class StepAggregationRepository implements StepAggregationRepositoryContract {
       (db) => db.query(
         'timeseries_samples',
         where: chartSamplesWhereClause,
-        whereArgs: chartSamplesWhereArgs(bounds.sqlLowerBoundUtc),
+        whereArgs: chartSamplesWhereArgs(
+          sqlLowerBoundUtc: bounds.sqlLowerBoundUtc,
+          sqlUpperBoundUtc: bounds.sqlUpperBoundUtc,
+        ),
       ),
     );
 

@@ -7,17 +7,25 @@ import '../../models/normalized_step_bucket.dart';
 import '../../models/timeseries_sample_model.dart';
 import '_step_sample_bounds.dart';
 
-const chartSamplesWhereClause = 'type = ? AND start_time >= ?';
+// Exclusive upper bound aligns with sampleUtcBoundsForLocalDay buffer (+2 days).
+const chartSamplesWhereClause =
+    'type = ? AND start_time >= ? AND start_time < ?';
 
-List<Object?> chartSamplesWhereArgs(DateTime sqlLowerBoundUtc) => [
-  kStepSampleType,
-  TimestampCodec.formatUtc(sqlLowerBoundUtc),
-];
+List<Object?> chartSamplesWhereArgs({
+  required DateTime sqlLowerBoundUtc,
+  required DateTime sqlUpperBoundUtc,
+}) =>
+    [
+      kStepSampleType,
+      TimestampCodec.formatUtc(sqlLowerBoundUtc),
+      TimestampCodec.formatUtc(sqlUpperBoundUtc),
+    ];
 
 ({
   DateTime referenceToday,
   DateTime windowStart,
   DateTime sqlLowerBoundUtc,
+  DateTime sqlUpperBoundUtc,
 })
 dailyChartQueryBounds({required int days, required TimeProvider clock}) {
   final timeSnapshot = clock.snapshot();
@@ -26,11 +34,16 @@ dailyChartQueryBounds({required int days, required TimeProvider clock}) {
     zoneOffset: TimestampCodec.formatZoneOffset(timeSnapshot.zoneOffset),
   );
   final windowStart = referenceToday.subtract(Duration(days: days - 1));
+  // Mirrors sampleUtcBoundsForLocalDay(windowStart).lowerInclusive — see
+  // _step_sample_bounds.dart buffer contract (±1 / +2 day UTC envelope).
   final sqlLowerBoundUtc = windowStart.subtract(const Duration(days: 1));
+  final sqlUpperBoundUtc =
+      sampleUtcBoundsForLocalDay(referenceToday).upperExclusive;
   return (
     referenceToday: referenceToday,
     windowStart: windowStart,
     sqlLowerBoundUtc: sqlLowerBoundUtc,
+    sqlUpperBoundUtc: sqlUpperBoundUtc,
   );
 }
 
@@ -38,6 +51,7 @@ dailyChartQueryBounds({required int days, required TimeProvider clock}) {
   DateTime referenceToday,
   DateTime windowStart,
   DateTime sqlLowerBoundUtc,
+  DateTime sqlUpperBoundUtc,
 })
 monthlyChartQueryBounds({required int months, required TimeProvider clock}) {
   final timeSnapshot = clock.snapshot();
@@ -45,16 +59,22 @@ monthlyChartQueryBounds({required int months, required TimeProvider clock}) {
     utc: timeSnapshot.nowUtc,
     zoneOffset: TimestampCodec.formatZoneOffset(timeSnapshot.zoneOffset),
   );
+  // Intentional DateTime.utc month rollover — Dart normalizes month <= 0
+  // (e.g. June minus 11 months → July prior year). Do not replace with manual
+  // year/month splitting; chart tests depend on this normalization.
   final windowStart = DateTime.utc(
     referenceToday.year,
     referenceToday.month - (months - 1),
     1,
   );
   final sqlLowerBoundUtc = windowStart.subtract(const Duration(days: 1));
+  final sqlUpperBoundUtc =
+      sampleUtcBoundsForLocalDay(referenceToday).upperExclusive;
   return (
     referenceToday: referenceToday,
     windowStart: windowStart,
     sqlLowerBoundUtc: sqlLowerBoundUtc,
+    sqlUpperBoundUtc: sqlUpperBoundUtc,
   );
 }
 
@@ -123,6 +143,8 @@ List<ChartMonthAggregate> chartMonthlyAggregatesFromRows({
 
   final results = <ChartMonthAggregate>[];
   for (var monthOffset = 0; monthOffset < months; monthOffset++) {
+    // Month iteration via DateTime.utc rollover — same normalization as
+    // monthlyChartQueryBounds; do not replace with manual year/month math.
     final monthStart = DateTime.utc(
       referenceToday.year,
       referenceToday.month - monthOffset,
@@ -130,6 +152,8 @@ List<ChartMonthAggregate> chartMonthlyAggregatesFromRows({
     );
     final monthEnd = monthOffset == 0
         ? referenceToday
+        // day 0 of next month = last calendar day of monthStart's month.
+        // Intentional DateTime.utc rollover — do not replace with manual month math.
         : DateTime.utc(monthStart.year, monthStart.month + 1, 0);
 
     var totalSteps = 0;

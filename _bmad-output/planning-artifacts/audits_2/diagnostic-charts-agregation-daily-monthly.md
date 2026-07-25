@@ -3,15 +3,15 @@
 **Généré :** 2026-07-21  
 **Base code :** `0.12.1+31` (`pubspec.yaml`)  
 **Périmètre :** `_step_chart_queries.dart` · `StepAggregationRepository.getChartDailyAggregates` / `getChartMonthlyAggregates` · History / Trends consumers  
-**Statut global :** `partial` (solide ; dette doc/perf mineure)
+**Statut global :** `fixed` (Story 33-2)
 
 ---
 
 ## Statut
 
-- **Dernière vérification :** 2026-07-21
-- **Statut :** `partial`
-- **Story / PR :** —
+- **Dernière vérification :** 2026-07-25
+- **Statut :** `fixed`
+- **Story / PR :** 33-2
 
 ---
 
@@ -19,8 +19,8 @@
 
 | Priorité | # | Domaine | Statut |
 |----------|---|---------|--------|
-| 🟡 P3 | 1 | Astuces `DateTime.utc` non commentées | `open` |
-| 🟡 P3 | 2 | Requête SQL sans borne haute | `open` |
+| 🟡 P3 | 1 | Astuces `DateTime.utc` non commentées | `fixed` (33-2) |
+| 🟡 P3 | 2 | Requête SQL sans borne haute | `fixed` (33-2) |
 
 ---
 
@@ -38,7 +38,7 @@
 
 **Risque :** Mainteneur « corrige » en logique manuelle (split année/mois) et introduit une régression.
 
-**Piste :** Commentaire court type *« intentional DateTime.utc rollover — do not replace with manual month math »*.
+**Fix (33-2) :** Commentaires inline *« intentional DateTime.utc rollover — do not replace with manual month math »* aux sites ci-dessus.
 
 ---
 
@@ -54,7 +54,7 @@
 
 **Impact :** Lignes futures ou hors fenêtre (jour local) chargées puis ignorées — IO SQLite + parsing Dart superflus. Acceptable Phase 0 ; pas de bug UI.
 
-**Piste (optionnelle) :** `sqlUpperBoundUtc = referenceToday.add(Duration(days: 2))` aligné sur `sampleUtcBoundsForLocalDay` (`_step_sample_bounds.dart:61-62`).
+**Fix (33-2) :** `sqlUpperBoundUtc = sampleUtcBoundsForLocalDay(referenceToday).upperExclusive` ; clause `start_time < ?` alignée sur `getTodaySteps` / `getActiveBucketsForLocalDay`.
 
 ---
 
@@ -79,7 +79,7 @@
 ```
 getChart*Aggregates
   → dailyChartQueryBounds / monthlyChartQueryBounds
-  → SQL: start_time >= sqlLowerBoundUtc
+  → SQL: start_time >= sqlLowerBoundUtc AND start_time < sqlUpperBoundUtc
   → accumulateStepsByDayAndResolution (filtre local day)
   → finestResolutionTotal par jour
   → ChartDayAggregate | ChartMonthAggregate (moyenne mois)
@@ -91,8 +91,8 @@ getChart*Aggregates
 
 | Phase | Action |
 |-------|--------|
-| **Doc** | Commentaires rollover `DateTime.utc` (T1) |
-| **Perf (optionnel)** | Borne haute SQL cohérente avec fenêtre locale |
+| **Doc** | ~~Commentaires rollover `DateTime.utc` (T1)~~ — done (33-2) |
+| **Perf (optionnel)** | ~~Borne haute SQL cohérente avec fenêtre locale~~ — done (33-2) |
 | **Ne pas faire** | Sommer toutes résolutions d'un même jour |
 
 ---

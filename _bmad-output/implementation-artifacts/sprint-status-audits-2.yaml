@@ -1,6 +1,6 @@
 # generated: 2026-07-24
-# last_updated: 2026-07-25 (Story 33-1 done)
-# NEXT: create-story 33-2-document-chart-date-rollover-and-optional-sql-upper-bound
+# last_updated: 2026-07-25 (Story 33-2 review)
+# NEXT: code-review 33-2 · epic-33 close (version bump after review)
 # Ref: planning-artifacts/epics-audits-2.md · implementation-readiness-report-2026-07-24.md
 # project: astra-app
 # project_key: NOKEY
@@ -47,7 +47,7 @@
 # NAVIGATION: _bmad-output/README.md · planning-artifacts/audits_2/README.md
 
 generated: 2026-07-24
-last_updated: 2026-07-25 (Story 33-1 done)
+last_updated: 2026-07-25 (Story 33-2 review)
 project: astra-app
 project_key: NOKEY
 tracking_system: file-system
@@ -91,5 +91,5 @@ development_status:
 
   epic-33: in-progress
   33-1-document-dst-non-compaction-intent: done
-  33-2-document-chart-date-rollover-and-optional-sql-upper-bound: backlog
+  33-2-document-chart-date-rollover-and-optional-sql-upper-bound: review
   epic-33-retrospective: optional
