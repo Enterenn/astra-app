@@ -1,5 +1,6 @@
 import 'dart:io';
 
+import '../../core/ids/sample_id_generator.dart';
 import '../../core/time/timestamp_codec.dart';
 import '../models/normalized_step_bucket.dart';
 import '../models/timeseries_sample_model.dart';
@@ -30,16 +31,6 @@ class TimeseriesCsvCodec {
     kHourlyResolution,
     kDailyResolution,
   };
-
-  static final _legacyUuidPattern = RegExp(
-    r'^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$',
-    caseSensitive: false,
-  );
-
-  static final _timestampIdPattern = RegExp(
-    r'^[0-9a-z]+(-[0-9a-z]+)?$',
-    caseSensitive: false,
-  );
 
   static String serializeRow(TimeseriesSampleModel sample) {
     final map = sample.toMap();
@@ -180,7 +171,25 @@ class TimeseriesCsvCodec {
       };
 
       _validateDataMap(map, rowNumber: rowNumber);
-      return TimeseriesSampleModel.fromMap(map);
+      final sample = TimeseriesSampleModel.fromMap(map);
+      return TimeseriesSampleModel(
+        id: SampleIdGenerator.deterministicFromIngestionBucket(
+          startTimeUtc: sample.startTimeUtc,
+          provider: sample.provider,
+          deviceId: sample.deviceId,
+          type: sample.type,
+          resolution: sample.resolution,
+        ),
+        startTimeUtc: sample.startTimeUtc,
+        endTimeUtc: sample.endTimeUtc,
+        type: sample.type,
+        value: sample.value,
+        unit: sample.unit,
+        resolution: sample.resolution,
+        provider: sample.provider,
+        deviceId: sample.deviceId,
+        zoneOffset: sample.zoneOffset,
+      );
     } on ImportValidationException {
       rethrow;
     } catch (error) {
@@ -245,13 +254,6 @@ class TimeseriesCsvCodec {
 
     for (final key in _headerColumns) {
       requireNonEmpty(key);
-    }
-
-    final id = map['id']! as String;
-    if (!_legacyUuidPattern.hasMatch(id) && !_timestampIdPattern.hasMatch(id)) {
-      throw ImportValidationException(
-        'Row $rowNumber: id must be a valid sample id',
-      );
     }
 
     final type = map['type']! as String;

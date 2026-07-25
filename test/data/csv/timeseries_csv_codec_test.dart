@@ -3,6 +3,7 @@ library;
 
 import 'dart:io';
 
+import 'package:astra_app/core/ids/sample_id_generator.dart';
 import 'package:astra_app/data/csv/import_validation_exception.dart';
 import 'package:astra_app/data/csv/timeseries_csv_codec.dart';
 import 'package:astra_app/data/datasources/data_ingestion_source.dart';
@@ -88,7 +89,16 @@ void main() {
       final row = TimeseriesCsvCodec.serializeRow(sample);
       final parsed = TimeseriesCsvCodec.parseDataRow(row, rowNumber: 1);
 
-      expect(parsed.id, sample.id);
+      expect(
+        parsed.id,
+        SampleIdGenerator.deterministicFromIngestionBucket(
+          startTimeUtc: sample.startTimeUtc,
+          provider: sample.provider,
+          deviceId: sample.deviceId,
+          type: sample.type,
+          resolution: sample.resolution,
+        ),
+      );
       expect(parsed.value, sample.value);
       expect(parsed.startTimeUtc, sample.startTimeUtc);
       expect(parsed.zoneOffset, sample.zoneOffset);
@@ -137,7 +147,16 @@ void main() {
       expect(fields.single, 'line\rend');
     });
 
-    test('parseDataRow id validation: UUID v4, base36, rejects garbage', () {
+    test('parseDataRow regenerates id from bucket identity, ignores CSV id', () {
+      final sample = _sample();
+      final expectedId = SampleIdGenerator.deterministicFromIngestionBucket(
+        startTimeUtc: sample.startTimeUtc,
+        provider: sample.provider,
+        deviceId: sample.deviceId,
+        type: sample.type,
+        resolution: sample.resolution,
+      );
+
       final uuidParsed = TimeseriesCsvCodec.parseDataRow(
         'a1b2c3d4-e5f6-7890-abcd-ef1234567890,'
         '2026-05-22T14:30:00Z,'
@@ -145,31 +164,16 @@ void main() {
         'steps,42,count,5min,internal_phone,smartphone,+02:00',
         rowNumber: 1,
       );
-      expect(uuidParsed.id, 'a1b2c3d4-e5f6-7890-abcd-ef1234567890');
+      expect(uuidParsed.id, expectedId);
 
-      final base36Parsed = TimeseriesCsvCodec.parseDataRow(
-        'l7x3k2m-1,'
+      final forgedParsed = TimeseriesCsvCodec.parseDataRow(
+        'not-a-valid-id!,'
         '2026-05-22T14:30:00Z,'
         '2026-05-22T14:35:00Z,'
         'steps,42,count,5min,internal_phone,smartphone,+02:00',
-        rowNumber: 1,
+        rowNumber: 5,
       );
-      expect(base36Parsed.id, 'l7x3k2m-1');
-
-      expect(
-        () => TimeseriesCsvCodec.parseDataRow(
-          'not-a-valid-id!,'
-          '2026-05-22T14:30:00Z,'
-          '2026-05-22T14:35:00Z,'
-          'steps,42,count,5min,internal_phone,smartphone,+02:00',
-          rowNumber: 5,
-        ),
-        throwsA(
-          predicate<ImportValidationException>(
-            (e) => e.message.contains('Row 5: id must be a valid sample id'),
-          ),
-        ),
-      );
+      expect(forgedParsed.id, expectedId);
     });
 
     test('parseImportFile round-trips row with quoted newline in field', () async {

@@ -120,6 +120,40 @@ void main() {
       expect(await stepRepos.aggregation.countStepSamples(), 1);
     });
 
+    test('forged CSV id cannot overwrite unrelated bucket via PK clash', () async {
+      await stepRepos.ingestion.insertDevSamplesBatch([
+        _sample(id: '00000000-0000-4000-8000-000000000001'),
+      ]);
+      final existing = await db.query('timeseries_samples');
+      expect(existing, hasLength(1));
+      final stolenId = existing.single['id']! as String;
+
+      final forgedRow = TimeseriesCsvCodec.serializeRow(
+        _sample(
+          id: stolenId,
+          startOffsetMinutes: 60,
+          value: 999,
+        ),
+      );
+      final path = await writeCsvFile([
+        TimeseriesCsvCodec.headerRow,
+        forgedRow,
+      ]);
+
+      final result = await stepRepos.csv.importCsv(filePath: path);
+
+      expect(result.insertedCount, 1);
+      expect(result.skippedCount, 0);
+      expect(await stepRepos.aggregation.countStepSamples(), 2);
+      final rows = await db.query(
+        'timeseries_samples',
+        orderBy: 'start_time ASC',
+      );
+      expect(rows.first['id'], stolenId);
+      expect(rows.last['id'], isNot(stolenId));
+      expect(rows.last['value'], 999);
+    });
+
     test('header-only CSV is a no-op import', () async {
       final path = await writeCsvFile([TimeseriesCsvCodec.headerRow]);
 
