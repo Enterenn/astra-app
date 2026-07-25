@@ -91,7 +91,7 @@ Bump `pubspec.yaml` at the **end of each work phase** (audit batch, story, hotfi
 
 Also update `README.md` version line when bumping. Historical checklist rows in `docs/BETA_CHECKLIST.md` are **not** rewritten.
 
-**Current:** `0.2.0+2` — post-audit remediation (bug fixes, stale banners, dead-code cleanup). `0.x` = pre-1.0 OSS beta.
+**Current:** `0.15.2+40` — Phase 0 complete (Epics 1–33). `0.x` = pre-1.0 OSS beta.
 
 **In-app display:** Profile tab footer reads from `package_info_plus` (built manifest). Release APK: displayed version must match `pubspec.yaml` and `aapt dump badging`.
 
@@ -231,11 +231,12 @@ Before marking a story done:
 - PRD: `_bmad-output/planning-artifacts/prds/prd-astra-app-2026-05-22/prd.md`
 - PRD addendum (SQL, ADP): `_bmad-output/planning-artifacts/prds/prd-astra-app-2026-05-22/addendum.md`
 - UX: `_bmad-output/planning-artifacts/ux-design-specification.md`
-- Epics & stories: `_bmad-output/planning-artifacts/epics.md`
+- Epic index (1–33): `_bmad-output/planning-artifacts/EPIC-INDEX.md`
+- Phase 0 epics: `_bmad-output/planning-artifacts/epics.md`
 - Decision log: `_bmad-output/planning-artifacts/prds/prd-astra-app-2026-05-22/.decision-log.md`
 
 **Implementation tracking:**
 
-- Sprint status: `_bmad-output/implementation-artifacts/sprint-status.yaml`
-- Readiness assessment: `_bmad-output/planning-artifacts/implementation-readiness-report-2026-05-25.md`
-- Story files (when created): `_bmad-output/implementation-artifacts/stories/`
+- Sprint status (consolidated): `_bmad-output/implementation-artifacts/sprint-status.yaml`
+- Latest readiness: `_bmad-output/planning-artifacts/implementation-readiness-report-2026-07-24.md`
+- Story files: `_bmad-output/implementation-artifacts/stories/`
