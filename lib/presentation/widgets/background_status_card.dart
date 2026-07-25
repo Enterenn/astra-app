@@ -14,8 +14,12 @@ class BackgroundStatusCard extends StatelessWidget {
     required this.lastIngestionUtc,
     required this.nowUtc,
     this.activityPermissionDenial,
+    this.batteryOptimizationExempt,
+    this.likelyOemBatteryDeferral = false,
+    this.deviceManufacturer,
     this.onOpenSettings,
     this.onRetryPermission,
+    this.onRequestBatteryExemption,
     super.key,
   });
 
@@ -23,8 +27,12 @@ class BackgroundStatusCard extends StatelessWidget {
   final DateTime? lastIngestionUtc;
   final DateTime nowUtc;
   final PermissionRequestStatus? activityPermissionDenial;
+  final bool? batteryOptimizationExempt;
+  final bool likelyOemBatteryDeferral;
+  final String? deviceManufacturer;
   final VoidCallback? onOpenSettings;
   final VoidCallback? onRetryPermission;
+  final VoidCallback? onRequestBatteryExemption;
 
   @override
   Widget build(BuildContext context) {
@@ -107,9 +115,39 @@ class BackgroundStatusCard extends StatelessWidget {
             ),
           ),
         ],
+        if (_showBatteryOptimizationHint) ...[
+          const SizedBox(height: AstraSpacing.kSpaceSm),
+          Text(
+            l10n.myDataBackgroundBatteryOptimizationHint,
+            style: AstraTypography.captionFor(colors),
+          ),
+          Align(
+            alignment: Alignment.centerLeft,
+            child: TextButton(
+              onPressed: onRequestBatteryExemption,
+              child: Text(l10n.myDataBackgroundAllowBatteryExemption),
+            ),
+          ),
+        ],
+        if (_showOemDeferralHint) ...[
+          const SizedBox(height: AstraSpacing.kSpaceSm),
+          Text(
+            l10n.myDataBackgroundOemBatteryHint(deviceManufacturer!),
+            style: AstraTypography.captionFor(colors),
+          ),
+        ],
       ],
     );
   }
+
+  bool get _showBatteryOptimizationHint =>
+      status != BackgroundCollectionStatus.permissionDenied &&
+      batteryOptimizationExempt == false;
+
+  bool get _showOemDeferralHint =>
+      likelyOemBatteryDeferral &&
+      status == BackgroundCollectionStatus.stale &&
+      deviceManufacturer != null;
 
   String _permissionDeniedCopy(AppLocalizations l10n) {
     return switch (activityPermissionDenial) {

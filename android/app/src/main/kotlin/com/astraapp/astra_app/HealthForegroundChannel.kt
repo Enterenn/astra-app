@@ -1,7 +1,10 @@
 package com.astraapp.astra_app
 
+import android.Manifest
 import android.content.Context
 import android.content.Intent
+import android.content.pm.PackageManager
+import android.os.Build
 import androidx.core.content.ContextCompat
 import io.flutter.embedding.engine.FlutterEngine
 import io.flutter.plugin.common.MethodChannel
@@ -33,7 +36,7 @@ object HealthForegroundChannel {
         channel.setMethodCallHandler { call, result ->
             when (call.method) {
                 METHOD_START -> {
-                    startService(context)
+                    startCollectionServiceIfPermitted(context)
                     result.success(null)
                 }
                 METHOD_STOP -> {
@@ -64,6 +67,23 @@ object HealthForegroundChannel {
             return
         }
         methodChannel?.invokeMethod(METHOD_COLLECT, null)
+    }
+
+    fun startCollectionServiceIfPermitted(context: Context) {
+        if (!hasActivityRecognitionPermission(context)) {
+            return
+        }
+        startService(context.applicationContext)
+    }
+
+    private fun hasActivityRecognitionPermission(context: Context): Boolean {
+        if (Build.VERSION.SDK_INT < Build.VERSION_CODES.Q) {
+            return true
+        }
+        return ContextCompat.checkSelfPermission(
+            context,
+            Manifest.permission.ACTIVITY_RECOGNITION,
+        ) == PackageManager.PERMISSION_GRANTED
     }
 
     private fun startService(context: Context) {

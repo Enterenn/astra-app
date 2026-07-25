@@ -382,6 +382,19 @@ class AppLocalizationsFr extends AppLocalizations {
   String get myDataOpenSettings => 'Ouvrir les paramètres';
 
   @override
+  String get myDataBackgroundBatteryOptimizationHint =>
+      'L\'optimisation batterie peut interrompre la collecte nocturne. Autorisez une utilisation sans restriction pour garder le suivi actif en arrière-plan.';
+
+  @override
+  String get myDataBackgroundAllowBatteryExemption =>
+      'Autoriser l\'utilisation batterie sans restriction';
+
+  @override
+  String myDataBackgroundOemBatteryHint(String manufacturer) {
+    return 'Les réglages batterie sur les appareils $manufacturer peuvent encore retarder la collecte. Voir dontkillmyapp.com pour les étapes spécifiques à votre appareil.';
+  }
+
+  @override
   String get myDataStatusIndicator => 'Indicateur d\'état';
 
   @override

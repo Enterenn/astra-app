@@ -194,9 +194,15 @@ class _MyDataScreenBody extends StatelessWidget {
                     lastIngestionUtc: state.lastIngestionUtc,
                     nowUtc: nowUtc,
                     activityPermissionDenial: state.activityPermissionDenial,
+                    batteryOptimizationExempt: state.batteryOptimizationExempt,
+                    likelyOemBatteryDeferral: state.likelyOemBatteryDeferral,
+                    deviceManufacturer: state.deviceManufacturer,
                     onOpenSettings: () => unawaited(openAppSettings()),
                     onRetryPermission: () {
                       unawaited(_retryActivityPermission(context, cubit));
+                    },
+                    onRequestBatteryExemption: () {
+                      unawaited(cubit.requestBatteryOptimizationExemption());
                     },
                   ),
           ),

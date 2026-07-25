@@ -167,6 +167,22 @@ WorkManager is **orchestration**, not a guaranteed 5-minute cadence — OEM batt
 
 Android 12 h avoids false stale after overnight sleep. iOS 4 h reflects the backfill-only model without WM parity.
 
+### Android overnight collection gaps
+
+**Root cause:** The health FGS (`HealthStepForegroundService`) collects every 60 s while alive, but Android (and OEM battery layers) may kill or defer the process overnight. A long gap produces a single cumulative step delta; the Dart proportional midnight split (`step_normalizer.dart`) distributes that delta by **elapsed time**, not activity — so sleep-heavy gaps can still mis-allocate steps across calendar days even after the split fix.
+
+**Mitigations shipped:**
+
+| Mitigation | Role |
+|------------|------|
+| `REQUEST_IGNORE_BATTERY_OPTIMIZATIONS` + My Data CTA | User-initiated exemption from standard Doze / App Standby (never auto-prompted on launch) |
+| `BootCompletedReceiver` | Restarts FGS after device reboot when activity recognition is granted |
+| Proportional midnight split | Safety net when a gap still occurs — imperfect for sleep profiles, acceptable once gaps are shorter |
+
+**Residual limit:** Samsung, Xiaomi, Huawei, and similar OEMs may ignore AOSP battery APIs. When collection stays stale despite exemption, My Data shows an OEM hint pointing users to [dontkillmyapp.com](https://dontkillmyapp.com) for manufacturer-specific settings. No 100% guarantee on all ROMs.
+
+**Split heuristic:** Do not “fix” sleep mis-allocation in the normalizer without intermediate samples — the correct fix is more frequent native collection, not finer post-hoc guessing.
+
 ### DB maintenance on iOS
 
 `DataLifecycleService` runs downsampling + `VACUUM` in a `[compute]` isolate (short-lived connection) so VACUUM does not race the UI connection. iOS maintenance is **opportunistic** — triggered from My Data flows or foreground offload when due. **Resume must not VACUUM** while the UI SQLite connection is open (`AppLifecycleCoordinator._onAppForegrounded` comment).

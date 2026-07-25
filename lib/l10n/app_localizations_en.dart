@@ -375,6 +375,19 @@ class AppLocalizationsEn extends AppLocalizations {
   String get myDataOpenSettings => 'Open settings';
 
   @override
+  String get myDataBackgroundBatteryOptimizationHint =>
+      'Battery optimization can pause overnight step collection. Allow unrestricted use so background tracking stays active.';
+
+  @override
+  String get myDataBackgroundAllowBatteryExemption =>
+      'Allow unrestricted battery use';
+
+  @override
+  String myDataBackgroundOemBatteryHint(String manufacturer) {
+    return 'Battery settings on $manufacturer devices may still delay collection. See dontkillmyapp.com for device-specific steps.';
+  }
+
+  @override
   String get myDataStatusIndicator => 'Status indicator';
 
   @override

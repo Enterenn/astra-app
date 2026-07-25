@@ -33,6 +33,9 @@ class MyDataState {
     this.dailyStepGoal = kDefaultStepGoal,
     this.displayName,
     this.activityPermissionDenial,
+    this.batteryOptimizationExempt,
+    this.likelyOemBatteryDeferral = false,
+    this.deviceManufacturer,
   });
 
   final MyDataStatus status;
@@ -62,6 +65,15 @@ class MyDataState {
   /// Permanent vs reversible denial when [backgroundStatus] is permissionDenied.
   final PermissionRequestStatus? activityPermissionDenial;
 
+  /// Android only — null on iOS.
+  final bool? batteryOptimizationExempt;
+
+  /// Derived from manufacturer + exemption (Android); false on iOS.
+  final bool likelyOemBatteryDeferral;
+
+  /// Android device manufacturer when available.
+  final String? deviceManufacturer;
+
   const MyDataState.loading() : this(status: MyDataStatus.loading);
 
   factory MyDataState.ready({
@@ -74,6 +86,9 @@ class MyDataState {
     int dailyStepGoal = kDefaultStepGoal,
     String? displayName,
     PermissionRequestStatus? activityPermissionDenial,
+    bool? batteryOptimizationExempt,
+    bool? likelyOemBatteryDeferral,
+    Object? deviceManufacturer = _unset,
   }) {
     return MyDataState(
       status: MyDataStatus.ready,
@@ -86,6 +101,11 @@ class MyDataState {
       dailyStepGoal: dailyStepGoal,
       displayName: displayName,
       activityPermissionDenial: activityPermissionDenial,
+      batteryOptimizationExempt: batteryOptimizationExempt,
+      likelyOemBatteryDeferral: likelyOemBatteryDeferral ?? false,
+      deviceManufacturer: deviceManufacturer == _unset
+          ? null
+          : deviceManufacturer as String?,
     );
   }
 
@@ -112,6 +132,9 @@ class MyDataState {
     int? dailyStepGoal,
     Object? displayName = _unset,
     Object? activityPermissionDenial = _unset,
+    Object? batteryOptimizationExempt = _unset,
+    bool? likelyOemBatteryDeferral,
+    Object? deviceManufacturer = _unset,
   }) {
     return MyDataState(
       status: status ?? this.status,
@@ -148,6 +171,14 @@ class MyDataState {
       activityPermissionDenial: activityPermissionDenial == _unset
           ? this.activityPermissionDenial
           : activityPermissionDenial as PermissionRequestStatus?,
+      batteryOptimizationExempt: batteryOptimizationExempt == _unset
+          ? this.batteryOptimizationExempt
+          : batteryOptimizationExempt as bool?,
+      likelyOemBatteryDeferral:
+          likelyOemBatteryDeferral ?? this.likelyOemBatteryDeferral,
+      deviceManufacturer: deviceManufacturer == _unset
+          ? this.deviceManufacturer
+          : deviceManufacturer as String?,
     );
   }
 }

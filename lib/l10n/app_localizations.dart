@@ -757,6 +757,24 @@ abstract class AppLocalizations {
   /// **'Open settings'**
   String get myDataOpenSettings;
 
+  /// Explains why battery optimization exemption helps overnight collection
+  ///
+  /// In en, this message translates to:
+  /// **'Battery optimization can pause overnight step collection. Allow unrestricted use so background tracking stays active.'**
+  String get myDataBackgroundBatteryOptimizationHint;
+
+  /// Button to request battery optimization exemption on Android
+  ///
+  /// In en, this message translates to:
+  /// **'Allow unrestricted battery use'**
+  String get myDataBackgroundAllowBatteryExemption;
+
+  /// OEM-specific battery deferral hint when collection is stale
+  ///
+  /// In en, this message translates to:
+  /// **'Battery settings on {manufacturer} devices may still delay collection. See dontkillmyapp.com for device-specific steps.'**
+  String myDataBackgroundOemBatteryHint(String manufacturer);
+
   /// Semantics label for background status dot
   ///
   /// In en, this message translates to:

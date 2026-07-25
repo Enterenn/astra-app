@@ -37,6 +37,32 @@ void main() {
       );
     });
 
+    test('declares boot completed and battery optimization permissions', () {
+      expect(
+        manifest,
+        contains(
+          '<uses-permission android:name="android.permission.RECEIVE_BOOT_COMPLETED" />',
+        ),
+      );
+      expect(
+        manifest,
+        contains(
+          '<uses-permission android:name="android.permission.REQUEST_IGNORE_BATTERY_OPTIMIZATIONS" />',
+        ),
+      );
+    });
+
+    test('declares boot receiver and health foreground service', () {
+      expect(
+        manifest,
+        contains('android:name=".BootCompletedReceiver"'),
+      );
+      expect(
+        manifest,
+        contains('<action android:name="android.intent.action.BOOT_COMPLETED" />'),
+      );
+    });
+
     test('declares health foreground service without dataSync type', () {
       expect(
         manifest,

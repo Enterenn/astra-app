@@ -512,6 +512,23 @@
   "@myDataOpenSettings": {
     "description": "Button to open OS settings when activity permission is off"
   },
+  "myDataBackgroundBatteryOptimizationHint": "Battery optimization can pause overnight step collection. Allow unrestricted use so background tracking stays active.",
+  "@myDataBackgroundBatteryOptimizationHint": {
+    "description": "Explains why battery optimization exemption helps overnight collection"
+  },
+  "myDataBackgroundAllowBatteryExemption": "Allow unrestricted battery use",
+  "@myDataBackgroundAllowBatteryExemption": {
+    "description": "Button to request battery optimization exemption on Android"
+  },
+  "myDataBackgroundOemBatteryHint": "Battery settings on {manufacturer} devices may still delay collection. See dontkillmyapp.com for device-specific steps.",
+  "@myDataBackgroundOemBatteryHint": {
+    "description": "OEM-specific battery deferral hint when collection is stale",
+    "placeholders": {
+      "manufacturer": {
+        "type": "String"
+      }
+    }
+  },
   "myDataStatusIndicator": "Status indicator",
   "@myDataStatusIndicator": {
     "description": "Semantics label for background status dot"

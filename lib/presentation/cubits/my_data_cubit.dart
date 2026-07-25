@@ -8,6 +8,7 @@ import 'package:path_provider/path_provider.dart';
 import '../../core/constants/purge_confirm_action.dart';
 import '../../core/validation/step_goal_validator.dart';
 import '../../data/csv/import_validation_exception.dart';
+import '../../core/health/battery_optimization_probe.dart';
 import '../../core/health/stale_data_evaluator.dart';
 import '../../core/permissions/activity_permission_resolver.dart'
     show
@@ -56,6 +57,7 @@ class MyDataCubit extends Cubit<MyDataState> {
     this._postGoalUpdate,
     this._postDisplayNameUpdate,
     bool? isIos,
+    BatteryOptimizationProbe? batteryOptimizationProbe,
   }) : _activityPermissionGranted =
            activityPermissionGranted ?? isActivityRecognitionGranted,
        _activityPermissionStatus =
@@ -65,6 +67,8 @@ class MyDataCubit extends Cubit<MyDataState> {
        _saveCsvFile = saveCsvFile,
        _pickCsvFile = pickCsvFile,
        _isIos = isIos ?? Platform.isIOS,
+       _batteryOptimizationProbe =
+           batteryOptimizationProbe ?? BatteryOptimizationProbe(),
        super(const MyDataState.loading());
 
   final StepAggregationRepositoryContract stepAggregation;
@@ -85,6 +89,7 @@ class MyDataCubit extends Cubit<MyDataState> {
   final PostGoalUpdateCallback? _postGoalUpdate;
   final PostDisplayNameUpdateCallback? _postDisplayNameUpdate;
   final bool _isIos;
+  final BatteryOptimizationProbe _batteryOptimizationProbe;
 
   Future<void>? _refreshInFlight;
   Future<void>? _exportInFlight;
@@ -528,6 +533,16 @@ class MyDataCubit extends Cubit<MyDataState> {
     }
   }
 
+  Future<void> requestBatteryOptimizationExemption() async {
+    if (isClosed || _isIos) {
+      return;
+    }
+    await _batteryOptimizationProbe.requestExemption();
+    if (!isClosed) {
+      await refresh(silent: true);
+    }
+  }
+
   Future<void> _refreshImpl({required bool silent}) async {
     if (!silent &&
         state.status != MyDataStatus.loading &&
@@ -570,6 +585,20 @@ class MyDataCubit extends Cubit<MyDataState> {
         }
       }
 
+      bool? batteryOptimizationExempt;
+      String? deviceManufacturer;
+      if (!_isIos && activityGranted) {
+        final batteryResults = await Future.wait<Object?>([
+          _batteryOptimizationProbe.isExempt(),
+          _batteryOptimizationProbe.deviceManufacturer(),
+        ]);
+        if (isClosed) {
+          return;
+        }
+        batteryOptimizationExempt = batteryResults[0]! as bool;
+        deviceManufacturer = batteryResults[1] as String?;
+      }
+
       _emitReadySnapshot(
         sampleCount: footprint.sampleCount,
         fileSizeBytes: footprint.fileSizeBytes,
@@ -582,6 +611,12 @@ class MyDataCubit extends Cubit<MyDataState> {
           nowUtc: nowUtc,
         ),
         activityPermissionDenial: activityPermissionDenial,
+        batteryOptimizationExempt: batteryOptimizationExempt,
+        likelyOemBatteryDeferral: likelyOemBatteryDeferral(
+          manufacturer: deviceManufacturer,
+          batteryOptimizationExempt: batteryOptimizationExempt ?? true,
+        ),
+        deviceManufacturer: deviceManufacturer,
       );
     } catch (error, stackTrace) {
       if (kDebugMode) {
@@ -635,6 +670,9 @@ class MyDataCubit extends Cubit<MyDataState> {
     int? dailyStepGoal,
     String? displayName,
     PermissionRequestStatus? activityPermissionDenial,
+    bool? batteryOptimizationExempt,
+    bool likelyOemBatteryDeferral = false,
+    String? deviceManufacturer,
   }) {
     emit(
       MyDataState.ready(
@@ -649,6 +687,9 @@ class MyDataCubit extends Cubit<MyDataState> {
         dailyStepGoal: dailyStepGoal ?? state.dailyStepGoal,
         displayName: displayName ?? state.displayName,
         activityPermissionDenial: activityPermissionDenial,
+        batteryOptimizationExempt: batteryOptimizationExempt,
+        likelyOemBatteryDeferral: likelyOemBatteryDeferral,
+        deviceManufacturer: deviceManufacturer,
       ).copyWith(
         isExporting: state.isExporting,
         exportError: state.exportError,

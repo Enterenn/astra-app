@@ -17,8 +17,12 @@ void main() {
     WidgetTester tester, {
     required BackgroundCollectionStatus status,
     PermissionRequestStatus? denial,
+    bool? batteryOptimizationExempt,
+    bool likelyOemBatteryDeferral = false,
+    String? deviceManufacturer,
     VoidCallback? onOpenSettings,
     VoidCallback? onRetryPermission,
+    VoidCallback? onRequestBatteryExemption,
   }) async {
     await tester.pumpWidget(
       MaterialApp(
@@ -32,8 +36,12 @@ void main() {
             lastIngestionUtc: null,
             nowUtc: nowUtc,
             activityPermissionDenial: denial,
+            batteryOptimizationExempt: batteryOptimizationExempt,
+            likelyOemBatteryDeferral: likelyOemBatteryDeferral,
+            deviceManufacturer: deviceManufacturer,
             onOpenSettings: onOpenSettings,
             onRetryPermission: onRetryPermission,
+            onRequestBatteryExemption: onRequestBatteryExemption,
           ),
         ),
       ),
@@ -74,5 +82,41 @@ void main() {
     expect(find.text(l10n.commonRetry), findsOneWidget);
     await tester.tap(find.text(l10n.commonRetry));
     expect(retryCount, 1);
+  });
+
+  testWidgets('battery not exempt shows exemption hint and button', (tester) async {
+    var requestCount = 0;
+    await pumpCard(
+      tester,
+      status: BackgroundCollectionStatus.healthy,
+      batteryOptimizationExempt: false,
+      onRequestBatteryExemption: () => requestCount++,
+    );
+
+    expect(
+      find.text(l10n.myDataBackgroundBatteryOptimizationHint),
+      findsOneWidget,
+    );
+    expect(
+      find.text(l10n.myDataBackgroundAllowBatteryExemption),
+      findsOneWidget,
+    );
+    await tester.tap(find.text(l10n.myDataBackgroundAllowBatteryExemption));
+    expect(requestCount, 1);
+  });
+
+  testWidgets('stale OEM hint shows manufacturer copy', (tester) async {
+    await pumpCard(
+      tester,
+      status: BackgroundCollectionStatus.stale,
+      batteryOptimizationExempt: false,
+      likelyOemBatteryDeferral: true,
+      deviceManufacturer: 'Xiaomi',
+    );
+
+    expect(
+      find.text(l10n.myDataBackgroundOemBatteryHint('Xiaomi')),
+      findsOneWidget,
+    );
   });
 }

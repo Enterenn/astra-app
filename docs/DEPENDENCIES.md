@@ -53,7 +53,8 @@ Phase 0 step collection declares only local device-health/background permissions
 | `BackgroundHealthCapabilityChannel` (Kotlin) | Method channel `com.astraapp.astra_app/background_health_capability`: `PowerManager.isIgnoringBatteryOptimizations`, `Build.MANUFACTURER` |
 | `kAndroidFgsHealthManifestDeclared` | Static manifest truth (verified by `test/android/android_manifest_test.dart`), not runtime FGS running state |
 
-- **Battery optimization:** Status read via native `PowerManager` only; `REQUEST_IGNORE_BATTERY_OPTIMIZATIONS` is **not** added, no auto-request on launch (Epic 4.2 owns settings UX).
+- **Battery optimization:** Status read via native `PowerManager`; `REQUEST_IGNORE_BATTERY_OPTIMIZATIONS` declared in manifest. Exemption is requested only from My Data (user-initiated CTA), never on launch.
+- **Boot restart:** `BootCompletedReceiver` restarts FGS when `ACTIVITY_RECOGNITION` is granted after `BOOT_COMPLETED`.
 - **OEM deferral hint:** `likelyOemBatteryDeferral` is true for Samsung/Xiaomi/Huawei/Oppo/Vivo/OnePlus/Realme when not battery-exempt, a UX hint, not proof WM was deferred.
 - **WorkManager fallback:** WM registers on Android regardless of FGS; periodic task passes `databasePath` in `inputData`. WM reconciles buckets (~15 min minimum), not realtime 5-min cadence; foreground backfill on open remains mandatory.
 
