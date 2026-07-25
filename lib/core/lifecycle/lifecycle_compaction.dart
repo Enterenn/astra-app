@@ -3,6 +3,15 @@ import '../time/timestamp_codec.dart';
 import '../../data/models/normalized_step_bucket.dart';
 import '../../data/models/timeseries_sample_model.dart';
 
+/// FR11 completeness uses fixed bucket counts (12 / 24 / 288), not live calendar
+/// length. DST transition days intentionally skip compaction:
+/// - Spring-forward: fewer local hourly/five-minute slots → group never "complete"
+/// - Offset change: [_sameSampleIdentity] + group keys split rows by stored
+///   [TimeseriesSampleModel.zoneOffset]
+/// Incomplete groups are skipped by [SampleCompactionRunner] (fail closed); fine
+/// buckets stay until a complete group exists. Do NOT relax these counts without
+/// offset-aware bucket math — risks cross-offset merge or double-counting in
+/// aggregates.
 const kFiveMinuteBucketsPerHour = 12;
 const kHourlyBucketsPerDay = 24;
 const kFiveMinuteBucketsPerDay = 288;
@@ -242,6 +251,9 @@ List<List<TimeseriesSampleModel>> contiguousFiveMinuteDayGroups(
   return groups;
 }
 
+/// True only for exactly [kFiveMinuteBucketsPerHour] consecutive 5-minute buckets
+/// in one local hour (same identity). DST hours typically fail — see constants
+/// comment above.
 bool isCompleteFiveMinuteHourGroup(List<TimeseriesSampleModel> buckets) {
   if (buckets.length != kFiveMinuteBucketsPerHour) {
     return false;
@@ -269,6 +281,9 @@ bool isCompleteFiveMinuteHourGroup(List<TimeseriesSampleModel> buckets) {
       fiveMinuteGroupKey(sortedBuckets.last);
 }
 
+/// True only for exactly [kHourlyBucketsPerDay] consecutive hourly buckets in one
+/// local day (same identity). DST days typically fail — see constants comment
+/// above.
 bool isCompleteHourlyDayGroup(List<TimeseriesSampleModel> buckets) {
   if (buckets.length != kHourlyBucketsPerDay) {
     return false;
@@ -295,6 +310,9 @@ bool isCompleteHourlyDayGroup(List<TimeseriesSampleModel> buckets) {
   return hourlyGroupKey(first) == hourlyGroupKey(sortedBuckets.last);
 }
 
+/// True only for exactly [kFiveMinuteBucketsPerDay] consecutive 5-minute buckets
+/// in one local day (same identity). DST days typically fail — see constants
+/// comment above.
 bool isCompleteFiveMinuteDayGroup(List<TimeseriesSampleModel> buckets) {
   if (buckets.length != kFiveMinuteBucketsPerDay) {
     return false;

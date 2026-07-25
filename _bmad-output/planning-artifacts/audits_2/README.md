@@ -1,7 +1,7 @@
 # Audits données & pipeline — index (`audits_2`)
 
 **Généré :** 2026-07-21  
-**Dernière resync :** 2026-07-24 (version `0.12.1+31`, P0-09 fixed — story 29-4)  
+**Dernière resync :** 2026-07-25 (Story 33-1 — diagnostic 05 fixed, D1 closed)  
 **Base code :** `0.12.1+31` (`pubspec.yaml`)  
 **Périmètre :** couche SQLite → ingestion pedometer → `LiveStepMonitor` → compaction FR11 → WorkManager → agrégations charts → prefs utilisateur → permissions/notifications  
 **Statut chantier :** `open` — aucun point marqué `fixed` dans ce dossier
@@ -33,7 +33,7 @@ Priorités : **P0** critique (corruption données / sur-comptage / sécurité) �
 | 02 | [diagnostic-permissions-notifications.md](./diagnostic-permissions-notifications.md) | Permissions activité/notif, `NotificationService` | `partial` | 1 | 4 |
 | 03 | [diagnostic-workmanager-maintenance-db.md](./diagnostic-workmanager-maintenance-db.md) | WM 15 min, maintenance hebdo, VACUUM, boot | `partial` | 0 | 2 |
 | 04 | [diagnostic-downsampling-compaction-fr11.md](./diagnostic-downsampling-compaction-fr11.md) | FR11 compaction, `SampleCompactionRunner` | `partial` | 0 | 2 |
-| 05 | [diagnostic-fuseaux-jours-locaux.md](./diagnostic-fuseaux-jours-locaux.md) | TZ, DST, clés regroupement, offset stocké | `partial` | 0 | 1 (doc) |
+| 05 | [diagnostic-fuseaux-jours-locaux.md](./diagnostic-fuseaux-jours-locaux.md) | TZ, DST, clés regroupement, offset stocké | `fixed` | 0 | 0 |
 | 06 | [diagnostic-preferences-utilisateur.md](./diagnostic-preferences-utilisateur.md) | Prefs KV, journal objectif, `isDatabaseOpen` | `fixed` | 0 | 0 |
 | 07 | [diagnostic-ingestion-pedometer.md](./diagnostic-ingestion-pedometer.md) | `StepNormalizer`, `StepIncrementCalculator`, baseline | `fixed` | 0 | 0 |
 | 08 | [diagnostic-charts-agregation-daily-monthly.md](./diagnostic-charts-agregation-daily-monthly.md) | History 30j, Trends 12 mois, `finestResolutionTotal` | `partial` | 0 | 2 |
@@ -278,7 +278,7 @@ My Data editor → refresh via getGoalForLocalDay(todayIso) + setDailyStepGoal
 
 | Todo | Diagnostics | Action |
 |------|-------------|--------|
-| D1 | 05 | Commentaire DST non-compaction `lifecycle_compaction.dart` |
+| D1 | 05 | ~~Commentaire DST non-compaction `lifecycle_compaction.dart`~~ — done (33-1) |
 | D2 | 08 | Commentaire rollover `DateTime.utc` charts |
 | D3 | 06 | ~~Doc cache prefs vs journal objectif ; single-writer~~ — done (32-4) |
 | D4 | 01 | NFR-4 / footprint plaintext si maintenu Phase 0 |
@@ -357,7 +357,7 @@ My Data editor → refresh via getGoalForLocalDay(todayIso) + setDailyStepGoal
 | **E30?** | Concurrence SQLite & maintenance | 03, 01 | Lock VACUUM, `busy_timeout` |
 | **E31?** | Permissions & notifications UX | 02 | permanentlyDenied, retry, init rethrow |
 | **E32?** | Hygiène données & IDs | 01, 06 | ID multi-type, dev guard, objectif single source |
-| **E33?** | Doc & perf pipeline | 05, 08 | DST comment, chart SQL bound |
+| **E33?** | Doc & perf pipeline | 05, 08 | ~~DST comment~~ done (33-1) · chart SQL bound (33-2) |
 
 *(Numérotation à valider avec [`epics-post-audit.md`](../epics-post-audit.md) / sprint planning — E27–E28 restent backlog audits v1.)*
 

@@ -126,6 +126,46 @@ void main() {
       );
     });
   });
+
+  group('DST incomplete day groups skip compaction', () {
+    test('23 hourly buckets (spring-forward day) fail completeness guard', () {
+      final buckets = List.generate(
+        23,
+        (index) => _hourlySample(
+          id: 'dst-hour-$index',
+          start: DateTime.utc(2026, 3, 29, 0).add(Duration(hours: index)),
+        ),
+      );
+
+      expect(isCompleteHourlyDayGroup(buckets), isFalse);
+      expect(
+        () => mergeHourlyBucketsToDaily(
+          buckets: buckets,
+          newId: 'merged-dst-day',
+        ),
+        throwsArgumentError,
+      );
+    });
+
+    test('287 five-minute buckets (spring-forward day) fail completeness guard', () {
+      final buckets = List.generate(
+        287,
+        (index) => _sample(
+          id: 'dst-5min-$index',
+          start: DateTime.utc(2026, 3, 29, 0, 0).add(Duration(minutes: index * 5)),
+        ),
+      );
+
+      expect(isCompleteFiveMinuteDayGroup(buckets), isFalse);
+      expect(
+        () => mergeFiveMinuteBucketsToDaily(
+          buckets: buckets,
+          newId: 'merged-dst-5min-day',
+        ),
+        throwsArgumentError,
+      );
+    });
+  });
 }
 
 TimeseriesSampleModel _sample({
@@ -140,6 +180,24 @@ TimeseriesSampleModel _sample({
     value: 10,
     unit: kStepSampleUnit,
     resolution: kFiveMinuteResolution,
+    provider: kInternalPhoneProvider,
+    deviceId: kSmartphoneDeviceId,
+    zoneOffset: '+02:00',
+  );
+}
+
+TimeseriesSampleModel _hourlySample({
+  required String id,
+  required DateTime start,
+}) {
+  return TimeseriesSampleModel(
+    id: id,
+    startTimeUtc: start,
+    endTimeUtc: start.add(const Duration(hours: 1)),
+    type: kStepSampleType,
+    value: 100,
+    unit: kStepSampleUnit,
+    resolution: kHourlyResolution,
     provider: kInternalPhoneProvider,
     deviceId: kSmartphoneDeviceId,
     zoneOffset: '+02:00',

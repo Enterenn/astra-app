@@ -3,15 +3,15 @@
 **Généré :** 2026-07-21  
 **Base code :** `0.12.1+31` (`pubspec.yaml`)  
 **Périmètre :** `LocalDayCalculator` · `lifecycle_compaction.dart` · ingestion `zone_offset` · agrégations lecture  
-**Statut global :** `partial` (architecture solide ; documentation DST compaction manquante)
+**Statut global :** `fixed` (Story 33-1 — documentation DST compaction)
 
 ---
 
 ## Statut
 
-- **Dernière vérification :** 2026-07-21
-- **Statut :** `partial`
-- **Story / PR :** —
+- **Dernière vérification :** 2026-07-25
+- **Statut :** `fixed`
+- **Story / PR :** Story 33-1
 
 ---
 
@@ -19,7 +19,7 @@
 
 | Priorité | # | Domaine | Statut |
 |----------|---|---------|--------|
-| 📝 Doc | 1 | Journées DST jamais compactées (voulu, silencieux) | `open` |
+| 📝 Doc | 1 | Journées DST jamais compactées (voulu, silencieux) | `fixed` (33-1) |
 | 🟢 — | 2 | Offset stocké par échantillon, jamais recalculé | `fixed` |
 | 🟢 — | 3 | Clé de regroupement incluant l'offset | `fixed` |
 | 🟢 — | 4 | Triple vérification complétude avant fusion | `fixed` |
@@ -51,6 +51,8 @@
 **Risque si non documenté :** Correctif naïf (assouplir le compte 24/288 ou ignorer l'offset) réintroduirait fusion erronée ou double-comptage.
 
 **Action suggérée :** Commentaire explicite dans `lifecycle_compaction.dart` (près de `kHourlyBucketsPerDay` / `isComplete*`) : *« DST transition days intentionally skip compaction — do not relax without offset-aware bucket math. »*
+
+**Statut :** `fixed` — Story 33-1 (block comment + `isComplete*` doc comments ; test DST incomplete groups)
 
 **Impact produit :** Lignes 5 min / horaires conservées plus longtemps sur ces jours — croissance DB marginale, pas d'erreur utilisateur.
 
@@ -116,8 +118,8 @@ Garde-fou final : `merge*` lève `ArgumentError` si incomplet (`lifecycle_compac
 
 | # | Action | Priorité |
 |---|--------|----------|
-| T1 | Commentaire DST / non-compaction dans `lifecycle_compaction.dart` | Doc |
-| T2 | (Optionnel) test compaction : jour DST simulé → 0 merge, buckets préservés | Faible |
+| T1 | Commentaire DST / non-compaction dans `lifecycle_compaction.dart` | Doc — **done** (33-1) |
+| T2 | (Optionnel) test compaction : jour DST simulé → 0 merge, buckets préservés | **done** (33-1) |
 
 ---
 
