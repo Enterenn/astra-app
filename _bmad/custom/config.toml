@@ -1,7 +1,13 @@
-# Team / enterprise overrides for _bmad/config.toml.
-# Committed to the repo — applies to every developer on the project.
-# Tables deep-merge over base config; keyed entries merge by key.
-# Example: override an agent descriptor, or add a new agent.
-#
-# [agents.bmad-agent-pm]
-# description = "Prefers short, bulleted PRDs over narrative drafts."
+# Team overrides for _bmad/config.toml (committed).
+# See _bmad-output/AGENTS.md for how agents should use these paths.
+
+[modules.bmm]
+# Explicit canonical artifacts (skills also resolve via config.yaml defaults)
+epics_file = "{project-root}/_bmad-output/planning-artifacts/epics.md"
+sprint_status_file = "{project-root}/_bmad-output/implementation-artifacts/sprint-status.yaml"
+epic_index_file = "{project-root}/_bmad-output/planning-artifacts/EPIC-INDEX.md"
+audits_manifest = "{project-root}/_bmad-output/planning-artifacts/audits/manifest.yaml"
+agents_entry = "{project-root}/_bmad-output/AGENTS.md"
+
+# Sprint-planning: only epics.md at planning-artifacts root matches *epic*.md
+# (no epics-refacto.md stubs — merged 2026-07-25)

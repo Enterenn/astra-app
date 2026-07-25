@@ -8,11 +8,7 @@
 # story_location: _bmad-output/implementation-artifacts/stories
 # navigation: _bmad-output/README.md · planning-artifacts/EPIC-INDEX.md
 #
-# PHASES (epic source files):
-#   1–13  → planning-artifacts/epics.md
-#   14–20 → planning-artifacts/epics-refacto.md
-#   21–28 → planning-artifacts/epics-post-audit.md · planning-artifacts/audits/
-#   29–33 → planning-artifacts/epics-audits-2.md · planning-artifacts/audits_2/
+# PHASES — acceptance criteria: planning-artifacts/epics.md (Epics 1–33)
 #
 # Per-phase snapshots (historical): implementation-artifacts/archive/sprint-trackers/
 #
@@ -26,6 +22,10 @@ tracking_system: file-system
 story_location: _bmad-output/implementation-artifacts/stories
 app_version: 0.15.2+40
 overall_status: complete
+schema_version: 1
+active_phase: null
+next_recommended: "Phase 1 planning — append Epic 34+ to epics.md and sprint-status.yaml"
+epics_file: planning-artifacts/epics.md
 
 development_status:
   # ── Phase 0 (Epics 1–13) ──────────────────────────────────────────────

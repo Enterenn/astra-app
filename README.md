@@ -207,8 +207,8 @@ KGP plugin patches apply automatically on Android builds (see [`docs/DEPENDENCIE
 | [Series types](docs/SERIES_TYPES.md) | Phase 0 `steps` / `count` definitions |
 | [Dependencies audit](docs/DEPENDENCIES.md) | Full package inventory, network policy |
 | [Regulatory position](docs/REGULATORY_POSITION.md) | General Wellness scope statement |
-| [Epics (Phase 0)](_bmad-output/planning-artifacts/epics.md) | Epics 1–13 acceptance criteria |
-| [Epic index](_bmad-output/planning-artifacts/EPIC-INDEX.md) | All 33 epics — phase, source file, audit link |
+| [Epics (Phase 0)](_bmad-output/planning-artifacts/epics.md) | Acceptance criteria Epics 1–33 |
+| [Epic index](_bmad-output/planning-artifacts/EPIC-INDEX.md) | All 33 epics — lookup table |
 | [Sprint tracker](_bmad-output/implementation-artifacts/sprint-status.yaml) | Consolidated story status (Epics 1–33) |
 | [PRD](_bmad-output/planning-artifacts/prds/prd-astra-app-2026-05-22/prd.md) | Functional requirements, NFRs, user journeys |
 | [Architecture](_bmad-output/planning-artifacts/architecture.md) | Technical decisions, structure, patterns |

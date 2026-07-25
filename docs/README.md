@@ -22,6 +22,7 @@ Planning specs, epics, audits, and story tracking: [`_bmad-output/README.md`](..
 ## Quick links
 
 - [Root README](../README.md) — pitch, airplane mode protocol, developer setup
-- [Epic index](../_bmad-output/planning-artifacts/EPIC-INDEX.md) — all 33 epics
+- [Epics & stories](../_bmad-output/planning-artifacts/epics.md) — acceptance criteria Epics 1–33
+- [Epic index](../_bmad-output/planning-artifacts/EPIC-INDEX.md) — lookup table
 - [Sprint tracker](../_bmad-output/implementation-artifacts/sprint-status.yaml) — consolidated status
 - [Latest readiness](../_bmad-output/planning-artifacts/implementation-readiness-report-2026-07-24.md)

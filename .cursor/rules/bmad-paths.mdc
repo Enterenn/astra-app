@@ -1,0 +1,23 @@
+---
+description: BMAD artifact paths — use canonical files when reading or updating planning/implementation tracking
+globs:
+  - _bmad-output/**
+  - _bmad/**
+  - docs/project-context.md
+alwaysApply: false
+---
+
+# BMAD paths (astra-app)
+
+**Entry:** `_bmad-output/AGENTS.md`
+
+| Action | File |
+|--------|------|
+| Epic AC | `_bmad-output/planning-artifacts/epics.md` only |
+| Story status | `_bmad-output/implementation-artifacts/sprint-status.yaml` |
+| New story context | `_bmad-output/implementation-artifacts/stories/` |
+| Audit lookup | `_bmad-output/planning-artifacts/audits/manifest.yaml` |
+
+Never treat `planning-artifacts/archive/**` or `implementation-artifacts/archive/**` as active sources.
+
+Do not recreate `epics-refacto.md` / `epics-post-audit.md` / `epics-audits-2.md` at planning-artifacts root (breaks `*epic*.md` glob).

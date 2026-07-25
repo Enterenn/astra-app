@@ -221,9 +221,26 @@ Before marking a story done:
 
 ---
 
+## BMAD agent contract
+
+**Machine entry:** [`_bmad-output/AGENTS.md`](../_bmad-output/AGENTS.md) · Config: [`_bmad/bmm/config.yaml`](../_bmad/bmm/config.yaml)
+
+| Action | Canonical file |
+|--------|----------------|
+| Read/write epic AC | `_bmad-output/planning-artifacts/epics.md` **only** (single active `*epic*.md`) |
+| Read/write story status | `_bmad-output/implementation-artifacts/sprint-status.yaml` |
+| Story context | `_bmad-output/implementation-artifacts/stories/{story-key}.md` |
+| Audit → epic lookup | `_bmad-output/planning-artifacts/audits/manifest.yaml` |
+
+**Do not edit** `planning-artifacts/archive/**` or `implementation-artifacts/archive/**` for active tracking.
+
+When marking stories/epics done: update `sprint-status.yaml` + bump version per [Versioning](#versioning) when closing a phase.
+
+---
+
 ## References
 
-**Entry point:** [`_bmad-output/README.md`](../_bmad-output/README.md)
+**Entry point:** [`_bmad-output/README.md`](../_bmad-output/README.md) · [`_bmad-output/AGENTS.md`](../_bmad-output/AGENTS.md)
 
 **Specifications:**
 
@@ -232,7 +249,7 @@ Before marking a story done:
 - PRD addendum (SQL, ADP): `_bmad-output/planning-artifacts/prds/prd-astra-app-2026-05-22/addendum.md`
 - UX: `_bmad-output/planning-artifacts/ux-design-specification.md`
 - Epic index (1–33): `_bmad-output/planning-artifacts/EPIC-INDEX.md`
-- Phase 0 epics: `_bmad-output/planning-artifacts/epics.md`
+- Epics & stories (AC): `_bmad-output/planning-artifacts/epics.md`
 - Decision log: `_bmad-output/planning-artifacts/prds/prd-astra-app-2026-05-22/.decision-log.md`
 
 **Implementation tracking:**

@@ -2,6 +2,8 @@
 
 Planning and delivery artifacts for **ASTRA Phase 0**. Generated with the [BMad Method](https://docs.bmad-method.org/).
 
+**Agents:** [`AGENTS.md`](./AGENTS.md) · **Humans:** this file
+
 **Status (2026-07-25):** Epics **1–33 complete** · app `0.15.2+40` · no active stories. Next work = Phase 1 planning.
 
 ---
@@ -15,7 +17,8 @@ Planning and delivery artifacts for **ASTRA Phase 0**. Generated with the [BMad 
 | 3 | [Architecture](./planning-artifacts/architecture.md) | Technical decisions, module layout |
 | 4 | [UX specification](./planning-artifacts/ux-design-specification.md) | Screens, tokens, flows |
 | 5 | [Epic index](./planning-artifacts/EPIC-INDEX.md) | All 33 epics at a glance |
-| 6 | [Sprint tracker](./implementation-artifacts/sprint-status.yaml) | Story status (consolidated) |
+| 6 | [Epics & stories](./planning-artifacts/epics.md) | Acceptance criteria Epics 1–33 |
+| 7 | [Sprint tracker](./implementation-artifacts/sprint-status.yaml) | Story status (consolidated) |
 
 Then browse [`stories/`](./implementation-artifacts/stories/) for per-story context when touching a specific area.
 
@@ -35,14 +38,15 @@ Post-audit (E21–28) cold start · a11y · boot polish · UX coherence
 Data audit (E29–33) persist integrity · SQLite concurrency · permissions
 ```
 
-| Phase | Epics | Epics file | Audit / source |
-|-------|-------|------------|------------------|
-| **Phase 0** | 1–13 | [epics.md](./planning-artifacts/epics.md) | PRD, UX, architecture |
-| **Refacto** | 14–20 | [epics-refacto.md](./planning-artifacts/epics-refacto.md) | [refactoring-audit-master](./planning-artifacts/refactoring-audit-master-v0.6.1.md) |
-| **Post-audit** | 21–28 | [epics-post-audit.md](./planning-artifacts/epics-post-audit.md) | [audits/](./planning-artifacts/audits/README.md) (11 diagnostics) |
-| **Data audit** | 29–33 | [epics-audits-2.md](./planning-artifacts/epics-audits-2.md) | [audits_2/](./planning-artifacts/audits_2/README.md) (9 diagnostics) |
+| Phase | Epics | Source |
+|-------|-------|--------|
+| **All phases** | 1–33 | [epics.md](./planning-artifacts/epics.md) (single file) |
 
-Full epic lookup: **[EPIC-INDEX.md](./planning-artifacts/EPIC-INDEX.md)**
+Phase sections inside `epics.md`: Phase 0 (1–13) · Refacto (14–20) · Post-audit (21–28) · Data audit (29–33).
+
+Audit diagnostics: [audits/](./planning-artifacts/audits/README.md) (post-refacto · data-pipeline)
+
+Per-phase snapshots (pre-merge): [`archive/epics/`](./planning-artifacts/archive/epics/)
 
 ---
 
@@ -63,6 +67,7 @@ Full epic lookup: **[EPIC-INDEX.md](./planning-artifacts/EPIC-INDEX.md)**
 
 | Artifact | Purpose |
 |----------|---------|
+| [epics.md](./planning-artifacts/epics.md) | Acceptance criteria — **Epics 1–33** (single file) |
 | [sprint-status.yaml](./implementation-artifacts/sprint-status.yaml) | **Single tracker** — Epics 1–33, all stories |
 | [stories/](./implementation-artifacts/stories/) | Per-story context (AC, code map, review notes) |
 | [deferred-work.md](./implementation-artifacts/deferred-work.md) | Cross-story deferrals and field feedback |
@@ -94,7 +99,7 @@ These live under [`docs/`](../docs/README.md) (not in `_bmad-output/`):
 |----------|----------|
 | [brainstorming/](./brainstorming/) | Phase 0 ideation session |
 | [planning-artifacts/research/](./planning-artifacts/research/) | Market & domain research |
-| [planning-artifacts/archive/](./planning-artifacts/archive/) | Superseded readiness reports, sprint change proposals |
+| [planning-artifacts/archive/](./planning-artifacts/archive/) | Superseded readiness, change proposals, epic snapshots |
 | [implementation-artifacts/archive/](./implementation-artifacts/archive/) | Per-phase sprint snapshots, delivered ad-hoc specs |
 | [prds/.../reconcile-*.md](./planning-artifacts/prds/prd-astra-app-2026-05-22/) | PRD authoring audit trail (not implementation specs) |
 
@@ -104,12 +109,13 @@ These live under [`docs/`](../docs/README.md) (not in `_bmad-output/`):
 
 ```
 _bmad-output/
-├── README.md                 ← you are here
+├── AGENTS.md                 ← BMAD / Cursor machine entry
+├── README.md                 ← human hub
 ├── planning-artifacts/
-│   ├── EPIC-INDEX.md         ← epic lookup (1–33)
-│   ├── epics*.md             ← acceptance criteria by phase
+│   ├── epics.md              ← acceptance criteria Epics 1–33
+│   ├── EPIC-INDEX.md         ← epic lookup table
 │   ├── architecture.md, ux-design-specification.md, …
-│   ├── audits/, audits_2/    ← code audit diagnostics
+│   ├── audits/               ← code audit diagnostics (post-refacto + data-pipeline)
 │   └── archive/              ← historical planning docs
 └── implementation-artifacts/
     ├── sprint-status.yaml    ← consolidated tracker
