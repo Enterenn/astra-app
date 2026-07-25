@@ -1,6 +1,6 @@
 # generated: 2026-07-24
-# last_updated: 2026-07-25 (Story 33-2 review)
-# NEXT: code-review 33-2 · epic-33 close (version bump after review)
+# last_updated: 2026-07-25 (Epic 33 close — 0.14.2+36)
+# NEXT: epic-33-retrospective optional · audits_2 complete
 # Ref: planning-artifacts/epics-audits-2.md · implementation-readiness-report-2026-07-24.md
 # project: astra-app
 # project_key: NOKEY
@@ -47,13 +47,13 @@
 # NAVIGATION: _bmad-output/README.md · planning-artifacts/audits_2/README.md
 
 generated: 2026-07-24
-last_updated: 2026-07-25 (Story 33-2 review)
+last_updated: 2026-07-25 (Epic 33 close — 0.14.2+36)
 project: astra-app
 project_key: NOKEY
 tracking_system: file-system
 story_location: _bmad-output/implementation-artifacts/stories
 epics_source: planning-artifacts/epics-audits-2.md
-base_version: 0.14.1+35
+base_version: 0.14.2+36
 git_branch: main
 
 development_status:
@@ -89,7 +89,7 @@ development_status:
   32-5-test-hook-and-deterministic-migration-v3: done
   epic-32-retrospective: optional
 
-  epic-33: in-progress
+  epic-33: done
   33-1-document-dst-non-compaction-intent: done
-  33-2-document-chart-date-rollover-and-optional-sql-upper-bound: review
+  33-2-document-chart-date-rollover-and-optional-sql-upper-bound: done
   epic-33-retrospective: optional

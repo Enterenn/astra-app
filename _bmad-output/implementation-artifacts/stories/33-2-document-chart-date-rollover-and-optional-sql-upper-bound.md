@@ -1,6 +1,6 @@
 # Story 33.2: Document Chart Date Rollover and Optional SQL Upper Bound
 
-Status: review
+Status: done
 
 <!-- audits_2 Epic 33 — tracker: sprint-status-audits-2.yaml -->
 <!-- Source: epics-audits-2.md Story 33-2 · diagnostic-charts-agregation-daily-monthly.md #1,#2 · AUD2-FR29, AUD2-FR31 -->
@@ -290,6 +290,7 @@ Composer (dev-story)
 - Sub-task A: UTC rollover comments at monthly window start, month iteration, day-0 month end, daily lower-bound mirror.
 - Sub-task B: `sqlUpperBoundUtc` via `sampleUtcBoundsForLocalDay(referenceToday).upperExclusive`; SQL `start_time < ?`; both chart query sites updated. 17/17 chart tests green.
 - Sub-task C: Diagnostic 08 → `fixed`; README D2/M9 closed; E33 both stories done. Version bump `0.14.1+35` → `0.14.2+36` deferred until epic-33 marked done post-review (AC #4).
+- Review follow-up: SQL upper-bound exclusion test; version bump `0.14.2+36`; epic-33 closed.
 
 ### File List
 

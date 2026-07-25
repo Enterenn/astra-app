@@ -158,6 +158,32 @@ void main() {
       },
     );
 
+    test('excludes rows beyond SQL upper bound from chart totals', () async {
+      // referenceToday = 2026-06-02; sqlUpperBound = 2026-06-04 00:00Z (+2 day buffer).
+      await stepRepos.ingestion.upsertIngestionBucket(
+        _bucket(
+          startTimeUtc: DateTime.utc(2026, 6, 2, 10),
+          value: 200,
+          zoneOffset: '+02:00',
+        ),
+      );
+      await stepRepos.ingestion.upsertIngestionBucket(
+        _bucket(
+          startTimeUtc: DateTime.utc(2026, 6, 5, 10),
+          value: 9999,
+          zoneOffset: '+02:00',
+        ),
+      );
+
+      final aggregates = await stepRepos.aggregation.getChartDailyAggregates(days: 7);
+
+      expect(
+        aggregates.firstWhere((e) => e.localDay == DateTime.utc(2026, 6, 2)).totalSteps,
+        200,
+      );
+      expect(aggregates.every((e) => e.totalSteps <= 200), isTrue);
+    });
+
     test('preserves daily totals after lifecycle compaction', () async {
       await DataInjectService(repository: stepRepos.ingestion).inject90Days(clock: clock);
 
