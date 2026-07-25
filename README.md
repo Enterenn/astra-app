@@ -14,7 +14,7 @@ ASTRA is a **local-first** wellness ecosystem: a Flutter mobile Hub App that col
 |---|---|
 | **Current phase** | Phase 0: OSS beta (exit gate passed 2026-06-08) |
 | **Version** | `0.15.2+40` (see `pubspec.yaml`; displayed on About screen) |
-| **Code status** | **Implemented**: Epics 1–7 complete |
+| **Code status** | **Implemented**: Epics 1–13 + post-audit passes (21–33) complete |
 | **Beta gate** | [docs/BETA_CHECKLIST.md](docs/BETA_CHECKLIST.md) — Phase 0 field pass logged; post-close items tracked in checklist |
 | **Reference platform** | Android (iOS secondary, with reduced background expectations) |
 | **License** | [Apache License 2.0](LICENSE) |
@@ -52,8 +52,10 @@ Phase 0 is not a throwaway prototype. It is a **learning sandbox** that delivers
 - Step counter via phone sensors (`PhonePedometerSource`)
 - Background collection (Android = reference; iOS = foreground backfill)
 - Local SQLite storage (`timeseries_samples`, 5-minute buckets) — **not encrypted at rest** in Phase 0 (SQLCipher planned Phase 1; disclosed on My Data → Footprint)
-- Four tabs: **Today** · **Trends** · **Data** · **Profile**
-- Trust-first onboarding (permissions, daily goal)
+- Three tabs: **Steps** · **Trends** · **Menu** — Profile, My Data, Settings, and About open from Menu
+- Trust-first onboarding (activity permission, optional weight / height; daily goal defaults to 8000)
+- UI localization (**EN** / **FR**) and display-unit preferences (metric / imperial)
+- Daily goal history (historical goal line on Trends charts); edit goal from Steps (goal ring)
 - CSV export / import ([Open Wearables](https://github.com/theopenwearables/open-wearables)-aligned columns, vocabulary only, no OW server dependency)
 - Full health-data purge
 - DB lifecycle (downsampling, maintenance) to bound growth (< 50 MB / year)
@@ -72,15 +74,18 @@ Phase 0 is not a throwaway prototype. It is a **learning sandbox** that delivers
 
 ## Interface
 
-| Tab | Screen | Purpose |
-|-----|--------|---------|
-| **Today** | Today | Goal ring, step count, derived stats, sensor source label, subtle celebration |
-| **Trends** | Trends | 7d / 30d charts, goal reference line, weekly trend |
-| **Data** | My Data | DB footprint, last optimization, background status, export / import / purge |
-| **Profile** | My Profile | Display name, theme, profile info |
-| **Onboarding** | (first launch) | Trust, permissions, goal (8000 steps default), optional notifications |
+| Tab / entry | Screen | Purpose |
+|-------------|--------|---------|
+| **Steps** | Steps (Today) | Week view, day picker, goal ring (tap to edit), derived stats, collection health, subtle celebration |
+| **Trends** | Trends | 7d / 30d / 12-month charts, period averages, peak-day card, historical goal line |
+| **Menu** | Menu hub | Routes to Profile, My Data, Settings, About |
+| **Menu → Profile** | Profile | Display name, weight, height |
+| **Menu → My Data** | My Data | DB footprint, last optimization, background status, export / import / purge |
+| **Menu → Settings** | Settings | Language, display units, notifications, theme, accent preset |
+| **Menu → About** | About | App identity and version |
+| **Onboarding** | (first launch) | Intro, activity permission (with denial / settings CTA), optional weight and height |
 
-**Visual tone:** quiet instrument panel. **System theme default** (follows OS); Light and Dark available on Profile / My Data. Clear hierarchy, no aggressive gamification.
+**Visual tone:** quiet instrument panel. **System theme default** (follows OS); Light, Dark, and accent presets in Settings. Clear hierarchy, no aggressive gamification.
 
 ---
 
@@ -94,7 +99,7 @@ OS sensor (pedometer)
     → StepNormalizer (deltas, reboot, counter reset)
     → BackgroundCollector (sole ingestion writer)
     → StepRepository → SQLite (timeseries_samples)
-    → UI (Today / Trends / My Data)
+    → UI (Steps / Trends / My Data)
     → DataLifecycleService (downsampling, VACUUM)
 ```
 
@@ -131,6 +136,7 @@ Full decisions: [`_bmad-output/planning-artifacts/architecture.md`](_bmad-output
 | Notifications | `flutter_local_notifications` (local only) |
 | Export | `file_picker` (OS save dialog) |
 | State | Cubit (`flutter_bloc`) |
+| i18n | `flutter_localizations` + ARB (`en`, `fr`) |
 | Bundle ID | `com.astraapp` |
 
 **Naming:** repo `astra-app` · Dart package `astra_app` · DB file `astra_app.db`
@@ -161,9 +167,9 @@ Reference test to validate the local-first promise on a **release** build:
 2. Complete onboarding (no account)
 3. Enable **airplane mode**
 4. Walk ~500 steps without keeping the app open
-5. Reopen **Today** → steps should have accumulated in the background (Android)
+5. Reopen **Steps** → step count should have accumulated in the background (Android)
 6. Open **Trends** → bar chart renders from local DB (no network)
-7. Open the **Data** tab → **My Data** screen → export CSV, verify footprint, test purge
+7. Open **Menu** → **My Data** → export CSV, verify footprint, test purge
 
 Automated manifest gate: `flutter test test/release_manifest_test.dart`
 
@@ -182,7 +188,7 @@ flutter upgrade
 # From repo root (astra-app/)
 flutter pub get
 flutter run          # debug on connected device/emulator
-flutter test         # unit + widget tests
+flutter test --tags critical   # default verify; full suite: flutter test
 flutter build apk --release
 ```
 
@@ -201,8 +207,9 @@ KGP plugin patches apply automatically on Android builds (see [`docs/DEPENDENCIE
 | [Series types](docs/SERIES_TYPES.md) | Phase 0 `steps` / `count` definitions |
 | [Dependencies audit](docs/DEPENDENCIES.md) | Full package inventory, network policy |
 | [Regulatory position](docs/REGULATORY_POSITION.md) | General Wellness scope statement |
-| [Epics & stories](_bmad-output/planning-artifacts/epics.md) | Story backlog with acceptance criteria |
-| [Sprint tracker](_bmad-output/implementation-artifacts/sprint-status.yaml) | Live story status |
+| [Epics (Phase 0)](_bmad-output/planning-artifacts/epics.md) | Epics 1–13 acceptance criteria |
+| [Epic index](_bmad-output/planning-artifacts/EPIC-INDEX.md) | All 33 epics — phase, source file, audit link |
+| [Sprint tracker](_bmad-output/implementation-artifacts/sprint-status.yaml) | Consolidated story status (Epics 1–33) |
 | [PRD](_bmad-output/planning-artifacts/prds/prd-astra-app-2026-05-22/prd.md) | Functional requirements, NFRs, user journeys |
 | [Architecture](_bmad-output/planning-artifacts/architecture.md) | Technical decisions, structure, patterns |
 | [UX specification](_bmad-output/planning-artifacts/ux-design-specification.md) | Tokens, screens, flows, accessibility |
@@ -242,7 +249,7 @@ The app is implemented and actively maintained. Contributions are welcome.
 
 1. Read [`docs/project-context.md`](docs/project-context.md), mandatory review-before-commit workflow
 2. Read [`docs/README.md`](docs/README.md), documentation index
-3. Check [`sprint-status.yaml`](_bmad-output/implementation-artifacts/sprint-status.yaml) for current story status
+3. Check [`_bmad-output/README.md`](_bmad-output/README.md) and [`sprint-status.yaml`](_bmad-output/implementation-artifacts/sprint-status.yaml) for current status
 
 **Invariants:**
 
