@@ -1203,9 +1203,9 @@ class _NeverEmittingStepSource implements DataIngestionSource {
 }
 
 class _FailingOnSetBaselineRepository extends IngestionBaselineRepository {
-  _FailingOnSetBaselineRepository(super.sessionOrDatabase, {this.failOnce = true});
+  _FailingOnSetBaselineRepository(super.sessionOrDatabase);
 
-  bool failOnce;
+  bool failOnce = true;
 
   @override
   Future<void> setBaseline({

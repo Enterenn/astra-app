@@ -27,7 +27,6 @@ Future<void> startNotificationInitForBoot(
 /// [notificationService] may be constructed before this gate; its constructor
 /// has no platform side effects — only [NotificationService.initialize] is
 /// gated after cancel to avoid WM isolate races (workmanager_callback.dart).
-@visibleForTesting
 Future<void> runBootGateBeforeDependencies({
   required NotificationService notificationService,
   Future<void> Function()? cancelStepCollection,

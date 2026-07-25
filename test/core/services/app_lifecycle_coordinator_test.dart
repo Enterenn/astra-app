@@ -74,17 +74,13 @@ class _ColdStartStepAggregation implements StepAggregationRepositoryContract {
 /// Wraps a fixed step count and tracks getTodaySteps call count for AUD-03 assertions.
 /// Returns [beforeBackfill] until [backfillComplete], then [afterBackfill].
 class _BackfillGatedStepAggregation implements StepAggregationRepositoryContract {
-  _BackfillGatedStepAggregation(
-    this.clock, {
-    this.beforeBackfill = 1200,
-    this.afterBackfill = 1500,
-  });
+  _BackfillGatedStepAggregation(this.clock);
 
   @override
   final TimeProvider clock;
 
-  final int beforeBackfill;
-  final int afterBackfill;
+  final int beforeBackfill = 1200;
+  final int afterBackfill = 1500;
   bool backfillComplete = false;
 
   @override
