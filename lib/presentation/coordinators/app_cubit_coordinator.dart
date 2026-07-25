@@ -16,12 +16,11 @@ class AppCubitCoordinator {
   AppCubitCoordinator({
     required this.deps,
     TodayCubit Function(AppDependencies deps)? createTodayCubit,
-    HistoryCubit Function(AppDependencies deps)? createHistoryCubit,
+    this._createHistoryCubit,
     MyDataCubit Function(AppDependencies deps)? createMyDataCubit,
     ProfileCubit Function(AppDependencies deps)? createProfileCubit,
-    ValueChanged<HistoryCubit>? onHistoryFirstCreated,
-  }) : _createHistoryCubit = createHistoryCubit,
-       _onHistoryFirstCreated = onHistoryFirstCreated {
+    this._onHistoryFirstCreated,
+  }) {
     today = createTodayCubit?.call(deps) ??
         TodayCubit(
           stepAggregation: deps.stepAggregation,

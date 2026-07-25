@@ -266,8 +266,8 @@ class _TimeoutBoundedSource implements DataIngestionSource {
     this._delegate, {
     required this.timeout,
     required this.maxCollectionDuration,
-    TimeProvider? clock,
-  }) : _clock = clock;
+    this._clock,
+  });
 
   final DataIngestionSource _delegate;
   final Duration timeout;

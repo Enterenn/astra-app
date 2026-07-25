@@ -5,8 +5,6 @@ import 'dart:io';
 
 import 'package:astra_app/core/debug/field_diagnostic_log.dart';
 import 'package:astra_app/core/database/app_database.dart';
-import 'package:astra_app/data/datasources/data_ingestion_source.dart';
-import 'package:astra_app/data/models/normalized_step_bucket.dart';
 import 'package:astra_app/data/repositories/user_health_metrics_repository.dart';
 import 'package:astra_app/data/repositories/user_settings_repository.dart';
 import 'package:astra_app/presentation/cubits/my_data_cubit.dart';
@@ -16,7 +14,6 @@ import 'package:sqflite/sqflite.dart';
 
 import '../../core/time/fake_time_provider.dart';
 import '../../helpers/sqflite_test_helper.dart';
-import 'package:astra_app/data/repositories/step/step_aggregation_repository.dart';
 import '../../helpers/step_test_fixtures.dart';
 
 void main() {

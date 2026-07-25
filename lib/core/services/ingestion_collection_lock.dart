@@ -16,10 +16,9 @@ class IngestionCollectionLock {
     this._session, {
     String? lockKey,
     Duration? ttl,
-    TimeProvider? clock,
+    this._clock,
   })  : _lockKey = lockKey ?? kIngestionCollectLockKey,
-        ttl = ttl ?? const Duration(seconds: 35),
-        _clock = clock;
+        ttl = ttl ?? const Duration(seconds: 35);
 
   factory IngestionCollectionLock.forMaintenance(
     AstraDatabaseSession session, {

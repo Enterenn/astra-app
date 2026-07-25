@@ -205,11 +205,9 @@ class _ColdStartUserHealthMetrics implements UserHealthMetricsRepositoryContract
 class _SeedCapturingMonitor extends LiveStepMonitor {
   _SeedCapturingMonitor({
     required LiveStepMonitor inner,
-    required void Function(int?) onStart,
-    required void Function(int?) onReconcile,
-  })  : _onStart = onStart,
-        _onReconcile = onReconcile,
-        super(
+    required this._onStart,
+    required this._onReconcile,
+  }) : super(
           stepAggregation: inner.stepAggregation,
           baselineRepository: inner.baselineRepository,
           clock: inner.clock,
@@ -275,6 +273,7 @@ class _DelayingBackgroundCollector extends BackgroundCollector {
     int maxReadingsPerSource = 50,
     bool enableGoalNotification = false,
     Duration? sourceTimeout,
+    String? fieldLogOrigin,
   }) async {
     onCollectStart();
     await Future<void>.delayed(collectDelay);
@@ -297,6 +296,7 @@ class _NoOpBackgroundCollector extends BackgroundCollector {
     int maxReadingsPerSource = 50,
     bool enableGoalNotification = false,
     Duration? sourceTimeout,
+    String? fieldLogOrigin,
   }) async =>
       0;
 }
@@ -317,6 +317,7 @@ class _SourceTimeoutCapturingBackgroundCollector extends BackgroundCollector {
     int maxReadingsPerSource = 50,
     bool enableGoalNotification = false,
     Duration? sourceTimeout,
+    String? fieldLogOrigin,
   }) async {
     capturedTimeouts.add(sourceTimeout);
     return 0;

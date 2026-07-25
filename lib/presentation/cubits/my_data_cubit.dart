@@ -51,9 +51,9 @@ class MyDataCubit extends Cubit<MyDataState> {
     ActivityPermissionChecker? activityPermissionGranted,
     ActivityPermissionStatusChecker? activityPermissionStatus,
     TempDirectoryProvider? tempDirectoryProvider,
-    required SaveCsvFileCallback saveCsvFile,
+    required this._saveCsvFile,
     SaveFieldLogFileCallback? saveFieldLogFile,
-    required PickCsvFileCallback pickCsvFile,
+    required this._pickCsvFile,
     this._confirmImport,
     this._postImportRefresh,
     this._postPurgeRefresh,
@@ -67,9 +67,7 @@ class MyDataCubit extends Cubit<MyDataState> {
            activityPermissionStatus ?? resolveActivityPermissionStatus,
        _tempDirectoryProvider =
            tempDirectoryProvider ?? _defaultTempDirectoryProvider,
-       _saveCsvFile = saveCsvFile,
        _saveFieldLogFile = saveFieldLogFile ?? ((_) async => false),
-       _pickCsvFile = pickCsvFile,
        _isIos = isIos ?? Platform.isIOS,
        _batteryOptimizationProbe =
            batteryOptimizationProbe ?? BatteryOptimizationProbe(),
