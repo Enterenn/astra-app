@@ -21,10 +21,15 @@ class IngestionBaselineRepository {
 
   static const baselineKeyPrefix = 'ingestion_baseline/';
 
+  static String _encodeKeySegment(String segment) => Uri.encodeComponent(segment);
+
+  /// Preference key for one ingestion source; segments are URI-encoded so `/`
+  /// inside [provider] or [deviceId] cannot collide with the delimiter.
   static String preferenceKey({
     required String provider,
     required String deviceId,
-  }) => '$baselineKeyPrefix$provider/$deviceId';
+  }) =>
+      '$baselineKeyPrefix${_encodeKeySegment(provider)}/${_encodeKeySegment(deviceId)}';
 
   /// Removes all ingestion baseline keys inside an existing [txn] (purge path).
   static Future<void> clearAllBaselines(Transaction txn) async {
