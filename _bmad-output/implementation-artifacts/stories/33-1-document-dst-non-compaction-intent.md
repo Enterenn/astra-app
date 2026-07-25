@@ -1,6 +1,6 @@
 # Story 33.1: Document DST Non-Compaction Intent
 
-Status: review
+Status: done
 
 <!-- audits_2 Epic 33 — tracker: sprint-status-audits-2.yaml -->
 <!-- Source: epics-audits-2.md Story 33-1 · diagnostic-fuseaux-jours-locaux.md #1 · AUD2-FR30 -->
@@ -254,3 +254,4 @@ Composer (create-story) · Composer (dev-story)
 
 - 2026-07-25: Story 33-1 created — document DST non-compaction intent in lifecycle_compaction.dart
 - 2026-07-25: Story 33-1 implemented — DST comments, optional tests, diagnostic 05 closed
+- 2026-07-25: Story 33-1 review passed — marked done
