@@ -1,0 +1,75 @@
+# Audit diagnostics manifest — for BMAD agents (compact lookup)
+# Full indexes: audits/README.md · post-refacto/README.md · data-pipeline/README.md
+# generated: 2026-07-25
+
+campaigns:
+  post-refacto:
+    folder: post-refacto
+    epics: [21, 22, 23, 24, 25, 26, 27, 28]
+    status: complete
+  data-pipeline:
+    folder: data-pipeline
+    epics: [29, 30, 31, 32, 33]
+    status: complete
+
+diagnostics:
+  - id: post-refacto-01
+    file: post-refacto/diagnostic-acces-concurrents.md
+    epics: [21]
+  - id: post-refacto-02
+    file: post-refacto/diagnostic-cold-start.md
+    epics: [21, 27]
+  - id: post-refacto-03
+    file: post-refacto/diagnostic-cycle-de-vie-ressoruce.md
+    epics: [22]
+  - id: post-refacto-04
+    file: post-refacto/diagnostic-gestion-etat-erreur.md
+    epics: [22, 28]
+  - id: post-refacto-05
+    file: post-refacto/diagnostic-accessibilité-statique.md
+    epics: [23]
+  - id: post-refacto-06
+    file: post-refacto/diagnostic-etat-chargement.md
+    epics: [24, 28]
+  - id: post-refacto-07
+    file: post-refacto/diagnostic-coherence-design-system.md
+    epics: [24]
+  - id: post-refacto-08
+    file: post-refacto/diagnostic-code-mort.md
+    epics: [24]
+  - id: post-refacto-09
+    file: post-refacto/diagnostic-convention-structure.md
+    epics: [25]
+  - id: post-refacto-10
+    file: post-refacto/diagnostic-couverture-structurelle.md
+    epics: [26]
+  - id: post-refacto-11
+    file: post-refacto/diagnostic-dependance.md
+    epics: [25]
+  - id: data-pipeline-01
+    file: data-pipeline/diagnostic-couche-donnees.md
+    epics: [29, 30, 32]
+  - id: data-pipeline-02
+    file: data-pipeline/diagnostic-permissions-notifications.md
+    epics: [31]
+  - id: data-pipeline-03
+    file: data-pipeline/diagnostic-workmanager-maintenance-db.md
+    epics: [30]
+  - id: data-pipeline-04
+    file: data-pipeline/diagnostic-downsampling-compaction-fr11.md
+    epics: [29]
+  - id: data-pipeline-05
+    file: data-pipeline/diagnostic-fuseaux-jours-locaux.md
+    epics: [33]
+  - id: data-pipeline-06
+    file: data-pipeline/diagnostic-preferences-utilisateur.md
+    epics: [32]
+  - id: data-pipeline-07
+    file: data-pipeline/diagnostic-ingestion-pedometer.md
+    epics: [29]
+  - id: data-pipeline-08
+    file: data-pipeline/diagnostic-charts-agregation-daily-monthly.md
+    epics: [33]
+  - id: data-pipeline-09
+    file: data-pipeline/diagnostic-live-step-monitor.md
+    epics: [29]

@@ -148,6 +148,6 @@ PhoneStepEvent → _bufferReading → _applyReadingToDelta → incrementCalculat
 
 ## Navigation
 
-- Dossier : [`audits_2/`](./)
+- Dossier : [`data-pipeline/`](./)
 - Tests : `live_step_monitor_test.dart` · `idle_flush_persist_test.dart` · `monitor_drain_source_test.dart`
 - Lifecycle : `lifecycle_day_boundary_service.dart` · `app_lifecycle_coordinator.dart`

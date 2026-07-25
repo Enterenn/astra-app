@@ -193,6 +193,6 @@ Suite logique du périmètre données :
 
 ## Navigation
 
-- Dossier : [`audits_2/`](./)
-- Audits précédents : [`audits/`](../audits/)
+- Dossier : [`data-pipeline/`](./)
+- Audits précédents : [`audits/`](../post-refacto/)
 - Architecture : [`architecture.md`](../architecture.md) — NFR-4, SQLCipher Phase 1

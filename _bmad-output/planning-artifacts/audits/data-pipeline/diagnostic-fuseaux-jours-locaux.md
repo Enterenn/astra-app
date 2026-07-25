@@ -135,6 +135,6 @@ Garde-fou final : `merge*` lève `ArgumentError` si incomplet (`lifecycle_compac
 
 ## Navigation
 
-- Dossier : [`audits_2/`](./)
+- Dossier : [`data-pipeline/`](./)
 - Lié : [`diagnostic-downsampling-compaction-fr11.md`](./diagnostic-downsampling-compaction-fr11.md) · [`diagnostic-couche-donnees.md`](./diagnostic-couche-donnees.md)
 - Tests : `test/core/time/local_day_calculator_test.dart` · `test/dev/lifecycle_compaction_test.dart`

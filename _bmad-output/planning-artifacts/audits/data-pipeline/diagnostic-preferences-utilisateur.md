@@ -115,6 +115,6 @@ getDailyStepGoal()                  → @Deprecated ; tests + introspection migr
 
 ## Navigation
 
-- Dossier : [`audits_2/`](./)
+- Dossier : [`data-pipeline/`](./)
 - Stories : `8-1-daily-goal-history-schema` · `8-2-goal-history-consumer-migration` · `18-2-split-user-preferences-repository`
 - Migration : `migrations.dart` v3

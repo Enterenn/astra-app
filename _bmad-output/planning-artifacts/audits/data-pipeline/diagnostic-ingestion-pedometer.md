@@ -99,5 +99,5 @@ Lié audit WM : [`diagnostic-workmanager-maintenance-db.md`](./diagnostic-workma
 
 ## Navigation
 
-- Dossier : [`audits_2/`](./)
+- Dossier : [`data-pipeline/`](./)
 - Tests : `test/data/datasources/step_normalizer_test.dart` · `test/data/datasources/step_increment_calculator_test.dart` (si présent)

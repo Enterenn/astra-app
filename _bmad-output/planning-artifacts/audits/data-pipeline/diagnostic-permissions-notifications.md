@@ -193,6 +193,6 @@ Risque faible ; incohérence de pattern dans le même cubit.
 
 ## Navigation
 
-- Dossier : [`audits_2/`](./)
+- Dossier : [`data-pipeline/`](./)
 - Audit précédent : [`diagnostic-couche-donnees.md`](./diagnostic-couche-donnees.md)
-- Audits v1 (erreurs UI) : [`diagnostic-gestion-etat-erreur.md`](../audits/diagnostic-gestion-etat-erreur.md) — E28 backlog permission fragmentée
+- Audits v1 (erreurs UI) : [`diagnostic-gestion-etat-erreur.md`](../post-refacto/diagnostic-gestion-etat-erreur.md) — E28 done (permission unifiée)

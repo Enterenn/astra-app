@@ -128,6 +128,6 @@ Chaque merge : `insertCompactedSample` (ignore) → delete N sources.
 
 ## Navigation
 
-- Dossier : [`audits_2/`](./)
+- Dossier : [`data-pipeline/`](./)
 - Lié : [`diagnostic-couche-donnees.md`](./diagnostic-couche-donnees.md) (IDs ingestion) · [`diagnostic-workmanager-maintenance-db.md`](./diagnostic-workmanager-maintenance-db.md) (maintenance appelle downsample)
 - Story : `4-1-data-lifecycle-service-downsampling-and-maintenance` · `18-3-split-step-repository`

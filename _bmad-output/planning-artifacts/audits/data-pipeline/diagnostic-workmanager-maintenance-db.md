@@ -172,6 +172,6 @@ Réutiliser le même lock/TTL pour VACUUM risquerait expiration mid-operation �
 
 ## Navigation
 
-- Dossier : [`audits_2/`](./)
-- Audits liés : [`diagnostic-couche-donnees.md`](./diagnostic-couche-donnees.md) · [`diagnostic-acces-concurrents.md`](../audits/diagnostic-acces-concurrents.md)
+- Dossier : [`data-pipeline/`](./)
+- Audits liés : [`diagnostic-couche-donnees.md`](./diagnostic-couche-donnees.md) · [`diagnostic-acces-concurrents.md`](../post-refacto/diagnostic-acces-concurrents.md)
 - Story lock : `21-4-route-ingestion-lock-through-session-with-retry`
