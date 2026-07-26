@@ -123,7 +123,7 @@ Direct dependencies from `pubspec.yaml` (locked versions from `pubspec.lock` as 
 | `permission_handler` | 12.0.1 | OS permission dialogs (`ACTIVITY_RECOGNITION`, notifications) | No (OS UI only) |
 | `flutter_local_notifications` | 21.0.0 | Local goal-reached and FGS ongoing notifications, **no FCM/Firebase** | No (local channels only) |
 | `path_provider` | 2.1.5 | App documents/temp paths for export | No |
-| `file_picker` | 12.0.0-beta.5 (exact pin) | My Data CSV import/export via OS save/pick dialogs | No data upload; OS picker only |
+| `file_picker` | 12.0.0-beta.7 (exact pin) | My Data CSV import/export via OS save/pick dialogs | No data upload; OS picker only |
 | `package_info_plus` | 10.1.0 | Profile version footer from built manifest (Story 7.3); local platform channel only | No |
 
 ### `flutter_local_notifications` (local only)
@@ -143,7 +143,7 @@ See KGP section below for Android build patches.
 |-----------------|-------|
 | Phosphor subset fonts (local) | `assets/fonts/Phosphor-Regular-subset.ttf` + `Phosphor-Fill-subset.ttf` — 18 Regular + 3 Fill glyphs only (Story 20-5). MIT license ([phosphor-icons/core](https://github.com/phosphor-icons/core)). **Not** `phosphor_flutter` 2.1.0 (incompatible with Dart 3.12). Tab icons: `sneakerMove`, `chartBar`, `list`. Regenerate: `tool/subset_phosphor_icons.ps1` or `.sh` (auto-downloads source TTFs to `tool/fonts/` from [phosphor-icons/web](https://github.com/phosphor-icons/web) release; requires `fonttools` / `pyftsubset`). Guard test: `test/core/icons/phosphor_icons_subset_test.dart`. |
 | Active nav squircle | Native `ClipPath` + `CustomClipper<Path>` (`RoundedSuperellipseBorder` path, radius 16) — Story 17-3; `figma_squircle` removed |
-| `file_picker` 12.0.0-beta.5 | Exact pin at 12.0.0-beta.5 (REF-15) — CSV import/export via OS dialogs (Story 4.4 import, Story 17-1 export) |
+| `file_picker` 12.0.0-beta.7 | Exact pin at 12.0.0-beta.7 (REF-15) — CSV import/export via OS dialogs (Story 4.4 import, Story 17-1 export) |
 
 ### Android Built-in Kotlin / KGP (Story 5.5)
 
@@ -173,12 +173,12 @@ AGP 9.0.1 + Flutter 3.44.0 use **built-in Kotlin** (no `kotlin-android` on the a
 
 **Pub upgrades skipped for KGP:** `pedometer`, `workmanager`, `file_picker` already at latest compatible versions; `permission_handler` / `sqflite` minor bumps are unrelated to KGP (deferred).
 
-**`file_picker` 12.0.0-beta.5:** AGP9-aware, applies KGP only when `android.builtInKotlin=false`; no patch required once built-in Kotlin is enabled. **Exact pin** in `pubspec.yaml` (no `^`) — hold at beta.5 until a deliberate upgrade story; pub.dev latest prerelease is `12.0.0-beta.7` (informational only, do not bump without manual CSV import/export device testing).
+**`file_picker` 12.0.0-beta.7:** AGP9-aware, applies KGP only when `android.builtInKotlin=false`; no patch required once built-in Kotlin is enabled. **Exact pin** in `pubspec.yaml` (no `^`) — hold at beta.7 until stable `12.0.0` or a deliberate upgrade story; re-test CSV import/export on device after any bump.
 
-**`file_picker` upgrade criteria (not actionable until a dedicated story):**
+**`file_picker` upgrade criteria (future bumps):**
 
 1. pub.dev publishes stable `12.0.0` (non-beta), **or**
-2. Deliberate story to evaluate beta.6+ with manual Android CSV import/export + full test suite
+2. Deliberate story to evaluate newer prerelease with manual Android CSV import/export + full test suite
 3. Re-check AGP/KGP compatibility (Story 5.5 criteria)
 
 ### Dev / test only (not shipped in release APK)
@@ -187,7 +187,7 @@ AGP 9.0.1 + Flutter 3.44.0 use **built-in Kotlin** (no `kotlin-android` on the a
 |---------|----------------|---------|
 | `flutter_test` | SDK | Widget and unit tests |
 | `flutter_lints` | 6.0.0 | Static analysis rules |
-| `sqflite_common_ffi` | 2.4.0+3 | Run sqflite-backed unit tests on VM/desktop without an emulator |
+| `sqflite_common_ffi` | 2.4.2 | Run sqflite-backed unit tests on VM/desktop without an emulator |
 | `sqlite3` | 3.3.2 | Native SQLite bindings required by `sqflite_common_ffi` 2.4+ |
 
 Windows tests use `hooks.user_defines.sqlite3` with `source: system` and `name_windows: winsqlite3` so Flutter does not copy `sqlite3.dll` into `build/native_assets/` (avoids file-lock errors). See `test/flutter_test_config.dart`.
