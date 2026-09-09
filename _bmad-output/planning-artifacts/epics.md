@@ -18,9 +18,21 @@ mergedFrom:
   - epics-refacto.md
   - epics-post-audit.md
   - epics-audits-2.md
+reprise:
+  stepsCompleted: [1, 2, 3, 4]
+  startedAt: 2026-08-31
+  completedAt: 2026-08-31
+  status: complete
+  scope: Epics 34–35 (Phase 0 reprise)
+  inputDocuments:
+    - sprint-change-proposal-2026-08-31.md
+    - prds/prd-astra-app-2026-05-22/prd.md
+    - architecture.md
+    - ux-design-specification.md
+    - audits/phase0-reprise/audit-master-v0.15.2.md
 ---
 
-# astra-app — Epic Breakdown (Epics 1–33)
+# astra-app — Epic Breakdown (Epics 1–35)
 
 ## Overview
 
@@ -40,6 +52,8 @@ This document provides the complete epic and story breakdown for astra-app, deco
 
 **Scope amendment (user-confirmed, 2026-06-17 — Sprint Change Proposal approved):** **Epic 13** reintroduced for **Onboarding Redesign** (intro → weight → height; activity permission on intro Continue). Supersedes Story 1.5 UX. Version bump **moyen** at Epic 13 close (`0.6.0+11`). Source: `planning-artifacts/sprint-change-proposal-2026-06-17.md`.
 
+**Scope amendment (2026-08-31 — Sprint Change Proposal approved):** Epic 34 = Phase 0 reprise hardening after post-pause audit. Source of truth for in/out = `sprint-change-proposal-2026-08-31.md` (not the raw audit matrix). Epic 35 = optional MyDataCubit split after 34. Phase 1 product (SQLCipher, BLE, Health Connect) still out of scope. Epics 1–33 stay `done`.
+
 ## Document map (Epics 1–33)
 
 | Phase | Epics | Status | Primary source |
@@ -48,6 +62,7 @@ This document provides the complete epic and story breakdown for astra-app, deco
 | **Refacto** | 14–20 | complete | `refactoring-audit-master-v0.6.1.md` |
 | **Post-audit** | 21–28 | complete | `audits/post-refacto/` diagnostics |
 | **Data audit** | 29–33 | complete | `audits/data-pipeline/` diagnostics |
+| **Phase 0 reprise** | 34–35 | AC written | `sprint-change-proposal-2026-08-31.md` |
 
 **Tracker:** [`sprint-status.yaml`](../implementation-artifacts/sprint-status.yaml) · **Lookup:** [`EPIC-INDEX.md`](./EPIC-INDEX.md)
 
@@ -278,6 +293,84 @@ FR29: Epic 7 — Beta acceptance checklist
 FR30: Epic 4 — CSV import with idempotent reconciliation
 FR31: Epic 4 — Theme selection (System / Light / Dark)
 
+## Requirements Inventory — Phase 0 reprise (Epic 34+)
+
+Source of truth: `sprint-change-proposal-2026-08-31.md`. No new PRD FRs. Epics 1–33 remain delivered. Audit `audits/phase0-reprise/audit-master-v0.15.2.md` is a constraint list, not a backlog.
+
+### Functional Requirements
+
+FR-R1: Types owned by presentation but consumed by `core/` (`PermissionRequestStatus`, `TrendsInsightAvailability`, and insight types `core/metrics` actually needs) live outside cubit/state files. No `lib/domain/` folder. iOS sensor vs activity permission mapping stays unchanged (`Platform.isIOS`).
+
+FR-R2: Lifecycle code in `core/` does not import presentation cubits. Resume/refresh orchestration uses ports or callbacks on the existing `AppCubitCoordinator`. Do not create a second coordinator.
+
+FR-R3: History refresh failure is visible on Trends. `HistoryStatus` includes `error`. If a usable cache remains, keep showing it. User can retry. Align with existing `StatusBanner` patterns on Today and My Data.
+
+FR-R4: Trends batch-reads active buckets for a set of local days (`getActiveBucketsForLocalDays` or equivalent). Local-day truth matches the per-day path: `LocalDayCalculator` + stored `zone_offset`. No semantic change to kcal or derived metrics. Contract + tests in `step_repository_*`.
+
+FR-R5: `getTodaySteps` hot path may use SQL/aggregation only if the Dart per-row local-day filter is preserved or proven equivalent. Existing `test/data/repositories/step_repository_today_test.dart` is the gate.
+
+FR-R6: Split `MyDataCubit` along existing test seams (export / import / purge / footprint). Cubit becomes an orchestrator; feature tests stay dedicated.
+
+FR-R7: Selective rebuilds on My Data via `BlocSelector` (and Profile if it still root-`watch`s). Runs after FR-R6, not in parallel.
+
+Preserved (must not regress; not reopened): FR5 stale banners on Today/My Data, FR14 local-day daily totals, FR16 History charts, single ingestion writer (`BackgroundCollector`).
+
+### NonFunctional Requirements
+
+NFR1: Chart render latency — History/Trends query + render <100ms (KPI-01). Epic 34 batch reads must not regress this.
+
+NFR9: Time semantics — UTC storage; immutable `zone_offset` at ingestion; daily totals and charts use `LocalDayCalculator` on stored offset per row — never device current timezone, never SQL `date(start_time, zone_offset)`.
+
+NFR-R1: Stories 34.1–34.2 are compile-time import-graph changes only. No schema change. No ingestion writer change.
+
+NFR-R2: Stories 34.4–34.5 are query-shape only. No change to NFR-9 day boundaries, double-count rules, or finest-resolution totals.
+
+NFR-R3: Default verify `flutter test --tags critical`. SQL stories must also run `test/data/repositories/step_repository_today_test.dart` and History/chart cubit tests.
+
+### Additional Requirements
+
+- **D-22:** Pragmatic 3-layer (`core` / `data` / `presentation`) — no `lib/domain/`. Shared types and ports used by core live in `core/` (or `data/`). Presentation cubits must not be imported from `core/`.
+- Refresh orchestration stays on existing `AppCubitCoordinator`.
+- `BackgroundCollector` remains the only ingestion write caller; 34.x is reads, import graph, and UI.
+- iOS: no new background collection stack.
+- Version bump at epic close: **mineur** (`patch+1` + `build+1`). Projected Epic 34 close: `0.15.3+41`.
+- First ready story is types (FR-R1), not SQL.
+
+### UX Design Requirements
+
+UX-DR1: Trends refresh failed with no usable cache — `StatusBanner` error variant + retry. No new screen or journey.
+
+UX-DR2: Trends refresh failed with cache remaining — `StatusBanner` stale/info + retry; chart stays on screen.
+
+UX-DR3: Reuse existing `StatusBanner` variants (Today compact / My Data full). Add EN/FR l10n keys. Collection stale >12h on Trends remains `—` (no new collection-stale banner on Trends).
+
+### Out of scope (explicit)
+
+- New `permanentlyDenied` funnel / `PermissionOutcome` enum (shipped Epic 31)
+- `_initializePlatform` swallow (shipped 31-3)
+- New `AppCubitCoordinator` (already exists)
+- `lib/domain/` (violates D-22)
+- Phase 1 product: SQLCipher, BLE, Health Connect
+- Split `goal_ring` / `today_screen`
+- Empty-folder test gaps (`test/data/models/`, `test/l10n/`)
+- RepaintBoundary / SQL index / profiler-first items
+- Reopen post-refacto-02 boot latency, WM TTL vs VACUUM (E21/E27/E30)
+- About `Semantics` + Trends skeletons as a story
+
+### FR Coverage Map
+
+FR-R1: Epic 34 — Relocate presentation-owned types used by core/ (no lib/domain/)
+FR-R2: Epic 34 — Lifecycle refresh without cubit imports (existing AppCubitCoordinator)
+FR-R3: Epic 34 — History refresh failure visible on Trends
+FR-R4: Epic 34 — Batch active-bucket reads for Trends (NFR-9 preserved)
+FR-R5: Epic 34 — getTodaySteps hot path without changing local-day truth
+FR-R6: Epic 35 — Split MyDataCubit along existing test seams
+FR-R7: Epic 35 — BlocSelector on My Data (and Profile if still root-watch)
+
+UX-DR1: Epic 34 — Trends StatusBanner error + retry (no usable cache)
+UX-DR2: Epic 34 — Trends StatusBanner stale/info + retry (cache remains)
+UX-DR3: Epic 34 — Reuse StatusBanner variants; EN/FR l10n
+
 ## Epic List
 
 ### Epic 1: Trust Onboarding & App Shell
@@ -307,6 +400,14 @@ Populate Today’s kcal / distance / walking-time row from steps and profile bio
 ### Epic 7: OSS Credibility & Beta Readiness
 The repo is beta-ready and open-source credible — documentation, privacy audit, release hardening, and acceptance checklist.
 **FRs covered:** FR18, FR26, FR27, FR29
+
+### Epic 34: Honest Trends & layering integrity
+The user sees a Trends refresh failure (banner + retry) instead of silent empty/cache; daily totals stay on stored local-day truth. `core/` no longer imports presentation cubits. Standalone; does not require Epic 35.
+**FRs covered:** FR-R1, FR-R2, FR-R3, FR-R4, FR-R5
+
+### Epic 35: Snappy My Data (optional)
+My Data (and Profile if it still root-watches) rebuilds only the section that changed. Same export/import/purge/footprint actions. After Epic 34.
+**FRs covered:** FR-R6, FR-R7
 
 ---
 
@@ -5325,3 +5426,236 @@ So that History/Trends queries stay efficient and correct.
 
 **Target files:** `lib/data/repositories/step/_step_chart_queries.dart`, `test/data/repositories/step_repository_chart_*_test.dart`  
 **Diagnostic:** `diagnostic-charts-agregation-daily-monthly.md` #1, #2
+
+---
+
+## Epic 34: Honest Trends & layering integrity
+
+The user sees a Trends refresh failure (banner + retry) instead of silent empty/cache; daily totals stay on stored local-day truth. `core/` no longer imports presentation cubits.
+
+**Priority:** P0 · **Version bump:** patch+1 + build+1 at epic close (mineur, e.g. `0.15.3+41`) · **Source:** `sprint-change-proposal-2026-08-31.md` (not the raw audit matrix)
+
+**FRs covered:** FR-R1, FR-R2, FR-R3, FR-R4, FR-R5  
+**UX-DRs:** UX-DR1, UX-DR2, UX-DR3  
+**NFRs:** NFR9, NFR1, NFR-R1, NFR-R2, NFR-R3
+
+**Prerequisite:** Epics 1–33 done. **Does not require Epic 35.** First story is types (34-1), not SQL.
+
+### Story 34-1: Relocate presentation-owned types used by core/
+
+As a **maintainer**,
+I want permission and Trends insight types to live outside cubit state files,
+So that `core/` can use them without importing presentation.
+
+**Acceptance Criteria:**
+
+**Given** `PermissionRequestStatus` today lives in `onboarding_state.dart`
+**When** this story ships
+**Then** the enum lives in `core/` (e.g. `core/permissions/`)
+**And** `activity_permission_resolver.dart` / `notification_permission_resolver.dart` import that location — not `presentation/`
+**And** onboarding, Today, My Data, and the background card keep the same enum values and iOS `Permission.sensors` vs Android `activityRecognition` mapping
+
+**Given** `core/metrics/trends_insights.dart` imports `history_state.dart`
+**When** this story ships
+**Then** `TrendsInsightAvailability`, `TrendsMostActiveWeekday`, and `TrendsGoalStreak` live in `core/metrics/` (or `core/` adjacent) — not `history_state.dart`
+**And** `history_state.dart` / Trends widgets re-export or import those types; behaviour of `computeInsightAvailability` is unchanged
+**And** **no** `lib/domain/` directory is created
+
+**Given** `flutter test --tags critical`
+**When** story closes
+**Then** the suite is green; `core/` permission + metrics files have zero `presentation/` imports
+
+**Out of scope:** cubit imports in lifecycle (34-2); `TodayStatus` if still only used by 34-2.
+
+**Target files:** `lib/core/permissions/*`, `lib/core/metrics/trends_insights.dart`, `onboarding_state.dart`, `history_state.dart`, tests that import those types  
+**Source:** FR-R1 · D-22
+
+---
+
+### Story 34-2: Lifecycle refresh without cubit imports
+
+As a **maintainer**,
+I want resume/refresh to go through the existing coordinator,
+So that `core/` lifecycle never imports cubits.
+
+**Acceptance Criteria:**
+
+**Given** `app_lifecycle_coordinator.dart` and `lifecycle_session_state.dart` import `TodayCubit` / `HistoryCubit` / `MyDataCubit`
+**When** this story ships
+**Then** those files have **zero** `package:astra_app/presentation/` (or relative `presentation/`) imports
+**And** `lifecycle_live_pipeline_service.dart` no longer imports `today_state.dart`
+
+**Given** `AppCubitCoordinator` already exists
+**When** implementing
+**Then** add ports/callbacks **on that class** — do not create a second coordinator
+**And** silent Today / History / My Data refresh on resume still runs (same triggers as today)
+
+**Given** `flutter test --tags critical` including lifecycle / coordinator tests
+**When** story closes
+**Then** the suite is green
+
+**Depends on:** 34-1 (types already moved).
+
+**Target files:** `app_lifecycle_coordinator.dart`, `lifecycle_session_state.dart`, `lifecycle_live_pipeline_service.dart`, `app_cubit_coordinator.dart`, DI/wiring, existing lifecycle tests  
+**Source:** FR-R2 · D-22 · NFR-R1
+
+---
+
+### Story 34-3: History refresh failure is visible
+
+As a **user**,
+I want Trends to tell me when history failed to refresh and let me retry,
+So that I do not think I have no data when the load failed.
+
+**Acceptance Criteria:**
+
+**Given** History refresh throws and `_cachedAggregates30d` is empty (or no usable cache)
+**When** recovery runs
+**Then** `HistoryStatus` includes `error` and Trends shows `StatusBanner` **error** + retry — UX-DR1
+**And** empty-state copy is **not** shown as if the user simply has no history
+
+**Given** refresh throws and a usable cache remains
+**When** recovery runs
+**Then** chart/insights stay on cached data
+**And** `StatusBanner` stale or info + retry — UX-DR2
+**And** status is not silent `ready` with no signal
+
+**Given** user taps retry
+**When** `onTap` (existing `StatusBanner` callback) fires
+**Then** History refresh runs again (non-silent or equivalent)
+
+**Given** EN + FR arb
+**When** story ships
+**Then** new keys exist in both locales; collection stale >12h on Trends stays `—` (no new collection-stale banner)
+
+**Out of scope:** new screen; About Semantics; Trends skeletons.
+
+**Target files:** `history_state.dart`, `history_cubit.dart`, `history_screen.dart`, `status_banner.dart` (reuse), l10n, `test/presentation/cubits/history_*`  
+**Source:** FR-R3 · UX-DR1 · UX-DR2 · UX-DR3
+
+---
+
+### Story 34-4: Batch active-bucket reads for Trends
+
+As a **user**,
+I want Trends to load 7d/30d buckets in one query,
+So that the chart stays fast without changing what a day means.
+
+**Acceptance Criteria:**
+
+**Given** `HistoryCubit` today `Future.wait`s 30× `getActiveBucketsForLocalDay`
+**When** this story ships
+**Then** the contract adds `getActiveBucketsForLocalDays` (or equivalent) used by History
+**And** each returned day uses the **same** per-row `LocalDayCalculator` + stored `zone_offset` as the 1-day path — NFR9
+**And** SQL `date(start_time, zone_offset)` is forbidden; a UTC window may bound the query, Dart still filters by stored offset
+
+**Given** mixed `zone_offset` rows (travel) and DST edges already covered by `step_repository_*`
+**When** tests run
+**Then** batch results **equal** N sequential `getActiveBucketsForLocalDay` calls for the same days
+**And** kcal / derived metrics are unchanged (same buckets → same metrics)
+
+**Given** KPI-01
+**When** 90-day inject
+**Then** chart query + render still < 100 ms — NFR1
+
+**Out of scope:** `getTodaySteps` (34-5); schema; ingestion writer.
+
+**Target files:** `step_aggregation_repository_contract.dart`, `step_aggregation_repository.dart`, `history_cubit.dart`, `test/data/repositories/step_repository_*`  
+**Source:** FR-R4 · NFR9 · NFR1 · NFR-R2
+
+---
+
+### Story 34-5: getTodaySteps hot path without changing local-day truth
+
+As a **user**,
+I want today’s step total to stay correct if the query is sped up,
+So that Today and notifications still match stored local days.
+
+**Acceptance Criteria:**
+
+**Given** `getTodaySteps` today loads rows then filters with `LocalDayCalculator` per row
+**When** SQL/`GROUP BY` (or other aggregation) is introduced
+**Then** it is **only** if that filter is preserved **or** proven equivalent on mixed offsets — NFR9 / NFR-R2
+**And** finest-resolution total / no double-count rules are unchanged
+
+**Given** `test/data/repositories/step_repository_today_test.dart`
+**When** story closes
+**Then** that file is the gate — must stay green; add cases if a SQL path is taken
+
+**Given** no safe equivalent
+**When** implementing
+**Then** keep the Dart per-row filter; do not ship a “faster” query that drops `zone_offset`
+
+**Out of scope:** schema; ingestion writer; Trends buckets (34-4).
+
+**Target files:** `step_aggregation_repository.dart`, contract if needed, `step_repository_today_test.dart`  
+**Source:** FR-R5 · NFR9 · NFR-R2 · NFR-R3
+
+---
+
+## Epic 35: Snappy My Data (optional)
+
+My Data (and Profile if it still root-watches) rebuilds only the section that changed. Same export/import/purge/footprint actions.
+
+**Priority:** P2 (structural debt) · **Version bump:** patch+1 + build+1 at epic close (mineur) · **Source:** `sprint-change-proposal-2026-08-31.md`
+
+**FRs covered:** FR-R6, FR-R7
+
+**Prerequisite:** Epic 34. Sequence locked: 35-1 then 35-2 (not in parallel). Rebuild reference: `today_screen.dart` (`BlocSelector` + view models).
+
+### Story 35-1: Split MyDataCubit along existing test seams
+
+As a **maintainer**,
+I want export / import / purge / footprint extracted from `MyDataCubit`,
+So that the cubit only orchestrates state and existing tests stay the gate.
+
+**Acceptance Criteria:**
+
+**Given** `my_data_cubit.dart` inlines CSV export, import, purge, and footprint refresh
+**When** this story ships
+**Then** each seam has a dedicated collaborator (controller/service) owned by presentation or data — not a new `lib/domain/`
+**And** `MyDataCubit` remains the public API used by the screen, coordinator, and lifecycle ports: `exportAndShare`, `pickAndImport`, `confirmAndPurge`, `refresh`, goal/display-name updates
+
+**Given** existing cubit tests (`my_data_cubit_export`, `_import`, `_purge`, `_field_log_export`, `_goal_refresh`)
+**When** story closes
+**Then** they stay green without rewriting scenarios; collaborators are injected so tests can still drive the cubit
+**And** `flutter test --tags critical` is green
+
+**Given** user-visible My Data behaviour
+**When** export / import / purge / footprint refresh run
+**Then** errors, success pending, and banners are unchanged
+
+**Out of scope:** `BlocSelector` (35-2); goal ring / Today split; field-log export **must** stay working (existing test) even if folded into the export collaborator.
+
+**Target files:** `my_data_cubit.dart`, new collaborator files next to cubit or `presentation/my_data/`, `app_dependencies.dart` / coordinator wiring, existing `test/presentation/cubits/my_data_cubit_*`  
+**Source:** FR-R6 · D-22
+
+---
+
+### Story 35-2: BlocSelector on My Data (and Profile if still root-watch)
+
+As a **user**,
+I want My Data (and Profile) to redraw only the section that changed,
+So that typing a goal or refreshing footprint does not rebuild the whole tab.
+
+**Acceptance Criteria:**
+
+**Given** `my_data_screen.dart` uses `context.watch<MyDataCubit>().state` at the root
+**When** this story ships
+**Then** sections use `BlocSelector` (or equivalent) on the slices they need — pattern = `today_screen.dart`
+**And** footprint, background status, export/import/purge controls, and goal editor do not all rebuild on every emit
+
+**Given** `profile_screen.dart` still `watch`es `ProfileCubit` at the content root (and `settings_screen.dart` if it still does)
+**When** this story ships
+**Then** those screens use selectors for the slices they display **or** a short note in the story file explains why Profile/Settings stay on `BlocBuilder`/`watch` (only if a selector would not cut rebuilds)
+
+**Given** `test/presentation/screens/my_data_screen_test.dart` (+ profile screen tests if touched)
+**When** story closes
+**Then** the suite is green; no behaviour change to editors, banners, or navigation
+
+**Depends on:** 35-1 (stable state slices after the split). **Not in parallel.**
+
+**Out of scope:** Trends skeletons; `goal_ring` split; `RepaintBoundary` charts.
+
+**Target files:** `my_data_screen.dart`, optionally `profile_screen.dart` / `settings_screen.dart`, screen tests  
+**Source:** FR-R7

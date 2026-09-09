@@ -1,6 +1,6 @@
 # Audit diagnostics manifest — for BMAD agents (compact lookup)
-# Full indexes: audits/README.md · post-refacto/README.md · data-pipeline/README.md
-# generated: 2026-07-25
+# Full indexes: audits/README.md · post-refacto/README.md · data-pipeline/README.md · phase0-reprise/README.md
+# generated: 2026-07-25 · updated: 2026-08-31
 
 campaigns:
   post-refacto:
@@ -11,6 +11,11 @@ campaigns:
     folder: data-pipeline
     epics: [29, 30, 31, 32, 33]
     status: complete
+  phase0-reprise:
+    folder: phase0-reprise
+    epics: [34, 35]
+    status: scoped
+    source_of_truth: planning-artifacts/sprint-change-proposal-2026-08-31.md
 
 diagnostics:
   - id: post-refacto-01
@@ -73,3 +78,7 @@ diagnostics:
   - id: data-pipeline-09
     file: data-pipeline/diagnostic-live-step-monitor.md
     epics: [29]
+  - id: phase0-reprise-01
+    file: phase0-reprise/audit-master-v0.15.2.md
+    epics: [34, 35]
+    note: Raw matrix is not CE input — use sprint-change-proposal-2026-08-31.md

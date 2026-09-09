@@ -1,30 +1,30 @@
-# Consolidated sprint tracker — Epics 1–33 (all complete)
+# Consolidated sprint tracker — Epics 1–33 done · 34–35 backlog (CC 2026-08-31)
 # generated: 2026-05-25 (Phase 0) · consolidated: 2026-07-25
-# last_updated: 2026-07-25 · app version 0.15.2+40
-# NEXT: Phase 1 planning (no active stories)
+# last_updated: 2026-08-31 · app version 0.15.2+40
+# NEXT: CE — append Epic 34–35 AC to epics.md (source: sprint-change-proposal-2026-08-31.md)
 #
 # project: astra-app
 # tracking_system: file-system
 # story_location: _bmad-output/implementation-artifacts/stories
 # navigation: _bmad-output/README.md · planning-artifacts/EPIC-INDEX.md
 #
-# PHASES — acceptance criteria: planning-artifacts/epics.md (Epics 1–33)
+# PHASES — acceptance criteria: planning-artifacts/epics.md (Epics 1–33 done; 34–35 pending CE)
 #
 # Per-phase snapshots (historical): implementation-artifacts/archive/sprint-trackers/
 #
 # STATUS: backlog | ready-for-dev | in-progress | review | done | optional (retrospectives)
 
 generated: 2026-07-25
-last_updated: 2026-07-25
+last_updated: 2026-08-31
 project: astra-app
 project_key: NOKEY
 tracking_system: file-system
 story_location: _bmad-output/implementation-artifacts/stories
 app_version: 0.15.2+40
-overall_status: complete
+overall_status: planning
 schema_version: 1
-active_phase: null
-next_recommended: "Phase 1 planning — append Epic 34+ to epics.md and sprint-status.yaml"
+active_phase: phase0-reprise
+next_recommended: "CE — append Epic 34–35 AC to epics.md from sprint-change-proposal-2026-08-31.md (not the raw audit matrix)"
 epics_file: planning-artifacts/epics.md
 
 development_status:
@@ -291,3 +291,17 @@ development_status:
   33-1-document-dst-non-compaction-intent: done
   33-2-document-chart-date-rollover-and-optional-sql-upper-bound: done
   epic-33-retrospective: optional
+
+  # ── Phase 0 reprise (Epics 34–35) — CC approved 2026-08-31; AC pending CE ──
+  epic-34: backlog
+  34-1-relocate-presentation-owned-types-used-by-core: backlog
+  34-2-lifecycle-refresh-without-cubit-imports: backlog
+  34-3-history-refresh-failure-is-visible: backlog
+  34-4-batch-active-bucket-reads-for-trends: backlog
+  34-5-gettodaysteps-hot-path-preserve-local-day: backlog
+  epic-34-retrospective: optional
+
+  epic-35: backlog
+  35-1-split-my-data-cubit-along-existing-test-seams: backlog
+  35-2-blocselector-on-my-data-and-profile: backlog
+  epic-35-retrospective: optional

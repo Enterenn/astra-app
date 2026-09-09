@@ -1,6 +1,6 @@
-# Epic index — Epics 1–33
+# Epic index — Epics 1–35
 
-Single lookup table for all delivered work. **All epics complete** as of 2026-07-25 (`0.15.2+40`).
+Epics **1–33 complete** as of 2026-07-25 (`0.15.2+40`). Epics **34–35 backlog** (CC approved 2026-08-31; AC pending CE).
 
 **Acceptance criteria (all phases):** [`epics.md`](./epics.md)
 
@@ -39,6 +39,8 @@ Single lookup table for all delivered work. **All epics complete** as of 2026-07
 | 31 | Clear Permission & Notification Flows | Data audit | [audits/data-pipeline/](./audits/data-pipeline/README.md) | 31.1–31.6 |
 | 32 | Trustworthy Local Data Storage | Data audit | [audits/data-pipeline/](./audits/data-pipeline/README.md) | 32.1–32.5 |
 | 33 | Maintainable Charts & Time-Zone Pipeline | Data audit | [audits/data-pipeline/](./audits/data-pipeline/README.md) | 33.1–33.2 |
+| 34 | Phase 0 reprise hardening | Phase 0 reprise | [audits/phase0-reprise/](./audits/phase0-reprise/README.md) · [CC 2026-08-31](./sprint-change-proposal-2026-08-31.md) | 34.1–34.5 (backlog) |
+| 35 | My Data cubit split | Phase 0 reprise | same · after E34 | 35.1–35.2 (backlog) |
 
 **Live tracker:** [`sprint-status.yaml`](../implementation-artifacts/sprint-status.yaml)  
 **Per-story context:** [`stories/`](../implementation-artifacts/stories/) (158 files)

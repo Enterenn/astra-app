@@ -13,7 +13,7 @@ Machine entry point for BMad skills, Cursor agents, and contributors automating 
 | **Epics + AC** | `_bmad-output/planning-artifacts/epics.md` | **Only** active `*epic*.md` at planning-artifacts root |
 | **Sprint tracker** | `_bmad-output/implementation-artifacts/sprint-status.yaml` | Read/write story & epic status here |
 | **Story context** | `_bmad-output/implementation-artifacts/stories/{story-key}.md` | Per-story AC, code map, review notes |
-| **Epic lookup** | `_bmad-output/planning-artifacts/EPIC-INDEX.md` | Table Epics 1–33 (human + quick agent scan) |
+| **Epic lookup** | `_bmad-output/planning-artifacts/EPIC-INDEX.md` | Table Epics 1–35 (human + quick agent scan) |
 | **Audits index** | `_bmad-output/planning-artifacts/audits/manifest.yaml` | Diagnostic → epic mapping |
 | **Project rules** | `docs/project-context.md` | OK commit gate, tests, versioning |
 
@@ -52,14 +52,14 @@ When closing an epic: bump `pubspec.yaml` + root `README.md` version row; set `l
 
 ---
 
-## Current state (2026-07-25)
+## Current state (2026-08-31)
 
 ```yaml
-overall_status: complete
-active_phase: null
+overall_status: planning
+active_phase: phase0-reprise
 app_version: 0.15.2+40
-epics: 1–33 done
-next_recommended: Phase 1 planning — extend epics.md + sprint-status.yaml with Epic 34+
+epics: 1–33 done · 34–35 backlog (AC pending CE)
+next_recommended: CE — append Epic 34–35 to epics.md from sprint-change-proposal-2026-08-31.md
 ```
 
 ---
@@ -71,5 +71,6 @@ planning-artifacts/audits/
 ├── README.md
 ├── manifest.yaml
 ├── post-refacto/      # E21–28 diagnostics
-└── data-pipeline/     # E29–33 diagnostics
+├── data-pipeline/     # E29–33 diagnostics
+└── phase0-reprise/    # E34–35 — CE must use sprint-change-proposal-2026-08-31.md, not the raw audit matrix
 ```
