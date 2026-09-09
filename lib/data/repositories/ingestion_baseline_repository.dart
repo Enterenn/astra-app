@@ -1,6 +1,20 @@
+import 'dart:convert';
+
 import 'package:sqflite/sqflite.dart';
 
 import '../../core/database/astra_database_session.dart';
+import '../../core/time/timestamp_codec.dart';
+
+/// Last credited pedometer cumulative for one ingestion source.
+class IngestionBaselineSnapshot {
+  const IngestionBaselineSnapshot({
+    required this.cumulative,
+    this.recordedAtUtc,
+  });
+
+  final int cumulative;
+  final DateTime? recordedAtUtc;
+}
 
 /// Persists the last seen cumulative step counter per ingestion source.
 ///
@@ -40,7 +54,76 @@ class IngestionBaselineRepository {
     );
   }
 
+  static DateTime secondAlignedUtc(DateTime value) {
+    final utc = value.toUtc();
+    return DateTime.utc(
+      utc.year,
+      utc.month,
+      utc.day,
+      utc.hour,
+      utc.minute,
+      utc.second,
+    );
+  }
+
+  static String encodeSnapshot(IngestionBaselineSnapshot snapshot) {
+    final recordedAtUtc = snapshot.recordedAtUtc;
+    if (recordedAtUtc == null) {
+      return snapshot.cumulative.toString();
+    }
+    return jsonEncode({
+      'v': snapshot.cumulative,
+      'at': TimestampCodec.formatUtc(secondAlignedUtc(recordedAtUtc)),
+    });
+  }
+
+  static IngestionBaselineSnapshot? decodeSnapshot(String? raw) {
+    if (raw == null || raw.isEmpty) {
+      return null;
+    }
+    final asInt = int.tryParse(raw);
+    if (asInt != null) {
+      return IngestionBaselineSnapshot(cumulative: asInt);
+    }
+    try {
+      final decoded = jsonDecode(raw);
+      if (decoded is! Map) {
+        return null;
+      }
+      final cumulative = decoded['v'];
+      if (cumulative is! int) {
+        return null;
+      }
+      DateTime? recordedAtUtc;
+      final at = decoded['at'];
+      if (at is String) {
+        try {
+          recordedAtUtc = TimestampCodec.parseUtc(at);
+        } on FormatException {
+          recordedAtUtc = null;
+        }
+      }
+      return IngestionBaselineSnapshot(
+        cumulative: cumulative,
+        recordedAtUtc: recordedAtUtc,
+      );
+    } on FormatException {
+      return null;
+    }
+  }
+
   Future<int?> getBaseline({
+    required String provider,
+    required String deviceId,
+  }) async {
+    final snapshot = await getBaselineSnapshot(
+      provider: provider,
+      deviceId: deviceId,
+    );
+    return snapshot?.cumulative;
+  }
+
+  Future<IngestionBaselineSnapshot?> getBaselineSnapshot({
     required String provider,
     required String deviceId,
   }) {
@@ -55,7 +138,7 @@ class IngestionBaselineRepository {
       if (rows.isEmpty) {
         return null;
       }
-      return int.tryParse(rows.first['value'] as String? ?? '');
+      return decodeSnapshot(rows.first['value'] as String?);
     });
   }
 
@@ -63,6 +146,7 @@ class IngestionBaselineRepository {
     required String provider,
     required String deviceId,
     required int cumulative,
+    DateTime? recordedAtUtc,
     Transaction? txn,
   }) async {
     if (cumulative < 0) {
@@ -70,7 +154,12 @@ class IngestionBaselineRepository {
     }
     final row = {
       'key': preferenceKey(provider: provider, deviceId: deviceId),
-      'value': cumulative.toString(),
+      'value': encodeSnapshot(
+        IngestionBaselineSnapshot(
+          cumulative: cumulative,
+          recordedAtUtc: recordedAtUtc ?? DateTime.now().toUtc(),
+        ),
+      ),
     };
     if (txn != null) {
       await txn.insert(

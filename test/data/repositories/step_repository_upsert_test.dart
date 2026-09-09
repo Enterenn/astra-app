@@ -64,6 +64,35 @@ void main() {
       expect(rows.single['value'], 67);
     });
 
+    test('getLastIngestionUtcForSource returns max end time for that source', () async {
+      await repository.upsertIngestionBucket(_bucket(value: 100));
+      await repository.upsertIngestionBucket(
+        NormalizedStepBucket(
+          startTimeUtc: DateTime.utc(2026, 6, 1, 8),
+          endTimeUtc: DateTime.utc(2026, 6, 1, 8, 5),
+          value: 40,
+          provider: kAstraWearableProvider,
+          deviceId: kAstraWearableDeviceId,
+          zoneOffset: '+02:00',
+        ),
+      );
+
+      expect(
+        await repository.getLastIngestionUtcForSource(
+          provider: kInternalPhoneProvider,
+          deviceId: kSmartphoneDeviceId,
+        ),
+        DateTime.utc(2026, 6, 2, 8, 5),
+      );
+      expect(
+        await repository.getLastIngestionUtcForSource(
+          provider: kAstraWearableProvider,
+          deviceId: kAstraWearableDeviceId,
+        ),
+        DateTime.utc(2026, 6, 1, 8, 5),
+      );
+    });
+
     test('database rejects negative step values', () async {
       await expectLater(
         db.insert('timeseries_samples', {

@@ -4,6 +4,7 @@ import 'package:sqflite/sqflite.dart';
 import '../../../core/constants/preference_keys.dart';
 import '../../../core/database/astra_database_session.dart';
 import '../../../core/ids/sample_id_generator.dart';
+import '../../../core/time/timestamp_codec.dart';
 import '../../contracts/step_ingestion_repository_contract.dart';
 import '../../models/normalized_step_bucket.dart';
 import '../../models/timeseries_sample_model.dart';
@@ -25,6 +26,25 @@ class StepIngestionRepository implements StepIngestionRepositoryContract {
   Database get db => _session.db;
 
   AstraDatabaseSession get databaseSession => _session.session;
+
+  /// Latest step sample end time for one source, or null when none exist.
+  Future<DateTime?> getLastIngestionUtcForSource({
+    required String provider,
+    required String deviceId,
+  }) async {
+    final rows = await _session.run(
+      (db) => db.rawQuery(
+        '''
+      SELECT MAX(end_time) AS last_end_time
+      FROM timeseries_samples
+      WHERE type = ? AND provider = ? AND device_id = ?
+      ''',
+        [kStepSampleType, provider, deviceId],
+      ),
+    );
+    final value = rows.single['last_end_time'] as String?;
+    return value == null ? null : TimestampCodec.parseUtc(value);
+  }
 
   /// Persists an ingestion bucket from the background collection pipeline only.
   ///

@@ -368,6 +368,90 @@ void main() {
       );
     });
 
+    test(
+      'spreads a single catch-up reading across days using baseline timestamp',
+      () async {
+        await baselineRepository.setBaseline(
+          provider: kInternalPhoneProvider,
+          deviceId: kSmartphoneDeviceId,
+          cumulative: 1000,
+          recordedAtUtc: DateTime.utc(2026, 6, 1, 21, 50),
+        );
+        final collector = BackgroundCollector(
+          sources: [
+            _FakeStepSource([
+              StepReading(
+                cumulativeSteps: 11000,
+                observedAtUtc: DateTime.utc(2026, 6, 4, 6),
+              ),
+            ]),
+          ],
+          normalizer: normalizer,
+          repository: repository,
+          stepAggregation: stepAggregation,
+          baselineRepository: baselineRepository,
+          clock: clock,
+          sourceTimeout: const Duration(milliseconds: 10),
+        );
+
+        expect(await collector.collectOnce(), greaterThanOrEqualTo(3));
+        final rows = await db.query('timeseries_samples');
+        expect(rows.length, greaterThanOrEqualTo(3));
+        final total = rows.fold<int>(
+          0,
+          (sum, row) => sum + (row['value']! as num).toInt(),
+        );
+        expect(total, 10000);
+      },
+    );
+
+    test(
+      'legacy baseline without timestamp falls back to last sample end time',
+      () async {
+        await db.insert('user_preferences', {
+          'key': IngestionBaselineRepository.preferenceKey(
+            provider: kInternalPhoneProvider,
+            deviceId: kSmartphoneDeviceId,
+          ),
+          'value': '1000',
+        });
+        await repository.upsertIngestionBucket(
+          NormalizedStepBucket(
+            startTimeUtc: DateTime.utc(2026, 6, 1, 21, 45),
+            endTimeUtc: DateTime.utc(2026, 6, 1, 21, 50),
+            value: 50,
+            provider: kInternalPhoneProvider,
+            deviceId: kSmartphoneDeviceId,
+            zoneOffset: '+02:00',
+          ),
+        );
+        final collector = BackgroundCollector(
+          sources: [
+            _FakeStepSource([
+              StepReading(
+                cumulativeSteps: 11000,
+                observedAtUtc: DateTime.utc(2026, 6, 4, 6),
+              ),
+            ]),
+          ],
+          normalizer: normalizer,
+          repository: repository,
+          stepAggregation: stepAggregation,
+          baselineRepository: baselineRepository,
+          clock: clock,
+          sourceTimeout: const Duration(milliseconds: 10),
+        );
+
+        expect(await collector.collectOnce(), greaterThanOrEqualTo(3));
+        final snapshot = await baselineRepository.getBaselineSnapshot(
+          provider: kInternalPhoneProvider,
+          deviceId: kSmartphoneDeviceId,
+        );
+        expect(snapshot?.cumulative, 11000);
+        expect(snapshot?.recordedAtUtc, DateTime.utc(2026, 6, 2, 8));
+      },
+    );
+
     test('skips overlapping collectOnce calls while one is in flight', () async {
       final collector = BackgroundCollector(
         sources: [
@@ -1212,6 +1296,7 @@ class _FailingOnSetBaselineRepository extends IngestionBaselineRepository {
     required String provider,
     required String deviceId,
     required int cumulative,
+    DateTime? recordedAtUtc,
     Transaction? txn,
   }) async {
     if (failOnce) {
@@ -1222,6 +1307,7 @@ class _FailingOnSetBaselineRepository extends IngestionBaselineRepository {
       provider: provider,
       deviceId: deviceId,
       cumulative: cumulative,
+      recordedAtUtc: recordedAtUtc,
       txn: txn,
     );
   }

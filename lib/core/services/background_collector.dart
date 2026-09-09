@@ -130,10 +130,15 @@ class BackgroundCollector {
 
     for (final source in _sources) {
       try {
-        final initialBaseline = await baselineRepository.getBaseline(
+        final snapshot = await baselineRepository.getBaselineSnapshot(
           provider: source.providerId,
           deviceId: source.deviceId,
         );
+        final lastIngestionUtc = snapshot?.recordedAtUtc ??
+            await repository.getLastIngestionUtcForSource(
+              provider: source.providerId,
+              deviceId: source.deviceId,
+            );
         final result = await normalizer.normalize(
           _TimeoutBoundedSource(
             source,
@@ -142,7 +147,8 @@ class BackgroundCollector {
             clock: clock,
           ),
           maxReadings: maxReadingsPerSource,
-          initialBaseline: initialBaseline,
+          initialBaseline: snapshot?.cumulative,
+          lastIngestionUtc: lastIngestionUtc,
         );
 
         final terminalBaseline = result.terminalBaseline;
@@ -158,6 +164,7 @@ class BackgroundCollector {
                   provider: source.providerId,
                   deviceId: source.deviceId,
                   cumulative: terminalBaseline,
+                  recordedAtUtc: clock?.nowUtc(),
                   txn: txn,
                 );
               }

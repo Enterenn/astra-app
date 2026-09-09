@@ -33,6 +33,7 @@ class StepNormalizer {
     DataIngestionSource source, {
     required int maxReadings,
     int? initialBaseline,
+    DateTime? lastIngestionUtc,
   }) async {
     final readings = await source
         .watchStepReadings()
@@ -42,6 +43,7 @@ class StepNormalizer {
       source: source,
       readings: readings,
       initialBaseline: initialBaseline,
+      lastIngestionUtc: lastIngestionUtc,
     );
   }
 
@@ -49,12 +51,13 @@ class StepNormalizer {
     required DataIngestionSource source,
     required Iterable<StepReading> readings,
     int? initialBaseline,
+    DateTime? lastIngestionUtc,
   }) {
     final bucketValues = <DateTime, int>{};
     final zoneOffset = _formatZoneOffset(clock.currentZoneOffset());
 
     int? baseline = initialBaseline;
-    DateTime? previousObservedAtUtc;
+    DateTime? previousObservedAtUtc = lastIngestionUtc;
     for (final reading in readings) {
       final cumulativeSteps = reading.cumulativeSteps;
 
@@ -64,7 +67,10 @@ class StepNormalizer {
         continue;
       }
 
-      final intervalStartUtc = previousObservedAtUtc;
+      final isHardwareReset = cumulativeSteps < baseline;
+      final intervalStartUtc = isHardwareReset
+          ? null
+          : _intervalStartBefore(previousObservedAtUtc, reading.observedAtUtc);
       final elapsedSincePrevious = intervalStartUtc == null
           ? null
           : reading.observedAtUtc.difference(intervalStartUtc);
@@ -117,6 +123,13 @@ class StepNormalizer {
       ],
       terminalBaseline: baseline ?? initialBaseline,
     );
+  }
+
+  DateTime? _intervalStartBefore(DateTime? start, DateTime end) {
+    if (start == null || !start.isBefore(end)) {
+      return null;
+    }
+    return start;
   }
 
   void _creditIncrementAcrossLocalDays({

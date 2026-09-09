@@ -320,6 +320,100 @@ void main() {
       expect(result.buckets.single.value, 100);
     });
 
+    test(
+      'splits single reading against persisted baseline across missed local days',
+      () {
+        final normalizer = StepNormalizer(
+          clock: _SequenceTimeProvider([DateTime.utc(2026, 6, 4, 6)]),
+        );
+        final readings = [
+          StepReading(
+            cumulativeSteps: 11000,
+            observedAtUtc: DateTime.utc(2026, 6, 4, 6),
+          ),
+        ];
+        final source = _FakeStepSource(readings);
+
+        final result = normalizer.normalizeReadings(
+          source: source,
+          readings: readings,
+          initialBaseline: 1000,
+          lastIngestionUtc: DateTime.utc(2026, 6, 1, 21, 50),
+        );
+
+        expect(result.buckets.length, greaterThanOrEqualTo(3));
+        expect(
+          result.buckets.fold<int>(0, (sum, bucket) => sum + bucket.value),
+          10000,
+        );
+        final localDays = result.buckets.map((bucket) {
+          final local = bucket.startTimeUtc.add(const Duration(hours: 2));
+          return DateTime.utc(local.year, local.month, local.day);
+        }).toSet();
+        expect(localDays.length, greaterThanOrEqualTo(3));
+        expect(
+          result.buckets.any(
+            (bucket) => bucket.startTimeUtc == DateTime.utc(2026, 6, 4, 6),
+          ),
+          isTrue,
+        );
+        expect(
+          result.buckets.every(
+            (bucket) => bucket.value < 10000,
+          ),
+          isTrue,
+        );
+      },
+    );
+
+    test('hardware reset with last ingestion still credits the current bucket', () {
+      final normalizer = StepNormalizer(
+        clock: _SequenceTimeProvider([DateTime.utc(2026, 6, 4, 6)]),
+      );
+      final readings = [
+        StepReading(
+          cumulativeSteps: 200,
+          observedAtUtc: DateTime.utc(2026, 6, 4, 6),
+        ),
+      ];
+      final source = _FakeStepSource(readings);
+
+      final result = normalizer.normalizeReadings(
+        source: source,
+        readings: readings,
+        initialBaseline: 10000,
+        lastIngestionUtc: DateTime.utc(2026, 6, 1, 21, 50),
+      );
+
+      expect(result.buckets, hasLength(1));
+      expect(result.buckets.single.value, 200);
+      expect(result.buckets.single.startTimeUtc, DateTime.utc(2026, 6, 4, 6));
+    });
+
+    test('ignores last ingestion after the reading time', () {
+      final normalizer = StepNormalizer(
+        clock: _SequenceTimeProvider([DateTime.utc(2026, 6, 2, 7, 1)]),
+      );
+      final readings = [
+        StepReading(
+          cumulativeSteps: 5100,
+          observedAtUtc: DateTime.utc(2026, 6, 2, 7, 1),
+        ),
+      ];
+      final source = _FakeStepSource(readings);
+
+      final result = normalizer.normalizeReadings(
+        source: source,
+        readings: readings,
+        initialBaseline: 5000,
+        lastIngestionUtc: DateTime.utc(2026, 6, 2, 8),
+      );
+
+      expect(result.buckets, hasLength(1));
+      expect(result.buckets.single.value, 100);
+      expect(result.buckets.single.startTimeUtc, DateTime.utc(2026, 6, 2, 7));
+    });
+
     test('splits increment proportionally when gap crosses local midnight', () {
       final normalizer = StepNormalizer(
         clock: _SequenceTimeProvider([DateTime.utc(2026, 6, 2, 6)]),

@@ -74,12 +74,56 @@ void main() {
         whereArgs: [storedKey],
       );
       expect(rows, hasLength(1));
-      expect(rows.single['value'], '4321');
+      final stored = IngestionBaselineRepository.decodeSnapshot(
+        rows.single['value'] as String,
+      );
+      expect(stored?.cumulative, 4321);
+      expect(stored?.recordedAtUtc, isNotNull);
 
       expect(
         await repository.getBaseline(provider: provider, deviceId: deviceId),
         4321,
       );
+      final snapshot = await repository.getBaselineSnapshot(
+        provider: provider,
+        deviceId: deviceId,
+      );
+      expect(snapshot?.cumulative, 4321);
+      expect(snapshot?.recordedAtUtc, isNotNull);
+    });
+
+    test('reads legacy integer baseline without timestamp', () async {
+      await db.insert('user_preferences', {
+        'key': IngestionBaselineRepository.preferenceKey(
+          provider: kInternalPhoneProvider,
+          deviceId: kSmartphoneDeviceId,
+        ),
+        'value': '5000',
+      });
+
+      final snapshot = await repository.getBaselineSnapshot(
+        provider: kInternalPhoneProvider,
+        deviceId: kSmartphoneDeviceId,
+      );
+      expect(snapshot?.cumulative, 5000);
+      expect(snapshot?.recordedAtUtc, isNull);
+    });
+
+    test('round-trips timestamped baseline snapshot', () async {
+      final recordedAt = DateTime.utc(2026, 5, 30, 21, 50);
+      await repository.setBaseline(
+        provider: kInternalPhoneProvider,
+        deviceId: kSmartphoneDeviceId,
+        cumulative: 1000,
+        recordedAtUtc: recordedAt,
+      );
+
+      final snapshot = await repository.getBaselineSnapshot(
+        provider: kInternalPhoneProvider,
+        deviceId: kSmartphoneDeviceId,
+      );
+      expect(snapshot?.cumulative, 1000);
+      expect(snapshot?.recordedAtUtc, recordedAt);
     });
 
     test('clearAllBaselines removes encoded keys inside txn', () async {
